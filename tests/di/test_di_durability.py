@@ -21,44 +21,48 @@
 F-23B : Data Durability/Integrity test module.
 """
 
-import os
 import logging
-import pytest
+import os
 import secrets
 from time import perf_counter_ns
+
+import pytest
 from boto3.s3.transfer import TransferConfig
+
+from commons.constants import MB, KB
 from commons.constants import NORMAL_UPLOAD_SIZES
-from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB
-from commons.utils import assert_utils
-from commons.utils import system_utils
-from commons.exceptions import CTException
+from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
-from commons.constants import const
-from commons.constants import MB, KB
+from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from config.s3 import S3_BLKBOX_CFG
-from libs.s3 import S3_CFG
+from libs.di import di_lib
+from libs.di.data_generator import DataGenerator
 from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.di.di_feature_control import DIFeatureControl
-from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
-from libs.di import di_lib
-from libs.s3.s3_test_lib import S3TestLib
-from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.s3 import cortxcli_test_lib
-from libs.s3.s3_cmd_test_lib import S3CmdTestLib
-from libs.s3.s3_blackbox_test_lib import JCloudClient
+from libs.s3 import S3_CFG
 from libs.s3 import SECRET_KEY, ACCESS_KEY
+from libs.s3 import cortxcli_test_lib
 from libs.s3 import s3_s3cmd
+from libs.s3.s3_blackbox_test_lib import JCloudClient
+from libs.s3.s3_cmd_test_lib import S3CmdTestLib
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_test_lib import S3TestLib
 
 
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-public-methods
 @pytest.mark.usefixtures("restart_s3server_with_fault_injection")
 class TestDIDurability:
     """DI Durability Test suite."""
 
+    # pylint: disable=too-many-statements
     @classmethod
     def setup_class(cls):
         """Setup class"""
@@ -387,7 +391,7 @@ class TestDIDurability:
         Corrupt data blocks of an object at Motr level and verify read (Get).
         """
         self.log.info("STARTED: Corrupt data blocks of an object at Motr level and "
-            "verify read (Get).")
+                      "verify read (Get).")
         valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
@@ -406,7 +410,7 @@ class TestDIDurability:
         for file_size in NORMAL_UPLOAD_SIZES:
             self.log.info("Step 3: Create a corrupted file of size %s", file_size)
             location = self.di_err_lib.create_corrupted_file(size=file_size, first_byte='z',
-                                                        data_folder_prefix=self.test_dir_path)
+                                                             data_folder_prefix=self.test_dir_path)
             self.log.info("Step 3: created a corrupted file at location %s", location)
             self.log.info("Step 4: Put object in a bucket.")
             self.s3_test_obj.put_object(bucket_name=self.bucket_name,
@@ -423,7 +427,7 @@ class TestDIDurability:
                 if "error occurred (InternalError) when calling the GetObject operation" in err_str:
                     self.log.info("Download failed with InternalError")
                     self.log.info("Step 5: Verified read (Get) of an object whose metadata is "
-                            "corrupted.")
+                                  "corrupted.")
                 else:
                     failed_file_sizes.append(file_size)
         self.s3_test_obj.delete_bucket(bucket_name=self.bucket_name, force=True)
@@ -431,7 +435,7 @@ class TestDIDurability:
             self.log.info("Test failed for sizes %s", str(failed_file_sizes))
             assert False
         self.log.info("ENDED: Corrupt data blocks of an object at Motr level and verify "
-            "read (Get).")
+                      "read (Get).")
 
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-locals
@@ -443,7 +447,7 @@ class TestDIDurability:
         Corrupt data blocks of an object at Motr level and verify range read.
         """
         self.log.info("STARTED: Corrupt data blocks of an object at Motr level and "
-            "verify range read (Get.")
+                      "verify range read (Get.")
         valid, skip_mark = self.di_err_lib.validate_valid_config()
         if not valid or skip_mark:
             self.log.debug("Skipping test as flags are not set to default")
@@ -476,13 +480,13 @@ class TestDIDurability:
             lower, upper = di_lib.get_random_ranges(size=file_size,
                                                     greater_than_unit_size=greater_than_unit_size)
             self.log.info("Lower range: %s, Upper range %s", lower, upper)
-            #Case 1: Read range with start byte 0
+            # Case 1: Read range with start byte 0
             start_range = 0
             end_range = upper - 1
             try:
                 resp = self.s3_test_obj.get_object(bucket=self.bucket_name,
-                                                key=self.object_name,
-                                                ranges=f"bytes={start_range}-{end_range}")
+                                                   key=self.object_name,
+                                                   ranges=f"bytes={start_range}-{end_range}")
 
                 if resp[0]:
                     self.log.info("Download of corrupted data is successful adding"
@@ -493,31 +497,31 @@ class TestDIDurability:
                 err_str = str(err)
                 self.log.info("Test failed with %s", err_str)
                 if "error occurred (InternalError) when calling the GetObject operation" \
-                    in err_str:
+                        in err_str:
                     self.log.info("Download failed with InternalError")
                 else:
                     failed_file_sizes.append(file_size)
 
-            #Case 2: for file Size greater than motr Unit Size (1MB)
+            # Case 2: for file Size greater than motr Unit Size (1MB)
             if file_size > 1 * MB:
                 self.log.info("Range read with lower %s and upper range %s: %s", lower, upper,
-                            len(buff_c[lower:upper]))
+                              len(buff_c[lower:upper]))
                 range_csum = di_lib.calc_checksum(buff_c[lower:upper])
                 self.log.info("Checksum of original range buffer is %s", range_csum)
                 try:
                     resp_dwn = self.s3_test_obj.get_object(bucket=self.bucket_name,
-                                                    key=self.object_name,
-                                                    ranges=f"bytes={lower}-{upper - 1}")
+                                                           key=self.object_name,
+                                                           ranges=f"bytes={lower}-{upper - 1}")
 
                     if resp_dwn[0]:
                         download_content = ''
                         download_content = resp_dwn[1]["Body"].read()
                         self.log.info('size of downloaded object %s is: %s bytes',
-                                    self.object_name, len(download_content))
+                                      self.object_name, len(download_content))
                         dw_csum = di_lib.calc_checksum(download_content)
                         self.log.info("Checksum of download range buffer is %s", dw_csum)
                         assert_utils.assert_equal(range_csum, dw_csum, 'Checksum match found in '
-                                                                         'downloaded file')
+                                                                       'downloaded file')
                 except CTException as err:
                     failed_file_sizes.append(file_size)
                     err_str = str(err)
@@ -682,15 +686,15 @@ class TestDIDurability:
                       "uploaded object should succeed ( 30 MB -100 MB).")
         self.log.info("Step 1: Create a bucket and upload object into a bucket.")
         command = self.jc_obj.create_cmd_format(self.bucket_name, "mb",
-                                        jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
-                                        chunk=True)
+                                                jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
+                                                chunk=True)
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp[1])
         self.log.info("Step: 1 Bucket was created %s", self.bucket_name)
         for size in NORMAL_UPLOAD_SIZES:
             self.log.info("Create a file of size %sMB", size)
-            test_file= "data_durability{}_TEST_22916_{}_MB_upload.txt" \
-                            .format(perf_counter_ns(),str(size))
+            test_file = "data_durability{}_TEST_22916_{}_MB_upload.txt" \
+                .format(perf_counter_ns(), str(size))
             file_path_upload = os.path.join(self.test_dir_path, test_file)
             self.log.info("Step 1: create a file of size %sMB", size)
             if os.path.exists(file_path_upload):
@@ -699,31 +703,33 @@ class TestDIDurability:
             self.data_gen.create_file_from_buf(fbuf=buff, size=size, name=file_path_upload)
             self.log.info("Created file %s with CSM: %s", file_path_upload, csm)
             self.log.info("Step 2: Created a bucket and upload object of %s MB into a "
-                        "bucket.", size)
+                          "bucket.", size)
             put_cmd_str = "{} {}".format("put", file_path_upload)
             command = self.jc_obj.create_cmd_format(self.bucket_name, put_cmd_str,
-                                            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
-                                            chunk=True)
+                                                    jtool=S3_BLKBOX_CFG["jcloud_cfg"][
+                                                        "jcloud_tool"],
+                                                    chunk=True)
             resp = system_utils.execute_cmd(command)
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_in("Object put successfully", resp[1][:-1], resp[1])
             self.log.info("Step 2: Put object to a bucket %s was successful", self.bucket_name)
             self.log.info("Step 3: Download chunk uploaded from bucket %s .", self.bucket_name)
-            test_file_download= "data_durability{}_TEST_22916_{}_MB_download.txt" \
-                            .format(perf_counter_ns(),str(size))
-            file_path_download= os.path.join(self.test_dir_path, test_file_download)
+            test_file_download = "data_durability{}_TEST_22916_{}_MB_download.txt" \
+                .format(perf_counter_ns(), str(size))
+            file_path_download = os.path.join(self.test_dir_path, test_file_download)
             if os.path.exists(file_path_download):
                 os.remove(file_path_download)
             bucket_str = "{0}/{1} {2}".format(self.bucket_name, test_file, file_path_download)
             command = self.jc_obj.create_cmd_format(bucket_str, "get",
-                                        jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
-                                        chunk=True)
+                                                    jtool=S3_BLKBOX_CFG["jcloud_cfg"][
+                                                        "jcloud_tool"],
+                                                    chunk=True)
             resp = system_utils.execute_cmd(command)
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_in("Object download successfully", resp[1][:-1], resp)
             self.log.info("Step 3: Object was downloaded successfully")
             self.log.info("Step 4:Validate checksum of uploaded and downloded files")
-            result = system_utils.validate_checksum(file_path_upload,file_path_download)
+            result = system_utils.validate_checksum(file_path_upload, file_path_download)
             if not result:
                 assert_utils.assert_true(False, "Checksum validation failed")
             self.log.info("Step 4:Checksum and ETAG validation is successful")
@@ -977,7 +983,7 @@ class TestDIDurability:
         for file_size in NORMAL_UPLOAD_SIZES:
             self.log.debug("Step 2: Create a corrupted file of size %s .", file_size)
             buff, csm = self.data_gen.generate(size=file_size,
-                                        seed=self.data_gen.get_random_seed())
+                                               seed=self.data_gen.get_random_seed())
             buff_c = self.data_gen.add_first_byte_to_buffer(buffer=buff, first_byte='f')
             greater_than_unit_size = False
             if file_size > 1 * MB:
@@ -996,12 +1002,12 @@ class TestDIDurability:
                                             object_name=self.object_name, file_path=location)
                 resp_dw_rr = self.s3_test_obj.get_object(bucket=self.bucket_name,
                                                          key=self.object_name,
-                                                         ranges=f"bytes={lower}-{upper-1}")
+                                                         ranges=f"bytes={lower}-{upper - 1}")
                 if resp_dw_rr[0]:
                     if file_size > 1 * MB:
                         content = resp_dw_rr[1]["Body"].read()
                         self.log.info('size of downloaded object %s is: %s bytes',
-                                    self.object_name, len(content))
+                                      self.object_name, len(content))
                         dw_csum = di_lib.calc_checksum(content)
                         self.log.info("Comparing csm of uploaded and downloaded parts")
                         if buff_csm != dw_csum:
@@ -1031,7 +1037,7 @@ class TestDIDurability:
                     self.log.debug("Lower: %s  Upper: %s", lower, upper)
                     resp_rr_dwn = self.s3_test_obj.get_object(bucket=self.bucket_name,
                                                               key=self.object_name,
-                                                              ranges=f"bytes={lower}-{upper-1}")
+                                                              ranges=f"bytes={lower}-{upper - 1}")
                     self.log.info(str(resp_rr_dwn))
                     if resp_rr_dwn[0]:
                         failed_file_sizes.append(file_size)
@@ -1267,7 +1273,7 @@ class TestDIDurability:
                       host_port=CMN_CFG['host_port'], object_uri=object_uri)
         try:
             cmd_status, output = s3_s3cmd.S3CmdFacade. \
-                download_object_s3cmd( file_path=self.file_path + '.bak', **dodict)
+                download_object_s3cmd(file_path=self.file_path + '.bak', **dodict)
         except Exception as fault:
             self.log.exception(fault, exc_info=True)
         else:
@@ -1332,7 +1338,7 @@ class TestDIDurability:
             self.s3_test_obj.copy_object(source_bucket=self.bucket_name, source_object=test_file,
                                          dest_bucket=bucket_name_2, dest_object=obj_name_2)
             resp_dw_rr = self.s3_test_obj.get_object(bucket=bucket_name_2, key=obj_name_2,
-                                                     ranges=f"bytes={lower}-{upper-1}")
+                                                     ranges=f"bytes={lower}-{upper - 1}")
             content = resp_dw_rr[1]["Body"].read()
             self.log.info('size of downloaded object %s is: %s bytes', obj_name_2, len(content))
             dw_csum = di_lib.calc_checksum(content)

@@ -202,8 +202,7 @@ class TestHANodeHealthGUI:
                 host=self.host_list[node],
                 node_obj=self.node_list[node],
                 is_safe=True)
-            assert_utils.assert_true(
-                resp, "Host has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node]}")
 
             LOGGER.info("Check in cortxcli and REST that the status is changed for %s to Failed",
                         node_name)
@@ -235,7 +234,7 @@ class TestHANodeHealthGUI:
 
             LOGGER.info("Power on %s", node_name)
             resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
-            assert_utils.assert_true(resp, "Host has not powered on yet.")
+            assert_utils.assert_true(resp, f"Failed to power on {self.host_list[node]}.")
             LOGGER.info("%s has powered on", node_name)
             self.restored = True
             # To get all the services up and running
@@ -307,7 +306,7 @@ class TestHANodeHealthGUI:
                 bmc_obj=self.bmc_list[node],
                 node_obj=self.node_list[node])
             assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not shutdown yet.")
+                resp, f"Failed to shutdown {self.host_list[node]}")
             LOGGER.info("%s is powered off.", self.host_list[node])
             LOGGER.info("Check %s is in Failed state and other nodes state is not affected",
                         self.srvnode_list[node])
@@ -338,7 +337,7 @@ class TestHANodeHealthGUI:
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node])
             resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
-            assert_utils.assert_true(resp, f"{self.host_list[node]} has not powered on yet.")
+            assert_utils.assert_true(resp, f"Failed to power on {self.host_list[node]}.")
             LOGGER.info("%s is powered on.", self.host_list[node])
             self.restored = True
             # To get all the services up and running
@@ -398,14 +397,10 @@ class TestHANodeHealthGUI:
         LOGGER.info("Fail if network alert in new alert table already present")
         self.ha_gui_obj.assert_if_network_interface_down_alert_present()
 
-        LOGGER.info("Get the list of private data interfaces for all nodes.")
-        response = self.ha_obj.get_iface_ip_list(
-            node_list=self.node_list, num_nodes=self.num_nodes)
+        response = self.ha_obj.get_iface_ip_list(node_list=self.node_list, num_nodes=self.num_nodes)
         iface_list = response[0]
         private_ip_list = response[1]
         self.nw_data = [iface_list, private_ip_list]
-        LOGGER.debug("List of private data IP : %s and interfaces on all nodes: %s",
-                     private_ip_list, iface_list)
 
         for node in range(self.num_nodes):
             self.restored = False
@@ -516,7 +511,7 @@ class TestHANodeHealthGUI:
         self.ha_gui_obj.acknowledge_node_alerts_in_active_alerts()
 
         LOGGER.info("Get the node for multiple os shutdown.")
-        node_index = self.system_random.choice(range(self.num_nodes))
+        node_index = self.system_random.choice(list(range(self.num_nodes)))
 
         LOGGER.info("Verify if node state online")
         self.ha_gui_obj.verify_node_state(node_index, "online")
@@ -537,7 +532,7 @@ class TestHANodeHealthGUI:
                 host=self.host_list[node_index],
                 node_obj=self.node_list[node_index],
                 is_safe=True)
-            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node_index]}")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
 
             LOGGER.info("Get the new node on which CSM service failover.")
@@ -568,7 +563,7 @@ class TestHANodeHealthGUI:
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node_index])
             resp = self.ha_obj.host_power_on(self.host_list[node_index], self.bmc_list[node_index])
-            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not powered on yet.")
+            assert_utils.assert_true(resp, f"Failed to power on {self.srvnode_list[node_index]}.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
             self.restored = True
 
@@ -623,7 +618,7 @@ class TestHANodeHealthGUI:
         self.ha_gui_obj.acknowledge_node_alerts_in_active_alerts()
 
         LOGGER.info("Get the node for multiple unsafe shutdown.")
-        node_index = self.system_random.choice(range(self.num_nodes))
+        node_index = self.system_random.choice(list(range(self.num_nodes)))
 
         LOGGER.info("Verify if node state online")
         # TODO: update argument if required in TE
@@ -644,7 +639,7 @@ class TestHANodeHealthGUI:
                 host=self.host_list[node_index],
                 bmc_obj=self.bmc_list[node_index],
                 node_obj=self.node_list[node_index])
-            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node_index]}")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
 
             LOGGER.info("Get the new node on which CSM service failover.")
@@ -675,7 +670,7 @@ class TestHANodeHealthGUI:
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node_index])
             resp = self.ha_obj.host_power_on(self.host_list[node_index], self.bmc_list[node_index])
-            assert_utils.assert_true(resp, f"{self.host_list[node_index]} has not powered on yet.")
+            assert_utils.assert_true(resp, f"Failed to power on {self.srvnode_list[node_index]}.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
             self.restored = True
 

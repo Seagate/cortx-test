@@ -264,11 +264,11 @@ class SystemHealth(RestTestLib):
         """
         node_ids = []
         node = node.lower()
-        if node == "storage" or node == "all":
+        if node in ("storage", "all"):
             node_ids.append(const.NODE_ID_OPTIONS["storage"])
-        elif node == "node-1" or node == "all":
+        elif node in ('node-1', 'all'):
             node_ids.append(const.NODE_ID_OPTIONS["node"].format(CMN_CFG['nodes'][0]["hostname"]))
-        elif node == "node-2" or node == "all":
+        elif node in ('node-2', 'all'):
             node_ids.append(const.NODE_ID_OPTIONS["node"].format(CMN_CFG['nodes'][0]["hostname"]))
         elif node == "":
             node_ids.append("")
@@ -498,7 +498,7 @@ class SystemHealth(RestTestLib):
             raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=rack_resp[1])
         if rack_resp[0] and site_resp[0] and cls_resp[0]:
             return True, f"Cluster, site and rack health status is {exp_status}"
-        return False, f"Cluster, site and rack health status is not as expected"
+        return False, f"Cluster, site and rack health status is not as expected {exp_status}"
 
     # pylint: disable=too-many-arguments
     @RestTestLib.authenticate_and_login

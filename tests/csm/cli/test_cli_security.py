@@ -24,11 +24,9 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils import assert_utils
 from commons.helpers.salt_helper import SaltHelper
+from commons.helpers.node_helper import Node
 from config import CMN_CFG
 from config import CSM_CFG
-from libs.s3 import S3H_OBJ
-from commons.helpers.node_helper import Node
-
 
 class TestCliSecurity:
     """CSM CLI Security TestSuite"""
