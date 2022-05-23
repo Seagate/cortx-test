@@ -61,13 +61,15 @@ class DiskFailureRecoveryLib:
         using hctl command
         :param pod_obj: Object for master nodes
         :param pod_name: name of the pod
-        :param data_pod_hostname: hostname of the cortx data pod of which disk status will be changed
+        :param data_pod_hostname: hostname of the cortx data pod of which disk status
+                                    will be changed
         :param device: name of disk of which status will be changed
         :param status: status of the disk
         :rtype Json response of hctl command
         """
-        cmd = common_cmd.CHANGE_DISK_STATE_USING_HCTL.replace("cortx_nod", str(data_pod_hostname)). \
-            replace("device_val", str(device)).replace("status_val", str(status))
+        cmd = common_cmd.CHANGE_DISK_STATE_USING_HCTL.replace(
+                        "cortx_nod", str(data_pod_hostname)).replace("device_val", str(device)).\
+                        replace("status_val", str(status))
         out = pod_obj.send_k8s_cmd(operation="exec", pod=pod_name,
                                    namespace=common_const.NAMESPACE,
                                    command_suffix=f"-c {self.hax_container}"

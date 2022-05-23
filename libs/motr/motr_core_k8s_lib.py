@@ -63,7 +63,8 @@ class MotrCoreK8s():
                                             password=CMN_CFG["nodes"][node]["password"])
             else:
                 self.worker_node_list.append(CMN_CFG["nodes"][node]["hostname"])
-                self.worker_node_objs.append(LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
+                self.worker_node_objs.append(LogicalNode(
+                                            hostname=CMN_CFG["nodes"][node]["hostname"],
                                             username=CMN_CFG["nodes"][node]["username"],
                                             password=CMN_CFG["nodes"][node]["password"]))
         self.node_dict = self._get_cluster_info

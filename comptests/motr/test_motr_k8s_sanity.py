@@ -299,24 +299,21 @@ class TestExecuteK8Sanity:
         """
         This is to test if SNS repair/rebalance start and status hctl interfaces works
         """
-        logger.info("Getting parity units count.")
         resp = self.disk_recvry_obj.retrieve_durability_values(self.motr_obj.node_obj, "sns")
         assert_utils.assert_true(resp[0], resp[1])
         parity_units = resp[1]['parity']
         logger.info("Step 1: Fail disks less than K(parity units)")
-        logger.info("No of parity units (K): %s", parity_units)
         if int(parity_units) == 1:
             disk_fail_cnt = 1
         else:
             disk_fail_cnt = random.randint(1, int(parity_units) - 1)  # nosec
-        logger.info(f"Failed disk count is {disk_fail_cnt}")
+        logger.info("Failed disk count: %s", disk_fail_cnt)
         cortx_node = self.motr_obj.get_primary_cortx_node()
         resp = self.disk_recvry_obj.fail_disk(disk_fail_cnt, self.motr_obj.node_obj,
                 self.motr_obj.worker_node_objs,
                 self.motr_obj.node_pod_dict[cortx_node])
         assert_utils.assert_true(resp[0], resp[1])
         failed_disks_dict = resp[1]
-        logger.info(f"Failed disk dict {failed_disks_dict}")
         logger.info("Step 2: Check if the disks are marked failed")
         disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()
         time.sleep(10)
@@ -341,14 +338,10 @@ class TestExecuteK8Sanity:
         logger.info("Step 5: Starting SNS Repair operation")
         resp = self.disk_recvry_obj.sns_repair(self.motr_obj.node_obj, "start",
                     self.motr_obj.node_pod_dict[cortx_node])
-        logger.info("sns start resp: %s", resp)
         logger.info("Step 6: Checking the SNS Repair status")
         repair_status = self.disk_recvry_obj.sns_repair(self.motr_obj.node_obj, "status",
                             self.motr_obj.node_pod_dict[cortx_node])
-        logger.info("sns start resp: %s", repair_status)
-        status = json.loads(repair_status)
-        logger.info(status)
-        for state in status:
+        for state in json.loads(repair_status):
             assert_utils.assert_equal(state['state'], 1)
         logger.info("Step 7: Checking if the disks are marked as repaired")
         disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()
@@ -374,14 +367,10 @@ class TestExecuteK8Sanity:
         logger.info("Step 10: Starting SNS Rebalance operation")
         resp = self.disk_recvry_obj.sns_rebalance(self.motr_obj.node_obj, "start",
                     self.motr_obj.node_pod_dict[cortx_node])
-        logger.info("sns rebalance start resp: %s", resp)
         logger.info("Step 11: Checking the SNS Rebalance status")
         rebalance_status = self.disk_recvry_obj.sns_rebalance(self.motr_obj.node_obj, "status",
                             self.motr_obj.node_pod_dict[cortx_node])
-        logger.info("sns rebalance status resp: %s", rebalance_status)
-        status = json.loads(rebalance_status)
-        logger.info(status)
-        for state in status:
+        for state in json.loads(rebalance_status):
             assert_utils.assert_equal(state['state'], 1)
         logger.info("Step 12: Checking if the disks are marked as online")
         disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()

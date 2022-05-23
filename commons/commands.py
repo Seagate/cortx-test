@@ -619,10 +619,9 @@ SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle ge
 # SNS repair
 SNS_REPAIR_CMD = "hctl repair {}"
 SNS_REBALANCE_CMD = "hctl rebalance {}"
-CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json $(jq --null-input --compact-output '{node : \"cortx_nod\", "\
-                               "source_type : \"drive\",  device : \"device_val\", " \
-                               "state : \"status_val\"}')"
-
+CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json $(jq --null-input --compact-output "\
+                                " '{node : \"cortx_nod\", source_type : \"drive\", "\
+                                " device : \"device_val\", state : \"status_val\"}')"
 # Procpath Collection
 PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'); procpath " \
            "record -i 45 -d {} -p $pid"
