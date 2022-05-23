@@ -117,7 +117,8 @@ class TestVersioningGetHeadObject:
                                           file_path=self.file_path1)
         assert_utils.assert_true(res[0], res[1])
         versions.append({"VersionId": "null", "ETag": res[1]["ETag"]})
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path1)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path1, download_path=self.download_path)
         self.log.info("Step 2: Enable bucket versioning")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
@@ -136,7 +137,8 @@ class TestVersioningGetHeadObject:
         self.log.info("Step 6: Check GET/HEAD Object without VersionId, check object content")
         check_get_head_object_version(self.s3_ver_test_obj,
                                       etag=versions[1]["ETag"])
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj,self.file_path2)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path2, download_path=self.download_path)
         self.log.info("Step 7: Suspend bucket versioning")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                          status="Suspended")
@@ -152,7 +154,8 @@ class TestVersioningGetHeadObject:
         self.log.info("Step 10: Check GET/HEAD Object without VersionId, check object content")
         check_get_head_object_version(self.s3_ver_test_obj,
                                       etag=versions[1]["ETag"])
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path2)
+        download_and_check(self.s3_test_obj,  self.bucket_name, self.object_name,
+                           file_path=self.file_path2, download_path=self.download_path)
         self.log.info("Step 11: Enable bucket versioning")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
@@ -173,14 +176,18 @@ class TestVersioningGetHeadObject:
                                       etag=versions[2]["ETag"])
         self.log.info("Step 16: Check GET/HEAD Object without VersionId, check object content")
         check_get_head_object_version(self.s3_ver_test_obj, etag=versions[2]["ETag"])
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path3)
+        download_and_check(self.s3_test_obj,  self.bucket_name, self.object_name,
+                           file_path=self.file_path3, download_path=self.download_path)
         self.log.info("Step 17: Verify version contents")
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj,
-                           version_id=versions[0]["VersionId"], file_path=self.file_path1)
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj,
-                           version_id=versions[1]["VersionId"], file_path=self.file_path2)
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj,
-                           version_id=versions[2]["VersionId"], file_path=self.file_path3)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path1, download_path=self.download_path,
+                           version_id=versions[0]["VersionId"])
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path2, download_path=self.download_path,
+                           version_id=versions[1]["VersionId"])
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path3, download_path=self.download_path,
+                           version_id=versions[2]["VersionId"])
 
     # pylint:disable-msg=too-many-statements
     @pytest.mark.s3_ops
@@ -201,7 +208,8 @@ class TestVersioningGetHeadObject:
                                               object_name=self.object_name,
                                               file_path=file_path)
             assert_utils.assert_true(res[0], res[1])
-            download_and_check(self.s3_test_obj, self.s3_ver_test_obj, file_path)
+            download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                               file_path=self.file_path, download_path=self.download_path)
             versions.append({"VersionId": res[1]["VersionId"], "ETag": res[1]["ETag"]})
         self.log.info("Step 3: Check GET/HEAD Object with VersionId=null returns error")
         check_get_head_object_version(self.s3_ver_test_obj, version_id="null",
@@ -215,7 +223,8 @@ class TestVersioningGetHeadObject:
                                       etag=versions[1]["ETag"])
         self.log.info("Step 6: Check GET/HEAD Object without VersionId, check object content")
         check_get_head_object_version(self.s3_ver_test_obj, etag=versions[1]["ETag"])
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path2)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path2, download_path=self.download_path)
         self.log.info("Step 7: Suspend bucket versioning")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                          status="Suspended")
@@ -232,7 +241,8 @@ class TestVersioningGetHeadObject:
                                       etag=versions[1]["ETag"])
         self.log.info("Step 11: Check GET/HEAD Object without VersionId, check object content")
         check_get_head_object_version(self.s3_ver_test_obj, etag=versions[1]["ETag"])
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path2)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path2, download_path=self.download_path)
         self.log.info("Step 12: Upload object after suspending versioning")
         res = self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                           object_name=self.object_name,
@@ -250,14 +260,18 @@ class TestVersioningGetHeadObject:
                                       etag=versions[1]["ETag"])
         self.log.info("Step 16: Check GET/HEAD Object without VersionId, check object content")
         check_get_head_object_version(self.s3_ver_test_obj, etag=versions[2]["ETag"])
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path3)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path3, download_path=self.download_path)
         self.log.info("Step 17: Verify version contents")
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj,
-                           version_id=versions[0]["VersionId"], file_path=self.file_path1)
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj,
-                           version_id=versions[1]["VersionId"], file_path=self.file_path2)
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj,
-                           version_id=versions[2]["VersionId"], file_path=self.file_path3)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path1, download_path=self.download_path,
+                           version_id=versions[0]["VersionId"])
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path2, download_path=self.download_path,
+                           version_id=versions[1]["VersionId"])
+        download_and_check(self.s3_test_obj,  self.bucket_name, self.object_name,
+                           file_path=self.file_path3, download_path=self.download_path,
+                           version_id=versions[2]["VersionId"])
 
     # pylint:disable-msg=too-many-statements
     @pytest.mark.s3_ops
@@ -280,13 +294,15 @@ class TestVersioningGetHeadObject:
                                           file_path=self.file_path1)
         assert_utils.assert_true(res[0], res[1])
         versions.append({"VersionId": "null", "ETag": res[1]["ETag"]})
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path1)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path, download_path=self.download_path)
         self.log.info("Step 3: Check GET/HEAD Object with VersionId=null")
         check_get_head_object_version(self.s3_ver_test_obj, version_id="null",
                                       etag=versions[0]["ETag"])
         self.log.info("Step 4: Check GET/HEAD Object without VersionId, check object content")
         check_get_head_object_version(self.s3_ver_test_obj, etag=versions[0]["ETag"])
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path1)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path1, download_path=self.download_path)
         self.log.info("Step 5: Enable bucket versioning")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
@@ -295,13 +311,15 @@ class TestVersioningGetHeadObject:
                                       etag=versions[0]["ETag"])
         self.log.info("Step 7: Check GET/HEAD Object without VersionId, check object content")
         check_get_head_object_version(self.s3_ver_test_obj, etag=versions[0]["ETag"])
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path1)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path1, download_path=self.download_path)
         self.log.info("Step 8: Upload a new version for the object and check object content")
         res = self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                           object_name=self.object_name,
                                           file_path=self.file_path2)
         assert_utils.assert_true(res[0], res[1])
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path2)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path2, download_path=self.download_path)
         versions.append({"VersionId": res[1]["VersionId"], "ETag": res[1]["ETag"]})
         self.log.info("Step 9: Check GET/HEAD Object with VersionId=null")
         check_get_head_object_version(self.s3_ver_test_obj, version_id="null",
@@ -311,12 +329,15 @@ class TestVersioningGetHeadObject:
                                       etag=versions[1]["ETag"])
         self.log.info("Step 11: Check GET/HEAD Object without VersionId, check object content")
         check_get_head_object_version(self.s3_ver_test_obj, etag=versions[1]["ETag"])
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj, self.file_path2)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path2, download_path=self.download_path)
         self.log.info("Step 12: Verify version contents")
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj,
-                           version_id=versions[0]["VersionId"], file_path=self.file_path1)
-        download_and_check(self.s3_test_obj, self.s3_ver_test_obj,
-                           version_id=versions[1]["VersionId"], file_path=self.file_path2)
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path1, download_path=self.download_path,
+                           version_id=versions[0]["VersionId"])
+        download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
+                           file_path=self.file_path2, download_path=self.download_path,
+                           version_id=versions[1]["VersionId"])
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32727')

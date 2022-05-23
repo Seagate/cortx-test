@@ -160,9 +160,9 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
         else:
             list_response = s3_ver_test_obj.list_object_versions(bucket_name=bucket_name)
     except CTException as error:
-        self.log.error(error)
+        LOG.error(error)
         list_error = error
-    
+
     if expected_error is not None:
         assert_utils.assert_in(expected_error, list_error.message, list_error)
         # If error is expected, assert the error message and skip validation of list response
@@ -184,23 +184,23 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
         for key in expected_versions.keys():
             for version in expected_versions[key]["versions"].keys():
                 assert_utils.assert_in(version, list(resp_dict["versions"][key].keys()))
-                is_latest = True if expected_versions[key]["is_latest"] == version else False
                 # Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
+                # is_latest = True if expected_versions[key]["is_latest"] == version else False
                 # Uncomment once CORTX-30178 changes are available in main
-                # assert_utils.assert_equal(is_latest, 
+                # assert_utils.assert_equal(is_latest,
                 #                           resp_dict["versions"][key][version]["is_latest"])
                 assert_utils.assert_equal(expected_versions[key]["versions"][version],
                                           resp_dict["versions"][key][version]["etag"])
                 expected_version_count += 1
             for delete_marker in expected_versions[key]["delete_markers"]:
-                assert_utils.assert_in(version, list(resp_dict["deletemarkers"][key].keys()))
-                is_latest = True if key["is_latest"] == version else False
+                assert_utils.assert_in(delete_marker, list(resp_dict["deletemarkers"][key].keys()))
                 # Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
+                # is_latest = True if key["is_latest"] == delete_marker else False
                 # Uncomment once CORTX-30178 changes are available in main
-                # assert_utils.assert_in(is_latest, 
+                # assert_utils.assert_in(is_latest,
                 #                        resp_dict["deletemarkers"][key][version]["is_latest"])
                 expected_deletemarker_count += 1
-        assert_utils.assert_equal(expected_version_count, resp_dict["version_count"], 
+        assert_utils.assert_equal(expected_version_count, resp_dict["version_count"],
                                   "Unexpected Version entry count in the response")
         assert_utils.assert_equal(expected_deletemarker_count, resp_dict["deletemarker_count"],
                                   "Unexpected DeleteMarker entry count in the response")
@@ -257,8 +257,8 @@ def check_get_head_object_version(s3_ver_test_obj: S3VersioningTestLib, version_
         LOG.info("Successfully performed GET Object: %s", get_response)
     except CTException as error:
         LOG.error(error)
-        if not error_msg:
-            raise CTException(err.CLI_ERROR, error.args[0]) from error
+        if not get_error_msg:
+            raise CTException(error.S3_CLIENT_ERROR, error.args[0]) from error
         assert_utils.assert_in(get_error_msg, error.message, error.message)
     LOG.info("Verifying HEAD Object with VersionId response")
     try:
@@ -278,20 +278,25 @@ def check_get_head_object_version(s3_ver_test_obj: S3VersioningTestLib, version_
         LOG.info("Successfully performed HEAD Object: %s", head_response)
     except CTException as error:
         LOG.error(error)
-        if not error_msg:
-            raise CTException(err.CLI_ERROR, error.args[0]) from error
+        if not head_error_msg:
+            raise CTException(error.S3_CLIENT_ERROR, error.args[0]) from error
         assert_utils.assert_in(head_error_msg, error.message, error.message)
 
-def download_and_check(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
-                       version_id: str, file_path: str) -> None:
+def download_and_check(s3_test_obj: S3TestLib, bucket_name: str, object_name: str,
+                       file_path: str, download_path: str, **kwargs) -> None:
     """
     Download an object/version and verify checksum of it's contents
     
-    :param s3_ver_test_obj: S3VersioningTestLib object to perform S3 versioning calls
-    :param version_id: Target version ID for GET/HEAD Object call.
-        In case it is not specified/None, object is retrieved instead of a specific version.
+    :param s3_test_obj: S3TestLib object to perform S3 calls
+    :param bucket_name: Target bucket name
+    :param object_name: Target object name
     :param file_path: File path of the uploaded file
+    :param download_path: Path for the downloaded object contents to be saved to.
+    :param **kwargs: Optional keyword arguments
+        "version_id": Target version ID for GET/HEAD Object call.
+            In case it is not specified/None, object is retrieved instead of a specific version.
     """
+    version_id = kwargs.get("version_id", None)
     expected_checksum = s3_utils.calc_checksum(file_path)
     if version_id:
         resp = s3_test_obj.object_download(bucket_name, object_name, download_path,
@@ -300,9 +305,10 @@ def download_and_check(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTest
         resp = s3_test_obj.object_download(bucket_name, object_name, download_path)
     assert_utils.assert_true(resp[0], resp[1])
     download_checksum = s3_utils.calc_checksum(self.download_path)
-    assert_utils.assert_equal(expected_checksum, download_checksum, 
+    assert_utils.assert_equal(expected_checksum, download_checksum,
                               "Mismatch in object/version contents")
 
+# pylint: disable=too-many-arguments
 def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
                     bucket_name: str, file_paths: list, obj_list: dict,
                     pre_obj_list: list = None) -> None:
@@ -338,18 +344,22 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
         LOG.info("Uploading objects before setting bucket versioning state")
         for obj_name in pre_obj_list:
             file_path = random.choice(file_paths)
+            res = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
+                                         file_path=file_path)
+            assert_utils.assert_true(res[0], res[1])
             
     for versioning_config, obj_name, count in obj_list:
-        resp = s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
+        resp = s3_ver_test_obj.put_bucket_versioning(bucket_name=bucket_name,
                                                      status=versioning_config)
         assert_utils.assert_true(resp[0], resp[1])
-        for i in range(count):
+        for _ in range(count):
             chk_null_version = True if versioning_config == "Enabled" else False
-            upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
-                           file_path=self.file_path, object_name=self.object_name,
-                           versions_dict=versions, chk_null_version=chk_null_version)
+            upload_version(s3_test_obj, bucket_name=bucket_name, file_path=file_path,
+                           object_name=object_name, versions_dict=versions,
+                           chk_null_version=chk_null_version)
     return versions
 
+# pylint: disable=too-many-arguments
 def upload_version(s3_test_obj: S3TestLib, bucket_name: str, object_name: str,
                    file_path: str, versions_dict: dict,
                    chk_null_version: bool = False) -> None:

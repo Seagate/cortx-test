@@ -141,7 +141,7 @@ def create_s3_acc_get_s3testlib(
     secret_key and S3 objects which required to perform further operations.
     """
     access_key, secret_key = create_s3_acc(account_name=account_name, email_id=email_id,
-                                           passwd=password)
+                                           password=password)
     s3_obj = s3_test_lib.S3TestLib(access_key, secret_key, endpoint_url=S3_CFG["s3_url"],
                                    s3_cert_path=S3_CFG["s3_cert_path"], region=S3_CFG["region"])
     response = (s3_obj, access_key, secret_key)
