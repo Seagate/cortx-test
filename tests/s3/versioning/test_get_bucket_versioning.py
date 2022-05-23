@@ -72,7 +72,7 @@ class TestGetBucketVersioning:
         if path_exists(self.test_dir_path):
             remove_dirs(self.test_dir_path)
         self.log.info("Cleanup test directory: %s", self.test_dir_path)
-        # TODO: DELETE Object with VersionId is WIP, uncomment once feature is available
+        # DELETE Object with VersionId is WIP, uncomment once feature is available
         # res = self.s3_test_obj.bucket_list()
         # pref_list = []
         # for bucket_name in res[1]:
@@ -102,8 +102,7 @@ class TestGetBucketVersioning:
         """Verify that bucket versioning status is not returned to non-owner user."""
         self.log.info("STARTED: Verify bucket versioning status is not returned to non-owner user")
         self.log.info("Prerequisite: New S3 account creation for non-owner user actions")
-        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(self.rest_obj,
-                                                                user_name=self.user_name,
+        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name,
                                                                 email_id=self.email_id,
                                                                 password=self.s3acc_password)
         self.log.info("Step 1: PUT Bucket Versioning with status=Enabled")

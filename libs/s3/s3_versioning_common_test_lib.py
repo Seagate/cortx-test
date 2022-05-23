@@ -18,7 +18,15 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 #
-"""Contains common functions for S3 Versioning tests."""
+"""
+Contains common functions for S3 Versioning tests.
+
+Checks/validation logic that is common to the test methods across the versioning related test
+modules should be extracted out and added to this module to reduce code duplication.
+
+Functions added here can accept cortx-test test libraries as parameters and can contain
+assertions as well, with the main aim being to have leaner and cleaner code in the test modules.
+"""
 import logging
 import random
 
@@ -26,6 +34,7 @@ from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import s3_utils
 from config.s3 import S3_CFG
+from libs.s3.s3_common_test_lib import create_s3_acc
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
@@ -33,42 +42,97 @@ from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 LOG = logging.getLogger(__name__)
 
 
-def create_s3_user_get_s3lib_object(rest_obj: S3AccountOperationsRestAPI,
-                                    user_name: str = None,
-                                    email_id: str = None,
-                                    password: str = None) -> tuple:
+def create_s3_user_get_s3lib_object(user_name: str, email_id: str,
+                                    password: str) -> tuple:
     """
-    Function will create s3 accounts with specified account name and email-id.
+    Create an S3 account and return S3 versioning test library object.
 
-    :param rest_obj: S3AccountOperationsRestAPI object for performing CSM operations.
     :param str user_name: Name of user to be created.
     :param str email_id: Email id for user creation.
     :param password: user password.
     :return: tuple, returns multiple values such as access_key, secret_key and S3 objects
         which are required to perform further operations.
     """
-    LOG.info("Creating user with name %s and email_id %s",
-             user_name, email_id)
-    new_user = rest_obj.create_s3_account(user_name=user_name, 
-                                          email_id=email_id,
-                                          passwd=password)
-    assert_utils.assert_true(new_user[0], new_user[1])
-    access_key = new_user[1]["access_key"]
-    secret_key = new_user[1]["secret_key"]
-    del rest_obj
-    LOG.info("Successfully created the S3 user")
-    s3_obj = S3VersioningTestLib(access_key=access_key, 
-                                 secret_key=secret_key,
-                                 endpoint_url=S3_CFG["s3_url"])
+    access_key, secret_key = create_s3_acc(account_name=user_name, email_id=email_id,
+                                           password=password)
+    s3_obj = S3VersioningTestLib(access_key=access_key, secret_key=secret_key,
+                                 endpoint_url=S3_CFG["s3_url"], region=S3_CFG["region"])
     response = (s3_obj, access_key, secret_key)
     return response
 
+def parse_list_object_versions_response(list_response: dict) -> dict:
+    """
+    Parse the response object returned from List Object Versions call.
+
+    :param list_response: Response object from List Object Versions call
+    :return: dict, with the following format:
+        {
+            "versions": {
+                    "<key_name>": {
+                        "<version-id>": {
+                            "etag": "Etag",
+                            "is_latest": True/False
+                        },
+                        ...
+                    },
+                    ...
+                }
+            "version_count": N
+            "deletemarkers": M
+            "deletemarker_count": {
+                "<key_name>": {
+                        "<version-id>": {
+                            "is_latest": True/False
+                        }, 
+                        ...
+                    },
+                    ...
+                }
+            }
+        }
+    """
+    versions = {}
+    deletemarkers = {}
+    version_count = 0
+    deletemarker_count = 0
+
+    print(f"List response: {list_response}")
+    if list_response[1].get("Versions"):
+        for version in list_response[1].get("Versions"):
+            key = version["Key"]
+            version_id = version["VersionId"]
+            if key not in versions.keys():
+                versions[key] = {}
+            versions[key][version_id] = {}
+            versions[key][version_id]["etag"] = version["ETag"]
+            versions[key][version_id]["is_latest"] = version["IsLatest"]
+            version_count += 1
+
+    if list_response[1].get("DeleteMarkers"):
+        for delete_marker in list_response[1].get("DeleteMarkers"):
+            key = version["Key"]
+            version_id = version["VersionId"]
+            if key not in deletemarkers.keys():
+                deletemarkers[key] = {}
+            deletemarkers[key][version_id] = {}
+            deletemarkers[key][version_id]["is_latest"] = version["IsLatest"]
+            deletemarker_count += 1
+    
+    response = {
+        "versions": versions,
+        "version_count": version_count,
+        "delete_markers": deletemarkers,
+        "deletemarker_count": deletemarker_count,
+    }
+    print(f"Parsed response: {response}")
+    return response
+
+
+
 def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
-                               bucket_name: str = None,
-                               list_params: dict = None,
-                               expected_versions: dict = None,
-                               expected_flags: dict = None,
-                               expected_error: str = None) -> None:
+                               bucket_name: str, expected_versions: dict,
+                               expected_flags: dict = None, expected_error: str = None,
+                               list_params: dict = None) -> None:
     """
     List all the versions and delete markers present in a bucket and verify the output
 
@@ -96,6 +160,7 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
     
     if expected_error is not None:
         assert_utils.assert_in(expected_error, list_error.message, list_error)
+        # If error is expected, assert the error message and skip validation of list response
         return
     
     assert_utils.assert_true(list_response[0], list_response[1])
@@ -107,60 +172,37 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
     if expected_versions is not None:
         LOG.info("Verifying bucket object versions list for expected contents")
         assert_utils.assert_true(list_response[0], list_response[1])
-        actual_versions = {}
-        actual_version_count = 0
         expected_version_count = 0
-        actual_deletemarkers = {}
-        actual_deletemarker_count = 0
         expected_deletemarker_count = 0
 
-        if list_response[1].get("Versions"):
-            for version in list_response[1].get("Versions"):
-                key = version["Key"]
-                version_id = version["VersionId"]
-                if key not in actual_versions.keys():
-                    actual_versions[key] = {}
-                actual_versions[key][version_id] = {}
-                actual_versions[key][version_id]["etag"] = version["ETag"]
-                actual_versions[key][version_id]["is_latest"] = version["IsLatest"]
-                actual_version_count += 1
-
-        if list_response[1].get("DeleteMarkers"):
-            for delete_marker in list_response[1].get("DeleteMarkers"):
-                key = version["Key"]
-                version_id = version["VersionId"]
-                if key not in actual_deletemarkers.keys():
-                    actual_deletemarkers[key] = {}
-                actual_deletemarkers[key][version_id] = {}
-                actual_deletemarkers[key][version_id]["is_latest"] = version["IsLatest"]
-                actual_deletemarker_count += 1
-        
+        resp_dict = parse_list_object_versions_response(list_response)
         for key in expected_versions.keys():
             for version in expected_versions[key]["versions"].keys():
-                assert_utils.assert_in(version, list(actual_versions[key].keys()))
+                assert_utils.assert_in(version, list(resp_dict["versions"][key].keys()))
                 is_latest = True if expected_versions[key]["is_latest"] == version else False
-                # TODO: Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
+                # Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
                 # Uncomment once CORTX-30178 changes are available in main
-                # assert_utils.assert_equal(is_latest, actual_versions[key][version]["is_latest"])
+                # assert_utils.assert_equal(is_latest, 
+                #                           resp_dict["versions"][key][version]["is_latest"])
                 assert_utils.assert_equal(expected_versions[key]["versions"][version],
-                                          actual_versions[key][version]["etag"])
+                                          resp_dict["versions"][key][version]["etag"])
                 expected_version_count += 1
             for delete_marker in expected_versions[key]["delete_markers"]:
-                assert_utils.assert_in(version, list(actual_deletemarkers[key].keys()))
+                assert_utils.assert_in(version, list(resp_dict["deletemarkers"][key].keys()))
                 is_latest = True if key["is_latest"] == version else False
-                # TODO: Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
+                # Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
                 # Uncomment once CORTX-30178 changes are available in main
-                # assert_utils.assert_in(is_latest, actual_versions[key][version]["is_latest"])
+                # assert_utils.assert_in(is_latest, 
+                #                        resp_dict["deletemarkers"][key][version]["is_latest"])
                 expected_deletemarker_count += 1
-        assert_utils.assert_equal(expected_version_count, actual_version_count, 
+        assert_utils.assert_equal(expected_version_count, resp_dict["version_count"], 
                                   "Unexpected Version entry count in the response")
-        assert_utils.assert_equal(expected_deletemarker_count, actual_deletemarker_count,
+        assert_utils.assert_equal(expected_deletemarker_count, resp_dict["deletemarker_count"],
                                   "Unexpected DeleteMarker entry count in the response")
         LOG.info("Completed verifying bucket object versions list for expected contents")
 
-def check_list_objects(s3_test_obj: S3TestLib,
-                       bucket_name: str = None,
-                       expected_objects: list = None) -> None:
+def check_list_objects(s3_test_obj: S3TestLib, bucket_name: str,
+                       expected_objects: list) -> None:
     """
     List bucket and verify there are single entries for each versioned object
 
@@ -176,11 +218,8 @@ def check_list_objects(s3_test_obj: S3TestLib,
     assert_utils.assert_equal(sorted(expected_objects), sorted(list_response[1]),
                               "List Objects response does not contain expected object names")
 
-def check_get_head_object_version(s3_ver_test_obj: S3VersioningTestLib,
-                                  version_id: str = None,
-                                  bucket_name: str = None,
-                                  object_name: str = None,
-                                  **kwargs) -> None:
+def check_get_head_object_version(s3_ver_test_obj: S3VersioningTestLib, version_id: str,
+                                  bucket_name: str, object_name: str, **kwargs) -> None:
     """
     Verify GET/HEAD Object response for specified version/object
 
@@ -212,7 +251,7 @@ def check_get_head_object_version(s3_ver_test_obj: S3VersioningTestLib,
             assert_utils.assert_equal(get_response[1]["ResponseMetadata"]["ETag"], etag)
         LOG.info("Successfully performed GET Object: %s", get_response)
     except CTException as error:
-        LOG.error(error.message)
+        LOG.error(error)
         if not error_msg:
             raise CTException(err.CLI_ERROR, error.args[0]) from error
         assert_utils.assert_in(get_error_msg, error.message, error.message)
@@ -233,15 +272,13 @@ def check_get_head_object_version(s3_ver_test_obj: S3VersioningTestLib,
             assert_utils.assert_equal(head_response[1]["ResponseMetadata"]["ETag"], etag)
         LOG.info("Successfully performed HEAD Object: %s", head_response)
     except CTException as error:
-        LOG.error(error.message)
+        LOG.error(error)
         if not error_msg:
             raise CTException(err.CLI_ERROR, error.args[0]) from error
         assert_utils.assert_in(head_error_msg, error.message, error.message)
 
-def download_and_check(s3_test_obj: S3TestLib,
-                       s3_ver_test_obj: S3VersioningTestLib,
-                       version_id: str = None,
-                       file_path: str = None) -> None:
+def download_and_check(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
+                       version_id: str, file_path: str) -> None:
     """
     Download an object/version and verify checksum of it's contents
     
@@ -261,12 +298,9 @@ def download_and_check(s3_test_obj: S3TestLib,
     assert_utils.assert_equal(expected_checksum, download_checksum, 
                               "Mismatch in object/version contents")
 
-def upload_versions(s3_test_obj: S3TestLib,
-                    s3_ver_test_obj: S3VersioningTestLib,
-                    bucket_name: str = None,
-                    file_paths: list = None,
-                    pre_obj_list: list = None,
-                    obj_list: dict = None) -> None:
+def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
+                    bucket_name: str, file_paths: list, obj_list: dict,
+                    pre_obj_list: list = None) -> None:
     """
     Upload objects to a versioning enabled/suspended bucket and return dictionary of uploaded
     versions
@@ -311,12 +345,9 @@ def upload_versions(s3_test_obj: S3TestLib,
                            versions_dict=versions, chk_null_version=chk_null_version)
     return versions
 
-def upload_version(s3_test_obj: S3TestLib,
-                   bucket_name: str = None,
-                   object_name: str = None,
-                   file_path: str = None,
-                   chk_null_version: bool = False,
-                   versions_dict: dict = None) -> None:
+def upload_version(s3_test_obj: S3TestLib, bucket_name: str, object_name: str,
+                   file_path: str, versions_dict: dict,
+                   chk_null_version: bool = False) -> None:
     """ Upload objects to a versioning enabled/suspended bucket and return dictionary of uploaded
     versions
 
@@ -346,7 +377,7 @@ def upload_version(s3_test_obj: S3TestLib,
     versions_dict[object_name]["is_latest"] = version_id
 
 def empty_versioned_bucket(s3_ver_test_obj: S3VersioningTestLib,
-                           bucket_name: str,) -> None:
+                           bucket_name: str) -> None:
     """
     Delete all versions and delete markers present in a bucket
 

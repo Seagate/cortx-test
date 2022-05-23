@@ -123,8 +123,7 @@ class TestPutBucketVersioning:
     def test_put_bucket_versioning_non_bucket_owner_32718(self):
         """ Test PUT Enabled/Suspended bucket versioning by non bucket owner. """
         self.log.info("STARTED: PUT Enabled/Suspended bucket versioning by non bucket owner")
-        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(self.rest_obj,
-                                                                user_name=self.user_name,
+        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name,
                                                                 email_id=self.email_id,
                                                                 password=self.s3acc_password)
         try:
@@ -173,8 +172,7 @@ class TestPutBucketVersioning:
     def test_put_unversioned_bucket_versioning_unversioned_bucket_32747(self):
         """ Test PUT Unversioned/Disable bucket versioning when versioning not set. """
         self.log.info("STARTED: PUT Disabled bucket versioning by non bucket owner.")
-        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(self.rest_obj,
-                                                                user_name=self.user_name,
+        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name,
                                                                 email_id=self.email_id,
                                                                 password=self.s3acc_password)
         try:
@@ -212,8 +210,7 @@ class TestPutBucketVersioning:
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Creating new account.")
-        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(self.rest_obj,
-                                                                user_name=self.user_name,
+        s3_new_test_obj, _, _ = create_s3_user_get_s3lib_object(user_name=self.user_name,
                                                                 email_id=self.email_id,
                                                                 password=self.s3acc_password)
         try:
