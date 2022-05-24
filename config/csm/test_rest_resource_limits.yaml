@@ -1,4 +1,6 @@
 test_xxxxx:
   active_users_quota: 50
   tmp_users_password: "Seagate@123"
-
+test_yyyyy:
+  requests_quota: 50
+  api_endpoint: "/api/v2/csm/users"
