@@ -669,6 +669,11 @@ class RestIamUser(RestTestLib):
                                    verify_response=False, login_as="csm_admin_user"):
         """
         creates and verify status code and response for iam user request.
+        :param user_type: user type
+        :param expected_response: expected response from test
+        :param verify_response: if response needs to be verified
+        :param login_as: login user as admin, manage or monitor
+        :return: boolean, response
         """
         payload = self.iam_user_payload_rgw(user_type=user_type)
         response = self.create_iam_user_rgw(payload, login_as=login_as)
