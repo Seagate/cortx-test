@@ -74,10 +74,9 @@ class TestServerPodFailure:
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
-        cls.s3_clean = cls.test_prefix = None
+        cls.s3_clean = cls.test_prefix = cls.multipart_obj_path = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
-        cls.deploy = cls.multipart_obj_path = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -105,7 +104,6 @@ class TestServerPodFailure:
     def setup_method(self):
         """Following function steps will be invoked prior to each test case."""
         LOGGER.info("STARTED: Setup Operations")
-        self.deploy = False
         self.s3_clean = dict()
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -142,30 +140,6 @@ class TestServerPodFailure:
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
         if os.path.exists(self.test_dir_path):
             sysutils.remove_dirs(self.test_dir_path)
-        # TODO: As cluster restart is not supported until F22A, Need to redeploy cluster after
-        #  every test
-        if self.deploy:
-            LOGGER.info("Cleanup: Destroying the cluster ")
-            resp = self.deploy_lc_obj.destroy_setup(self.node_master_list[0],
-                                                    self.node_worker_list,
-                                                    const.K8S_SCRIPTS_PATH)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Cleanup: Cluster destroyed successfully")
-
-            LOGGER.info("Cleanup: Setting prerequisite")
-            self.deploy_lc_obj.execute_prereq_cortx(self.node_master_list[0],
-                                                    const.K8S_SCRIPTS_PATH,
-                                                    const.K8S_PRE_DISK)
-            for node in self.node_worker_list:
-                self.deploy_lc_obj.execute_prereq_cortx(node, const.K8S_SCRIPTS_PATH,
-                                                        const.K8S_PRE_DISK)
-            LOGGER.info("Cleanup: Prerequisite set successfully")
-
-            LOGGER.info("Cleanup: Deploying the Cluster")
-            resp_cls = self.deploy_lc_obj.deploy_cluster(self.node_master_list[0],
-                                                         const.K8S_SCRIPTS_PATH)
-            assert_utils.assert_true(resp_cls[0], resp_cls[1])
-            LOGGER.info("Cleanup: Cluster deployment successfully")
 
         LOGGER.info("Cleanup: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.node_master_list[0])
@@ -196,7 +170,7 @@ class TestServerPodFailure:
         LOGGER.info("Step 2: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Performed READs and verified DI on the written data")
 
@@ -209,7 +183,7 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
@@ -218,7 +192,7 @@ class TestServerPodFailure:
         LOGGER.info("Step 4: Perform READs & verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed READs & verified DI on the written data")
 
@@ -247,7 +221,7 @@ class TestServerPodFailure:
         LOGGER.info("Step 2: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Performed READs and verified DI on the written data")
 
@@ -261,7 +235,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
@@ -270,7 +244,7 @@ class TestServerPodFailure:
         LOGGER.info("Step 4: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed READs and verified DI on the written data")
 
@@ -323,7 +297,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
@@ -354,7 +328,7 @@ class TestServerPodFailure:
         self.test_prefix = 'test-39904-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True,
-                                                    nsamples=2, nclients=2)
+                                                    nsamples=2, nclients=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Successfully created IAM user with multiple buckets and ran IOs.")
         LOGGER.info("ENDED: Test to verify degraded reads during server pod is going down.")
@@ -387,7 +361,7 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -395,7 +369,8 @@ class TestServerPodFailure:
 
         LOGGER.info("Step 3: Perform WRITEs, READs & verify DI on the already created bucket")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Successfully performed WRITEs, READs & verify DI on the already "
                     "created bucket")
@@ -431,7 +406,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -439,7 +414,8 @@ class TestServerPodFailure:
 
         LOGGER.info("Step 3: Perform WRITEs, READs & verify DI on the already created bucket")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Successfully performed WRITEs, READs & verify DI on the already "
                     "created bucket")
@@ -484,7 +460,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -580,7 +556,7 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -626,7 +602,7 @@ class TestServerPodFailure:
         LOGGER.info("Completed READs on remaining %s .", remain_bkt)
         LOGGER.info("Deleting remaining %s buckets.", remain_bkt)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'skipget': True, 'bkts_to_del': remain_bkt, 'output': del_output}
+                'skipput': True, 'skipget': True, 'output': del_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = tuple()
         while len(del_resp) != 2:
@@ -716,7 +692,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -889,7 +865,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -1039,7 +1015,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -1085,7 +1061,7 @@ class TestServerPodFailure:
         LOGGER.info("Completed READs on remaining %s .", remain_bkt)
         LOGGER.info("Deleting remaining %s buckets.", remain_bkt)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'skipget': True, 'bkts_to_del': remain_bkt, 'output': del_output}
+                'skipput': True, 'skipget': True, 'output': del_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = tuple()
         while len(del_resp) != 2:
@@ -1164,7 +1140,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
@@ -1270,7 +1246,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -1321,7 +1297,7 @@ class TestServerPodFailure:
         self.test_prefix = 'test-39911-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True,
-                                                    nsamples=2, nclients=2)
+                                                    nsamples=2, nclients=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Successfully created IAM user with multiple buckets and ran IOs.")
         LOGGER.info("ENDED: Test to verify READs and WRITEs during server pod down by "
@@ -1381,7 +1357,7 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -1480,7 +1456,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -1601,7 +1577,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
@@ -1727,7 +1703,7 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -1835,7 +1811,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -1917,7 +1893,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -1929,7 +1905,8 @@ class TestServerPodFailure:
         self.test_prefix = 'test-39921-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
@@ -1993,7 +1970,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -2132,7 +2109,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
@@ -2256,7 +2233,7 @@ class TestServerPodFailure:
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
         self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
@@ -2347,7 +2324,7 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = self.deploy = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
@@ -2359,7 +2336,8 @@ class TestServerPodFailure:
         self.test_prefix = 'test-32461-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
