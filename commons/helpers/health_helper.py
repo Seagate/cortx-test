@@ -422,40 +422,6 @@ class Health(Host):
         LOG.error("Product family: %s Unimplemented method", CMN_CFG.get("product_family"))
         return False, {}
 
-    def hctl_status_get_service_fids(
-            self,
-            service_name: str) -> Union[Tuple[bool, dict], Tuple[bool, list]]:
-        """
-        Get FIDs for given services using hctl status command
-        :param service_name: Service name to be checked in hctl status.
-        :return: List of FIDs found
-        """
-        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
-            result = self.hctl_status_json()
-            fids = []
-            for node in result["nodes"]:
-                pod_name = node["name"]
-                services = node["svcs"]
-                pod_fids = []
-                for service in services:
-                    if service_name in service["name"]:
-                        fid = service["fid"]
-                        pod_fids.append(fid)
-                        if service["status"] != "started":
-                            LOG.error("%s service (%s) not started on pod %s", service_name, fid,
-                                      pod_name)
-                            return False, result
-                if not services:
-                    LOG.critical("No service found on pod %s", pod_name)
-                    return False, result
-                if not pod_fids:
-                    LOG.critical("No %s service found on pod %s", service_name, pod_name)
-                    return False, result
-                fids.extend(pod_fids)
-            return True, fids
-        LOG.error("Product family: %s: Unimplemented method", CMN_CFG.get("product_family"))
-        return False, []
-
     def get_sys_capacity(self):
         """Parse the hctl response to extract used, available and total capacity
         :return [tuple]: total_cap,avail_cap,used_cap
