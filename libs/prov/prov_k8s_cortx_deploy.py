@@ -554,6 +554,10 @@ class ProvDeployK8sCortxLib:
         resource_resp = self.update_res_limit_third_party(filepath)
         if not resource_resp:
             return False, "Failed to update the resources for thirdparty"
+        # Update resources for cortx component
+        cortx_resource_resp = self.update_res_limit_cortx(filepath)
+        if not cortx_resource_resp:
+            return False, "Failed to update the resources for cortx components"
         # Update the solution yaml file with images
         resp_image = self.update_image_section_sol_file(filepath, third_party_images_dict,
                                                         cortx_image=cortx_image,
@@ -1897,6 +1901,58 @@ class ProvDeployK8sCortxLib:
                         third_party_resource[elem][res_type]['mem']
                     consul[elem]['resources'][res_type]['cpu'] = \
                         third_party_resource[elem][res_type]['cpu']
+            soln.close()
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(filepath, 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            soln.close()
+        return True, filepath
+
+    def update_res_limit_cortx(self, filepath):
+        """
+        This Method is used to update the resource limits for cortx services
+        file: solution.yaml file
+        returns True
+        """
+
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']  # Parent key
+            common = parent_key['common']
+            resource = common['resource_allocation']
+            hare_hax_res = resource['hare']['hax']['resources']
+            data_res = resource['data']
+            control_res = resource['control']['agent']['resources']
+            server_res = resource['server']['rgw']['resources']
+            ha_res = resource['ha']
+            type_list = ['requests', 'limits']
+            data_list = ['motr', 'confd']
+            ha_list = ['fault_tolerance', 'health_monitor', 'k8s_monitor']
+            cortx_resource = self.deploy_cfg['cortx_resource']
+
+            for res_type in type_list:
+                hare_hax_res[res_type]['memory'] = \
+                    cortx_resource['hax'][res_type]['mem']
+                hare_hax_res[res_type]['cpu'] = \
+                    cortx_resource['hax'][res_type]['cpu']
+                server_res[res_type]['memory'] = cortx_resource['rgw'][res_type]['mem']
+                server_res[res_type]['cpu'] = cortx_resource['rgw'][res_type]['cpu']
+                control_res[res_type]['memory'] = cortx_resource['agent'][res_type]['mem']
+                control_res[res_type]['cpu'] = cortx_resource['agent'][res_type]['cpu']
+            # updating the motr /confd requests and limits resources
+                for elem in data_list:
+                    data_res[elem]['resources'][res_type]['memory'] = \
+                        cortx_resource[elem][res_type]['mem']
+                    data_res[elem]['resources'][res_type]['cpu'] = \
+                        cortx_resource[elem][res_type]['cpu']
+            # updating the ha component resources
+                for ha_elem in ha_list:
+                    ha_res[ha_elem]['resources'][res_type]['memory'] = \
+                        cortx_resource[elem][res_type]['mem']
+                    ha_res[ha_elem]['resources'][res_type]['cpu'] = \
+                        cortx_resource[elem][res_type]['cpu']
             soln.close()
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True
