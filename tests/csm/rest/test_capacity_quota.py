@@ -1394,6 +1394,7 @@ class TestCapacityQuota():
                       "be uploaded since max_size parameter is ineffective")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    # pylint: disable=broad-except
     @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1423,9 +1424,12 @@ class TestCapacityQuota():
         self.log.info("Response : %s", resp)
         self.log.info("Step 2: Performing IOs of any size and any number of objects"
                       "should pass")
-        res = self.csm_obj.perform_ios_iam_user(size_for_io, objects_for_io,
-                         self.akey, self.skey)
-        assert res[0], res[1]
+        random_size = math.floor(size_for_io/objects_for_io)
+        for num in range(0, objects_for_io):
+            self.log.info("Creating an uploading object %s:", num)
+            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                                              akey, skey, object_size=random_size)
+        assert resp[0], resp[1]
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip("Feature not ready")
@@ -1541,4 +1545,4 @@ class TestCapacityQuota():
             self.log.info("Logout user session")
             response = self.csm_obj.csm_user_logout(header)
             self.csm_obj.check_expected_response(response, HTTPStatus.OK)
-            self.log.info("##### Test ended -  %s #####", test_case_name)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
