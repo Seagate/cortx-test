@@ -36,7 +36,6 @@ from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
-from config import DTM_CFG
 
 
 class DTMRecoveryTestLib:
@@ -362,8 +361,8 @@ class DTMRecoveryTestLib:
         for obj_name in workload["obj_list"]:
             try:
                 self.s3t_obj.copy_object(source_bucket=workload["source_bucket"],
-                                        source_object=obj_name, dest_bucket=workload["dest_bucket"],
-                                        dest_object=obj_name)
+                                         source_object=obj_name,
+                                         dest_bucket=workload["dest_bucket"], dest_object=obj_name)
 
             except CTException as error:
                 self.log.exception("Error: %s", error)
