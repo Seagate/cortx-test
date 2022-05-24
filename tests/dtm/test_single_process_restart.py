@@ -139,8 +139,9 @@ class TestSingleProcessRestart:
 
         self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
         self.log.debug("Get IDs of all m0d processes")
-        fids = list(self.health_obj.hctl_status_get_svc_fids(
-            service_name='ioservice')[1].values())[0]
+        resp, fids = self.health_obj.hctl_status_get_svc_fids()
+        assert_utils.assert_true(resp, "Failed to get services fids")
+        fids = fids['ioservice']
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj, pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
@@ -180,8 +181,9 @@ class TestSingleProcessRestart:
 
         self.log.info("Step 2 : Perform Single m0d Process Restart During Write Operations")
         self.log.debug("Get IDs of all m0d processes")
-        fids = list(self.health_obj.hctl_status_get_svc_fids(
-            service_name='ioservice')[1].values())[0]
+        resp, fids = self.health_obj.hctl_status_get_svc_fids()
+        assert_utils.assert_true(resp, "Failed to get services fids")
+        fids = fids['ioservice']
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj, pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
@@ -257,8 +259,9 @@ class TestSingleProcessRestart:
                 break
         self.log.info("RC node %s has data pod: %s ", rc_node_name, rc_datapod)
         self.log.debug("Get IDs of all m0d processes")
-        fids = list(self.health_obj.hctl_status_get_svc_fids(
-            service_name='ioservice')[1].values())[0]
+        resp, fids = self.health_obj.hctl_status_get_svc_fids()
+        assert_utils.assert_true(resp, "Failed to get services fids")
+        fids = fids['ioservice']
         event.set()
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj, pod_prefix=rc_datapod,
@@ -306,8 +309,9 @@ class TestSingleProcessRestart:
 
         self.log.info("Step 1: Perform Single m0d Process Restart")
         self.log.debug("Get IDs of all m0d processes")
-        fids = list(self.health_obj.hctl_status_get_svc_fids(
-            service_name='ioservice')[1].values())[0]
+        resp, fids = self.health_obj.hctl_status_get_svc_fids()
+        assert_utils.assert_true(resp, "Failed to get services fids")
+        fids = fids['ioservice']
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj, pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
