@@ -25,10 +25,9 @@ import random
 import time
 import re
 
-from config import S3_CFG
+from config import S3_CFG, DTM_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from scripts.s3_bench import s3bench
-from config import DTM_CFG
 
 
 class DTMRecoveryTestLib:
@@ -126,7 +125,7 @@ class DTMRecoveryTestLib:
                 self.log.info("Workload: %s objects of %s with %s parallel clients ",
                               workload['num_sample'], workload['obj_size'],
                               workload['num_clients'])
-                self.log.info(f"Log Path {resp[1]}")
+                self.log.info("Log Path %s", resp[1])
                 log_path = resp[1]
                 if s3bench.check_log_file_error(resp[1]):
                     results.append(False)
