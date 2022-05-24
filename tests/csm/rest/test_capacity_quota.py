@@ -1279,3 +1279,266 @@ class TestCapacityQuota():
                 total_size / (1024 * 1024), m_size, "Total Used Size mismatch found ")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41964')
+    def test_41964(self):
+        """
+        Test set API for User level quota/capacity greater then available and
+        full 100%
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_41964"]
+        quota_type = test_cfg["quota_type"]
+        enabled = test_cfg["enabled"]
+        max_objects = test_cfg["max_objects"]
+        self.log.info("Step 1: Check the total available capacity")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+            "Status code check failed for get capacity"
+        total_cap_cluster = resp.json()["capacity"]["system"]["cluster"][0]["total"]
+        total_available = resp.json()["capacity"]["system"]["cluster"][0]["available"]
+        max_size = total_available + 1024
+        self.log.info("Step 2: Set max size to greater than available capacity")
+        payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=True)
+        assert result, "Verification for get set user failed."  # TODO: Expected outcome not known
+        self.log.info("Response : %s", resp)
+        self.log.info("Step 3: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+            "Status code check failed for get capacity"
+        m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
+        assert_utils.assert_greater_equal(m_size, total_available, "Size mismatch not found")
+
+        self.log.info("Step 3: Completely full the storage capacity full")
+        max_size = total_cap_cluster
+        payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=True)
+        assert result, "Verification for get set user failed."  # TODO: Expected outcome not known
+        avail_size = resp.json()["capacity"]["system"]["cluster"][0]["available"]
+        assert_utils.assert_equal(avail_size, "0", "Total Used Size mismatch found")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41965')
+    def test_41965(self):
+        """
+        Test SET and GET quota with negative max objects
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Perform PUT API to set valid max size and negative "
+                      "max object value")
+        test_cfg = self.csm_conf["test_41965"]
+        quota_type = test_cfg["quota_type"]
+        max_size = test_cfg["max_size"]
+        small_size = test_cfg["small_size"]
+        enabled = test_cfg["enabled"]
+        max_objects = "-1024"
+        payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=True)
+        assert result, "Verification for get set user failed."
+        self.log.info("Response : %s", resp)
+        self.log.info("Step 2: Perform max size number of 1MB objects")
+        for num in range(0, max_size):
+            self.log.info("Creating object number %s", num)
+            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                                              self.akey, self.skey,
+                                              object_size=small_size)
+            assert resp, "Put object Failed"
+        self.log.info("Maximum amount of objects should be created since max_objects"
+                      "parameter is not effective")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41966')
+    def test_41966(self):
+        """
+        Test SET and GET quota with negative max size
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Perform PUT API to set valid max size and negative "
+                      "max object value")
+        test_cfg = self.csm_conf["test_41966"]
+        quota_type = test_cfg["quota_type"]
+        max_size = "-12288"
+        enabled = test_cfg["enabled"]
+        max_objects = test_cfg["max_objects"]
+        payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=True)
+        assert result, "Verification for get set user failed."
+        self.log.info("Response : %s", resp)
+        self.log.info("Step 2: Perform max_objects upload of random size")
+        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
+        assert res[0], res[1]
+        self.log.info("Only maximum number of objects specified of any size should"
+                      "be uploaded since max_size parameter is ineffective")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41967')
+    def test_41967(self):
+        """
+        Test SET and GET quota with negative max objects and size
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Perform PUT API to set valid max size and negative "
+                      "max object value")
+        test_cfg = self.csm_conf["test_41967"]
+        quota_type = test_cfg["quota_type"]
+        enabled = test_cfg["enabled"]
+        max_size = "-12288"
+        max_objects = "-1024"
+        size_for_io = test_cfg["size_for_io"]
+        objects_for_io = test_cfg["objects_for_io"]
+        payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size,
+                                                      max_objects)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=True)
+        assert result, "Verification for get set user failed."
+        self.log.info("Response : %s", resp)
+        self.log.info("Step 2: Performing IOs of any size and any number of objects"
+                      "should pass")
+        res = self.csm_obj.perform_ios_iam_user(size_for_io, objects_for_io,
+                         self.akey, self.skey)
+        assert res[0], res[1]
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41968')
+    def test_41968(self):
+        """
+        Test IO operations on suspended IAM user
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Creating IAM user with suspended False")
+        uid = "iam_user_1_" + str(int(time.time()))
+        bucket_name = "iam-user-bucket-" + str(int(time.time()))
+        tenant = "tenant_" + system_utils.random_string_generator()
+        self.log.info("Creating new iam user  %s", uid)
+        payload = self.csm_obj.iam_user_payload_rgw("loaded")
+        payload.update({"uid": uid})
+        payload.update({"tenant": tenant})
+        payload.update({"display_name": uid})
+        payload.update({"suspended": False})
+        resp1 = self.csm_obj.create_iam_user_rgw(payload)
+        self.log.info("Verify Response : %s", resp1)
+        assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
+                                 "IAM user creation failed")
+        user_id = resp1.json()['tenant'] + "$" + uid
+        self.created_iam_users.add(user_id)
+        resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
+        assert_utils.assert_true(resp[0], resp[1])
+        akey = resp1.json()["keys"][0]["access_key"]
+        skey = resp1.json()["keys"][0]["secret_key"]
+        self.log.info("Step 2: Create bucket under above IAM user")
+        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                      self.bucket, akey, skey)
+        bucket_created = s3_misc.create_bucket(bucket_name, akey, skey)
+        assert bucket_created, "Failed to create bucket"
+        self.log.info("Step 3: Perform IOs")
+        resp = s3_misc.create_put_objects(self.obj_name, bucket_name,
+                                          akey, skey)
+        assert resp, "Put object Failed"
+
+        self.log.info("Step 4: Update Suspended True for same IAM User")
+        payload.update({"suspended": True})
+        response = self.csm_obj.modify_iam_user_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, \
+                  "Status code check failed for updating iam user."
+        self.log.info("Step 5: Create bucket under above IAM user")
+        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                      self.bucket, akey, skey)
+        try:
+            bucket_created = s3_misc.create_bucket(bucket_name)
+            assert_utils.assert_false(bucket_created, "Failed to create bucket")
+        except Exception as error:
+            self.log.info("Expected exception received %s", error)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-41970')
+    def test_41970(self):
+        """
+        Test with Login and logout in loop
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_41970"]
+        custom_time = test_cfg["custom_time"]
+        t_end = time.time() + custom_time
+        while time.time() < t_end:
+            self.log.info("Step 1: Login using admin user")
+            response = self.csm_obj.custom_rest_login(
+                username=self.csm_obj.config["csm_admin_user"]["username"],
+                password=self.csm_obj.config["csm_admin_user"]["password"])
+            assert_utils.assert_equals(response.status_code, HTTPStatus.OK)
+            self.log.info("Step 2: Login using manage user")
+            response = self.csm_obj.custom_rest_login(
+                username=self.csm_obj.config["csm_user_manage"]["username"],
+                password=self.csm_obj.config["csm_user_manage"]["password"])
+            assert_utils.assert_equals(response.status_code, HTTPStatus.OK)
+            self.log.info("Step 3: Login using monitor user")
+            response = self.csm_obj.custom_rest_login(
+                username=self.csm_obj.config["csm_user_monitor"]["username"],
+                password=self.csm_obj.config["csm_user_monitor"]["password"])
+            assert_utils.assert_equals(response.status_code, HTTPStatus.OK)
+
+            self.log.info("Step 4: Logout admin user")
+            self.log.info("Get header")
+            header = self.csm_obj.get_headers(
+                self.csm_obj.config["csm_admin_user"]["username"],
+                self.csm_obj.config["csm_admin_user"]["password"])
+            self.log.info("Logout user session")
+            response = self.csm_obj.csm_user_logout(header)
+            self.csm_obj.check_expected_response(response, HTTPStatus.OK)
+            self.log.info("Step 5: Logout manage user")
+            self.log.info("Get header")
+            header = self.csm_obj.get_headers(
+                self.csm_obj.config["csm_user_manage"]["username"],
+                self.csm_obj.config["csm_user_manage"]["password"])
+            self.log.info("Logout user session")
+            response = self.csm_obj.csm_user_logout(header)
+            self.csm_obj.check_expected_response(response, HTTPStatus.OK)
+            self.log.info("Step 6: Logout monitor user")
+            self.log.info("Get header")
+            header = self.csm_obj.get_headers(
+                self.csm_obj.config["csm_user_monitor"]["username"],
+                self.csm_obj.config["csm_user_monitor"]["password"])
+            self.log.info("Logout user session")
+            response = self.csm_obj.csm_user_logout(header)
+            self.csm_obj.check_expected_response(response, HTTPStatus.OK)
+            self.log.info("##### Test ended -  %s #####", test_case_name)

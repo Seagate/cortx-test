@@ -116,9 +116,6 @@ test_41746:
   max_size: 12288
 test_41750:
   max_size: 12288
-test_41156:
-  max_size: 12288
-  num_tenants: 2
 test_41757:
   max_size: 12288
 test_41758:
@@ -137,3 +134,24 @@ test_41156:
   min_users: 5
   max_users: 100
   available_size: 1024
+test_41964:
+  max_objects: 1000
+  quota_type: "user"
+  enabled: True
+test_41965:
+  small_size: 1024
+  quota_type: "user"
+  enabled: True
+  max_size: 12288
+test_41966:
+  quota_type: "user"
+  enabled: True
+  max_objects: 1000
+test_41967:
+  quota_type: "user"
+  enabled: True
+  size_for_io: 1024
+  objects_for_io: 10
+test_41970:
+  custom_time: 3600
+
