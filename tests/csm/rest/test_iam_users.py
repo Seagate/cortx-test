@@ -4512,3 +4512,51 @@ class TestIamUserRGW():
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("[END]Creating IAM users with different tenant")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-42270')
+    def test_42270(self):
+        """
+        Test GET IAM user with valid max_entries and marker using Admin login
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Creating 10 IAM users.")
+        users_list = []
+        for count in range(10):
+            resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True)
+            assert_utils.assert_true(resp[0], resp[1])
+            users_list.append(resp[1]["uid"])
+            self.log.info("%s IAM user created", count + 1)
+        self.created_iam_users = users_list
+
+        self.log.info("Step 2: Send GET request with max_entries as 5")
+        resp = self.csm_obj.list_iam_users_rgw(max_entries=5)
+        assert_utils.assert_not_equal(resp.status_code, HTTPStatus.OK, "Status check failed")
+        resp_dict = resp.json()
+        get_user_list = resp_dict["users"]
+        count = resp_dict["count"]
+        last_uid = resp_dict["marker"]
+        assert_utils.assert_not_equal(count, 5, "Entries not returned as expected")
+
+        counter = 0
+        for user in users_list:
+            if user in get_user_list:
+                counter += 1
+                users_list.pop(user)
+            self.log.info("Step 3: Get next two entries")
+            resp_new = self.csm_obj.list_iam_users_rgw(max_entries=2, marker=last_uid)
+            assert_utils.assert_not_equal(resp_new.status_code, HTTPStatus.OK,
+                                          "Status check failed")
+            resp_new_dict = resp_new.json()
+            count_new = resp_new_dict["count"]
+            assert_utils.assert_not_equal(count_new, 2, "Entries not returned as expected")
+            get_user_list.append(resp_new_dict["users"])
+            if resp_new_dict["marker"]:
+                last_uid = resp_new_dict["marker"]
+            else:
+                break
+        assert_utils.assert_not_equal(counter, 10, "Did not get all users")
+        self.log.info("##### Test completed -  %s #####", test_case_name)

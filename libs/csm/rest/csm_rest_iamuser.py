@@ -166,7 +166,7 @@ class RestIamUser(RestTestLib):
         return response.status_code
 
     @RestTestLib.authenticate_and_login
-    def list_iam_users(self, max_entries = None, marker = None):
+    def list_iam_users(self, max_entries=None, marker=None):
         """
         This function will list all IAM users.
         :param max_entries: Number of users to be returned
@@ -665,13 +665,13 @@ class RestIamUser(RestTestLib):
         self.log.info("Remove key from IAM user request successfully sent...")
         return response
 
-    def verify_create_iam_user_rgw(
-            self, user_type="valid", expected_response=HTTPStatus.CREATED, verify_response=False):
+    def verify_create_iam_user_rgw(self, user_type="valid", expected_response=HTTPStatus.CREATED,
+                                   verify_response=False, login_as="csm_admin_user"):
         """
         creates and verify status code and response for iam user request.
         """
         payload = self.iam_user_payload_rgw(user_type=user_type)
-        response = self.create_iam_user_rgw(payload)
+        response = self.create_iam_user_rgw(payload, login_as=login_as)
         resp = response.json()
         if response.status_code == expected_response:
             self.log.info("Status code check passed.")
@@ -778,7 +778,7 @@ class RestIamUser(RestTestLib):
         return random_cap[:-1]
 
     @RestTestLib.authenticate_and_login
-    def list_iam_users_rgw(self, max_entries = None, marker = None):
+    def list_iam_users_rgw(self, max_entries=None, marker=None):
         """
         This function will list all IAM users.
         :param max_entries: Number of users to be returned
