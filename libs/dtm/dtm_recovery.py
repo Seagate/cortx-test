@@ -24,14 +24,12 @@ import logging
 import random
 import re
 import time
-import re
 
 from commons import constants as const
 from config import S3_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from scripts.s3_bench import s3bench
-from config import DTM_CFG
 
 
 class DTMRecoveryTestLib:
