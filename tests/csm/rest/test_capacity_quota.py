@@ -1380,11 +1380,11 @@ class TestCapacityQuota():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step 1: Perform PUT API to set valid max size and negative "
+        self.log.info("Step 1: Perform PUT API to set negative max size and valid"
                       "max object value")
         test_cfg = self.csm_conf["test_41966"]
         quota_type = test_cfg["quota_type"]
-        max_size = "-12288"
+        max_size = (self.csm_obj.random_gen.randrange(-1, -999999))
         enabled = test_cfg["enabled"]
         max_objects = test_cfg["max_objects"]
         payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
