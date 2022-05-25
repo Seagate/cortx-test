@@ -4528,7 +4528,7 @@ class TestIamUserRGW():
         for count in range(self.csm_conf["common"]["num_users"]):
             resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True)
             assert_utils.assert_true(resp[0], resp[1])
-            users_list.append(resp[1]["uid"])
+            users_list.append(resp[1]["user_id"])
             self.log.info("%s IAM user created", count + 1)
         self.log.info("Created users: %s", users_list)
         self.created_iam_users = users_list
