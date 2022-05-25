@@ -16,7 +16,6 @@
 #
 """
 Tests various operations on IAM users using REST API
-NOTE: These tests are no longer valid as CSM will no longer support IAM user operations.
 """
 import logging
 from string import Template
@@ -2167,7 +2166,6 @@ class TestIamUserRGW():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Bug CORTX-30999")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
