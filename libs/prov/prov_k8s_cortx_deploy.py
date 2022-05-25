@@ -73,7 +73,7 @@ class ProvDeployK8sCortxLib:
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         self.s3_engine = int(os.getenv("S3_ENGINE", CMN_CFG["s3_engine"]))
-        self.cortx_image = os.getenv("CORTX_IMAGE")
+        self.cortx_image = os.getenv("CORTX_CONTROL_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
         self.cortx_data_image = os.getenv("CORTX_DATA_IMAGE", None)
         self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
@@ -722,12 +722,16 @@ class ProvDeployK8sCortxLib:
         image_default_dict = {}
 
         for image_key in self.deploy_cfg['cortx_images_key']:
-            if self.cortx_server_image and image_key == "cortxserver":
-                cortx_im[image_key] = cortx_server_image
+            if image_key == "cortxcontrol":
+                cortx_im[image_key] = cortx_image
             elif self.cortx_data_image and image_key == "cortxdata":
                 cortx_im[image_key] = cortx_data_image
-            else:
+            elif self.cortx_server_image and image_key == "cortxserver":
+                cortx_im[image_key] = cortx_server_image
+            elif image_key == "cortxha":
                 cortx_im[image_key] = cortx_image
+            elif self.cortx_data_image and image_key == "cortxclient":
+                cortx_im[image_key] = cortx_data_image
 
         def _update_file(cortx_im):
             image_default_dict.update(self.deploy_cfg['third_party_images'])
