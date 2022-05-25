@@ -1303,7 +1303,7 @@ class TestCapacityQuota():
             "Status code check failed for get capacity"
         total_cap_cluster = resp.json()["capacity"]["system"]["cluster"][0]["total"]
         total_available = resp.json()["capacity"]["system"]["cluster"][0]["available"]
-        max_size = total_available + 1024
+        max_size = total_available + test_cfg["extra_bytes"]
         self.log.info("Step 2: Set max size to greater than available capacity")
         payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
@@ -1361,6 +1361,11 @@ class TestCapacityQuota():
             assert resp, "Put object Failed"
         self.log.info("Maximum amount of objects should be created since max_objects"
                       "parameter is not effective")
+        self.log.info("Step 3: Perform put 1 object of random size")
+        random_size = self.cryptogen.randrange(1, max_size)
+        resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                                          self.akey, self.skey, object_size=random_size)
+        assert not resp, "Put object passed even after exceeding max size"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip("Feature not ready")
@@ -1424,11 +1429,11 @@ class TestCapacityQuota():
         self.log.info("Response : %s", resp)
         self.log.info("Step 2: Performing IOs of any size and any number of objects"
                       "should pass")
-        random_size = math.floor(size_for_io/objects_for_io)
         for num in range(0, objects_for_io):
             self.log.info("Creating an uploading object %s:", num)
+            random_size = math.floor(size_for_io/objects_for_io)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                              akey, skey, object_size=random_size)
+                                              self.akey, self.skey, object_size=random_size)
         assert resp[0], resp[1]
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1466,7 +1471,7 @@ class TestCapacityQuota():
         skey = resp1.json()["keys"][0]["secret_key"]
         self.log.info("Step 2: Create bucket under above IAM user")
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
-                      self.bucket, akey, skey)
+                      bucket_name, akey, skey)
         bucket_created = s3_misc.create_bucket(bucket_name, akey, skey)
         assert bucket_created, "Failed to create bucket"
         self.log.info("Step 3: Perform IOs")
@@ -1479,14 +1484,28 @@ class TestCapacityQuota():
         response = self.csm_obj.modify_iam_user_rgw(user_id, payload)
         assert response.status_code == HTTPStatus.OK, \
                   "Status code check failed for updating iam user."
-        self.log.info("Step 5: Create bucket under above IAM user")
-        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
-                      self.bucket, akey, skey)
+        self.log.info("Step 5: Perform IOs on previously created bucket")
         try:
-            bucket_created = s3_misc.create_bucket(bucket_name)
-            assert_utils.assert_false(bucket_created, "Failed to create bucket")
+            resp = s3_misc.create_put_objects(self.obj_name, bucket_name,
+                                          akey, skey)
+            assert_utils.assert_false(resp[0], resp[1])
         except Exception as error:
             self.log.info("Expected exception received %s", error)
+
+        self.log.info("Step 5: Update Suspended False for same IAM User")
+        payload.update({"suspended": False})
+        response = self.csm_obj.modify_iam_user_rgw(user_id, payload)
+        assert response.status_code == HTTPStatus.OK, \
+                  "Status code check failed for updating iam user."
+        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                      bucket_name, akey, skey)
+        bucket_created = s3_misc.create_bucket(bucket_name, akey, skey)
+        assert bucket_created, "Failed to create bucket"
+        self.log.info("Step 6: Perform IOs")
+        resp = s3_misc.create_put_objects(self.obj_name, bucket_name,
+                                          akey, skey)
+        assert resp, "Put object Failed"
+
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip("Feature not ready")
@@ -1502,8 +1521,8 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_41970"]
-        custom_time = test_cfg["custom_time"]
-        t_end = time.time() + custom_time
+        duration = test_cfg["duration"]
+        t_end = time.time() + duration
         while time.time() < t_end:
             self.log.info("Step 1: Login using admin user")
             response = self.csm_obj.custom_rest_login(
