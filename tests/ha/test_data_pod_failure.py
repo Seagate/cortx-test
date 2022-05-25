@@ -2850,8 +2850,7 @@ class TestDataPodFailure:
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
         self.deployment_name = resp[1][pod_name]['deployment_name']
-        # TODO: As per dev instruction, not restoring pod for now
-        # self.restore_pod = True
+        self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
