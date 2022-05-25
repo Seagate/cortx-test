@@ -1302,7 +1302,6 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_capacity_usage()
         assert resp.status_code == HTTPStatus.OK, \
             "Status code check failed for get capacity"
-        total_cap_cluster = resp.json()["capacity"]["system"]["cluster"][0]["total"]
         total_available = resp.json()["capacity"]["system"]["cluster"][0]["available"]
         max_size = total_available + test_cfg["extra_bytes"]
         self.log.info("Step 2: Set max size to greater than available capacity")
@@ -1314,7 +1313,7 @@ class TestCapacityQuota():
         self.log.info("Step 3: Completely full the storage capacity full")
         for i in range(1, test_cfg["extra_bytes"]):
             if test_cfg["extra_bytes"] % i == 0:
-               list_factors.append(i)
+                list_factors.append(i)
         random_size = list_factors[-1]
         random_objects = math.floor(total_available/random_size)
         for num in range(0, random_objects):
