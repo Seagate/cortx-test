@@ -85,7 +85,7 @@ class NearFullStorage:
                 client, 'obj_size': obj_size, 'num_sample': sample}]
         """
         client = kwargs.get("client", 10)
-        workload = [1, 16, 128, 256, 512]  # workload in mb
+        workload = [128, 256, 512]  # workload in mb
         if CMN_CFG["setup_type"] == "HW":
             workload.extend([1024, 2048, 3072, 4096])
 
