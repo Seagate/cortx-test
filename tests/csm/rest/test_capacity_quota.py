@@ -1297,8 +1297,9 @@ class TestCapacityQuota():
         quota_type = test_cfg["quota_type"]
         enabled = test_cfg["enabled"]
         max_objects = test_cfg["max_objects"]
+        list_factors = []
         self.log.info("Step 1: Check the total available capacity")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        resp = self.csm_obj.get_capacity_usage()
         assert resp.status_code == HTTPStatus.OK, \
             "Status code check failed for get capacity"
         total_cap_cluster = resp.json()["capacity"]["system"]["cluster"][0]["total"]
@@ -1310,20 +1311,23 @@ class TestCapacityQuota():
                                                               verify_response=True)
         assert result, "Verification for get set user failed."  # TODO: Expected outcome not known
         self.log.info("Response : %s", resp)
-        self.log.info("Step 3: Perform & Verify GET API to get capacity usage stats")
+        self.log.info("Step 3: Completely full the storage capacity full")
+        for i in range(1, test_cfg["extra_bytes"]):
+            if test_cfg["extra_bytes"] % i == 0:
+               list_factors.append(i)
+        random_size = list_factors[-1]
+        random_objects = math.floor(total_available/random_size)
+        for num in range(0, random_objects):
+            self.log.info("Creating object number %s", num)
+            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                                              self.akey, self.skey,
+                                              object_size=random_size)
+            assert resp, "Put object Failed"
+        self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
             "Status code check failed for get capacity"
-        m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
-        assert_utils.assert_greater_equal(m_size, total_available, "Size mismatch not found")
-
-        self.log.info("Step 3: Completely full the storage capacity full")
-        max_size = total_cap_cluster
-        payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
-        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
-                                                              verify_response=True)
-        assert result, "Verification for get set user failed."  # TODO: Expected outcome not known
-        avail_size = resp.json()["capacity"]["system"]["cluster"][0]["available"]
+        avail_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
         assert_utils.assert_equal(avail_size, "0", "Total Used Size mismatch found")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1346,7 +1350,7 @@ class TestCapacityQuota():
         max_size = test_cfg["max_size"]
         small_size = test_cfg["small_size"]
         enabled = test_cfg["enabled"]
-        max_objects = "-1024"
+        max_objects = -(self.cryptogen.randrange(1, small_size))
         payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=True)
@@ -1417,10 +1421,10 @@ class TestCapacityQuota():
         test_cfg = self.csm_conf["test_41967"]
         quota_type = test_cfg["quota_type"]
         enabled = test_cfg["enabled"]
-        max_size = "-12288"
-        max_objects = "-1024"
         size_for_io = test_cfg["size_for_io"]
         objects_for_io = test_cfg["objects_for_io"]
+        max_size = -(self.cryptogen.randrange(1, objects_for_io))
+        max_objects = -(self.cryptogen.randrange(1, max_size))
         payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size,
                                                       max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
