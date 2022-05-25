@@ -25,7 +25,9 @@ import random
 import re
 import time
 
+from commons import constants as const
 from config import S3_CFG
+from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from scripts.s3_bench import s3bench
 
@@ -34,8 +36,6 @@ class DTMRecoveryTestLib:
     """
         This class contains common utility methods for DTM related operations.
     """
-
-    expected_process_state = "RECOVERED"
 
     def __init__(self, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
         """
@@ -46,6 +46,7 @@ class DTMRecoveryTestLib:
         self.log = logging.getLogger(__name__)
         self.access_key = access_key
         self.secret_key = secret_key
+        self.ha_obj = HAK8s()
 
     # pylint: disable=too-many-arguments
     def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples, obj_size,
@@ -142,13 +143,12 @@ class DTMRecoveryTestLib:
                               f" Please read log file {log_path}"])
 
     # pylint: disable-msg=too-many-locals
-    def process_restart(self, master_node, ha_obj, pod_prefix, container_prefix, process,
+    def process_restart(self, master_node, pod_prefix, container_prefix, process,
                         process_ids: list = None, check_proc_state: bool = False,
-                        proc_state: str = expected_process_state):
+                        proc_state: str = const.DTM_RECOVERY_STATE):
         """
         Restart specified Process of specific pod and container
         :param master_node: Master node object
-        :param ha_obj: Master node ha object
         :param pod_prefix: Pod Prefix
         :param container_prefix: Container Prefix
         :param process: Process to be restarted.
@@ -172,25 +172,23 @@ class DTMRecoveryTestLib:
         if check_proc_state:
             self.log.info("Check process states")
             resp = self.poll_process_state(master_node=master_node, pod_name=pod_selected,
-                                           container_name=container, process_name=process,
-                                           process_ids=process_ids, status=proc_state)
+                                           container_name=container, process_ids=process_ids,
+                                           status=proc_state)
             if not resp:
                 return False, "Failed during polling status of process"
 
             self.log.info("Process %s restarted successfully", process)
 
         self.log.info("Polling hctl status to check if all services are online")
-        resp = ha_obj.poll_cluster_status(pod_obj=master_node, timeout=300)
+        resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=300)
         return resp
 
-    def get_process_state(self, master_node, pod_name, container_name, process_name,
-                          process_ids: list = None):
+    def get_process_state(self, master_node, pod_name, container_name, process_ids):
         """
         Function to get given process state
         :param master_node: Object of master node
         :param pod_name: Name of the pod on which container is residing
         :param container_name: Name of the container inside which process is running
-        :param process_name: Name of the process
         :param process_ids: List of Process IDs
         :return: bool, dict
         e.g. (True, {'0x19': 'M0_CONF_HA_PROCESS_STARTED', '0x28': 'M0_CONF_HA_PROCESS_STARTED'})
@@ -200,31 +198,24 @@ class DTMRecoveryTestLib:
                       pod_name)
         resp = master_node.get_all_container_processes(pod_name=pod_name,
                                                        container_name=container_name)
-        if process_ids:
-            self.log.info("Extract list of %s processes having IDs %s", process_name, process_ids)
-            process_list = [(ele, p_id) for ele in resp for p_id in process_ids if p_id in ele
-                            and process_name in ele]
-            if len(process_ids) != len(process_list):
-                return False, f"All process IDs {process_ids} are not found. " \
-                              f"All processes running in container are: {resp}"
-        else:
-            self.log.info("Extract list of %s processes", process_name)
-            process_list = [ele for ele in resp if process_name in ele]
+        self.log.info("Extract list of processes having IDs %s", process_ids)
+        process_list = [(ele, p_id) for ele in resp for p_id in process_ids if p_id in ele]
+        if len(process_ids) != len(process_list):
+            return False, f"All process IDs {process_ids} are not found. " \
+                          f"All processes running in container are: {resp}"
         compile_exp = re.compile('"state": "(.*?)"')
         for i_i in process_list:
             process_state[i_i[1]] = compile_exp.findall(i_i[0])[0]
 
         return True, process_state
 
-    def poll_process_state(self, master_node, pod_name, container_name, process_name,
-                           process_ids: list = None, status: str = expected_process_state,
-                           timeout: int = 300):
+    def poll_process_state(self, master_node, pod_name, container_name, process_ids,
+                           status: str = const.DTM_RECOVERY_STATE, timeout: int = 300):
         """
         Helper function to poll the process states
         :param master_node: Object of master node
         :param pod_name: Name of the pod on which container is residing
         :param container_name: Name of the container inside which process is running
-        :param process_name: Name of the process
         :param process_ids: List of Process IDs
         :param status: Expected status of process
         :param timeout: Poll timeout
@@ -237,19 +228,19 @@ class DTMRecoveryTestLib:
             time.sleep(60)
             resp, process_state = self.get_process_state(master_node=master_node, pod_name=pod_name,
                                                          container_name=container_name,
-                                                         process_name=process_name.upper(),
                                                          process_ids=process_ids)
             if not resp:
-                self.log.info("Failed to get process states for process %s with IDs %s. "
-                              "proccess_state dict: %s", process_name, process_ids, process_state)
+                self.log.info("Failed to get process states for process with IDs %s. "
+                              "proccess_state dict: %s", process_ids, process_state)
                 return resp
+            self.log.debug("Process states: %s", process_state)
             states = list(process_state.values())
             resp = all(ele == status for ele in states)
             if resp:
-                self.log.debug("Time taken by %s process to recover is %s seconds", process_name,
+                self.log.debug("Time taken by process to recover is %s seconds",
                                int(time.time()) - start_time)
                 break
 
-        self.log.info("State of process %s with process ids %s is %s", process_name, process_ids,
+        self.log.info("State of process with process ids %s is %s", process_ids,
                       status)
         return resp

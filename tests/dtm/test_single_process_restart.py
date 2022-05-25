@@ -141,9 +141,9 @@ class TestSingleProcessRestart:
         self.log.debug("Get IDs of all m0d processes")
         resp, fids = self.health_obj.hctl_status_get_svc_fids()
         assert_utils.assert_true(resp, "Failed to get services fids")
-        fids = fids['ioservice']
+        fids = fids[const.M0D_SVC]
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            ha_obj=self.ha_obj, pod_prefix=POD_NAME_PREFIX,
+                                            pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, process_ids=fids,
                                             check_proc_state=True)
@@ -184,9 +184,9 @@ class TestSingleProcessRestart:
         self.log.debug("Get IDs of all m0d processes")
         resp, fids = self.health_obj.hctl_status_get_svc_fids()
         assert_utils.assert_true(resp, "Failed to get services fids")
-        fids = fids['ioservice']
+        fids = fids[const.M0D_SVC]
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            ha_obj=self.ha_obj, pod_prefix=POD_NAME_PREFIX,
+                                            pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, process_ids=fids,
                                             check_proc_state=True)
@@ -265,10 +265,10 @@ class TestSingleProcessRestart:
         self.log.debug("Get IDs of all m0d processes")
         resp, fids = self.health_obj.hctl_status_get_svc_fids()
         assert_utils.assert_true(resp, "Failed to get services fids")
-        fids = fids['ioservice']
+        fids = fids[const.M0D_SVC]
         event.set()
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            ha_obj=self.ha_obj, pod_prefix=rc_datapod,
+                                            pod_prefix=rc_datapod,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, process_ids=fids,
                                             check_proc_state=True)
@@ -329,9 +329,9 @@ class TestSingleProcessRestart:
         self.log.debug("Get IDs of all m0d processes")
         resp, fids = self.health_obj.hctl_status_get_svc_fids()
         assert_utils.assert_true(resp, "Failed to get services fids")
-        fids = fids['ioservice']
+        fids = fids[const.M0D_SVC]
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            ha_obj=self.ha_obj, pod_prefix=POD_NAME_PREFIX,
+                                            pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, process_ids=fids,
                                             check_proc_state=True)
