@@ -2167,7 +2167,6 @@ class TestIamUserRGW():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Bug CORTX-30999")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
