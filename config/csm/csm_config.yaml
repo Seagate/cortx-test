@@ -87,6 +87,7 @@ Restcall_LC:
   s3_iam_user_endpoint : "/api/v2/iam/users"
   s3_iam_keys_endpoint : "/api/v2/iam/keys"
   s3_iam_caps_endpoint : "/api/v2/iam/caps"
+  iam_users_endpoint: "/api/v2/iam/users"
   get_set_quota: "/api/v2/iam/quota/{}"
   get_user_capacity_usage: "/api/v2/capacity/s3/$resource/$uid"
   csmuser_endpoint : "/api/v2/system/users"

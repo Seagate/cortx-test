@@ -188,7 +188,7 @@ class TestMultiPodFailure:
             for node_name in self.node_name_list:
                 LOGGER.info("Cleanup: Power on the %s down node.", node_name)
                 resp = self.ha_obj.host_power_on(host=node_name)
-                assert_utils.assert_true(resp, "Host f{node_name} is not powered on")
+                assert_utils.assert_true(resp, f"Host {node_name} is not powered on")
                 LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
                             " node", node_name, HA_CFG["common_params"]["pod_joinback_time"])
                 time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
