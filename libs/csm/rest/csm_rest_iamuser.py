@@ -793,7 +793,7 @@ class RestIamUser(RestTestLib):
         """
 
         self.log.debug("Listing of iam users")
-        endpoint = self.config["IAM_users_endpoint"]
+        endpoint = self.config["iam_users_endpoint"]
         self.log.debug("Endpoint for iam user is %s", endpoint)
 
         self.headers.update(self.config["Login_headers"])
