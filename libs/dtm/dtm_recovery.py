@@ -29,6 +29,7 @@ from commons import constants as const
 from config import S3_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
 
 
@@ -271,3 +272,25 @@ class DTMRecoveryTestLib:
         svc = switcher[process]
         fids = fids[svc]
         return True, fids
+
+    def perform_copy_objects(self, workload, que):
+        """
+        function to perform copy object for dtm test case in background
+        :param workload: Python dict containing source and destination bucket and object
+        :param que: Multiprocessing Queue to be used for returning values (Boolean,dict)
+        """
+        results = list()
+        for obj_name in workload["obj_list"]:
+            resp = self.s3_obj.copy_object(source_bucket=workload["source_bucket"],
+                                           source_object=obj_name,
+                                           dest_bucket=workload["dest_bucket"],
+                                           dest_object=obj_name)
+            if resp[0]:
+                results.append(True)
+            else:
+                results.append(False)
+                break
+        if all(results):
+            que.put([True])
+        else:
+            que.put([False, "Copy Object operation failed"])
