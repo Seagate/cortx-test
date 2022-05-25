@@ -197,6 +197,8 @@ def s3bench(
     :param region: Region name
     :param log_file_prefix: Test number prefix for log file
     :param validate_certs: Validate SSL certificates
+    :keyword int max_retries: maximum retry for any request
+    :keyword int response_header_timeout: Response header Timeout in ms
     :return: tuple with json response and log path
     """
     max_retries = kwargs.get("max_retries", None)
@@ -210,6 +212,10 @@ def s3bench(
           f"-bucket={bucket} -endpoint={end_point} -numClients={num_clients} " \
           f"-numSamples={num_sample} -objectNamePrefix={obj_name_pref} -objectSize={obj_size} " \
           f"-skipSSLCertVerification={not validate_certs} "
+    if max_retries:
+        cmd = cmd + f"-s3MaxRetries={max_retries} "
+    if response_header_timeout:
+        cmd = cmd + f"-responseHeaderTimeout={response_header_timeout} "
     if region:
         cmd = cmd + f"-region {region} "
     if skip_write:
@@ -222,10 +228,6 @@ def s3bench(
         cmd = cmd + "-validate "
     if verbose:
         cmd = cmd + "-verbose "
-    if max_retries:
-        cmd = cmd + f"-s3MaxRetries={max_retries} "
-    if response_header_timeout:
-        cmd = cmd + f"-responseHeaderTimeout={response_header_timeout} "
     cmd = f"{cmd}>> {log_path} 2>&1"
     LOGGER.info("Workload execution started.")
     if duration:
