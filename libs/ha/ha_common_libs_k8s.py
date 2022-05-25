@@ -802,7 +802,7 @@ class HAK8s:
             cmd_path = dir_path if dir_path else self.dir_path
             resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(cmd_path))
         except IOError as error:
-            LOGGER.exception("Error: Cluster status has some failures.")
+            LOGGER.error("Error: Cluster status has some failures.")
             return False, error
         resp = (resp.decode('utf-8')).split('\n')
         for line in resp:

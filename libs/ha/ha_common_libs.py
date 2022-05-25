@@ -123,9 +123,7 @@ class HALibs:
             return False
 
     @staticmethod
-    def verify_node_health_status(
-            sys_obj,
-            status: list):
+    def verify_node_health_status(sys_obj, status: list):
         """
         This method will verify node status with health show node command response
         :param sys_obj: System object
