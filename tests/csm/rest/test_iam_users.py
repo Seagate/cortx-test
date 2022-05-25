@@ -16,7 +16,6 @@
 #
 """
 Tests various operations on IAM users using REST API
-NOTE: These tests are no longer valid as CSM will no longer support IAM user operations.
 """
 import logging
 from string import Template
