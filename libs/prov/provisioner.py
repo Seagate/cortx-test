@@ -40,6 +40,7 @@ class Provisioner:
     """This class contains utility methods for all the provisioning related operations"""
 
     @staticmethod
+    # pylint: disable-msg=too-many-locals
     def build_job(
             job_name: str,
             parameters: dict = None,
@@ -218,6 +219,7 @@ class Provisioner:
                     key="storage.cvg.0.metadata_devices",
                     value=metadata_devices,
                     add_section=False)
+        # pylint: disable=broad-except
         except Exception as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -304,6 +306,7 @@ class Provisioner:
                 read_lines=True)
             resp = node_obj.execute_cmd(
                 cmd=common_cmd.CMD_CONFSTORE_EXPORT, read_lines=True)
+        # pylint: disable=broad-except
         except Exception as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -337,6 +340,7 @@ class Provisioner:
                 command = " ".join([command, "--no-color"])
                 resp = node_obj.execute_cmd(cmd=command, read_lines=True)
                 LOGGER.debug(resp)
+        # pylint: disable=broad-except
         except Exception as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -370,6 +374,7 @@ class Provisioner:
                 node_obj.execute_cmd(
                     cmd=common_cmd.CMD_DEPLOY_VM.format(
                         setup_type, comp), read_lines=True)
+            # pylint: disable=broad-except
             except Exception as error:
                 LOGGER.error(
                     "An error occurred in %s:",
@@ -406,6 +411,7 @@ class Provisioner:
                 return False, inactive_ports
 
             return True, active_ports
+        # pylint: disable=broad-except
         except Exception as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -431,7 +437,7 @@ class Provisioner:
             chk = "srvnode-{}".format(node_id)
             cmd = common_cmd.CMD_PILLAR_DATA.format(chk, key)
             resp = node_obj.execute_cmd(cmd, read_lines=True)
-            LOGGER.debug(f"pillar command output for {chk}'s {key}: {resp}")
+            LOGGER.debug("pillar command output for %s's %s: %s", chk, key, resp)
             data1 = ansi_escape.sub('', resp[1])
             out = data1.strip()
             LOGGER.info("%s for %s is %s", key, chk, out)
@@ -440,8 +446,7 @@ class Provisioner:
             LOGGER.debug("confstore template command output for %s's %s: %s", chk, key, resp1)
             if resp1:
                 return True, "Key from pillar and confstore match."
-            else:
-                return False, "Key doesn't match."
+            return False, "Key doesn't match."
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -462,8 +467,7 @@ class Provisioner:
             resp = node_obj.execute_cmd(cmd, read_lines=True)
             if resp:
                 return True, f"Executed {cmd}"
-            else:
-                return False, f"Failed {cmd}"
+            return False, f"Failed {cmd}"
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -482,8 +486,7 @@ class Provisioner:
         grep_chrony = node_obj.execute_cmd(cmd, read_lines=True)
         if time_server in grep_chrony[0]:
             return True, grep_chrony
-        else:
-            return False, f"{time_server} is not in /etc/chrony.conf"
+        return False, f"{time_server} is not in /etc/chrony.conf"
 
     @staticmethod
     def get_ntpsysconfg(key: list, node_obj, node_id: int):
@@ -518,8 +521,7 @@ class Provisioner:
             key: list,
             node_obj,
             node_id: int,
-            exp_t_srv: str,
-            exp_t_zone: str):
+            **kwargs):
         """
         Helper function to verify the system NTP configuration
         param: key: NTP keys to be verified
@@ -529,6 +531,8 @@ class Provisioner:
         param: exp_t_zone: Expected time_zone value
         return: bool, Execution response
         """
+        exp_t_srv = kwargs.get("exp_t_srv")
+        exp_t_zone = kwargs.get("exp_t_zone")
         resp = self.get_ntpsysconfg(key, node_obj, node_id)
         if resp[0]:
             if resp[1][key[0]] == exp_t_srv and resp[1][key[1]] == exp_t_zone:
@@ -629,6 +633,7 @@ class Provisioner:
                                                     dix=dix)
                 if resp[0]:
                     LOGGER.info("Updated the config ini file %s", resp[1])
+        # pylint: disable=broad-except
         except Exception as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -678,7 +683,7 @@ class Provisioner:
             output += node_obj.shell_obj.recv(2048).decode("utf-8")
             if output:
                 LOGGER.debug("Confirmation after setting new password is - %s", output)
-
+        # pylint: disable=broad-except
         except Exception as error:
             LOGGER.error(
                 "An error occurred in %s:",
