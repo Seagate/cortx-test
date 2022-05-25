@@ -1,4 +1,11 @@
 clients: 1
 samples: 500
 size: '128Mb'
-exp_state: "RECOVERED"
+
+test_41234:
+  nclients: 10
+  nsamples: 30
+
+test_41235:
+  nclients: 10
+  nsamples: 10

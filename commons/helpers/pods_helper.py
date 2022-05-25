@@ -508,14 +508,14 @@ class LogicalNode(Host):
                                  decode=True)
         return resp
 
-    def get_all_container_processes(self, pod_name, container_name):
+    def get_all_cluster_processes(self, pod_name, container_name):
         """
-        Function to get all processes running on given container
+        Function to get all cluster processes from consul
         :param pod_name: Name of the pod
         :param container_name: Name of the container
         :return: list (list of the processes running on container)
         """
-        cmd = commands.GET_CONTAINER_PROCESSES_CMD
+        cmd = commands.GET_CLUSTER_PROCESSES_CMD
         resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
                                  command_suffix=f"-c {container_name} -- {cmd}",
                                  decode=True)

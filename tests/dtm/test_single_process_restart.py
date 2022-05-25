@@ -25,9 +25,9 @@ import logging
 import multiprocessing
 import os
 import threading
+import time
 from multiprocessing import Queue
 from time import perf_counter_ns
-import time
 
 import pytest
 
@@ -38,7 +38,7 @@ from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
 from commons.utils import support_bundle_utils, assert_utils
-from config import CMN_CFG, HA_CFG
+from config import CMN_CFG, HA_CFG, DTM_CFG
 from config.s3 import S3_CFG
 from conftest import LOG_DIR
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
@@ -143,9 +143,10 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp, "Failed to get services fids")
         fids = fids['ioservice']
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj, pod_prefix=POD_NAME_PREFIX,
+                                            ha_obj=self.ha_obj, pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
-                                            process=self.m0d_process, process_ids=fids)
+                                            process=self.m0d_process, process_ids=fids,
+                                            check_proc_state=True)
         assert_utils.assert_true(resp, f"Response: {resp} \nhctl status is not as expected")
 
         self.log.info("Step 4: Wait for Read Operation to complete.")
@@ -185,9 +186,10 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp, "Failed to get services fids")
         fids = fids['ioservice']
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj, pod_prefix=POD_NAME_PREFIX,
+                                            ha_obj=self.ha_obj, pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
-                                            process=self.m0d_process, process_ids=fids)
+                                            process=self.m0d_process, process_ids=fids,
+                                            check_proc_state=True)
         assert_utils.assert_true(resp, f"Response: {resp} \nhctl status is not as expected")
 
         self.log.info("Step 3: Wait for Write Operation to complete.")
@@ -213,6 +215,7 @@ class TestSingleProcessRestart:
     def test_ios_during_rc_m0d_restart(self):
         """Verify IOs during RC pod m0d restart using pkill."""
         self.log.info("STARTED: Verify IOs before and after RC pod m0d restart using pkill")
+        test_cfg = DTM_CFG['test_41234']
 
         self.log.info("Step 1: Create IAM user and perform WRITEs/READs-Verify with variable "
                       "object sizes in background")
@@ -231,7 +234,8 @@ class TestSingleProcessRestart:
         test_prefix = 'test-41234'
         self.log.info("Perform WRITEs/READs-Verify with variable object sizes in background")
         args = {'s3userinfo': self.iam_user, 'log_prefix': test_prefix,
-                'nclients': 10, 'nsamples': 30, 'skipcleanup': True, 'output': output}
+                'nclients': test_cfg['nclients'], 'nsamples': test_cfg['nsamples'],
+                'skipcleanup': True, 'output': output}
 
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
@@ -264,9 +268,10 @@ class TestSingleProcessRestart:
         fids = fids['ioservice']
         event.set()
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj, pod_prefix=rc_datapod,
+                                            ha_obj=self.ha_obj, pod_prefix=rc_datapod,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
-                                            process=self.m0d_process, process_ids=fids)
+                                            process=self.m0d_process, process_ids=fids,
+                                            check_proc_state=True)
         assert_utils.assert_true(resp, f"Response: {resp} \nhctl status is not as expected")
         self.log.info("Step 2: Successfully performed single restart of m0d process on pod hosted "
                       "on RC node and checked hctl status is good")
@@ -306,22 +311,9 @@ class TestSingleProcessRestart:
     def test_bkt_creation_ios_after_m0d_restart(self):
         """Verify bucket creation and IOs after m0d restart using pkill."""
         self.log.info("STARTED: Verify bucket creation and IOs after m0d restart using pkill")
+        test_cfg = DTM_CFG['test_41235']
 
-        self.log.info("Step 1: Perform Single m0d Process Restart")
-        self.log.debug("Get IDs of all m0d processes")
-        resp, fids = self.health_obj.hctl_status_get_svc_fids()
-        assert_utils.assert_true(resp, "Failed to get services fids")
-        fids = fids['ioservice']
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj, pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
-                                            process=self.m0d_process, process_ids=fids)
-        assert_utils.assert_true(resp, f"Response: {resp} \nhctl status is not as expected")
-        self.log.info("Step 1: m0d restarted and recovered successfully")
-
-        self.log.info("Step 2: Create IAM user and perform WRITEs/READs-Verify/DELETEs with "
-                      "variable object sizes")
-        self.log.info("Create IAM user with name %s", self.s3acc_name)
+        self.log.info("Step 1: Create IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -331,11 +323,28 @@ class TestSingleProcessRestart:
         self.iam_user = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         test_prefix = 'test-41235'
+        self.log.info("Step 1: Created IAM user with name %s", self.s3acc_name)
+
+        self.log.info("Step 2: Perform Single m0d Process Restart")
+        self.log.debug("Get IDs of all m0d processes")
+        resp, fids = self.health_obj.hctl_status_get_svc_fids()
+        assert_utils.assert_true(resp, "Failed to get services fids")
+        fids = fids['ioservice']
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            ha_obj=self.ha_obj, pod_prefix=POD_NAME_PREFIX,
+                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process, process_ids=fids,
+                                            check_proc_state=True)
+        assert_utils.assert_true(resp, f"Response: {resp} \nhctl status is not as expected")
+        self.log.info("Step 2: m0d restarted and recovered successfully")
+
+        self.log.info("Step 3: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix,
-                                                    nclients=5, nsamples=5)
+                                                    nclients=test_cfg['nclients'],
+                                                    nsamples=test_cfg['nsamples'],)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 2: Successfully created IAM user and performed "
-                      "WRITEs/READs-Verify/DELETEs with variable sizes objects.")
+        self.log.info("Step 3: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
+                      "sizes objects.")
 
         self.log.info("ENDED: Verify IOs after m0d restart using pkill")

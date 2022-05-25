@@ -956,12 +956,11 @@ class Health(Host):
                       Health.get_pod_svc_status.__name__, error)
             return False, error
 
-    def hctl_status_get_svc_fids(self) -> Union[Tuple[bool, dict], Tuple[bool, list]]:
+    def hctl_status_get_svc_fids(self):
         """
-        Get FIDs for given services using hctl status command
+        Get FIDs for all services using hctl status command
         :return: Bool, List of FIDs
         """
-        result = None
         pod_fids = dict()
         if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
             result = self.hctl_status_json()
@@ -974,7 +973,10 @@ class Health(Host):
                     else:
                         pod_fids[service["name"]].append(service["fid"])
                 LOG.info("Extracted FIDs from pod %s", pod_name)
-        if not pod_fids:
-            LOG.critical("No services found in cluster")
-            return False, result
-        return True, pod_fids
+            if not pod_fids:
+                LOG.critical("No services found in cluster")
+                return False, result
+            return True, pod_fids
+        else:
+            return False, f"Expected Product family is {const.PROD_FAMILY_LC}. " \
+                          f"\nActual product family is {CMN_CFG.get('product_family')}"
