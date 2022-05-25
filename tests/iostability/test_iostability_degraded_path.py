@@ -74,10 +74,6 @@ class TestIOWorkloadDegradedPath:
         cls.iolib = IOStabilityLib()
         cls.duration_in_days = int(os.getenv("DURATION_OF_TEST_IN_DAYS",
                                              cls.test_cfg['happy_path_duration_days']))
-        cls.dfr = DiskFailureRecoveryLib()
-        cls.health_obj = Health(cls.master_node_list[0].hostname,
-                                cls.master_node_list[0].username,
-                                cls.master_node_list[0].password)
 
         cls.clients = int(os.getenv("CLIENT_SESSIONS_PER_WORKER_NODE", '0'))
         if cls.clients == 0:
@@ -227,7 +223,7 @@ class TestIOWorkloadDegradedPath:
         self.test_completed = True
         self.log.info("ENDED: Perform disk storage near full once and read in loop for %s days",
                       self.duration_in_days)
-                      "S3bench for 7 days")
+
 
     @pytest.mark.lc
     @pytest.mark.io_stability
@@ -238,19 +234,18 @@ class TestIOWorkloadDegradedPath:
         self.log.info("STARTED: Test for Perform 40% Writes of user data capacity (Healthy mode) "
                       "and perform Object CRUD(40% write,Read,20% delete) operation(degraded mode)")
 
-        duration_in_days = self.test_cfg['degraded_path_durations_days']
-        clients = (len(self.worker_node_list)-1) * self.test_cfg['sessions_per_node_vm']
         write_percent_per_iter = self.test_cfg['test_40174']['write_percent_per_iter']
         delete_percent_per_iter = self.test_cfg['test_40174']['delete_percent_per_iter']
         max_cluster_capacity_percent = self.test_cfg['test_40174']['max_cluster_capacity_percent']
-        s3userinfo = dict()
-        s3userinfo['accesskey'] = ACCESS_KEY
-        s3userinfo['secretkey'] = SECRET_KEY
+
+        duration_in_days = self.test_cfg['degraded_path_durations_days']
+        clients = (len(self.worker_node_list) - 1) * self.test_cfg['sessions_per_node_vm']
+        s3userinfo = {'accesskey':ACCESS_KEY,'secretkey':SECRET_KEY}
         bucket_prefix = "test-40174-bkt"
         end_time = datetime.now() + timedelta(days=duration_in_days)
 
         self.log.info("Step 1: Get the used percentage of disk space.")
-        total_cap, avail_cap, used_cap = self.health_obj.get_sys_capacity()
+        total_cap, avail_cap, used_cap = self.health_obj_list[0].get_sys_capacity()
         current_usage_per = round(used_cap / total_cap * 100)
         self.log.info("Step 1: Current used percent : %s", current_usage_per)
 
@@ -263,13 +258,13 @@ class TestIOWorkloadDegradedPath:
                                            "capacity percent")
         else:
             self.log.info("Perform write and read operations")
-            resp = self.dfr.get_user_data_space_in_bytes(
+            resp = NearFullStorage.get_user_data_space_in_bytes(
                 master_obj=self.master_node_list[0],
                 memory_percent=write_per)
             assert_utils.assert_true(resp[0], resp[1])
 
             if resp[1] != 0:
-                resp = DiskFailureRecoveryLib.perform_near_full_sys_writes(
+                resp = NearFullStorage.perform_near_full_sys_writes(
                     s3userinfo=s3userinfo,
                     user_data_writes=resp[1],
                     bucket_prefix=bucket_prefix,
@@ -280,7 +275,7 @@ class TestIOWorkloadDegradedPath:
 
         self.log.info("Step 3 : Perform Single pod shutdown")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.master_node_list[0],
-                                                            self.hlth_master_list[0])
+                                                            self.health_obj_list[0])
         assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
         self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
 
@@ -291,19 +286,19 @@ class TestIOWorkloadDegradedPath:
             self.log.info(" Loop count : %s", loop)
             loop += 1
             self.log.info("Get Current disk usage capacity")
-            total_cap, avail_cap, used_cap = self.health_obj.get_sys_capacity()
+            total_cap, avail_cap, used_cap = self.health_obj_list[0].get_sys_capacity()
             current_usage_per = round(used_cap / total_cap * 100)
             self.log.info("Current usage : %s",current_usage_per)
             write_per = current_usage_per + write_percent_per_iter
             if write_per < max_cluster_capacity_percent:
                 self.log.info("Perform Write operation to fill %s disk capacity", write_per)
-                resp = self.dfr.get_user_data_space_in_bytes(
+                resp = NearFullStorage.get_user_data_space_in_bytes(
                     master_obj=self.master_node_list[0],
                     memory_percent=write_per)
                 assert_utils.assert_true(resp[0], resp[1])
 
                 if resp[1] != 0:
-                    resp = DiskFailureRecoveryLib.perform_near_full_sys_writes(
+                    resp = NearFullStorage.perform_near_full_sys_writes(
                         s3userinfo=s3userinfo,
                         user_data_writes=resp[1],
                         bucket_prefix=bucket_prefix,
@@ -316,7 +311,7 @@ class TestIOWorkloadDegradedPath:
 
                 self.log.info("Validate all the written data of the cluster")
                 if len(workload_info_list) > 0:
-                    resp = DiskFailureRecoveryLib.perform_near_full_sys_operations(
+                    resp = NearFullStorage.perform_near_full_sys_operations(
                         s3userinfo=s3userinfo,
                         workload_info=workload_info_list,
                         skipread=True,
@@ -341,7 +336,7 @@ class TestIOWorkloadDegradedPath:
                         delete_list.append(bucket_info)
                         workload_info_list.remove(bucket_info)
 
-                    resp = DiskFailureRecoveryLib.perform_near_full_sys_operations(
+                    resp = NearFullStorage.perform_near_full_sys_operations(
                         s3userinfo=s3userinfo,
                         workload_info=delete_list,
                         skipread=True,
@@ -357,7 +352,7 @@ class TestIOWorkloadDegradedPath:
                 self.log.info("Write percentage(%s) exceeding the max cluster capacity(%s)",
                               write_per, max_cluster_capacity_percent)
                 self.log.info("Deleting all the written data.")
-                resp = DiskFailureRecoveryLib.perform_near_full_sys_operations(
+                resp = NearFullStorage.perform_near_full_sys_operations(
                     s3userinfo=s3userinfo,
                     workload_info=workload_info_list,
                     skipread=True,

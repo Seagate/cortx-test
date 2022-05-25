@@ -20,6 +20,7 @@
 import datetime
 import logging
 import os
+import random
 import time
 from datetime import datetime
 from datetime import timedelta
@@ -121,7 +122,7 @@ class TestIOWorkload:
     def test_bucket_object_crud_s3bench(self):
         """Perform Bucket and  Object CRUD operations in loop using S3bench for n days."""
         self.log.info("STARTED: Test for Bucket and  Object CRUD operations in loop using "
-                      "S3bench for %s days",self.duration_in_days)
+                      "S3bench for %s days", self.duration_in_days)
         test_case_name = cortxlogging.get_frame()
         self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
                                                   test_case_name, self.health_obj_list[0])
@@ -195,3 +196,110 @@ class TestIOWorkload:
         self.test_completed = True
         self.log.info("ENDED: Perform disk storage near full once and read in loop for %s days",
                       self.duration_in_days)
+
+    @pytest.mark.lc
+    @pytest.mark.io_stability
+    @pytest.mark.tags("TEST-40042")
+    def test_iteration_write_read_partial_delete(self):
+        """Perform iterations of 40% writes of user capacity ,
+        reads entire data, and delete 20% of the data."""
+        write_percent_per_iter = self.test_cfg['test_40042']['write_percent_per_iter']
+        delete_percent_per_iter = self.test_cfg['test_40042']['delete_percent_per_iter']
+
+        self.log.info("STARTED: Test for performing %s% writes, reads written data and deleting "
+                      "%s% of written data.", write_percent_per_iter, delete_percent_per_iter)
+
+        duration_in_days = self.test_cfg['happy_path_duration_days']
+        max_cluster_capacity_percent = self.test_cfg['nearfull_storage_percentage']
+        s3userinfo = {'accesskey': ACCESS_KEY, 'secretkey': SECRET_KEY}
+        clients = len(self.worker_node_list) * self.test_cfg['sessions_per_node_vm']
+        bucket_prefix = "test-40042-bkt"
+
+        self.log.info("Step: Perform %s writes and Read the written data and %s deletes."
+                      "Delete all the written data once %s is reached",
+                      write_percent_per_iter, delete_percent_per_iter, max_cluster_capacity_percent)
+        workload_info_list = []
+        end_time = datetime.now() + timedelta(days=duration_in_days)
+        loop = 0
+        while datetime.now() < end_time:
+            self.log.info("LOOP COUNT : %s", loop)
+            loop += 1
+            total_cap, _, used_cap = self.health_obj_list[0].get_sys_capacity()
+            current_usage_per = round(used_cap / total_cap * 100)
+            write_per = current_usage_per + write_percent_per_iter
+
+            if write_per < max_cluster_capacity_percent:
+
+                self.log.info("Perform Write operation to fill %s disk capacity", write_per)
+                resp = NearFullStorage.get_user_data_space_in_bytes(
+                    master_obj=self.master_node_list[0],
+                    memory_percent=write_per)
+                assert_utils.assert_true(resp[0], resp[1])
+
+                if resp[1] != 0:
+                    resp = NearFullStorage.perform_near_full_sys_writes(
+                        s3userinfo=s3userinfo,
+                        user_data_writes=resp[1],
+                        bucket_prefix=bucket_prefix,
+                        clients=clients)
+                    assert_utils.assert_true(resp[0], resp[1])
+                    workload_info_list.extend(resp[1])
+                    self.log.info("Writes Completed.!!")
+                else:
+                    self.log.info("No bytes to be written to fill %s capacity", write_per)
+
+                self.log.info("Read/Validate all the written data of the cluster")
+                if len(workload_info_list) > 0:
+                    resp = NearFullStorage.perform_near_full_sys_operations(
+                        s3userinfo=s3userinfo,
+                        workload_info=workload_info_list,
+                        skipread=False,
+                        validate=True,
+                        skipcleanup=True)
+                    assert_utils.assert_true(resp[0], resp[1])
+                else:
+                    self.log.error("No buckets available to perform read operations %s",
+                                   workload_info_list)
+                    assert_utils.assert_true(False,
+                                             "No buckets available to perform read operations")
+
+                self.log.info("Delete %s percent of the written data", delete_percent_per_iter)
+                if len(workload_info_list) > 0:
+                    num_buckets_delete = int(
+                        delete_percent_per_iter * len(workload_info_list) / 100)
+                    delete_list = []
+                    self.log.info("Delete %s random buckets.", num_buckets_delete)
+                    for i in range(num_buckets_delete):
+                        bucket_info = workload_info_list[
+                            random.randint(1, len(workload_info_list) - 1)]
+                        delete_list.append(bucket_info)
+                        workload_info_list.remove(bucket_info)
+                    self.log.info("Deleting buckets : %s",delete_list)
+                    resp = NearFullStorage.perform_near_full_sys_operations(
+                        s3userinfo=s3userinfo,
+                        workload_info=delete_list,
+                        skipread=True,
+                        validate=False,
+                        skipcleanup=False)
+                    assert_utils.assert_true(resp[0], resp[1])
+                else:
+                    self.log.error("No buckets available to perform delete operations,"
+                                   "workload info list :  %s",workload_info_list)
+                    assert_utils.assert_true(False,
+                                             "No buckets available to perform delete operations")
+            else:
+                self.log.info("Write percentage(%s) exceeding the max cluster capacity(%s)",
+                              write_per, max_cluster_capacity_percent)
+                self.log.info("Deleting all the written data.")
+                resp = NearFullStorage.perform_near_full_sys_operations(
+                    s3userinfo=s3userinfo,
+                    workload_info=workload_info_list,
+                    skipread=True,
+                    validate=False,
+                    skipcleanup=False)
+                assert_utils.assert_true(resp[0], resp[1])
+                self.log.info("Deletion completed.")
+
+        self.test_completed = True
+        self.log.info("ENDED: Test for performing %s% writes, reads written data and deleting "
+                      "%s% of written data.", write_percent_per_iter, delete_percent_per_iter)
