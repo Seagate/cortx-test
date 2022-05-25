@@ -4563,3 +4563,47 @@ class TestIamUserRGW():
         assert_utils.assert_equals(counter, self.csm_conf["common"]["num_users"],
                                    "Did not get all users")
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-42271')
+    def test_42271(self):
+        """
+        Test GET IAM user without any optional parameters using manage login
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        for count in range(self.csm_conf["common"]["iterations"]):
+            self.log.info("Starting iteration: %s", count + 1)
+            self.log.info("Step 1: Creating IAM user with manage login")
+            resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True,
+                                                           login_as="csm_user_manage")
+            assert_utils.assert_true(resp[0], resp[1])
+            user_id = resp[1]["user_id"]
+            self.log.info("IAM user %s is created", user_id)
+
+            self.log.info("Step 2: Send GET request for list users and check if created user %s"
+                          "is listed in it", user_id)
+            resp = self.csm_obj.list_iam_users_rgw()
+            assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
+            resp_dict = resp.json()
+            get_user_list = resp_dict["users"]
+            assert_utils.assert_in(user_id, get_user_list, "created user not found in list")
+            self.log.info("IAM user %s is listed in users list: %s", user_id, get_user_list)
+
+            self.log.info("Step 3: Delete created user: %s", user_id)
+            resp = self.csm_obj.delete_iam_user(user=user_id, purge_data=True)
+            self.log.debug("Verify Response : %s", resp)
+            assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "User not deleted")
+            self.log.info("User %s deleted successfully", user_id)
+
+            self.log.info("Step 4: Again GET list users")
+            resp = self.csm_obj.list_iam_users_rgw()
+            assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
+            resp_dict = resp.json()
+            get_user_list = resp_dict["users"]
+            assert_utils.assert_not_in(user_id, get_user_list, "deleted user still found in list")
+            self.log.info("Deleted user %s is not listed in users list: %s", user_id, get_user_list)
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
