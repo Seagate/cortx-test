@@ -888,7 +888,7 @@ class HAK8s:
 
     def event_s3_operation(self, event, setup_s3bench=True, log_prefix=None, s3userinfo=None,
                            skipread=False, skipwrite=False, skipcleanup=False, nsamples=10,
-                           nclients=10, output=None):
+                           nclients=10, output=None, event_set_clr=None):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
         :param event: Thread event to be sent in case of parallel IOs
@@ -901,6 +901,8 @@ class HAK8s:
         :param nsamples: Number of samples of object
         :param nclients: Number of clients/workers
         :param output: Queue to fill results
+        :param event_set_clr: Thread event set-clear flag reference when s3bench workload
+        execution miss the event set-clear time window
         :return: None
         """
         pass_res = []
@@ -929,7 +931,7 @@ class HAK8s:
                 fail_res.append(resp)
                 event_clear_flg = True
             else:
-                if event_clear_flg:
+                if event_clear_flg or event_set_clr[0]:
                     fail_res.append(resp)
                     event_clear_flg = False
                     continue
@@ -1471,15 +1473,17 @@ class HAK8s:
     def delete_kpod_with_shutdown_methods(self, master_node_obj, health_obj,
                                           pod_prefix=None, kvalue=1,
                                           down_method=common_const.RESTORE_SCALE_REPLICAS,
-                                          event=None):
+                                          event=None, event_set_clr=None):
         """
         Delete K pods by given shutdown method. Check and verify deleted/remaining pod's services
         status, cluster status
         :param master_node_obj: Master node object list
         :param health_obj: Health object
         :param pod_prefix: Pod prefix to be deleted (Expected List type)
-        :param down_method: Pod shutdown/delete method
-        :param kvalue: Number of pod to be shutdown/deleted
+        :param down_method: Pod shutdown/delete method.
+        :param kvalue: Number of pod to be shutdown/deleted.
+        :param event_set_clr: Thread event set-clear flag reference when s3bench workload
+        execution miss the event set-clear time window
         :param event: Thread event to set/clear before/after pods/nodes
         shutdown with parallel IOs
         return : tuple
@@ -1526,6 +1530,7 @@ class HAK8s:
             if event is not None:
                 LOGGER.debug("Clearing the Thread event")
                 event.clear()
+                event_set_clr[0] = True
             LOGGER.info("Check services status that were running on pod %s", pod)
             resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
                                                  hostname=pod_info[pod]['hostname'])

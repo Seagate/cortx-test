@@ -267,16 +267,17 @@ class TestServerPodFailure:
         self.s3_clean = users
         output = Queue()
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    nsamples=30, nclients=20,
+                                                    nsamples=20, nclients=20,
                                                     log_prefix=self.test_prefix,
                                                     skipread=True, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
 
         LOGGER.info("Step 2: Perform READs & verify DI on the written data in background")
+        event_set_clr = [False]
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
-                'nclients': 5, 'nsamples': 30, 'skipwrite': True, 'skipcleanup': True,
-                'output': output, 'setup_s3bench': False}
+                'nclients': 5, 'nsamples': 20, 'skipwrite': True, 'skipcleanup': True,
+                'output': output, 'setup_s3bench': False, 'event_set_clr': event_set_clr}
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
@@ -291,7 +292,7 @@ class TestServerPodFailure:
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S,
-            event=event)
+            event=event, event_set_clr=event_set_clr)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
@@ -439,9 +440,10 @@ class TestServerPodFailure:
         self.test_prefix = 'test-39907'
         self.s3_clean = users
         output = Queue()
+        event_set_clr = [False]
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
-                'nclients': 1, 'nsamples': 20, 'skipread': True, 'skipcleanup': True,
-                'output': output, 'setup_s3bench': False}
+                'nclients': 2, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
+                'output': output, 'setup_s3bench': False, 'event_set_clr': event_set_clr}
         thread = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
@@ -454,7 +456,7 @@ class TestServerPodFailure:
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S,
-            event=event)
+            event=event, event_set_clr=event_set_clr)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
