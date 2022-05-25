@@ -886,7 +886,7 @@ class TestMultipartUploadGetPut:
         """
         mp_config = MPART_CFG["test_28539"]
         self.log.info("STARTED: test get object of multipart uploaded object with range read")
-        parts, keys, s3_background_io = self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+        parts, keys, s3_background_io = start_ios_get_precalc_parts(
             mp_config, self.mp_obj_path, log_prefix="TEST-40993_s3bench_ios", duration="0h1m",
             s3_test_lib_obj=self.s3_test_obj)
         random.shuffle(keys)
