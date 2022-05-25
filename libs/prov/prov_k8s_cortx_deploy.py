@@ -1969,8 +1969,8 @@ class ProvDeployK8sCortxLib:
     def update_res_limit_cortx(self, filepath):
         """
         This Method is used to update the resource limits for cortx services
-        file: solution.yaml file
-        returns True
+        param: filepath: solution.yaml filepath
+        returns True, filepath
         """
 
         with open(filepath) as soln:
