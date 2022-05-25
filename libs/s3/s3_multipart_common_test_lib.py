@@ -61,3 +61,4 @@ def start_ios_get_precalc_parts(
                                                 chunk_size=mp_config["chunk_size"])
     keys = list(precalc_parts.keys())
     return precalc_parts, keys, s3_background_io
+
