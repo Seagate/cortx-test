@@ -38,12 +38,9 @@ from libs.s3.s3_common_test_lib import S3BackgroundIO
 LOGGER = logging.getLogger(__name__)
 
 
-def start_ios_get_precalc_parts(
-        mp_config: dict,
-        obj_path: str,
-        **kwargs):
+def start_ios_get_precalc_parts(mp_config: dict, obj_path: str, **kwargs):
     """
-    This creates file, starts IOs, Initiates mpu and gets the precalculated parts for uploading
+    Creates a file, start IOs, initiate mpu and get the precalculated parts for uploading
     to multipart upload
     :param mp_config: configuration dict for multipart upload
     :param obj_path: path to object file
@@ -58,6 +55,6 @@ def start_ios_get_precalc_parts(
     LOGGER.info("start s3 IO's")
     s3_background_io.start(log_prefix, duration)
     precalc_parts = s3_utils.get_precalculated_parts(obj_path, mp_config["part_sizes"],
-                                                chunk_size=mp_config["chunk_size"])
+                                                     chunk_size=mp_config["chunk_size"])
     keys = list(precalc_parts.keys())
     return precalc_parts, keys, s3_background_io
