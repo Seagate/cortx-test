@@ -32,8 +32,8 @@ from commons.helpers.pods_helper import LogicalNode
 from commons import commands
 from commons import constants
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
-
-
+from commons.utils import assert_utils
+from http import HTTPStatus
 class SystemCapacity(RestTestLib):
     """RestCsmUser contains all the Rest API calls for system health related
     operations"""
@@ -187,12 +187,15 @@ class SystemCapacity(RestTestLib):
             self.log.info("Max Expected total bytes : %s", total_err)
             self.log.info("Actual total bytes : %s", sum(resp.values()))
             result_flag = total <= sum(resp.values()) <= total_err
-            result_msg = "Summation check failed."
+            if result_flag:
+                result_msg = "Summation check Passed."
+            else:
+                result_msg = "Summation check failed."
 
         for chk in checklist:
             # pylint: disable=eval-used
-            expected = ast.literal_eval(chk)
-            actual = resp[chk]
+            expected = eval(chk)
+            actual = float(resp[chk])
             self.log.info("Actual %s byte count : %s", chk, actual)
             expected_err = expected/(1-err_margin/100)
             self.log.info("Error margin : %s percent", err_margin)
@@ -318,10 +321,7 @@ class SystemCapacity(RestTestLib):
         Creates dataframe for the storing degraded capacity for csm, hctl, consul
         """
 
-        col = ["consul_healthy", "consul_degraded", "consul_critical", "consul_damaged",
-           "consul_repaired", "hctl_healthy", "hctl_degraded", "hctl_critical", "hctl_damaged",
-           "hctl_repaired", "csm_healthy", "csm_degraded", "csm_critical", "csm_damaged",
-           "csm_repaired"]
+        col = ["healthy", "degraded", "critical", "damaged"]
         row = ["No failure"]
         self.row_temp1 = "N{} fail beforeIO"
         self.row_temp2 = "N{} fail afterIO"
@@ -330,3 +330,32 @@ class SystemCapacity(RestTestLib):
             row.append(self.row_temp2.format(node))
         cap_df = pd.DataFrame(columns=col, index=row)
         return cap_df
+
+    def get_degraded_all(self, master_obj):
+        """
+        """
+
+        self.log.info("[Start] Fetch degraded capacity on Consul")
+        consul_op = self.get_capacity_consul()
+        self.log.info("[End] Fetch degraded capacity on Consul")
+
+        self.log.info("[Start] Fetch degraded capacity on HCTL")
+        hctl_op = master_obj.hctl_status_json()["bytecount"]
+        self.log.info("[End] Fetch degraded capacity on HCTL")
+
+        self.log.info("[Start] Fetch degraded capacity on CSM")
+        resp = self.get_degraded_capacity()
+        assert(resp.status_code == HTTPStatus.OK.value, "Status code check failed.")
+        resp = resp.json()["bytecount"]
+        self.log.info("[End] Fetch degraded capacity on CSM")
+
+        assert(hctl_op["healthy"] == consul_op["healthy"], "HCTL & Consul healthy byte mismatch")
+        assert(hctl_op["degraded"] == consul_op["degraded"], "HCTL & Consul degraded byte mismatch")
+        assert(hctl_op["critical"] == consul_op["critical"], "HCTL & Consul critical byte mismatch")
+        assert(hctl_op["damaged"] == consul_op["damaged"], "HCTL & Consul healthy byte mismatch")
+        assert(resp["healthy"] == consul_op["healthy"], "CSM & Consul healthy byte mismatch")
+        assert(resp["degraded"] == consul_op["degraded"], "CSM & Consul degraded byte mismatch")
+        assert(resp["critical"] == consul_op["critical"], "CSM & Consul critical byte mismatch")
+        assert(resp["damaged"] == consul_op["damaged"], "CSM & Consul healthy byte mismatch")
+
+        return resp
