@@ -119,7 +119,7 @@ class HALibs:
             return True
         except IOError as error:
             LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
-                         HALibs.check_service_other_nodes.__name__, error)
+                             HALibs.check_service_other_nodes.__name__, error)
             return False
 
     @staticmethod
