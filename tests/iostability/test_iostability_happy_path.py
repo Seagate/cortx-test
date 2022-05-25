@@ -93,6 +93,7 @@ class TestIOWorkload:
         time.sleep(30)
         resp = self.proc_path.validate_collection()
         assert_utils.assert_true(resp[0], resp[1])
+        self.test_completed = False
         self.log.info("Setup Method Ended")
 
     def teardown_method(self):
@@ -191,5 +192,6 @@ class TestIOWorkload:
                                                                    validate=False,
                                                                    skipcleanup=False)
         assert_utils.assert_true(del_ret[0], del_ret[1])
+        self.test_completed = True
         self.log.info("ENDED: Perform disk storage near full once and read in loop for %s days",
                       self.duration_in_days)

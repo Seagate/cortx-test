@@ -96,20 +96,27 @@ class TestIOWorkloadDegradedPath:
         time.sleep(30)
         resp = self.proc_path.validate_collection()
         assert_utils.assert_true(resp[0], resp[1])
+        self.test_completed = False
         self.log.info("Setup Method Ended")
 
     def teardown_method(self):
         """Teardown method."""
         self.log.info("Teardown method")
         if not self.test_completed:
-            self.log.info("Test Failure observed, collecting support bundle")
             self.mail_notify.event_fail.set()
+            self.log.info("Test Failure observed, collecting support bundle")
             path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
             resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                                    scripts_path=K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
         else:
             self.mail_notify.event_pass.set()
+        self.log.info("Stop Procpath collection")
+        self.proc_path.stop_collection()
+        self.log.info("Copy files to client")
+        resp = self.proc_path.get_stat_files_to_local()
+        self.log.debug("Resp : %s", resp)
+        self.log.info("Teardown method ended.")
 
     @pytest.mark.lc
     @pytest.mark.io_stability
@@ -210,5 +217,6 @@ class TestIOWorkloadDegradedPath:
             self.log.info("%s interation is done", loop)
             assert_utils.assert_true(read_ret[0], read_ret[1])
         # To Do delete operation, will be enabled after support from cortx
+        self.test_completed = True
         self.log.info("ENDED: Perform disk storage near full once and read in loop for %s days",
                       self.duration_in_days)
