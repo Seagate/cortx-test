@@ -25,27 +25,28 @@ This file has to be placed to the following directory of target machine
 '/root/.s3cfg'
 """
 
+import logging
 import os
 import time
-import logging
+
 import pytest
 
-from commons.params import TEST_DATA_FOLDER
+from commons import error_messages as errmsg
 from commons.ct_fail_on import CTFailOn
-from commons.exceptions import CTException
 from commons.errorcodes import error_handler
-from commons.utils.assert_utils import assert_true
+from commons.exceptions import CTException
+from commons.params import TEST_DATA_FOLDER
+from commons.utils import system_utils
 from commons.utils.assert_utils import assert_in
 from commons.utils.assert_utils import assert_not_in
+from commons.utils.assert_utils import assert_true
 from commons.utils.s3_utils import assert_s3_err_msg
-from commons.utils import system_utils
-from commons import error_messages as errmsg
-from config.s3 import S3_BLKBOX_CFG as S3CMD_CNF
 from config import CMN_CFG
+from config.s3 import S3_BLKBOX_CFG as S3CMD_CNF
+from libs.s3 import SECRET_KEY, ACCESS_KEY
+from libs.s3.s3_blackbox_test_lib import S3CMD
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_test_lib import S3TestLib
-from libs.s3.s3_blackbox_test_lib import S3CMD
-from libs.s3 import SECRET_KEY, ACCESS_KEY
 
 
 class TestS3cmdClient:
@@ -60,7 +61,7 @@ class TestS3cmdClient:
         s3cmd_obj = S3CMD(ACCESS_KEY, SECRET_KEY)
         cls.log.info("Setting access and secret key & other options in s3cfg.")
         resp = s3cmd_obj.configure_s3cfg(ACCESS_KEY, SECRET_KEY)
-        assert_true(resp, f"Failed to update s3cfg.")
+        assert_true(resp, "Failed to update s3cfg.")
         cls.log.info("ENDED: Setup suite level operation.")
 
     def setup_method(self):
