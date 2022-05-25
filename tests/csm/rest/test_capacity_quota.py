@@ -24,7 +24,6 @@ import math
 import os
 import time
 from http import HTTPStatus
-from random import SystemRandom
 
 import pytest
 
@@ -50,7 +49,6 @@ class TestCapacityQuota():
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
         cls.csm_obj = csm_api_factory("rest")
-        cls.cryptogen = SystemRandom()
         cls.log.info("Initiating Rest Client ...")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
         cls.created_iam_users = set()
@@ -91,7 +89,6 @@ class TestCapacityQuota():
         self.obj_name_prefix = "created_obj"
         self.obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
         self.log.info("Verify Create bucket: %s", self.bucket)
-        self.cryptogen = SystemRandom()
         assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
         self.buckets_created.append([self.bucket, self.akey, self.skey])
 
@@ -405,12 +402,12 @@ class TestCapacityQuota():
         bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
         assert bucket_created, "Failed to create bucket"
         self.log.info("Step 3: Perform s3 operation")
-        random_size = self.cryptogen.randrange(1, max_size)
+        random_size = self.csm_obj.random_gen.randrange(1, max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           self.akey, self.skey, object_size=random_size)
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 4: Perform get and set user level quota of less size")
-        less_size = self.cryptogen.randrange(1, max_size)
+        less_size = self.csm_obj.random_gen.randrange(1, max_size)
         payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,less_size,max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True)
@@ -470,7 +467,7 @@ class TestCapacityQuota():
         assert_utils.assert_in(self.obj_name, res[1], res[1])
         self.log.info("Multipart upload completed")
         self.log.info("Step 4: Perform get and set user level quota of less size")
-        less_size = self.cryptogen.randrange(1, max_size)
+        less_size = self.csm_obj.random_gen.randrange(1, max_size)
         payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,less_size,max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True)
@@ -551,7 +548,7 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_user_quota(self.user_id)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Perform get and set user level quota of less size")
-        less_size = self.cryptogen.randrange(1, max_size)
+        less_size = self.csm_obj.random_gen.randrange(1, max_size)
         payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,less_size,max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True)
@@ -601,7 +598,7 @@ class TestCapacityQuota():
         bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
         assert bucket_created, "Failed to create bucket"
         self.log.info("Step 2: Perform get and set user level quota of less size")
-        less_size = self.cryptogen.randrange(1, max_size)
+        less_size = self.csm_obj.random_gen.randrange(1, max_size)
         payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,less_size,max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True)
@@ -1349,7 +1346,7 @@ class TestCapacityQuota():
         max_size = test_cfg["max_size"]
         small_size = test_cfg["small_size"]
         enabled = test_cfg["enabled"]
-        max_objects = -(self.cryptogen.randrange(1, small_size))
+        max_objects = -(self.csm_obj.random_gen.randrange(1, small_size))
         payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=True)
@@ -1365,7 +1362,7 @@ class TestCapacityQuota():
         self.log.info("Maximum amount of objects should be created since max_objects"
                       "parameter is not effective")
         self.log.info("Step 3: Perform put 1 object of random size")
-        random_size = self.cryptogen.randrange(1, max_size)
+        random_size = self.csm_obj.random_gen.randrange(1, max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           self.akey, self.skey, object_size=random_size)
         assert not resp, "Put object passed even after exceeding max size"
@@ -1422,8 +1419,8 @@ class TestCapacityQuota():
         enabled = test_cfg["enabled"]
         size_for_io = test_cfg["size_for_io"]
         objects_for_io = test_cfg["objects_for_io"]
-        max_size = -(self.cryptogen.randrange(1, objects_for_io))
-        max_objects = -(self.cryptogen.randrange(1, max_size))
+        max_size = -(self.csm_obj.random_gen.randrange(1, objects_for_io))
+        max_objects = -(self.csm_obj.random_gen.randrange(1, max_size))
         payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size,
                                                       max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
