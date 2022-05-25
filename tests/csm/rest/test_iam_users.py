@@ -4614,15 +4614,14 @@ class TestIamUserRGW():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step 1: Creating IAM user with manage login")
-        resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True,
-                                                       login_as="csm_user_monitor")
+        self.log.info("Step 1: Creating IAM user with admin login")
+        resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True)
         assert_utils.assert_true(resp[0], resp[1])
         user_id = resp[1]["user_id"]
         self.log.info("IAM user %s is created", user_id)
         self.log.info("Step 2: Send GET request for list users and check if created user %s is "
                       "listed in it", user_id)
-        resp = self.csm_obj.list_iam_users_rgw(max_entries=9999999999)
+        resp = self.csm_obj.list_iam_users_rgw(max_entries=9999999999, login_as="csm_user_monitor")
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
         resp_dict = resp.json()
         get_user_list = resp_dict["users"]
@@ -4634,7 +4633,7 @@ class TestIamUserRGW():
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "User not deleted")
         self.log.info("User %s deleted successfully", user_id)
         self.log.info("Step 4: Again GET list users")
-        resp = self.csm_obj.list_iam_users_rgw(max_entries=9999999999)
+        resp = self.csm_obj.list_iam_users_rgw(max_entries=9999999999, login_as="csm_user_monitor")
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
         resp_dict = resp.json()
         get_user_list = resp_dict["users"]
