@@ -1308,7 +1308,7 @@ class TestCapacityQuota():
         payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=True)
-        assert result, "Verification for get set user failed."  # TODO: Expected outcome not known
+        assert result, "Verification for get set user failed."
         self.log.info("Response : %s", resp)
         self.log.info("Step 3: Completely full the storage capacity full")
         for i in range(1, test_cfg["extra_bytes"]):
