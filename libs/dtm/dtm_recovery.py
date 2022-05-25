@@ -44,8 +44,6 @@ class DTMRecoveryTestLib:
         This class contains common utility methods for DTM related operations.
     """
 
-    expected_process_state = "RECOVERED"
-
     def __init__(self, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
         """
         Init method
@@ -226,7 +224,6 @@ class DTMRecoveryTestLib:
         :param master_node: Object of master node
         :param pod_name: Name of the pod on which container is residing
         :param container_name: Name of the container inside which process is running
-        :param process_name: Name of the process
         :param process_ids: List of Process IDs
         :return: bool, dict
         e.g. (True, {'0x19': 'M0_CONF_HA_PROCESS_STARTED', '0x28': 'M0_CONF_HA_PROCESS_STARTED'})
