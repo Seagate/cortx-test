@@ -89,6 +89,7 @@ class ProvDeployK8sCortxLib:
         self.server_only_list = ["server-only", "standard"]
         self.exclusive_pod_list = ["data-only", "server-pod"]
         self.patterns = ['RFC 1123', '63 characters']
+        self.local_sol_path = common_const.LOCAL_SOLUTION_PATH
 
     @staticmethod
     def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
@@ -492,6 +493,7 @@ class ProvDeployK8sCortxLib:
                                                read_lines=True)[0].split(",")
             device_list[-1] = device_list[-1].replace("\n", "")
             metadata_devices = device_list[1:cvg_count + 1]
+            LOGGER.info(metadata_devices)
             # This will split the metadata disk list
             # into metadata devices per cvg
             # 2 is defined the split size based
@@ -1443,11 +1445,6 @@ class ProvDeployK8sCortxLib:
                 response.append(time_taken)
                 break
             time.sleep(deploy_ff_cfg["per_step_delay"])
-            server_pod_list = LogicalNode.get_all_pods(master_node_obj,
-                                                       common_const.SERVER_POD_NAME_PREFIX)
-            assert_utils.assert_true(server_pod_list)
-            LOGGER.debug("The Server pod list is %s", server_pod_list)
-            LOGGER.info("s3 Server Status Check Completed")
         if len(response) == 0:
             return False, "All Services are not started."
         return response
@@ -1820,6 +1817,61 @@ class ProvDeployK8sCortxLib:
         else:
             LOGGER.info("Installing version is not higher than installed version.")
         return installing_version
+
+    def update_sol_for_granular_deploy(self, file_path: str, host_list: list,master_node_list,
+                                       image: str, deployment_type: str, **kwargs):
+        """
+        Helper function to update image in solution.yaml.
+        :param: file_path: Filename with complete path
+        :param: host_list: List of setup hosts
+        :param: image: Image to be used for deployment
+        :param: deployment_type: Type of deployment(Standard/Data-Only)
+        :return: True/False and local file
+        """
+        cvg_count = kwargs.get("cvg_count", 2)
+        data_disk_per_cvg = kwargs.get("data_disk_per_cvg", 0)
+        LOGGER.debug("Update nodes section with setup details.")
+        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        resp = self.update_nodes_sol_file(file_path, host_list)
+        if not resp[0]:
+            return False, "solution.yaml is not updated properly."
+        LOGGER.debug("Update storage section and deployment type.")
+        with open(file_path) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']
+            storage_key = parent_key["storage"]
+            soln.close()
+        parent_key["deployment_type"] = deployment_type
+        if "data" in deployment_type:
+            parent_key["images"]["cortxdata"] = image
+        else:
+            # Extend else condition when a different granular deployment type is available.
+            pass
+        for cvg in prov_deploy_cfg["cvg_config"]:
+            if cvg == "cvg1":
+                cvg_key = storage_key[cvg]["devices"]["data"]
+                device_list = master_node_list.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
+                                               read_lines=True)[0].split(",")
+                device_list[-1] = device_list[-1].replace("\n", "")
+                if data_disk_per_cvg == 0:
+                    data_disk_per_cvg = int(len(device_list[cvg_count + 1:]) / cvg_count)
+
+                LOGGER.debug("Data disk per cvg : %s", data_disk_per_cvg)
+                LOGGER.info(len(cvg_key))
+                cvg_len = len(cvg_key)
+                for data_disk in range(len(cvg_key)-data_disk_per_cvg):
+                    cvg_key.pop("d"+str(cvg_len))
+                    cvg_len = cvg_len -1
+                    LOGGER.info(data_disk)
+            else:
+                storage_key.pop(cvg)
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(file_path, 'w') as pointer:
+            yaml.dump(conf, pointer, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            pointer.close()
+        return True, file_path
 
     @staticmethod
     def create_namespace(master_node_list, namespace):
