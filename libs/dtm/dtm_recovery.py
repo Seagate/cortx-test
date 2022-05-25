@@ -47,8 +47,6 @@ class DTMRecoveryTestLib:
         This class contains common utility methods for DTM related operations.
     """
 
-    expected_process_state = "RECOVERED"
-
     def __init__(self, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
         """
         Init method
