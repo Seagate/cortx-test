@@ -782,7 +782,7 @@ class TestMultipartUploadGetPut:
         """
         mp_config = MPART_CFG["test_40265"]
         self.log.info("STARTED: Test delete 1000 multipart uploaded objects using bulk delete")
-        parts, keys, s3_background_io = \
+        parts, _, s3_background_io = \
             self.s3_mpu_test_obj.start_ios_get_precalc_parts(
                 mp_config, self.mp_obj_path, log_prefix="TEST-40265_s3bench_ios", duration="0h5m",
                 s3_test_lib_obj=self.s3_test_obj)
