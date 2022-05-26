@@ -17,21 +17,23 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-import logging
 import json
-import time
-import xmltodict
+import logging
 import re
-from typing import Tuple, List, Any, Union
+import time
+from typing import Tuple, List, Any
+
+import xmltodict
+
+from commons import commands
 from commons import constants as const
 from commons.helpers.host import Host
-from commons import commands
 from commons.helpers.pods_helper import LogicalNode
+from commons.utils.assert_utils import assert_true
 from commons.utils.system_utils import check_ping
 from commons.utils.system_utils import run_remote_cmd
-from commons.utils.assert_utils import assert_true
-from config import RAS_VAL
 from config import CMN_CFG
+from config import RAS_VAL
 
 LOG = logging.getLogger(__name__)
 
@@ -977,6 +979,6 @@ class Health(Host):
                 LOG.critical("No services found in cluster")
                 return False, result
             return True, pod_fids
-        else:
-            return False, f"Expected Product family is {const.PROD_FAMILY_LC}. " \
-                          f"\nActual product family is {CMN_CFG.get('product_family')}"
+
+        return False, f"Expected Product family is {const.PROD_FAMILY_LC}. " \
+                      f"\nActual product family is {CMN_CFG.get('product_family')}"

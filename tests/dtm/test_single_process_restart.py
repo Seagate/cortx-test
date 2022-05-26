@@ -45,6 +45,7 @@ from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from scripts.s3_bench import s3bench
+from libs.s3.s3_test_lib import S3TestLib
 
 
 # pylint: disable=R0902
@@ -80,14 +81,13 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp)
         cls.ha_obj = HAK8s()
         cls.rest_obj = S3AccountOperations()
+        cls.setup_type = CMN_CFG["setup_type"]
 
     def setup_method(self):
         """Setup Method"""
         self.log.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
-        if not resp[0]:
-            resp = self.ha_obj.restart_cluster(self.master_node_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Cluster status is online.")
         self.random_time = int(perf_counter_ns())
         self.s3acc_name = f"dps_s3acc_{self.random_time}"
@@ -232,6 +232,15 @@ class TestSingleProcessRestart:
         self.iam_user = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         test_prefix = 'test-41234'
+        self.log.info("Create buckets for IOs")
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        workloads = HA_CFG["s3_bench_workloads"]
+        if self.setup_type == "HW":
+            workloads.extend(HA_CFG["s3_bench_large_workloads"])
+        for workload in workloads:
+            s3_test_obj.create_bucket(f"bucket-{workload.lower()}-{test_prefix}")
+
         self.log.info("Perform WRITEs/READs-Verify with variable object sizes in background")
         args = {'s3userinfo': self.iam_user, 'log_prefix': test_prefix,
                 'nclients': test_cfg['nclients'], 'nsamples': test_cfg['nsamples'],
@@ -290,9 +299,8 @@ class TestSingleProcessRestart:
         assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background before/after m0d"
                                                 f"restart. Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_false(len(resp[1]) <= len(fail_logs),
-                                  "Expected failures in WRITEs/READs in background during m0d "
-                                  f"restart. Logs collected during m0d restart: {resp[1]}")
+        assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background before/after m0d"
+                                                f"restart. Logs which contain failures: {resp[1]}")
         self.log.info("Step 3: Successfully completed WRITEs/READs in background")
 
         self.log.info("Step 4: Perform READs-Verify on already written data in Step 1")
