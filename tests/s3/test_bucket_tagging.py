@@ -463,7 +463,7 @@ class TestBucketTagging:
         assert_utils.assert_equal(resp[1], self.bucket_name, resp[1])
         self.log.info("Step 1: Created a bucket: %s", self.bucket_name)
         self.log.info("Step 2: Setting multiple tags with tag keys having special characters")
-        for char in :
+        for char in lst_special_chars:
             tag_key = f"{char}key{char}"
             resp = self.tag_obj.set_bucket_tag(self.bucket_name, tag_key, "testval")
             self.log.info(resp)
