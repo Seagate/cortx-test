@@ -265,8 +265,9 @@ class RestApiRgw:
             'POST', "/", query_params=user_params)
         return status
 
-    # pylint: disable=C0301,C0103
-    async def delete_policy_with_user_keys(self,user_params,access_key,secret_key) -> Tuple[HTTPStatus, Dict[str, Any]]:
+    # pylint: disable=C0103
+    async def delete_policy_with_user_keys(
+        self,user_params,access_key,secret_key) -> Tuple[HTTPStatus, Dict[str, Any]]:
         """
         Illustrate S3Client signed_http_request work.
         Create IAM user by specifying parameters, HTTP method and path.
