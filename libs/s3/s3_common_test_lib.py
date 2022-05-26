@@ -110,11 +110,8 @@ def create_s3_acc(
     :return tuple: access key and secret key of the newly created S3 account.
     """
     rest_obj = S3AccountOperationsRestAPI()
-    LOG.info("Step : Creating account with name %s and email_id %s",
-             account_name,
-             email_id)
-    s3_account = rest_obj.create_s3_account(user_name=account_name,
-                                            email_id=email_id,
+    LOG.info("Step: Creating account with name %s and email_id %s", account_name, email_id)
+    s3_account = rest_obj.create_s3_account(user_name=account_name, email_id=email_id,
                                             passwd=password)
     del rest_obj
     assert_utils.assert_true(s3_account[0], s3_account[1])
@@ -122,9 +119,7 @@ def create_s3_acc(
     secret_key = s3_account[1]["secret_key"]
     LOG.info("Step Successfully created the s3 account")
 
-    response = (access_key, secret_key)
-
-    return response
+    return access_key, secret_key
 
 
 def create_s3_acc_get_s3testlib(
@@ -144,9 +139,7 @@ def create_s3_acc_get_s3testlib(
                                            password=password)
     s3_obj = s3_test_lib.S3TestLib(access_key, secret_key, endpoint_url=S3_CFG["s3_url"],
                                    s3_cert_path=S3_CFG["s3_cert_path"], region=S3_CFG["region"])
-    response = (s3_obj, access_key, secret_key)
-
-    return response
+    return s3_obj, access_key, secret_key
 
 
 def create_s3_account_get_s3lib_objects(account_name: str, email_id: str, password: str) -> tuple:
