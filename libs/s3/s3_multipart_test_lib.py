@@ -228,8 +228,8 @@ class S3MultipartTestLib(Multipart):
                         part_number=int(partnum) + 1)
                     LOGGER.debug("Part : %s", str(part))
                     uploaded_parts.append({"PartNumber": int(partnum) + 1,
-                                           "ETag": part["ETag"]}) # nosec
-                    md5_digests[int(partnum)] = md5(data).digest()
+                                           "ETag": part["ETag"]})
+                    md5_digests[int(partnum)] = md5(data).digest() # nosec
             multipart_etag = '"%s"' % \
                              (md5(b''.join(md5_digests)).hexdigest() + \
                               '-' + str(len(md5_digests))) # nosec
