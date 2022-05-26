@@ -283,8 +283,7 @@ class TestServerPodFailure:
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 2: Successfully started READs & verified DI on the written data in "
-                    "background. Sleeping for %s sec for s3bench setup check.",
-                    HA_CFG["common_params"]["30sec_delay"])
+                    "background. Sleeping for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 3: Shutdown random server pod by deleting deployment and "
@@ -497,7 +496,7 @@ class TestServerPodFailure:
                                                     log_prefix=self.test_prefix, skipcleanup=True,
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Successfully created IAM user with multiple buckets and ran IOs.",)
+        LOGGER.info("Step 4: Successfully created IAM user with multiple buckets and ran IOs.")
 
         LOGGER.info("ENDED: Test to verify WRITEs during server pod down by delete deployment.")
 
@@ -641,7 +640,7 @@ class TestServerPodFailure:
         users = self.mgnt_ops.create_account_users(nusers=1)
         access_key = list(users.values())[0]["accesskey"]
         secret_key = list(users.values())[0]["secretkey"]
-        self.test_prefix = 'test-39912'
+        self.test_del_prefix = 'test-del-39912'
         self.s3_clean = users
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
@@ -650,7 +649,7 @@ class TestServerPodFailure:
                     "during server pod down by delete deployment.")
 
         LOGGER.info("Perform WRITEs on %s buckets for background DELETEs", del_total_bkt)
-        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+        args = {'test_prefix': self.test_del_prefix, 'test_dir_path': self.test_dir_path,
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': del_total_bkt, 'output': wr_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         wr_resp = tuple()
@@ -664,15 +663,17 @@ class TestServerPodFailure:
         LOGGER.info("Performed WRITEs on %s buckets for background DELETEs", del_total_bkt)
 
         LOGGER.info("Starting WRITEs on %s buckets in background", wr_bucket)
-        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+        self.test_write_prefix = 'test-write-39912'
+        args = {'test_prefix': self.test_write_prefix, 'test_dir_path': self.test_dir_path,
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
         thread1 = threading.Thread(target=self.ha_obj.put_get_delete,
                                    args=(event, s3_test_obj,), kwargs=args)
 
         LOGGER.info("Starting DELETEs of %s buckets in background", del_bucket)
         get_random_buck = self.system_random.sample(written_bck, del_bucket)
-        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'skipget': True, 'bkt_list': get_random_buck,
+        del_random_buck = get_random_buck.copy()
+        args = {'test_prefix': self.test_del_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkt_list': del_random_buck,
                 'bkts_to_del': del_bucket, 'output': del_output}
         thread2 = threading.Thread(target=self.ha_obj.put_get_delete,
                                    args=(event, s3_test_obj,), kwargs=args)
@@ -735,8 +736,8 @@ class TestServerPodFailure:
         new_s3data = dict()
         for bkt in remain_bkts:
             new_s3data[bkt] = s3_data[bkt]
-        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'skipdel': True, 's3_data': new_s3data, 'di_check': True,
+        args = {'test_prefix': self.test_del_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipdel': True, 's3_data': new_s3data, 'bkt_list': remain_bkts, 'di_check': True,
                 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = tuple()
@@ -759,8 +760,9 @@ class TestServerPodFailure:
                     len(remain_bkts))
 
         LOGGER.info("Step 5: Deleting remaining %s buckets.", len(remain_bkts))
-        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'skipget': True, 'output': del_output}
+        args = {'test_prefix': self.test_del_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'output': del_output, 'bkt_list': remain_bkts,
+                'bkts_to_del': len(remain_bkts)}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = tuple()
         while len(del_resp) != 2:
@@ -799,7 +801,8 @@ class TestServerPodFailure:
         users = self.mgnt_ops.create_account_users(nusers=1)
         access_key = list(users.values())[0]["accesskey"]
         secret_key = list(users.values())[0]["secretkey"]
-        self.test_prefix = 'test-39913'
+        self.test_read_prefix = 'test-read-39913'
+        self.test_del_prefix = 'test-del-39913'
         self.s3_clean = users
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
@@ -808,7 +811,7 @@ class TestServerPodFailure:
                     "during server pod down by delete deployment.")
 
         LOGGER.info("Perform WRITEs on %s buckets for background DELETEs", del_total_bkt)
-        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+        args = {'test_prefix': self.test_del_prefix, 'test_dir_path': self.test_dir_path,
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': del_total_bkt, 'output': wr_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         wr_resp = tuple()
@@ -822,7 +825,7 @@ class TestServerPodFailure:
         LOGGER.info("Performed WRITEs on %s buckets for background DELETEs", del_total_bkt)
 
         LOGGER.info("Perform WRITEs on %s buckets for background READs", rd_bucket)
-        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+        args = {'test_prefix': self.test_read_prefix, 'test_dir_path': self.test_dir_path,
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': rd_bucket, 'output': wr_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         wr_resp = tuple()
@@ -836,7 +839,7 @@ class TestServerPodFailure:
         LOGGER.info("Performed WRITEs on %s buckets for background READs", rd_bucket)
 
         LOGGER.info("Starting READs on %s buckets in background", rd_bucket)
-        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+        args = {'test_prefix': self.test_read_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipdel': True, 's3_data': s3_data_rd,
                 'di_check': True, 'output': rd_output}
         thread1 = threading.Thread(target=self.ha_obj.put_get_delete,
@@ -844,8 +847,9 @@ class TestServerPodFailure:
 
         LOGGER.info("Starting DELETEs of %s buckets in background", del_bucket)
         get_random_buck = self.system_random.sample(written_bck, del_bucket)
-        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'skipget': True, 'bkt_list': get_random_buck,
+        del_random_buck = get_random_buck.copy()
+        args = {'test_prefix': self.test_del_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkt_list': del_random_buck,
                 'bkts_to_del': del_bucket, 'output': del_output}
         thread2 = threading.Thread(target=self.ha_obj.put_get_delete,
                                    args=(event, s3_test_obj,), kwargs=args)
@@ -919,9 +923,9 @@ class TestServerPodFailure:
         for bkt in remain_bkts:
             new_s3data[bkt] = s3_data_del[bkt]
 
-        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+        args = {'test_prefix': self.test_del_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipdel': True, 's3_data': new_s3data, 'di_check': True,
-                'output': rd_output}
+                'bkt_list': remain_bkts, 'output': rd_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         rd_resp = tuple()
         while len(rd_resp) != 4:
@@ -943,8 +947,9 @@ class TestServerPodFailure:
         LOGGER.info("Step 4: Successfully checked READs and DI_CHECK for remaining buckets.")
 
         LOGGER.info("Step 5: Deleting remaining %s buckets.", len(remain_bkts))
-        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'skipget': True, 'output': del_output}
+        args = {'test_prefix': self.test_del_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'output': del_output, 'bkt_list': remain_bkts,
+                'bkts_to_del': len(remain_bkts)}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = tuple()
         while len(del_resp) != 2:
@@ -955,7 +960,6 @@ class TestServerPodFailure:
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
                                   f"Failed to DELETE buckets: {event_del_bkt} OR {fail_del_bkt}")
-
         LOGGER.info("Step 5: Successfully deleted remaining buckets.")
 
         LOGGER.info("ENDED: Test to verify READs and DELETEs during server pod down "
@@ -1234,8 +1238,7 @@ class TestServerPodFailure:
                     "background")
         LOGGER.info("Waiting for %s seconds", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
-        LOGGER.info("Step 1: Successfully started READs & WRITES in background. Sleeping for %s "
-                    "sec for s3bench setup check.", HA_CFG["common_params"]["30sec_delay"])
+        LOGGER.info("Step 1: Successfully started READs & WRITES in background")
 
         LOGGER.info("Step 2: Shutdown random server pod by deleting deployment and "
                     "verify cluster & remaining pods status")
