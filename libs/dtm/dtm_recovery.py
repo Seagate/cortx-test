@@ -262,8 +262,8 @@ class DTMRecoveryTestLib:
         :return: bool, list
         """
         switcher = {
-            'm0d': 'ioservice',
-            'rgw': 'rgw_s3'
+            'm0d': const.M0D_SVC,
+            'rgw': const.SERVER_SVC
         }
         resp, fids = health_obj.hctl_status_get_svc_fids()
         if not resp:
