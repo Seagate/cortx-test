@@ -446,6 +446,16 @@ class TestBucketTagging:
     def test_2443(self):
         """Create multiple tags with tag keys having special characters."""
         self.log.info("STARTED: Create multiple tags with tag keys having special characters")
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            lst_special_chars = [
+                                "~", "`", "!", "@", "#", "$",
+                                "%", "^", "&", "*", "(", ")",
+                                "-", "_", "+", "=", ";", ":",
+                                "|", "\\", ":", ";", "\"", "\'",
+                                "<", ",", ">", ".", "?", "\/"
+                                ]
+        else:
+            lst_special_chars = ["+", "-", "=", ".", "_", ":"]
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
         resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
@@ -453,7 +463,7 @@ class TestBucketTagging:
         assert_utils.assert_equal(resp[1], self.bucket_name, resp[1])
         self.log.info("Step 1: Created a bucket: %s", self.bucket_name)
         self.log.info("Step 2: Setting multiple tags with tag keys having special characters")
-        for char in ["+", "-", "=", ".", "_", ":"]:
+        for char in :
             tag_key = f"{char}key{char}"
             resp = self.tag_obj.set_bucket_tag(self.bucket_name, tag_key, "testval")
             self.log.info(resp)
