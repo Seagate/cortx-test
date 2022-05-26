@@ -517,6 +517,7 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
 
         self.test_completed = True
+
         self.log.info("ENDED: Verify continuous WRITE during m0d restart using pkill")
 
     @pytest.mark.lc
