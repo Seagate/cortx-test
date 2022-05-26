@@ -133,7 +133,7 @@ class TestIOWorkloadDegradedPath:
                                                   test_case_name, self.health_obj_list[0])
 
         self.log.info("Step 1: Create 50 buckets in healthy mode ")
-        bucket_creation_healthy_mode = self.test_cfg['test_40172']['bucket_creation_healthy_mode']
+        bucket_creation_healthy_mode = self.test_cfg['bucket_creation_healthy_mode']
         bucket_list = None
         if bucket_creation_healthy_mode:
             resp = self.s3t_obj.create_multiple_buckets(50, 'test-40172')
@@ -234,9 +234,9 @@ class TestIOWorkloadDegradedPath:
         self.log.info("STARTED: Test for Perform 40% Writes of user data capacity (Healthy mode) "
                       "and perform Object CRUD(40% write,Read,20% delete) operation(degraded mode)")
 
-        write_percent_per_iter = self.test_cfg['test_40174']['write_percent_per_iter']
-        delete_percent_per_iter = self.test_cfg['test_40174']['delete_percent_per_iter']
-        max_cluster_capacity_percent = self.test_cfg['test_40174']['max_cluster_capacity_percent']
+        write_percent_per_iter = self.test_cfg['write_percent_per_iter']
+        delete_percent_per_iter = self.test_cfg['delete_percent_per_iter']
+        max_cluster_capacity_percent = self.test_cfg['max_cluster_capacity_percent']
 
         duration_in_days = self.test_cfg['degraded_path_durations_days']
         clients = (len(self.worker_node_list) - 1) * self.test_cfg['sessions_per_node_vm']

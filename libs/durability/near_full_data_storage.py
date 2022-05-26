@@ -87,7 +87,7 @@ class NearFullStorage:
                 client, 'obj_size': obj_size, 'num_sample': sample}]
         """
         client = kwargs.get("client", 10)
-        workload = [128, 256, 512,1024, 2048,]  # workload in mb
+        workload = [128, 256, 512, 1024, 2048, ]  # workload in mb
         if CMN_CFG["setup_type"] == "HW":
             workload.extend([3072, 4096])
 
@@ -109,7 +109,7 @@ class NearFullStorage:
                                        num_sample=samples,
                                        obj_name_pref=obj_name, obj_size=f"{obj_size}b",
                                        skip_cleanup=True, duration=None,
-                                       log_file_prefix=f"workload_{obj_size}b",
+                                       log_file_prefix=f"write_workload_{obj_size}b",
                                        end_point=S3_CFG["s3_url"],
                                        validate_certs=S3_CFG["validate_certs"])
                 LOGGER.info("Workload: %s objects of %s with %s parallel clients ", samples,
