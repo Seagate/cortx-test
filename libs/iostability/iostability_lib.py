@@ -132,7 +132,11 @@ class MailNotification(threading.Thread):
             subject = f"Test {self.test_id} in progress on {self.health_obj.hostname}"
             body = f"hctl Status: {status} \n"
             self.mail_obj.send_mail(subject=subject, body=body)
-            time.sleep(self.interval * 60 * 60)
+            current_time = time.time()
+            while time.time() < current_time + self.interval * 60 * 60:
+                if self.event_pass.is_set() or self.event_fail.is_set():
+                    break
+                time.sleep(60)
         test_status = "Failed"
         if self.event_pass.is_set():
             test_status = "Passed"

@@ -20,6 +20,7 @@
 """Test library for System Health related operations.
    Author: Divya Kachhwaha
 """
+import ast
 import time
 import json
 import datetime
@@ -41,6 +42,7 @@ class SystemAlerts(RestTestLib):
         super(SystemAlerts, self).__init__()
         self.node_obj = node_obj
 
+    # pylint: disable=too-many-arguments
     @RestTestLib.authenticate_and_login
     def get_alerts(self, alert_id=None, acknowledged=None, resolved=None,
                    show_active=None, sortby="created_time", direction="desc",
@@ -72,6 +74,7 @@ class SystemAlerts(RestTestLib):
                            SystemAlerts.get_alerts.__name__, error)
             raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
+    # pylint: disable=too-many-arguments
     @RestTestLib.authenticate_and_login
     def edit_alerts(self, alert_id, ack=True, comment="By Script",
                     ack_key="acknowledged", comment_key="comments"):
@@ -103,9 +106,12 @@ class SystemAlerts(RestTestLib):
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
-    def _add_parameters(self, endpoint, alert_id=None, acknowledged=None,
-                        resolved=False, show_active=None, sortby="created_time", dirby="desc",
-                        offset=1, limit=10, severity=None):
+    # pylint: disable=too-many-arguments
+    # pylint: disable-msg=too-many-branches
+    @staticmethod
+    def _add_parameters(endpoint, alert_id=None, acknowledged=None, resolved=False,
+                        show_active=None, sortby="created_time", dirby="desc", offset=1, limit=10,
+                        severity=None):
         """ Add parameter to endpoint
         """
         if alert_id is not None:
@@ -240,8 +246,8 @@ class SystemAlerts(RestTestLib):
             resp = self.verify_csm_response(*args, **kwargs)
             time.sleep(1)
             time_lapsed = time_lapsed + 1
-        return resp, "CSM alert is not reported within {}".format(timeout)
         self.log.info("CSM alert reported within %s seconds.", time_lapsed)
+        return resp, "CSM alert is not reported within {}".format(timeout)
 
     def get_alerts_id_after(self, starttime):
         """
@@ -373,6 +379,7 @@ class SystemAlerts(RestTestLib):
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
+    # pylint: disable-msg=too-many-locals
     def create_alert(self, alert_type, alert_timeout, **kwargs):
         """Create the alert and read get information before and after alert.
 
@@ -411,7 +418,7 @@ class SystemAlerts(RestTestLib):
         #self.node_obj.copy_file_to_remote(local_path=local_path,
         #                                  remote_path=remote_path)
         resp = alert_api_obj.generate_alert(
-            eval('AlertType.{}'.format(alert_type)),
+            ast.literal_eval(str('AlertType.%s', alert_type)),
             host_details={'host': self.node_obj.hostname,
                           'host_user': self.node_obj.username,
                           'host_password': self.node_obj.password})
@@ -451,6 +458,7 @@ class SystemAlerts(RestTestLib):
         self.log.info("After alert IDs: %s", after_alert_ids)
         return new_alerts, before_alert_ids, after_alert_ids
 
+    # pylint: disable-msg=too-many-locals
     def resolve_alert(self, resolve_type, alert_timeout, **kwargs):
         """Resolve the alert and return before and after alert IDs
 
@@ -486,7 +494,7 @@ class SystemAlerts(RestTestLib):
 
         self.log.info("Resolving alert...")
         resp = alert_api_obj.generate_alert(
-            eval('AlertType.{}'.format(resolve_type)))
+            ast.literal_eval(str('AlertType.%s', resolve_type)))
         if not resp[0]:
             self.log.error("Failed to resolve alert")
             return False
@@ -524,6 +532,7 @@ class SystemAlerts(RestTestLib):
         self.log.info("Post alert IDs: %s", after_alert_ids)
         return before_alert_ids, after_alert_ids
 
+    # pylint: disable=too-many-arguments
     @RestTestLib.authenticate_and_login
     def get_alerts_history(self, sortby="created_time", direction="desc",
                            offset=1, limit=1000, sensor_info=None,
@@ -567,10 +576,11 @@ class SystemAlerts(RestTestLib):
                            SystemAlerts.get_alerts_history.__name__, error)
             raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0]) from error
 
-    def _add_parameters_alert_history(self, endpoint, sortby="created_time",
-                                      dirby="desc", offset=1, limit=1000,
-                                      sensor_info=None, start_date=None,
-                                      end_date=None, duration=None):
+    # pylint: disable=too-many-arguments
+    @staticmethod
+    def _add_parameters_alert_history(endpoint, sortby="created_time", dirby="desc", offset=1,
+                                      limit=1000, sensor_info=None, start_date=None, end_date=None,
+                                      duration=None):
 
         params = []
         if sortby is not None:

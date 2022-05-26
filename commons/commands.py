@@ -20,7 +20,7 @@ CREATE_FILE = "dd if={} of={} bs={} count={} iflag=fullblock"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
 GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
 LS_CMD = "ls {}"
-LS_LH_CMD = "ls -lhR {}"
+LS_LH_CMD = "ls -lhR $dir"
 LST_PRVSN_DIR = "ls /opt/seagate/"
 LST_RPM_CMD = "rpm -qa | grep eos-prvsnr"
 MEM_USAGE_CMD = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
@@ -113,8 +113,7 @@ CMD_SHOW_VOLUMES = "show volumes"
 CMD_CLEAR_METADATA = "clear disk-metadata {}"
 CHECK_SSPL_LOG_FILE = "tail -f /var/log/cortx/sspl/sspl.log > '{}' 2>&1 &"
 SSPL_SERVICE_CMD = "journalctl -xefu sspl-ll.service"
-SET_DRIVE_STATUS_CMD = "set expander-phy encl {} controller {} type drive phy" \
-                       " {} {}"
+SET_DRIVE_STATUS_CMD = "set expander-phy encl {} controller {} type drive phy {} {}"
 ENCRYPT_PASSWORD_CMD = "python3 encryptor.py encrypt {} {} storage_enclosure"
 GET_CLUSTER_ID_CMD = "salt-call grains.get cluster_id"
 COPY_FILE_CMD = "cp -rfv {} {}"
@@ -131,7 +130,7 @@ SEL_INFO_CMD = "ipmitool sel info"
 SEL_LIST_CMD = "ipmitool sel list"
 IEM_LOGGER_CMD = "logger -i -p local3.err {}"
 INSTALL_SCREEN_CMD = "yum -y install screen"
-INSTALL_SSH_PASS_CMD = "yum -y install sshpass"
+INSTALL_SSH_PASS_CMD = "yum -y install sshpass"  # nosec
 SCREEN_CMD = "screen -d -m -L -S 'screen_RMQ' {}"
 SSH_CMD = "sshpass -p {} ssh -o 'StrictHostKeyChecking no' {}@{} {}"
 RESOLVE_FAN_FAULT = "ipmitool event {} {} deassert"
@@ -191,14 +190,14 @@ CMD_LOGOUT_CORTXCLI = "exit"
 CMD_CREATE_CSM_USER = "users create"
 CMD_DELETE_CSM_USER = "users delete"
 CMD_UPDATE_ROLE = "users update"
-CMD_RESET_PWD = "users password"
+CMD_RESET_PWD = "users password"  # nosec
 CMD_LIST_CSM_USERS = "users show"
 CMD_HELP_OPTION = "-h"
 CMD_S3ACC = "s3accounts"
 CMD_CREATE_S3ACC = "s3accounts create"
 CMD_SHOW_S3ACC = "s3accounts show"
 CMD_DELETE_S3ACC = "s3accounts delete {}"
-CMD_RESET_S3ACC_PWD = "s3accounts password {}"
+CMD_RESET_S3ACC_PWD = "s3accounts password {}"  # nosec
 CMD_S3BKT_HELP = "s3buckets -h"
 CMD_CREATE_BUCKET = "s3buckets create {}"
 CMD_SHOW_BUCKETS = "s3buckets show"
@@ -225,7 +224,7 @@ CMD_SHOW_ACCESS_KEY = "s3accesskeys show -iu"
 CMD_UPDATE_ACCESS_KEY = "s3accesskeys update"
 CMD_HEALTH_SHOW = "health show \"{}\""
 CMD_HEALTH_ID = "health show \"{}\" -i \"{}\""
-CMD_RESET_IAM_PWD = "s3iamusers password {}"
+CMD_RESET_IAM_PWD = "s3iamusers password {}"  # nosec
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
@@ -273,7 +272,8 @@ CMD_ADD_REPO_3RDPARTY = "yum-config-manager --add-repo \"{0}/3rd_party/\""
 CMD_ADD_REPO_CORTXISO = "yum-config-manager --add-repo \"{0}/cortx_iso/\""
 CMD_INSTALL_JAVA = "yum install --nogpgcheck -y java-1.8.0-openjdk-headless"
 CMD_INSTALL_CORTX_PRE_REQ = "yum install --nogpgcheck -y python3 cortx-prereq sshpass"
-CMD_INSTALL_PRVSNR_PRE_REQ = "yum install --nogpgcheck -y python36-m2crypto salt salt-master salt-minion"
+CMD_INSTALL_PRVSNR_PRE_REQ = "yum install --nogpgcheck -y python36-m2crypto salt salt-master " \
+                             "salt-minion"
 CMD_INSTALL_PRVSNR_API = "yum install --nogpgcheck -y python36-cortx-prvsnr"
 CMD_RM_3RD_PARTY_REPO = "rm -rf /etc/yum.repos.d/*3rd_party*.repo"
 CMD_RM_CORTXISO_REPO = "rm -rf /etc/yum.repos.d/*cortx_iso*.repo"
@@ -336,9 +336,11 @@ CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS = "aws s3api list-objects-v2 --bucket {0}"
 CMD_AWSCLI_LIST_OBJECTS_V2_OPTIONS_BUCKETS = "aws s3api list-objects-v2 --bucket {0} {1}"
 
 # jCloud commands.
-CMD_KEYTOOL1 = "`keytool -delete -alias s3server -keystore /etc/pki/java/cacerts -storepass changeit >/dev/null`"
+CMD_KEYTOOL1 = "`keytool -delete -alias s3server -keystore /etc/pki/java/cacerts -storepass " \
+               "changeit >/dev/null`"
 # ca.crt path.
-CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {} -keystore /etc/pki/java/cacerts -storepass changeit`"
+CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {} -keystore " \
+               "/etc/pki/java/cacerts -storepass changeit`"
 
 # cortx_setup commands
 CMD_RESOURCE_DISCOVER = "cortx_setup resource discover"
@@ -384,9 +386,10 @@ CMD_PDU_POWER_CYCLE = "expect scripts/expect_utils/expect_power_cycle.exp {0} {1
 # Ldap commands to fetch user, password.
 LDAP_USER = "s3confstore properties:///opt/seagate/cortx/auth/resources/authserver.properties " \
             "getkey --key ldapLoginDN"
-LDAP_PWD = "s3cipher decrypt --data $(s3confstore properties:///opt/seagate/cortx/auth/resources/" \
-           "authserver.properties getkey --key ldapLoginPW) --key $(s3cipher generate_key" \
-           " --const_key cortx)"
+LDAP_PWD = ("s3cipher decrypt --data "  # nosec
+            "$(s3confstore properties:///opt/seagate/cortx/auth/resources/"
+            "authserver.properties getkey --key ldapLoginPW) --key $(s3cipher generate_key"
+            " --const_key cortx)")
 
 # Motr commands
 M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
@@ -556,9 +559,9 @@ CLSTR_START_CMD = "cd {}; ./start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; ./shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; ./status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
-PRE_REQ_CMD = "cd {}; ./prereq-deploy-cortx-cloud.sh -d {}"
+PRE_REQ_CMD = "cd $dir; ./prereq-deploy-cortx-cloud.sh -d $disk"
 DEPLOY_CLUSTER_CMD = "cd $path; ./deploy-cortx-cloud.sh > $log"
-DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
+DESTROY_CLUSTER_CMD = "cd $dir; ./destroy-cortx-cloud.sh --force"
 UPGRADE_CLUSTER_DESTRUPTIVE_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
 UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
 UPGRADE_COLD_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -cold"
@@ -573,10 +576,11 @@ CMD_GET_NODE = "kubectl get nodes"
 # LC deployment
 CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
 CMD_MOUNT_EXT4 = "mount -t ext4 {} {}"
-CMD_CURL = "curl -o {} {}"
+CMD_CURL = "curl -o $file $url"
 
 # Git commands
 CMD_GIT_CLONE = "git clone {}"
+CMD_GIT_CLONE_TEMPLATE = "git clone"
 CMD_GIT_CLONE_D = "git clone {} {}"
 CMD_GIT_CHECKOUT = "git checkout {}"
 

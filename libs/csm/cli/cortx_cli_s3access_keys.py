@@ -74,9 +74,10 @@ class CortxCliS3AccessKeys(CortxCli):
                        (possible values: table/xml/json)
         :return: True/False and dictionary.
         """
-        command = "{0} -f {1}".format(commands.CMD_SHOW_S3ACC_ACCESS_KEY.format(user_name), output_format)
+        command = f"{commands.CMD_SHOW_S3ACC_ACCESS_KEY.format(user_name)} -f {output_format}"
         LOGGER.info("Listing s3 user accesskey of user %s", user_name)
-        status, response = self.execute_cli_commands(cmd=command, patterns=["Access Key", "access_keys"])
+        status, response = self.execute_cli_commands(cmd=command,
+                      patterns=["Access Key", "access_keys"])
         if output_format == "json":
             response = self.format_str_to_dict(response)
         if output_format == "xml":
@@ -145,8 +146,7 @@ class CortxCliS3AccessKeys(CortxCli):
                        (possible values: table/xml/json)
         :return: Response returned by CORTX CLI
         """
-        command = "{0} {1} -f {2}".format(
-            commands.CMD_SHOW_ACCESS_KEY, user_name, output_format)
+        command = f"{commands.CMD_SHOW_ACCESS_KEY} {user_name} -f {output_format}"
         LOGGER.info("Listing s3accesskey of user %s", user_name)
         response = self.execute_cli_commands(cmd=command, patterns=["Access Key", "access_keys"])[1]
         if output_format == "json":

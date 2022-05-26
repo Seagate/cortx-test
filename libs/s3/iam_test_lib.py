@@ -76,7 +76,7 @@ class IamTestLib(IamLib):
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.create_user.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -93,7 +93,7 @@ class IamTestLib(IamLib):
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.list_users.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -112,7 +112,7 @@ class IamTestLib(IamLib):
             time.sleep(S3_CFG["access_key_delay"])
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.create_access_key.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -132,7 +132,7 @@ class IamTestLib(IamLib):
             time.sleep(S3_CFG["access_key_delay"])
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.delete_access_key.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -149,7 +149,7 @@ class IamTestLib(IamLib):
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.delete_user.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -166,7 +166,7 @@ class IamTestLib(IamLib):
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.list_access_keys.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -186,7 +186,7 @@ class IamTestLib(IamLib):
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.update_access_key.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -204,7 +204,7 @@ class IamTestLib(IamLib):
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.update_user.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -233,7 +233,7 @@ class IamTestLib(IamLib):
                 "Error in %s: %s",
                 IamTestLib.create_user_login_profile.__name__,
                 error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, user_dict
 
@@ -257,7 +257,7 @@ class IamTestLib(IamLib):
                 "Error in %s: %s",
                 IamTestLib.update_user_login_profile.__name__,
                 error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -277,7 +277,7 @@ class IamTestLib(IamLib):
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s",
                              IamTestLib.update_user_login_profile_no_pwd_reset.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -298,7 +298,7 @@ class IamTestLib(IamLib):
             LOGGER.info(user_dict)
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.get_user_login_profile.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, user_dict
 
@@ -315,7 +315,7 @@ class IamTestLib(IamLib):
                 "Error in %s: %s",
                 IamTestLib.delete_user_login_profile.__name__,
                 error)
-            raise CTException(err.S3_CLIENT_ERROR, error)
+            raise CTException(err.S3_CLIENT_ERROR, error) from error
 
         return True, response
 
@@ -339,7 +339,7 @@ class IamTestLib(IamLib):
             LOGGER.debug(user_dict)
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.create_iam_user.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, user_dict
 
@@ -358,7 +358,7 @@ class IamTestLib(IamLib):
             response = self.delete_user(user_name)
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.delete_iam_user.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -392,7 +392,7 @@ class IamTestLib(IamLib):
             response = {"AccountName": user_name, "BucketName": bucket_name}
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.s3_user_operation.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -421,7 +421,7 @@ class IamTestLib(IamLib):
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s",
                              IamTestLib.create_modify_delete_access_key.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, user_name
 
@@ -455,7 +455,7 @@ class IamTestLib(IamLib):
                 "Error in %s: %s",
                 IamTestLib.s3_ops_using_temp_auth_creds.__name__,
                 error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, s3_resource
 
@@ -945,7 +945,7 @@ class IamTestLib(IamLib):
             self.change_password(old_pwd, new_pwd)
         except (ClientError, Exception) as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.change_user_password.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, "Change Password Request is Successful"
 
@@ -1013,7 +1013,7 @@ class IamTestLib(IamLib):
         except (ClientError, Exception) as error:
             LOGGER.exception(
                 "Error in %s: %s", IamTestLib.create_and_delete_account.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
     def reset_access_key_and_delete_account(
             self, account_name: str = None) -> tuple:
@@ -1053,7 +1053,7 @@ class IamTestLib(IamLib):
             response.append({"User": create_user, "Keys": create_acc_key})
         except CTException as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.create_user_access_key.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -1079,7 +1079,7 @@ class IamTestLib(IamLib):
         except CTException as error:
             LOGGER.exception(
                 "Error in %s: %s", IamTestLib.delete_users_with_access_key.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True
 
@@ -1102,7 +1102,7 @@ class IamTestLib(IamLib):
                 acc_li.append(resp)
         except CTException as error:
             LOGGER.exception("Error in %s: %s", IamTestLib.create_multiple_accounts.__name__, error)
-            raise CTException(err.S3_CLIENT_ERROR, error)
+            raise CTException(err.S3_CLIENT_ERROR, error) from error
 
         return True, acc_li
 

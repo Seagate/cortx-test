@@ -25,6 +25,7 @@ import random
 import time
 from http import HTTPStatus
 
+from random import SystemRandom
 import pytest
 
 from commons import configmanager
@@ -40,7 +41,7 @@ from libs.csm.rest.csm_rest_stats import SystemStats
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from scripts.hs_bench import hsbench
 
-
+# pylint: disable-msg=too-many-public-methods
 class TestSystemStats():
     """System Health Testsuite
     """
@@ -55,6 +56,7 @@ class TestSystemStats():
         cls.test_conf = configmanager.get_config_wrapper(
             fpath="config/csm/test_rest_system_stats.yaml")
         cls.csm_user = RestCsmUser()
+        cls.cryptogen = SystemRandom()
         cls.nd_obj = LogicalNode(hostname=CMN_CFG["nodes"][0]["hostname"],
                                  username=CMN_CFG["nodes"][0]["username"],
                                  password=CMN_CFG["nodes"][0]["password"])
@@ -170,6 +172,7 @@ class TestSystemStats():
                                       "Null values in the response")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.skip("Known issue EOS-23135")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -206,7 +209,7 @@ class TestSystemStats():
         self.log.info("##### Testing with invalid TOTAL SAMPLEs param  #####")
         invalid_samples = self.test_conf["test_4961"]["invalid_samples"]
         for invalid_sample in invalid_samples:
-            metric = random.choice(metrics)
+            metric = self.cryptogen.randrange(metrics)
             response = self.system_stats.get_stats(metrics=[metric],
                                                    from_time=from_time,
                                                    to_time=to_time,
@@ -220,7 +223,7 @@ class TestSystemStats():
         self.log.info("##### Testing with invalid INTERVALs param  #####")
         invalid_intervals = self.test_conf["test_4961"]["invalid_intervals"]
         for invalid_interval in invalid_intervals:
-            metric = random.choice(metrics)
+            metric = self.cryptogen.randrange(metrics)
             response = self.system_stats.get_stats(metrics=[metric],
                                                    from_time=from_time,
                                                    to_time=to_time,
@@ -243,8 +246,8 @@ class TestSystemStats():
             self.log.info("Expected response : %s", expected_response)
             self.log.info("Actual response : %s", response.status_code)
             assert_utils.assert_in(response.status_code, expected_response,
-                                   f"Status code check failed with invalid FROM"
-                                   " time :{invalid_time}.")
+                                   "Status code check failed with invalid FROM"
+                                   " time : %s.", invalid_time)
 
             metric = random.choice(metrics)
             response = self.system_stats.get_stats(metrics=[metric],
@@ -287,7 +290,7 @@ class TestSystemStats():
 
         metric = random.choice(metrics)
         self.log.info(
-            f"##### Testing with missing FROM param for metrics {metric} #####")
+            "##### Testing with missing FROM param for metrics %s #####", metric)
         response = self.system_stats.get_stats(metrics=[metric],
                                                to_time=to_time,
                                                total_sample=total_sample)
