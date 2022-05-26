@@ -53,6 +53,7 @@ from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
 from libs.s3.s3_test_lib import S3TestLib
+from scripts.s3_bench import s3bench
 
 
 # pylint: disable=too-many-instance-attributes
