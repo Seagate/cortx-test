@@ -272,10 +272,8 @@ class RestApiRgw:
         Create IAM user by specifying parameters, HTTP method and path.
         :returns: HTTP status code and user information as parsed json.
         """
-        ACCESS_KEY = access_key
-        SECRET_KEY = secret_key
         rgwcli = S3Client(
-             ACCESS_KEY, SECRET_KEY, self.HOST, self.PORT, tls_enabled=False)
+             access_key, secret_key, self.HOST, self.PORT, tls_enabled=False)
         status = await rgwcli.signed_http_request(
             'POST', "/", query_params=user_params)
         return status
