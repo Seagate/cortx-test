@@ -766,7 +766,8 @@ class TestBucketTagging:
             self.log.info(error)
             assert_utils.assert_in(errmsg.NO_BUCKET_OBJ_ERR_KEY, str(error.message), error.message)
         self.log.info("Step 2: Retrieved tag of non existing bucket failed with NoSuchBucket")
-        self.log.info("Step 2: Verified PUT and GET tag of non existing bucket failed with NoSuchBucket")
+        self.log.info(
+            "Step 2: Verified PUT and GET tag of non existing bucket failed with NoSuchBucket")
         self.log.info("ENDED: Verify PUT bucket tagging to non-existing bucket")
 
     @pytest.mark.parallel
