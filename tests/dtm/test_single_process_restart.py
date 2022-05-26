@@ -44,11 +44,11 @@ from conftest import LOG_DIR
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from scripts.s3_bench import s3bench
 from libs.s3.s3_test_lib import S3TestLib
+from scripts.s3_bench import s3bench
 
 
-# pylint: disable=R0902
+# pylint: disable=too-many-instance-attributes
 class TestSingleProcessRestart:
     """Test Class for Single Process Restart."""
 
@@ -138,16 +138,12 @@ class TestSingleProcessRestart:
         proc_read_op.start()
 
         self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
-        self.log.debug("Get IDs of all m0d processes")
-        resp, fids = self.health_obj.hctl_status_get_svc_fids()
-        assert_utils.assert_true(resp, "Failed to get services fids")
-        fids = fids[const.M0D_SVC]
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
-                                            process=self.m0d_process, process_ids=fids,
-                                            check_proc_state=True)
-        assert_utils.assert_true(resp, f"Response: {resp} \nhctl status is not as expected")
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, f"Failure in observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for Read Operation to complete.")
         if proc_read_op.is_alive():
@@ -181,16 +177,12 @@ class TestSingleProcessRestart:
         proc_write_op.start()
 
         self.log.info("Step 2 : Perform Single m0d Process Restart During Write Operations")
-        self.log.debug("Get IDs of all m0d processes")
-        resp, fids = self.health_obj.hctl_status_get_svc_fids()
-        assert_utils.assert_true(resp, "Failed to get services fids")
-        fids = fids[const.M0D_SVC]
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
-                                            process=self.m0d_process, process_ids=fids,
-                                            check_proc_state=True)
-        assert_utils.assert_true(resp, f"Response: {resp} \nhctl status is not as expected")
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, f"Failure in observed during process restart/recovery")
 
         self.log.info("Step 3: Wait for Write Operation to complete.")
         if proc_write_op.is_alive():
@@ -271,17 +263,13 @@ class TestSingleProcessRestart:
                 rc_datapod = pod_name
                 break
         self.log.info("RC node %s has data pod: %s ", rc_node_name, rc_datapod)
-        self.log.debug("Get IDs of all m0d processes")
-        resp, fids = self.health_obj.hctl_status_get_svc_fids()
-        assert_utils.assert_true(resp, "Failed to get services fids")
-        fids = fids[const.M0D_SVC]
         event.set()
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
                                             pod_prefix=rc_datapod,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
-                                            process=self.m0d_process, process_ids=fids,
-                                            check_proc_state=True)
-        assert_utils.assert_true(resp, f"Response: {resp} \nhctl status is not as expected")
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, f"Failure in observed during process restart/recovery")
         self.log.info("Step 2: Successfully performed single restart of m0d process on pod hosted "
                       "on RC node and checked hctl status is good")
         event.clear()
@@ -296,10 +284,10 @@ class TestSingleProcessRestart:
         fail_logs = list(x[1] for x in responses["fail_res"])
         self.log.debug("Fail logs list: %s", fail_logs)
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background before/after m0d"
+        assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background during m0d"
                                                 f"restart. Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background before/after m0d"
+        assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background during m0d"
                                                 f"restart. Logs which contain failures: {resp[1]}")
         self.log.info("Step 3: Successfully completed WRITEs/READs in background")
 
@@ -334,16 +322,12 @@ class TestSingleProcessRestart:
         self.log.info("Step 1: Created IAM user with name %s", self.s3acc_name)
 
         self.log.info("Step 2: Perform Single m0d Process Restart")
-        self.log.debug("Get IDs of all m0d processes")
-        resp, fids = self.health_obj.hctl_status_get_svc_fids()
-        assert_utils.assert_true(resp, "Failed to get services fids")
-        fids = fids[const.M0D_SVC]
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
-                                            process=self.m0d_process, process_ids=fids,
-                                            check_proc_state=True)
-        assert_utils.assert_true(resp, f"Response: {resp} \nhctl status is not as expected")
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, f"Failure in observed during process restart/recovery")
         self.log.info("Step 2: m0d restarted and recovered successfully")
 
         self.log.info("Step 3: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
@@ -355,4 +339,4 @@ class TestSingleProcessRestart:
         self.log.info("Step 3: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
 
-        self.log.info("ENDED: Verify IOs after m0d restart using pkill")
+        self.log.info("ENDED: Verify bucket creation and IOs after m0d restart using pkill")

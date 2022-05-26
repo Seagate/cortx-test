@@ -143,16 +143,15 @@ class DTMRecoveryTestLib:
                               f" Please read log file {log_path}"])
 
     # pylint: disable-msg=too-many-locals
-    def process_restart(self, master_node, pod_prefix, container_prefix, process,
-                        process_ids: list = None, check_proc_state: bool = False,
-                        proc_state: str = const.DTM_RECOVERY_STATE):
+    def process_restart(self, master_node, health_obj, pod_prefix, container_prefix, process,
+                        check_proc_state: bool = False, proc_state: str = const.DTM_RECOVERY_STATE):
         """
         Restart specified Process of specific pod and container
         :param master_node: Master node object
+        :param health_obj: Health object of the master node
         :param pod_prefix: Pod Prefix
         :param container_prefix: Container Prefix
         :param process: Process to be restarted.
-        :param process_ids: List of Process IDs (Optional)
         :param check_proc_state: Flag to check process state
         :param proc_state: Expected state of the process
         """
@@ -163,11 +162,21 @@ class DTMRecoveryTestLib:
                                                           container_prefix=container_prefix)
         container = container_list[random.randint(0, len(container_list) - 1)]
         self.log.info("Container selected : %s", container)
+        self.log.info("Get process IDs of %s", process)
+        resp = self.get_process_ids(health_obj=health_obj, process=process)
+        if not resp[0]:
+            return resp[0]
+        process_ids = resp[1]
         self.log.info("Perform %s restart", process)
         resp = master_node.kill_process_in_container(pod_name=pod_selected,
                                                      container_name=container,
                                                      process_name=process)
         self.log.debug("Resp : %s", resp)
+
+        self.log.info("Polling hctl status to check if all services are online")
+        resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=300)
+        if not resp[0]:
+            return resp[0]
 
         if check_proc_state:
             self.log.info("Check process states")
@@ -175,13 +184,12 @@ class DTMRecoveryTestLib:
                                            container_name=container, process_ids=process_ids,
                                            status=proc_state)
             if not resp:
-                return False, "Failed during polling status of process"
+                self.log.error("Failed during polling status of process")
+                return False
 
             self.log.info("Process %s restarted successfully", process)
 
-        self.log.info("Polling hctl status to check if all services are online")
-        resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=300)
-        return resp
+        return True
 
     def get_process_state(self, master_node, pod_name, container_name, process_ids):
         """
@@ -244,3 +252,22 @@ class DTMRecoveryTestLib:
         self.log.info("State of process with process ids %s is %s", process_ids,
                       status)
         return resp
+
+    @staticmethod
+    def get_process_ids(health_obj, process):
+        """
+        Function to get process IDs of given process
+        :param health_obj: Health object of the master node
+        :param process: Name of the process
+        :return: bool, list
+        """
+        switcher = {
+            'm0d': 'ioservice',
+            'rgw': 'rgw_s3'
+        }
+        resp, fids = health_obj.hctl_status_get_svc_fids()
+        if not resp:
+            return resp, "Failed to get process IDs"
+        svc = switcher[process]
+        fids = fids[svc]
+        return True, fids
