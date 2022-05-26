@@ -25,6 +25,7 @@ export ADMIN_USR="${ADMIN_USR}"
 export ADMIN_PWD="${ADMIN_PWD}"
 export HOST_PASS="${HOST_PASS}"
 export Target_Node="${Target_Node}"
+export EXTERNAL_EXPOSURE_SERVICE="${EXTERNAL_EXPOSURE_SERVICE}"
 deactivate
 '''
 			}
@@ -55,7 +56,7 @@ deactivate
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/latest/results.xml, log/latest/results.html, *.png', followSymlinks: false
 			    junit allowEmptyResults: true, testResults: 'log/latest/results.xml'
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL.template"}', recipientProviders: [requestor()], subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: "${EMAIL_RECEPIENTS}"
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL.template"}', recipientProviders: [requestor()], subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: "${EMAIL_RECEPIENTS}"
 			}
 		}
 	}
