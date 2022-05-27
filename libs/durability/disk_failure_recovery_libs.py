@@ -150,7 +150,7 @@ class DiskFailureRecoveryLib:
                 if values['type'] == 'data_node':
                     hostname = str(values['hostname'].split('svc')[1]).replace('-', '', 1)
                     if hostname in worker_node.hostname:
-                        for cvg in values['storage']['cvg']:
+                        for cvg in values['cvg']:
                             return_dict[cvg['name']] = cvg['devices']
                         break
             return True, return_dict
