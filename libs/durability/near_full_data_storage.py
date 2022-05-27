@@ -98,7 +98,9 @@ class NearFullStorage:
         workload = [each * MB for each in workload]  # convert to bytes
         each_workload_byte = user_data_writes / len(workload)
         return_list = []
-        bucket_iter = iter(bucket_list)
+        if bucket_list:
+            bucket_iter = iter(bucket_list)
+        LOGGER.info("Perform Write operation for object size : %s",workload)
         for obj_size in workload:
             samples = int(each_workload_byte / obj_size)
             if samples > 0:
