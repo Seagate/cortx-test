@@ -95,7 +95,7 @@ class S3MultipartTestLib(Multipart):
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.create_multipart_upload.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -273,7 +273,7 @@ class S3MultipartTestLib(Multipart):
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.upload_parts_parallel.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error)
+            raise CTException(err.S3_CLIENT_ERROR, error) from error
 
     def upload_parts_sequential(self,
                                 upload_id: int = None,
