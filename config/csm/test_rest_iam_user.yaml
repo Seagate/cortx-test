@@ -112,4 +112,7 @@ test_42289:
   error_code: 4103
   message_id:
   message_index:
-
+test_42290:
+  error_code: 4111
+  message_id: "UnauthorizedError"
+  message_index: 0 

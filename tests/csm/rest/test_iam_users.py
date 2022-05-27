@@ -40,6 +40,9 @@ from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import s3_misc
+from config import CMN_CFG
+from commons.helpers.node_helper import Node
+from commons import constants as cons
 
 class TestIamUser():
     """
@@ -4989,7 +4992,6 @@ class TestIamUserRGW():
         resp_msg_index = test_cfg["message_index"]
         msg = resp_data[resp_msg_index]
         self.log.info("Fetching internal IAM User")
-        self.log.info("Fetching internal IAM User")
         resp_node = self.nd_obj.execute_cmd(cmd=common_cmd.K8S_GET_PODS,
                                             read_lines=False,
                                             exc=False)
@@ -5015,6 +5017,34 @@ class TestIamUserRGW():
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")  # TODO
             assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-42290')
+    def test_42290(self):
+        """
+        GET IAM user with invalid login
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_42290"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
+        self.log.info("Step 1: Send GET request with max_entries as 1 and invalid header")
+        resp = self.csm_obj.list_iam_users_rgw(max_entries=1, auth_header=True)
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.UNAUTHORIZED,
+                                                "Status code check failed")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], str(resp_error_code))
             assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(resp.json()["message"], msg)
         self.log.info("##### Test completed -  %s #####", test_case_name)

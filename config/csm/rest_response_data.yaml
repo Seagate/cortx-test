@@ -79,3 +79,6 @@
     - "Attempt to create existing user."
   EmailExists:
     - "Provided email address exists."
+4111:
+  UnauthorizedError:
+    - "Invalid authentication credentials for the target resource."

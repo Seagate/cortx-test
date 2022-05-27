@@ -21,7 +21,8 @@ from http import HTTPStatus
 from random import SystemRandom
 from string import Template
 from requests.models import Response
-
+import string
+import secrets
 import commons.errorcodes as err
 from commons.constants import Rest as const
 from commons.constants import S3_ENGINE_RGW
@@ -783,7 +784,7 @@ class RestIamUser(RestTestLib):
         return random_cap[:-1]
 
     @RestTestLib.authenticate_and_login
-    def list_iam_users_rgw(self, max_entries=None, marker=None):
+    def list_iam_users_rgw(self, max_entries=None, marker=None, auth_header=False):
         """
         This function will list all IAM users.
         :param max_entries: Number of users to be returned
@@ -795,9 +796,12 @@ class RestIamUser(RestTestLib):
         self.log.debug("Listing of iam users")
         endpoint = self.config["iam_users_endpoint"]
         self.log.debug("Endpoint for iam user is %s", endpoint)
-
-        self.headers.update(self.config["Login_headers"])
-
+        if auth_header:
+            self.headers['Authorization'] = ''.join(secrets.choice(string.digits +
+                                            string.ascii_lowercase) for i in range(15))
+        else:
+            self.headers.update(self.config["Login_headers"])
+     
         # Fetching api response
         response = self.restapi.rest_call("get", endpoint=endpoint, headers=self.headers,
                                           params={"max_entries": max_entries, "marker": marker})
