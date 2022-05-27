@@ -48,7 +48,6 @@ from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -98,7 +97,6 @@ class TestMultiPodFailure:
         cls.ip_dict = {}
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
-        cls.motr_obj = MotrCoreK8s()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -190,7 +188,7 @@ class TestMultiPodFailure:
             for node_name in self.node_name_list:
                 LOGGER.info("Cleanup: Power on the %s down node.", node_name)
                 resp = self.ha_obj.host_power_on(host=node_name)
-                assert_utils.assert_true(resp, "Host f{node_name} is not powered on")
+                assert_utils.assert_true(resp, f"Host {node_name} is not powered on")
                 LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
                             " node", node_name, HA_CFG["common_params"]["pod_joinback_time"])
                 time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
@@ -430,7 +428,7 @@ class TestMultiPodFailure:
         while self.kvalue > 0:
             LOGGER.info("Step 2: Get the RC node pod details.")
             pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-            rc_node = self.motr_obj.get_primary_cortx_node()
+            rc_node = self.ha_obj.get_rc_node(self.node_master_list[0])
             rc_info = \
                 self.node_master_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
             self.node_name = list(rc_info.values())[0]

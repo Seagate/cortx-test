@@ -1,7 +1,4 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-#
-# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -19,7 +16,6 @@
 #
 """Test library for IAM user related operations."""
 import json
-import random
 import time
 from http import HTTPStatus
 from random import SystemRandom
@@ -36,6 +32,7 @@ from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 
+# pylint: disable-msg=too-many-public-methods
 class RestIamUser(RestTestLib):
     """RestIamUser contains all the Rest API calls for iam user operations"""
 
@@ -169,16 +166,16 @@ class RestIamUser(RestTestLib):
         return response.status_code
 
     @RestTestLib.authenticate_and_login
-    def list_iam_users(self):
+    def list_iam_users(self, max_entries=None, marker=None):
         """
         This function will list all IAM users.
+        :param max_entries: Number of users to be returned
+        :param marker: Name of user from which specified number of users to be returned
         :return: response
         :rtype: response object
         """
         if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            response = Response()
-            response.status_code = 200
-            response._content = b'{"message":"bypassed"}'
+            response = self.list_iam_users_rgw(max_entries=max_entries, marker=marker)
         else:
             self.log.debug("Listing of iam users")
             endpoint = self.config["IAM_users_endpoint"]
@@ -191,6 +188,9 @@ class RestIamUser(RestTestLib):
                 "get", endpoint=endpoint, headers=self.headers)
         return response
 
+    # pylint: disable-msg=too-many-branches
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-return-statements
     def verify_unauthorized_access_to_csm_user_api(self):
         """
         Verifying that IAM login to CSM fails and unauthorised access to CSM
@@ -473,7 +473,7 @@ class RestIamUser(RestTestLib):
             del payload["uid"]
             del payload["display_name"]
             optional_payload = payload.copy()
-            ran_sel = random.sample(range(0, len(optional_payload)),
+            ran_sel = self.cryptogen.sample(list(range(0, len(optional_payload))),
                                     self.cryptogen.randrange(0, len(optional_payload)))
             for i, (k, _) in enumerate(payload.items()):
                 if i not in ran_sel:
@@ -520,7 +520,7 @@ class RestIamUser(RestTestLib):
         :return: response
         """
         self.log.info("Creating IAM user request....")
-        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
+        endpoint = self.config["s3_iam_user_endpoint"]
         response = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
                                           headers=self.headers)
         self.log.info("IAM user request successfully sent...")
@@ -556,6 +556,7 @@ class RestIamUser(RestTestLib):
         self.log.info("Removing user capabilities from user request successfully sent...")
         return response
 
+    @RestTestLib.authenticate_and_login
     def delete_iam_user_rgw(self, uid, header, purge_data=False):
         """
         Delete IAM user
@@ -574,6 +575,7 @@ class RestIamUser(RestTestLib):
         self.log.info("Delete IAM user request successfully sent...")
         return response
 
+    @RestTestLib.authenticate_and_login
     def get_iam_user_rgw(self, uid, header):
         """
         Get IAM user
@@ -663,13 +665,18 @@ class RestIamUser(RestTestLib):
         self.log.info("Remove key from IAM user request successfully sent...")
         return response
 
-    def verify_create_iam_user_rgw(
-            self, user_type="valid", expected_response=HTTPStatus.CREATED, verify_response=False):
+    def verify_create_iam_user_rgw(self, user_type="valid", expected_response=HTTPStatus.CREATED,
+                                   verify_response=False, login_as="csm_admin_user"):
         """
         creates and verify status code and response for iam user request.
+        :param user_type: user type
+        :param expected_response: expected response from test
+        :param verify_response: if response needs to be verified
+        :param login_as: login user as admin, manage or monitor
+        :return: boolean, response
         """
         payload = self.iam_user_payload_rgw(user_type=user_type)
-        response = self.create_iam_user_rgw(payload)
+        response = self.create_iam_user_rgw(payload, login_as=login_as)
         resp = response.json()
         if response.status_code == expected_response:
             self.log.info("Status code check passed.")
@@ -693,7 +700,7 @@ class RestIamUser(RestTestLib):
         return result, resp
 
     @RestTestLib.authenticate_and_login
-    def modify_iam_user_rgw(self, uid, payload: dict):
+    def modify_iam_user_rgw(self, uid, payload: dict, auth_header=True):
         """
         Modify IAM User parameters.
         :param uid: userid
@@ -702,8 +709,12 @@ class RestIamUser(RestTestLib):
         """
         self.log.info("Modifying IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
+        if auth_header:
+            headers = self.headers
+        else:
+            headers = None
         response = self.restapi.rest_call("patch", endpoint=endpoint, json_dict=payload,
-                                          headers=self.headers)
+                                          headers=headers)
         self.log.info("IAM user request successfully sent...")
         return response
 
@@ -722,7 +733,7 @@ class RestIamUser(RestTestLib):
         del payload["tenant"]
         del payload["user_caps"]
         optional_payload = payload.copy()
-        ran_sel = random.sample(range(0, len(optional_payload)),
+        ran_sel = self.cryptogen.sample(list(range(0, len(optional_payload))),
                                     self.cryptogen.randrange(0, len(optional_payload)))
         for i, (k, _) in enumerate(payload.items()):
             if i not in ran_sel:
@@ -756,14 +767,13 @@ class RestIamUser(RestTestLib):
                 diff_items.append(i)
         return diff_items
 
-    @staticmethod
-    def get_random_caps():
+    def get_random_caps(self):
         """
         Get random capabilities
         """
         cap_keys = ['usage', 'users', 'buckets', 'info', 'metadata', 'zone']
         cap_values = ['read', 'write', 'read,write', '*']
-        random_index = random.sample(range(1, len(cap_keys)),
+        random_index = self.cryptogen.sample(list(range(1, len(cap_keys))),
                                      SystemRandom().randrange(1, len(cap_keys)))
         random_cap = ""
         for index in random_index:
@@ -771,3 +781,24 @@ class RestIamUser(RestTestLib):
             value = cap_values[value_index]
             random_cap = random_cap + cap_keys[index] + "=" + value + ";"
         return random_cap[:-1]
+
+    @RestTestLib.authenticate_and_login
+    def list_iam_users_rgw(self, max_entries=None, marker=None):
+        """
+        This function will list all IAM users.
+        :param max_entries: Number of users to be returned
+        :param marker: Name of user from which specified number of users to be returned
+        :return: response
+        :rtype: response object
+        """
+
+        self.log.debug("Listing of iam users")
+        endpoint = self.config["iam_users_endpoint"]
+        self.log.debug("Endpoint for iam user is %s", endpoint)
+
+        self.headers.update(self.config["Login_headers"])
+
+        # Fetching api response
+        response = self.restapi.rest_call("get", endpoint=endpoint, headers=self.headers,
+                                          params={"max_entries": max_entries, "marker": marker})
+        return response

@@ -9,6 +9,7 @@ common_params:
   pod_eviction_time: 360
   pod_joinback_time: 180
   1sec_delay: 1
+  2sec_delay: 2
   5sec_delay: 5
   10sec_delay: 10
   20sec_delay: 20
@@ -23,6 +24,7 @@ s3_operation_data:
   no_csm_users: 10
   no_buckets_per_users: 50
   obj_per_bucket: 200
+  iam_users: 300
 
 5gb_mpu_data:
   file_size: 4800

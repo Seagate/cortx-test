@@ -16,11 +16,11 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """All the constants are alphabetically arranged."""
-CREATE_FILE = "dd if={} of={} bs={} count={}"
+CREATE_FILE = "dd if={} of={} bs={} count={} iflag=fullblock"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
 GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
 LS_CMD = "ls {}"
-LS_LH_CMD = "ls -lhR {}"
+LS_LH_CMD = "ls -lhR $dir"
 LST_PRVSN_DIR = "ls /opt/seagate/"
 LST_RPM_CMD = "rpm -qa | grep eos-prvsnr"
 MEM_USAGE_CMD = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
@@ -33,7 +33,7 @@ HA_COPY_CMD = "kubectl cp {} {}:{}"
 HA_POD_RUN_SCRIPT = 'kubectl exec {} -- {} {}'
 HA_LOG_PVC = "ls /mnt/fs-local-volume/local-path-provisioner/"
 HA_CONSUL_STR = 'consul kv get ' \
-                '-http-addr=consul-server-0.consul-server.default.svc.cluster.local:8500 ' \
+                '-http-addr=consul-server:8500 ' \
                 '--recurse "cortx>ha>v1>cluster_stop_key"'
 MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"
@@ -72,6 +72,7 @@ CMD_TOUCH_FILE = "touch {}"
 LSSCSI_CMD = "lsscsi > {}"
 LINUX_STRING_CMD = "sed '/{}/!d' {} > {}"
 LINUX_REPLACE_STRING = "sed -i 's/{}/{}/g' {}"
+LINUX_EXPORT = "export {}={}"
 LINE_COUNT_CMD = "cat {} | wc -l"
 DISCONNECT_OS_DRIVE_CMD = "echo 1 > /sys/block/{}/device/delete"
 CONNECT_OS_DRIVE_CMD = 'echo "- - -" > /sys/class/scsi_host/host{}/scan'
@@ -112,8 +113,7 @@ CMD_SHOW_VOLUMES = "show volumes"
 CMD_CLEAR_METADATA = "clear disk-metadata {}"
 CHECK_SSPL_LOG_FILE = "tail -f /var/log/cortx/sspl/sspl.log > '{}' 2>&1 &"
 SSPL_SERVICE_CMD = "journalctl -xefu sspl-ll.service"
-SET_DRIVE_STATUS_CMD = "set expander-phy encl {} controller {} type drive phy" \
-                       " {} {}"
+SET_DRIVE_STATUS_CMD = "set expander-phy encl {} controller {} type drive phy {} {}"
 ENCRYPT_PASSWORD_CMD = "python3 encryptor.py encrypt {} {} storage_enclosure"
 GET_CLUSTER_ID_CMD = "salt-call grains.get cluster_id"
 COPY_FILE_CMD = "cp -rfv {} {}"
@@ -130,7 +130,7 @@ SEL_INFO_CMD = "ipmitool sel info"
 SEL_LIST_CMD = "ipmitool sel list"
 IEM_LOGGER_CMD = "logger -i -p local3.err {}"
 INSTALL_SCREEN_CMD = "yum -y install screen"
-INSTALL_SSH_PASS_CMD = "yum -y install sshpass"
+INSTALL_SSH_PASS_CMD = "yum -y install sshpass"  # nosec
 SCREEN_CMD = "screen -d -m -L -S 'screen_RMQ' {}"
 SSH_CMD = "sshpass -p {} ssh -o 'StrictHostKeyChecking no' {}@{} {}"
 RESOLVE_FAN_FAULT = "ipmitool event {} {} deassert"
@@ -190,14 +190,14 @@ CMD_LOGOUT_CORTXCLI = "exit"
 CMD_CREATE_CSM_USER = "users create"
 CMD_DELETE_CSM_USER = "users delete"
 CMD_UPDATE_ROLE = "users update"
-CMD_RESET_PWD = "users password"
+CMD_RESET_PWD = "users password"  # nosec
 CMD_LIST_CSM_USERS = "users show"
 CMD_HELP_OPTION = "-h"
 CMD_S3ACC = "s3accounts"
 CMD_CREATE_S3ACC = "s3accounts create"
 CMD_SHOW_S3ACC = "s3accounts show"
 CMD_DELETE_S3ACC = "s3accounts delete {}"
-CMD_RESET_S3ACC_PWD = "s3accounts password {}"
+CMD_RESET_S3ACC_PWD = "s3accounts password {}"  # nosec
 CMD_S3BKT_HELP = "s3buckets -h"
 CMD_CREATE_BUCKET = "s3buckets create {}"
 CMD_SHOW_BUCKETS = "s3buckets show"
@@ -224,7 +224,7 @@ CMD_SHOW_ACCESS_KEY = "s3accesskeys show -iu"
 CMD_UPDATE_ACCESS_KEY = "s3accesskeys update"
 CMD_HEALTH_SHOW = "health show \"{}\""
 CMD_HEALTH_ID = "health show \"{}\" -i \"{}\""
-CMD_RESET_IAM_PWD = "s3iamusers password {}"
+CMD_RESET_IAM_PWD = "s3iamusers password {}"  # nosec
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
@@ -264,6 +264,7 @@ CMD_ISO_VER = "provisioner get_iso_version"
 CMD_SW_UP = "provisioner sw_upgrade --offline"
 CMD_SPACE_CHK = "df -h"
 CMD_FIND_FILE = "find /etc/cortx/ -name *.gz"
+SET_NAMESPACE = "kubectl config set-context --current --namespace={}"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
@@ -271,7 +272,8 @@ CMD_ADD_REPO_3RDPARTY = "yum-config-manager --add-repo \"{0}/3rd_party/\""
 CMD_ADD_REPO_CORTXISO = "yum-config-manager --add-repo \"{0}/cortx_iso/\""
 CMD_INSTALL_JAVA = "yum install --nogpgcheck -y java-1.8.0-openjdk-headless"
 CMD_INSTALL_CORTX_PRE_REQ = "yum install --nogpgcheck -y python3 cortx-prereq sshpass"
-CMD_INSTALL_PRVSNR_PRE_REQ = "yum install --nogpgcheck -y python36-m2crypto salt salt-master salt-minion"
+CMD_INSTALL_PRVSNR_PRE_REQ = "yum install --nogpgcheck -y python36-m2crypto salt salt-master " \
+                             "salt-minion"
 CMD_INSTALL_PRVSNR_API = "yum install --nogpgcheck -y python36-cortx-prvsnr"
 CMD_RM_3RD_PARTY_REPO = "rm -rf /etc/yum.repos.d/*3rd_party*.repo"
 CMD_RM_CORTXISO_REPO = "rm -rf /etc/yum.repos.d/*cortx_iso*.repo"
@@ -334,9 +336,11 @@ CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS = "aws s3api list-objects-v2 --bucket {0}"
 CMD_AWSCLI_LIST_OBJECTS_V2_OPTIONS_BUCKETS = "aws s3api list-objects-v2 --bucket {0} {1}"
 
 # jCloud commands.
-CMD_KEYTOOL1 = "`keytool -delete -alias s3server -keystore /etc/pki/java/cacerts -storepass changeit >/dev/null`"
+CMD_KEYTOOL1 = "`keytool -delete -alias s3server -keystore /etc/pki/java/cacerts -storepass " \
+               "changeit >/dev/null`"
 # ca.crt path.
-CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {} -keystore /etc/pki/java/cacerts -storepass changeit`"
+CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {} -keystore " \
+               "/etc/pki/java/cacerts -storepass changeit`"
 
 # cortx_setup commands
 CMD_RESOURCE_DISCOVER = "cortx_setup resource discover"
@@ -357,7 +361,7 @@ CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
 CMD_VM_REVERT = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"revert_vm_snap\" " \
                 "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_REFRESH = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"refresh_vm\" " \
-                "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+                 "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 
 CPU_COUNT = "cat /sys/devices/system/cpu/online"
 CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
@@ -382,12 +386,17 @@ CMD_PDU_POWER_CYCLE = "expect scripts/expect_utils/expect_power_cycle.exp {0} {1
 # Ldap commands to fetch user, password.
 LDAP_USER = "s3confstore properties:///opt/seagate/cortx/auth/resources/authserver.properties " \
             "getkey --key ldapLoginDN"
-LDAP_PWD = "s3cipher decrypt --data $(s3confstore properties:///opt/seagate/cortx/auth/resources/" \
-           "authserver.properties getkey --key ldapLoginPW) --key $(s3cipher generate_key" \
-           " --const_key cortx)"
+LDAP_PWD = ("s3cipher decrypt --data "  # nosec
+            "$(s3confstore properties:///opt/seagate/cortx/auth/resources/"
+            "authserver.properties getkey --key ldapLoginPW) --key $(s3cipher generate_key"
+            " --const_key cortx)")
 
 # Motr commands
 M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
+M0CP_U = "m0cp -G -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} -O {} -u {}"
+# m0cp -G -l 192.168.59.17@tcp:12345:34:101 -H 192.168.59.17@tcp:12345:34:1 -p 0x7000000000000001:0
+# -P 0x7200000000000000:0 -o 1048580 /var/motr/update_file -s 4096 -c 8 -L 3 -u -O 4096
+
 M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"
 M0KV = "m0kv -l {} -h {} -f {} -p {} {}"
@@ -497,8 +506,10 @@ K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
 GET_STATS = "consul kv get -recurse stats"
 GET_BYTECOUNT = "consul kv get -recurse bytecount"
+
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
+KUBECTL_GET_DEPLOYMENT = "kubectl get deployment"
 KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
 KUBECTL_GET_POD_IPS = 'kubectl get pods --no-headers -o ' \
                       'custom-columns=":metadata.name,:.status.podIP"'
@@ -519,11 +530,19 @@ KUBECTL_GET_RECENT_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:m
 
 KUBECTL_GET_RPM = "kubectl exec -it {} -c {} -- rpm -qa|grep -i {}"
 KUBECTL_SET_CONTEXT = "kubectl config set-context --current --namespace={}"
+KUBECTL_GET_TAINT_NODES = "kubectl get nodes -o custom-columns=" \
+                          "NAME:.metadata.name,TAINTS:.spec.taints --no-headers > {}"
+KUBECTL_GET_ALL = "kubectl get all -A >> {}"
+KUBECTL_GET_SCT = "kubectl get {} -A >> {}"
+KUBECTL_GET_PVC = "kubectl get pvc -A >> {}"
+KUBECTL_GET_PV = "kubectl get pv >> {}"
 GET_IMAGE_VERSION = "kubectl describe po {} | grep Image:"
 K8S_CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' "\
                       "-p='[{{\"op\":\"replace\", \"path\":\"/spec/template/spec/nodeSelector\", "\
                       "\"value\":{{\"kubernetes.io/hostname\":{}}} }}]'"
-
+KUBECTL_CREATE_NAMESPACE = "kubectl create ns {}"
+KUBECTL_GET_NAMESPACE = "kubectl get ns"
+KUBECTL_DEL_NAMESPACE = "kubectl delete ns {}"
 
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
@@ -540,9 +559,9 @@ CLSTR_START_CMD = "cd {}; ./start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; ./shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; ./status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
-PRE_REQ_CMD = "cd {}; ./prereq-deploy-cortx-cloud.sh -d {}"
-DEPLOY_CLUSTER_CMD = "cd {}; ./deploy-cortx-cloud.sh > {}"
-DESTROY_CLUSTER_CMD = "cd {}; ./destroy-cortx-cloud.sh --force"
+PRE_REQ_CMD = "cd $dir; ./prereq-deploy-cortx-cloud.sh -d $disk"
+DEPLOY_CLUSTER_CMD = "cd $path; ./deploy-cortx-cloud.sh > $log"
+DESTROY_CLUSTER_CMD = "cd $dir; ./destroy-cortx-cloud.sh --force"
 UPGRADE_CLUSTER_DESTRUPTIVE_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
 UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
 UPGRADE_COLD_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -cold"
@@ -557,10 +576,11 @@ CMD_GET_NODE = "kubectl get nodes"
 # LC deployment
 CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
 CMD_MOUNT_EXT4 = "mount -t ext4 {} {}"
-CMD_CURL = "curl -o {} {}"
+CMD_CURL = "curl -o $file $url"
 
 # Git commands
 CMD_GIT_CLONE = "git clone {}"
+CMD_GIT_CLONE_TEMPLATE = "git clone"
 CMD_GIT_CLONE_D = "git clone {} {}"
 CMD_GIT_CHECKOUT = "git checkout {}"
 
@@ -591,7 +611,7 @@ FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
 
 # LC Support Bundle
 SUPPORT_BUNDLE_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle generate " \
-              "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
+                    "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
 SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle get_status -b {}"
 
 # SNS repair
@@ -599,3 +619,7 @@ SNS_REPAIR_CMD = "hctl repair {}"
 CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json '{\"node\" : \"node_val\", " \
                                "\"source_type\" : \"drive\",  \"device\" : \"device_val\", " \
                                "\"state\" : \"status_val\"}'"
+
+# Procpath Collection
+PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'); procpath " \
+           "record -i 45 -d {} -p $pid"

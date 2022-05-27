@@ -40,7 +40,6 @@ if sys.version >= '3.7':
     # Use dataclass decorator if running Python 3.7 or newer.
     from dataclasses import dataclass
 
-
     @dataclass
     class CTError:
         """Provides an error data object to contain the error code and description."""
@@ -56,9 +55,14 @@ else:
             self.code = code
             self.desc = desc
 
+        def __del__(self):
+            """Delete and cleanup objects"""
+            del self.code
+            del self.desc
+
         def __str__(self):
             """String representation for CTError class."""
-            return "{}{}".format(self.__class__.__name__, self.__dict__)
+            return f"{self.__class__.__name__}{self.__dict__}"
 
 
 def get_error(info):
@@ -95,20 +99,18 @@ def validate_ct_errors(code=None) -> bool:
             if not isinstance(vali, CTError):
                 continue
             if vali.desc is None or vali.desc == '':
-                raise Exception("{}({}): Error description cannot be empty!"
-                                .format(i, vali.code))
+                raise Exception(f"{i}({vali.code}): Error description cannot be empty!")
             for j, valj in glob.items():
                 if i == j:
                     continue
                 if isinstance(valj, CTError) and valj.code == vali.code:
-                    raise Exception("{} is duplicate error code for {} and {}"
-                                    .format(valj.code, i, j))
+                    raise Exception(f"{valj.code} is duplicate error code for {i} and {j}")
     else:
         for _, vali in glob.items():
             if isinstance(vali, CTError) and vali.code == code:
                 return False
         return True
-
+    return None
 
 def error_handler(
         exception_detail: Any,
@@ -130,7 +132,7 @@ def error_handler(
         assert isinstance(
             error_desc, str), 'failure routine parameter setup msg must be str'
     except AssertionError as a_err:
-        raise Exception(str(a_err))
+        raise Exception(str(a_err)) from a_err
     if exception_detail.ct_error.code:
         LOGGER.debug("Test FAILURE")
         # Mark test error in result

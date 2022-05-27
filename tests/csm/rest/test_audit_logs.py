@@ -56,6 +56,7 @@ from libs.s3.s3_common_test_lib import create_s3_acc
 from libs.s3.s3_common_test_lib import perform_s3_io
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
+# pylint: disable-msg=too-many-instance-attributes
 # pylint: disable-msg=too-many-public-methods
 class TestAuditLogs:
     """Audit logs Testsuite"""
@@ -1007,10 +1008,10 @@ class TestAuditLogs:
         passwd = CMN_CFG["nodes"][0]["password"]
         status, result = run_remote_cmd(commands.SYSTEM_CTL_STOP_CMD.format(
             "rsyslog"), hostname=host, username=uname, password=passwd, read_lines=True)
-        assert status, "Command failed with error\n{}".format(result)
+        assert status, f"Command failed with error\n{result}"
         status, result = run_remote_cmd(commands.SYSTEM_CTL_STOP_CMD.format(
             "elasticsearch"), hostname=host, username=uname, password=passwd, read_lines=True)
-        assert status, "Command failed with error\n{}".format(result)
+        assert status, f"Command failed with error\n{result}"
         self.log.info("Step 2: Create IAM user, manage user and monitor user")
         self.log.info("Creating IAM user")
         status, response = self.rest_iam_user.create_and_verify_iam_user_response_code()
@@ -1073,12 +1074,12 @@ class TestAuditLogs:
             "Step 3: Bring back rsyslog and elastic search services using systemctl start command.")
         status, result = run_remote_cmd(commands.SYSTEM_CTL_START_CMD.format(
             "rsyslog"), hostname=host, username=uname, password=passwd, read_lines=True)
-        assert status, "Command failed with error\n{}".format(result)
+        assert status, f"Command failed with error\n{result}"
         time.sleep(5)
         self.log.info("Waiting for sometime for rsyslog service to start")
         status, result = run_remote_cmd(commands.SYSTEM_CTL_START_CMD.format(
             "elasticsearch"), hostname=host, username=uname, password=passwd, read_lines=True)
-        assert status, "Command failed with error\n{}".format(result)
+        assert status, f"Command failed with error\n{result}"
         time.sleep(5)
         self.log.info("Waiting for sometime for elasticsearch service to start")
         self.log.info("Step 4: Check hctl status")

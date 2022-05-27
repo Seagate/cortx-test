@@ -21,7 +21,6 @@ pipeline {
 		Enclosure_Type = '5U84'
 		DB_Update = false
 		Current_TP = "None"
-		Sanity_Failed = true
     }
     stages {
 		stage('CODE_CHECKOUT') {
@@ -99,12 +98,7 @@ IFS=$OLDIFS
 deactivate
 '''	)
 				    }
-				    if ( status != 0 ) {
-                        currentBuild.result = 'FAILURE'
-                        env.Health = 'Not OK'
-                        error('Aborted Sanity due to bad health of deployment')
-                    }
-                    if ( fileExists('log/latest/failed_tests.log') ) {
+				    if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def lines = failures.readLines()
                         if (lines) {
@@ -113,6 +107,12 @@ deactivate
                             currentBuild.result = 'FAILURE'
                         }
                     }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        env.Sanity_Failed = true
+                        error('Aborted Sanity due to bad health of deployment')
+                    }
 				}
 			}
 		}
@@ -120,11 +120,12 @@ deactivate
 			steps {
 				script {
 			        env.Health = 'OK'
-
+                    env.Regression_Failed = false
 				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
+set -e
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
 IFS=','
@@ -145,9 +146,18 @@ IFS=$OLDIFS
 deactivate
 ''' )
 				    }
-				    if ( status != 0 ) {
+				    if ( fileExists('log/latest/failed_tests.log') ) {
+                        def failures = readFile 'log/latest/failed_tests.log'
+                        def rlines = failures.readLines()
+                        if (rlines) {
+                            echo "Regression Test Failed"
+                            env.Regression_Failed = true
+                        }
+                    }
+                    if ( status != 0 ) {
                         currentBuild.result = 'FAILURE'
                         env.Health = 'Not OK'
+                        env.Regression_Failed = true
                         error('Aborted Regression due to bad health of deployment')
                     }
 				}
@@ -157,11 +167,12 @@ deactivate
 			steps {
 				script {
 			        env.Health = 'OK'
-
+                    env.Io_Path_Failed = false
 				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
+set -e
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
 IFS=','
@@ -182,9 +193,18 @@ IFS=$OLDIFS
 deactivate
 ''' )
 				    }
+				    if ( fileExists('log/latest/failed_tests.log') ) {
+                        def failures = readFile 'log/latest/failed_tests.log'
+                        def ilines = failures.readLines()
+                        if (ilines) {
+                            echo "IO_PATH_TEST Test Failed"
+                            env.Io_Path_Failed = true
+                        }
+                    }
 				    if ( status != 0 ) {
                         currentBuild.result = 'FAILURE'
                         env.Health = 'Not OK'
+                        env.Io_Path_Failed = true
                         error('Aborted IO Path due to bad health of deployment')
                     }
 				}
@@ -194,11 +214,12 @@ deactivate
 			steps {
 				script {
 			        env.Health = 'OK'
-
+                    env.Failure_Domain_Failed = false
 				withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
+set -e
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
 IFS=','
@@ -219,9 +240,18 @@ IFS=$OLDIFS
 deactivate
 ''' )
 				    }
+				    if ( fileExists('log/latest/failed_tests.log') ) {
+                        def failures = readFile 'log/latest/failed_tests.log'
+                        def flines = failures.readLines()
+                        if (flines) {
+                            echo "FAILURE DOMAIN Test Failed"
+                            env.Failure_Domain_Failed = true
+                        }
+                    }
 				    if ( status != 0 ) {
                         currentBuild.result = 'FAILURE'
                         env.Health = 'Not OK'
+                        env.Failure_Domain_Failed = true
                         error('Aborted Failure Domain Path due to bad health of deployment')
                     }
 				}
@@ -232,6 +262,10 @@ deactivate
 		always {
 		    junit allowEmptyResults: true, testResults: 'log/*report.xml'
 		    script {
+		          env.Regression_overall_failed = false
+		          if ( env.Regression_Failed != false || env.Io_Path_Failed != false || env.Failure_Domain_Failed != false ) {
+                     env.Regression_overall_failed = true
+                  }
         		  if ( fileExists('cloned_tp_info.csv') ) {
             		  def records = readCSV file: 'cloned_tp_info.csv'
             		  env.Current_TP = records[0][0]
@@ -246,16 +280,20 @@ deactivate
 }
                   if ( fileExists('total_count.csv')) {
                       def testcount = readCSV file: 'total_count.csv'
-                      env.totalcount = testcount[0][0]
-                      env.passcount = testcount[0][1]
-                      env.failcount = testcount[0][2]
-                      env.skipcount = testcount[0][3]
-                      env.todocount = testcount[0][4]
+                      testcount.with {
+                          env.totalcount = testcount[0][0]
+                          env.passcount = testcount[0][1]
+                          env.failcount = testcount[0][2]
+                          env.skipcount = testcount[0][3]
+                          env.todocount = testcount[0][4]
+                          env.abortcount = testcount[0][5]
+                      }
                       echo "Total : ${totalcount}"
                       echo "Pass : ${passcount}"
                       echo "Fail : ${failcount}"
                       echo "Skip : ${skipcount}"
                       echo "Todo : ${todocount}"
+                      echo "Aborted : ${abortcount}"
  }
         		  if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
         		  try {
@@ -278,7 +316,7 @@ deactivate
 		     }
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5_v2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}
 	}

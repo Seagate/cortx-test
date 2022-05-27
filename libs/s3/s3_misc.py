@@ -163,6 +163,31 @@ def delete_objects_bucket(bucket_name, access_key: str, secret_key: str, **kwarg
     LOGGER.debug("Verified bucket is deleted.")
     return not result
 
+def delete_object(bucket_name, obj_name, access_key: str, secret_key: str, **kwargs):
+    """
+    Deleting Object.
+    :param bucket_name: Name of the bucket.
+    :param obj_name: Name of object.
+    :return: response.
+    """
+    LOGGER.debug("BucketName: %s, ObjectName: %s", bucket_name, obj_name)
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    LOGGER.debug("S3 Endpoint : %s", endpoint)
+    region = S3_CFG["region"]
+    LOGGER.debug("Region : %s", region)
+    s3_resource = boto3.resource('s3', verify=False,
+                                 endpoint_url=endpoint,
+                                 aws_access_key_id=access_key,
+                                 aws_secret_access_key=secret_key,
+                                 region_name=region,
+                                 **kwargs)
+    LOGGER.debug("S3 boto resource created")
+    resp_obj = s3_resource.Object(bucket_name, obj_name)
+    response = resp_obj.delete()
+    LOGGER.debug(response)
+    LOGGER.info("Object Deleted Successfully")
 
 def create_put_objects(object_name: str, bucket_name: str,
                        access_key: str, secret_key: str, object_size:int=10, **kwargs):
@@ -205,7 +230,6 @@ def create_put_objects(object_name: str, bucket_name: str,
             break
     del s3_resource
     system_utils.remove_file(file_path)
-
     LOGGER.debug("Verified that Object: %s is present in bucket: %s", object_name, bucket_name)
     return result
 
@@ -231,5 +255,57 @@ def delete_object(obj_name, bucket_name, access_key: str, secret_key: str, **kwa
 
     LOGGER.debug("Delete object : %s in bucket: %s", obj_name, bucket_name)
     s3_resource.Object(bucket_name, obj_name).delete()
+    result = False
+    for my_bucket_object in s3_resource.Bucket(bucket_name).objects.all():
+        if my_bucket_object.key != obj_name:
+            result = True
+            break
+    if result is True:
+        LOGGER.debug("Verified that Object: %s is deleted", obj_name)
+    else:
+        LOGGER.debug("Object %s is not deleted", obj_name)
     del s3_resource
     return True
+
+def get_object_size(bucket_name, access_key: str, secret_key: str, **kwargs):
+    """
+    Function to get object name and size from aws
+    """
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    LOGGER.debug("S3 Endpoint : %s", endpoint)
+
+    region = S3_CFG["region"]
+    LOGGER.debug("Region : %s", region)
+
+    s3_resource = boto3.resource('s3', verify=False,
+                        endpoint_url=endpoint,
+                        aws_access_key_id=access_key,
+                        aws_secret_access_key=secret_key,
+                        region_name=region,
+                        **kwargs)
+    LOGGER.debug("S3 boto resource created")
+    objs = s3_resource.Bucket(bucket_name).objects.all()
+    return_dict = {}
+    for obj in objs:
+        return_dict.update({obj.key:obj.size})
+    return return_dict
+
+def get_objects_size_bucket(bucket_name, access_key: str, secret_key: str, **kwargs):
+    """
+    Function to get total number of objects and total size from aws
+    """
+    resp = get_object_size(bucket_name, access_key, secret_key, **kwargs)
+    return len(resp), sum(resp.values())
+
+def get_objects_list(bucket_name, access_key: str, secret_key: str, **kwargs):
+    """
+    Function to get list of objects created
+    """
+    resp = get_object_size(bucket_name, access_key, secret_key, **kwargs)
+    obj_lst = []
+    for key, value in resp.items():
+        obj_lst.append(key)
+        LOGGER.debug("values are: %s", value)
+    return obj_lst

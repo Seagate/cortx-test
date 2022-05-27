@@ -24,13 +24,18 @@ Test class that contains MOTR K8s tests.
 
 import os
 import csv
+import time
+import shutil
+import uuid
 import logging
+import multiprocessing
 from random import SystemRandom
 import pytest
 from commons.utils import assert_utils
 from commons.utils import config_utils
 from commons import constants as common_const
-from libs.motr import TEMP_PATH, BSIZE_LAYOUT_MAP
+from libs.motr import TEMP_PATH
+from libs.motr.layouts import BSIZE_LAYOUT_MAP
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 logger = logging.getLogger(__name__)
@@ -66,38 +71,6 @@ class TestExecuteK8Sanity:
         """Teardown of Node object"""
         del self.motr_obj
 
-    def update_m0crate_config(self, config_file, node):
-        """
-        This will modify the m0crate workload config yaml with the node details
-        param: confile_file: Path of m0crate workload config yaml
-        param: node: Cortx node on which m0crate utility to be executed
-        """
-        m0cfg = config_utils.read_yaml(config_file)[1]
-        node_enpts = self.motr_obj.get_cortx_node_endpoints(node)
-        # modify m0cfg and write back to file
-        m0cfg['MOTR_CONFIG']['MOTR_HA_ADDR'] = node_enpts['hax_ep']
-        m0cfg['MOTR_CONFIG']['PROF'] = self.motr_obj.profile_fid
-        m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts['m0client'][0]['fid']
-        m0cfg['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = node_enpts['m0client'][0]['ep']
-        b_size = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
-        source_file = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['SOURCE_FILE']
-        file_size = source_file.split('/')[-1]
-        count = self.motr_obj.byte_conversion(file_size) // self.motr_obj.byte_conversion(b_size)
-        self.motr_obj.dd_cmd(b_size.upper(), str(count), source_file, node)
-        config_utils.write_yaml(config_file, m0cfg, backup=False, sort_keys=False)
-
-    def test_motr_k8s_lib(self):
-        """
-        Sample test
-        """
-        # TODO: This a sample test for the usage, need to delete it later
-        logger.info(self.motr_obj.get_node_pod_dict())
-        logger.info(self.motr_obj.profile_fid)
-        logger.info(self.motr_obj.node_dict)
-        logger.info(self.motr_obj.cortx_node_list)
-        logger.info(self.motr_obj.get_primary_cortx_node())
-        logger.info(self.motr_obj.get_cortx_node_endpoints())
-
     @pytest.mark.tags("TEST-14925")
     @pytest.mark.motr_sanity
     def test_m0crate_utility(self, param_loop):
@@ -124,8 +97,8 @@ class TestExecuteK8Sanity:
                     file_size = value
         m0cfg['MOTR_CONFIG']['MOTR_HA_ADDR'] = node_enpts['hax_ep']
         m0cfg['MOTR_CONFIG']['PROF'] = self.motr_obj.profile_fid
-        m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts['m0client'][0]['fid']
-        m0cfg['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = node_enpts['m0client'][0]['ep']
+        m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts[common_const.MOTR_CLIENT][0]['fid']
+        m0cfg['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = node_enpts[common_const.MOTR_CLIENT][0]['ep']
         m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['SOURCE_FILE'] = source_file
         logger.info(m0cfg['MOTR_CONFIG'])
         logger.info(m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD'])
@@ -145,8 +118,8 @@ class TestExecuteK8Sanity:
         infile = TEMP_PATH + 'input'
         outfile = TEMP_PATH + 'output'
         node_pod_dict = self.motr_obj.get_node_pod_dict()
-        m0client_num = self.motr_obj.get_number_of_m0clients()
-        for client_num in range(m0client_num):
+        motr_client_num = self.motr_obj.get_number_of_motr_clients()
+        for client_num in range(motr_client_num):
             for node in node_pod_dict:
                 count_list = ['1', '2', '4', '4', '4', '2', '4', '4', '250',
                               '2', '4', '2', '3', '4', '8', '4', '1024']
@@ -251,9 +224,60 @@ class TestExecuteK8Sanity:
         config_file = os.path.join(os.getcwd(), "config/motr/test_29707_m0crate_workload.yaml")
         remote_file = TEMP_PATH + config_file.split("/")[-1]
         for node in self.motr_obj.get_node_pod_dict():
-            self.update_m0crate_config(config_file, node)
+            self.motr_obj.update_m0crate_config(config_file, node)
             self.motr_obj.m0crate_run(config_file, remote_file, node)
         self.motr_obj.shutdown_cluster()
         for node in self.motr_obj.get_node_pod_dict():
-            self.update_m0crate_config(config_file, node)
+            self.motr_obj.update_m0crate_config(config_file, node)
             self.motr_obj.m0crate_run(config_file, remote_file, node)
+
+    @pytest.mark.tags("TEST-29709")
+    @pytest.mark.motr_sanity
+    def test_cluster_shutdown_with_intrupted_motr_io(self):
+        """
+        This test will run the motr io on all the nodes in parallel and
+        verify the services after cluster shutdown
+        """
+        return_dict = multiprocessing.Manager().dict()
+        for node in self.motr_obj.cortx_node_list:
+            node_process = multiprocessing.Process(target=self.motr_obj.run_io_in_parallel,
+                args=[node, [4], False, True, return_dict])
+            node_process.start()
+        logger.info("Let the motr IO run on all the nodes for 120 sec")
+        time.sleep(120)
+        self.motr_obj.shutdown_cluster()
+        for exc in return_dict.values():
+            if isinstance(exc, Exception) and not isinstance(exc, AssertionError):
+                raise exc
+
+
+    @pytest.mark.tags("TEST-29706")
+    @pytest.mark.motr_sanity
+    def test_cluster_shutdown_with_intruppted_m0crate(self):
+        """
+        This will test cluster health after cluster shutdown during the m0crate run
+        """
+        try:
+            temp_files = []
+            return_dict = multiprocessing.Manager().dict()
+            config_file = os.path.join(os.getcwd(), "config/motr/test_29706_m0crate_workload.yaml")
+            path, yaml_file = config_file.rsplit("/", 1)
+            remote_file = TEMP_PATH + yaml_file
+            for node in self.motr_obj.cortx_node_list:
+                bkup_file = path + "/" + uuid.uuid4().hex[0:4] + "_" + yaml_file
+                temp_files.append(bkup_file)
+                shutil.copy(config_file, bkup_file)
+                self.motr_obj.update_m0crate_config(bkup_file, node)
+                node_process = multiprocessing.Process(target=self.motr_obj.run_m0crate_in_parallel,
+                    args=[bkup_file, remote_file, node, return_dict])
+                node_process.start()
+            logger.info("Let the motr IO run on all the nodes for 30 sec")
+            time.sleep(30)
+            self.motr_obj.shutdown_cluster()
+            for exc in return_dict.values():
+                if not isinstance(exc, AssertionError):
+                    raise exc
+        finally:
+            if temp_files:
+                for file in temp_files:
+                    os.remove(file)

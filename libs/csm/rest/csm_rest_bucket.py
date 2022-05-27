@@ -356,7 +356,7 @@ class RestS3Bucket(RestTestLib):
                 error))
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
-                error.args[0])
+                error.args[0]) from error
 
     @RestTestLib.authenticate_and_login
     def list_buckets_under_given_account(self, account_name):
@@ -504,6 +504,7 @@ class RestS3BucketPolicy(RestTestLib):
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error) from error
 
+    # pylint: disable=too-many-arguments
     def create_and_verify_bucket_policy(
             self,
             expected_status_code=200,
@@ -752,7 +753,7 @@ class RestS3BucketPolicy(RestTestLib):
                 const.EXCEPTION_ERROR,
                 RestS3BucketPolicy.get_bucket_policy_under_given_account.__name__,
                 error))
-            raise CTException(err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+            raise CTException(err.CSM_REST_AUTHENTICATION_ERROR, error.args[0]) from error
 
     @RestTestLib.authenticate_and_login
     def delete_bucket_policy_under_given_name(self, account_name):

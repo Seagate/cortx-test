@@ -52,14 +52,13 @@ class TestObjectMetadataOperations:
         self.log = logging.getLogger(__name__)
         self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.bkt_name_prefix = "obj-metadata"
-        self.file_name = "{}{}".format("metadata", time.perf_counter_ns())
+        self.file_name = f"metadata{time.perf_counter_ns()}"
         self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestObjectMetadataOperations")
         self.file_path = os.path.join(self.folder_path, self.file_name)
-        self.new_file_path = "{}{}".format(
-            "new_objmetadata", time.perf_counter_ns())
+        self.new_file_path = f"new_objmetadata{time.perf_counter_ns()}"
         self.new_file_path = os.path.join(self.folder_path, self.new_file_path)
-        self.object_name = "{}{}".format("metaobj", time.perf_counter_ns())
-        self.bucket_name = "{}{}".format("metaobjbkt", time.perf_counter_ns())
+        self.object_name = f"metaobj{time.perf_counter_ns()}"
+        self.bucket_name = f"metaobjbkt{time.perf_counter_ns()}"
         if not path_exists(self.folder_path):
             resp = make_dirs(self.folder_path)
             self.log.info("Created path: %s", resp)
@@ -219,10 +218,7 @@ class TestObjectMetadataOperations:
         self.log.info("Create object key 1024 byte long")
         obj_key = "".join(
             random.choices(
-                "{0}{1}{2}".format(
-                    string.ascii_uppercase,
-                    string.ascii_lowercase,
-                    string.digits),
+                f"{string.ascii_uppercase}{string.ascii_lowercase}{string.digits}",
                 k=S3_OBJ_TST["test_8547"]["obj_key_length"]))
         self.create_bucket_put_list_object(
             self.bucket_name,
@@ -490,17 +486,11 @@ class TestObjectMetadataOperations:
         self.log.info("Update user defined metadata upto 2KB")
         m_key = "".join(
             random.choices(
-                "{0}{1}{2}".format(
-                    string.ascii_uppercase,
-                    string.ascii_lowercase,
-                    string.digits),
+                f"{string.ascii_uppercase}{string.ascii_lowercase}{string.digits}",
                 k=S3_OBJ_TST["test_8557"]["byte_count"]))
         m_val = "".join(
             random.choices(
-                "{0}{1}{2}".format(
-                    string.ascii_uppercase,
-                    string.ascii_lowercase,
-                    string.digits),
+                "{string.ascii_uppercase}{string.ascii_lowercase}{string.digits}",
                 k=S3_OBJ_TST["test_8557"]["byte_count"]))
         self.create_bucket_put_list_object(
             self.bucket_name,
@@ -537,15 +527,11 @@ class TestObjectMetadataOperations:
                 S3_OBJ_TST["test_8558"]["start_range"],
                 S3_OBJ_TST["test_8558"]["stop_range"]))
         m_key = "".join(
-            random.choices("{0}{1}{2}".format(
-                string.ascii_uppercase,
-                string.ascii_lowercase,
-                string.digits), k=count_limit))
+            random.choices("{string.ascii_uppercase}{string.ascii_lowercase}{string.digits}",
+                           k=count_limit))
         m_val = "".join(
-            random.choices("{0}{1}{2}".format(
-                string.ascii_uppercase,
-                string.ascii_lowercase,
-                string.digits), k=count_limit))
+            random.choices("{string.ascii_uppercase}{string.ascii_lowercase}{string.digits}",
+                           k=count_limit))
         self.log.info(
             "Uploading an object to a bucket %s with metadata size greater than 2KB",
             self.bucket_name)

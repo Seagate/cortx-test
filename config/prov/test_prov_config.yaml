@@ -1,8 +1,13 @@
 k8s_prov_cortx_deploy:
-  deploy_cluster: "sh deploy-cortx-cloud.sh"
-  git_prov_k8_repo: "https://github.com/Seagate/cortx-k8s -b cortx-test"
+  deploy_cluster: "./deploy-cortx-cloud.sh"
+  git_prov_k8_repo: "https://github.com/Seagate/cortx-k8s -b {}"
+  git_prov_k8_repo_template: "https://github.com/Seagate/cortx-k8s -b"
   git_remote_path: "/root/cortx-k8s/k8_cortx_cloud/"
-  upgrade_cluster: "sh upgrade-cortx-cloud.sh -p {}"
-  cold_upgrade: "sh upgrade-cortx-cloud.sh -cold"
-  destroy_cluster: "sh destroy-cortx-cloud.sh"
+  upgrade_cluster: "./upgrade-cortx-cloud.sh -p {}"
+  cold_upgrade: "./upgrade-cortx-cloud.sh -cold"
+  destroy_cluster: "./destroy-cortx-cloud.sh"
   images_key: [ "cortxcontrol", "cortxdata", "cortxserver", "cortxha", "cortxclient" ]
+  cvg_config: ["cvg1", "cvg2"]
+  upgrade_process_file_path: "/tmp/upgrade-cortx-cloud.sh.pid"
+  pre_req:  "/dev/sdb"
+

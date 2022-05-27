@@ -235,7 +235,7 @@ class TestS3FaultTolerance:
         self.log.info(
             "Step 2. Restart the s3services for changes to take effect.")
         for service in [const.SLAPD, const.HAPROXY, const.S3AUTHSERVER]:
-            resp = S3H_OBJ.self.restart_s3server_service(service)
+            resp = S3H_OBJ.restart_s3server_service(service)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 3. Using curl ,inject fault injection so that upload of object fails "

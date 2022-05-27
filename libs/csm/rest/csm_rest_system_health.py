@@ -38,7 +38,7 @@ class SystemHealth(RestTestLib):
         """
         Initialize the rest api
         """
-        super().__init__()
+        super(SystemHealth, self).__init__()
         self.main_conf = config_utils.read_yaml(
             "config\\common_config.yaml")[1]
 
@@ -264,11 +264,11 @@ class SystemHealth(RestTestLib):
         """
         node_ids = []
         node = node.lower()
-        if node == "storage" or node == "all":
+        if node in ("storage", "all"):
             node_ids.append(const.NODE_ID_OPTIONS["storage"])
-        elif node == "node-1" or node == "all":
+        elif node in ('node-1', 'all'):
             node_ids.append(const.NODE_ID_OPTIONS["node"].format(CMN_CFG['nodes'][0]["hostname"]))
-        elif node == "node-2" or node == "all":
+        elif node in ('node-2', 'all'):
             node_ids.append(const.NODE_ID_OPTIONS["node"].format(CMN_CFG['nodes'][0]["hostname"]))
         elif node == "":
             node_ids.append("")
@@ -498,7 +498,7 @@ class SystemHealth(RestTestLib):
             raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=rack_resp[1])
         if rack_resp[0] and site_resp[0] and cls_resp[0]:
             return True, f"Cluster, site and rack health status is {exp_status}"
-        return False, f"Cluster, site and rack health status is not as expected"
+        return False, f"Cluster, site and rack health status is not as expected {exp_status}"
 
     # pylint: disable=too-many-arguments
     @RestTestLib.authenticate_and_login
@@ -626,3 +626,54 @@ class SystemHealth(RestTestLib):
         self.log.info("%s operation on %s POST REST API response : %s",
                       operation, resource, response)
         return True, response
+
+    @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
+    def set_resource_signal(
+            self,
+            req_body: dict,
+            resource: str):
+        """
+        This method POST resource failure/shutdown signal to cluster
+        :param req_body: POST operation request body
+        :param resource: Resource type (eg. node)
+        :return: bool, POST API response
+        """
+        # Building request url to POST resource failure signal
+        endpoint = "{}/{}".format(self.config["cluster_operation_endpoint"], resource)
+        headers = self.headers
+        conf_headers = self.config["Login_headers"]
+        headers.update(conf_headers)
+        self.log.info("POST REST API Endpoint :", endpoint)
+        # Fetching api response
+        response = self.restapi.rest_call("post", endpoint=endpoint, data=json.dumps(req_body),
+                                          headers=headers)
+        if response.status_code != HTTPStatus.OK:
+            self.log.error("POST REST API response : %s", response)
+            return False, response
+        self.log.info("POST REST API response : %s", response.json())
+        return True, response.json()
+
+    @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
+    def get_resource_status(
+            self,
+            resource_id: str,
+            resource: str = "node"):
+        """
+        This method GETs resource status
+        :param resource: Resource type (eg. node)
+        :param resource_id: Resource ID for which user wants to fetch status
+        :return: bool, GET API response
+        """
+        # Building request url to GET resource status
+        self.log.info("GET the status for %s", resource)
+        endpoint = "{}/{}/{}".format(self.config["cluster_status_endpoint"], resource, resource_id)
+        self.log.info("GET REST API Endpoint: %s", endpoint)
+        # Fetching api response
+        response = self.restapi.rest_call(request_type="get",
+                                          endpoint=endpoint, headers=self.headers)
+        if response.status_code != HTTPStatus.OK:
+            return False, response
+        self.log.info("GET API %s status response = %s", resource, response.json())
+        return True, response.json()

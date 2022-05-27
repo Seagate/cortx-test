@@ -33,9 +33,10 @@ from commons.utils import assert_utils
 from commons.utils import s3_utils
 from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
-from libs.s3.s3_common_test_lib import S3BackgroundIO
+
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_common_test_lib import get_cortx_capacity
 from libs.s3.s3_common_test_lib import upload_random_size_objects
 from libs.s3.s3_common_test_lib import create_s3_account_get_s3lib_objects
@@ -45,6 +46,7 @@ from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 class TestMultipartUploadDelete:
     """Multipart Upload Delete Test Suite."""
 
+    # pylint: disable=too-many-instance-attributes
     def setup_method(self):
         """
         Function will be invoked prior to each test case.

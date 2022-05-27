@@ -121,15 +121,22 @@ k8s_cortx_deploy:
     kernel: [ "3.10.0-1160.el7.x86_64" ]
     cpu_cores: 8
     memory: 16
+  node_count: 15
   clone_dir: "deploy-scripts"
   local_path_prov: "/mnt/fs-local-volume"
+  mnt_path: "/mnt/fs-local-volume/local-path-provisioner/"
   3rd_party_data_dir: "/var/data/3rd-party/"
   3rd_party_dir: "/etc/3rd-party/"
   log_path: "/etc/cortx/log"
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 240
-  setup_size: "small"
-  https_protocol: "https://{}"
+  sleep_time: 60
+  service_delay: 120
+  service_delay_scale: 360
+  namespace: "cortx"
+  max_size_namespace: 18
+  max_char_limit: 19
+  https_protocol: "https://$ip"
   https_port: 30443
   http_port: 30080
   control_port_https: 31169
@@ -140,32 +147,30 @@ k8s_cortx_deploy:
   data_disk_size: "20Gi"
   metadata_disk_size: "20Gi"
   git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"
-  git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/{}"
+  git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/$tag/k8_cortx_cloud/$file"
   k8s_dir: "/root/deploy-scripts/k8_cortx_cloud/"
-  new_file_path: "solution.yaml"
+  new_file_path: "solution.example.yaml"
+  solution_file: "solution.yaml"
   deploy_file: "deploy-cortx-cloud.sh"
   report_file: "deployment_report.csv"
   log_file: "deployment.log"
   rgw_rpm: "cortx-rgw"
   status_log_file: "status.log"
   pre_req_log: "pre_req_log.log"
+  pre_check_log: "pre_check.log"
   deployment_type_data: "data-only"
   client_instance: 0
   cluster_yaml_path: "/etc/cortx/solution/cluster.yaml"
   cluster_conf_path: "/etc/cortx/cluster.conf"
   third_party_images:
     consul: 'ghcr.io/seagate/consul:1.11.4'
-    kafka: 'ghcr.io/seagate/kafka:3.0.0-debian-10-r7'
-    zookeeper: 'ghcr.io/seagate/zookeeper:3.7.0-debian-10-r182'
+    kafka: 'ghcr.io/seagate/kafka:3.0.0-debian-10-r97'
+    zookeeper: 'ghcr.io/seagate/zookeeper:3.8.0-debian-10-r9'
     rancher: 'ghcr.io/seagate/local-path-provisioner:v0.0.20'
     busybox: 'ghcr.io/seagate/busybox:latest'
   cortx_images_key: [ 'cortxcontrol', 'cortxdata', 'cortxserver',
                       'cortxha', 'cortxclient' ]
   password:
-    kafka_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
-    consul_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
-    common_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
-    s3_auth_admin_secret: 'B+cVuyLECx9taLLC9lNA+gVeLpSG9XDBgd0E5KEvOFc='
     csm_auth_admin_secret: 'hPknkG1peaPHKdEdL5xCV4eguDl9Fgq1C513lpIKzFc='
     csm_mgmt_admin_secret: '50e4j0exZRRpDTkh+t5wuktLv+SmxpwL//3uamQCCM0='
   setup_k8s_cluster_flag: "True"
@@ -174,11 +179,100 @@ k8s_cortx_deploy:
   run_s3bench_workload_flag: "True"
   destroy_setup_flag: "True"
   cortx_cluster_deploy_flag: "True"
+  deploy_ha_timeout_key: "CORTX_DEPLOY_HA_TIMEOUT"
+  deploy_ha_timeout_val: 1000
   timeout:
     pre-req: 120
     deploy: 7200
     destroy: 900
     status: 120
+  thirdparty_resource:
+    server:   #consul_server
+      requests:
+        mem: '200Mi'
+        cpu: '200m'
+      limits:
+        mem: '500Mi'
+        cpu: '500m'
+    client:  #consul_client
+      requests:
+        mem: '200Mi'
+        cpu: '200m'
+      limits:
+        mem: '500Mi'
+        cpu: '500m'
+    kafka:
+      requests:
+        mem: '1Gi'
+        cpu: '250m'
+      limits:
+        mem: '3Gi'
+        cpu: '1000m'
+    zookeeper:
+      requests:
+        mem: '256Mi'
+        cpu: '250m'
+      limits:
+        mem: '1Gi'
+        cpu: '1000m'
+  cortx_resource:
+    hax:
+      requests:
+        mem: '128Mi'
+        cpu: '250m'
+      limits:
+        mem: '2Gi'
+        cpu: '1000m'
+    motr:
+      requests:
+        mem: '1Gi'
+        cpu: '250m'
+      limits:
+        mem: '2Gi'
+        cpu: '1000m'
+    confd:
+      requests:
+        mem: '128Mi'
+        cpu: '250m'
+      limits:
+        mem: '512Mi'
+        cpu: '500m'
+    rgw:
+        requests:
+          mem: '128Mi'
+          cpu: '250m'
+        limits:
+          mem: '2Gi'
+          cpu: '2000m'
+    agent:
+      requests:
+        mem: '128Mi'
+        cpu: '250m'
+      limits:
+        mem: '256Mi'
+        cpu: '500m'
+    ha:
+      fault_tolerance:
+        requests:
+          mem: '128Mi'
+          cpu: '250m'
+        limits:
+          mem: '1Gi'
+          cpu: '500m'
+      health_monitor:
+        requests:
+          mem: '128Mi'
+          cpu: '250m'
+        limits:
+          mem: '1Gi'
+          cpu: '500m'
+      k8s_monitor:
+        requests:
+          mem: '128Mi'
+          cpu: '250m'
+        limits:
+          mem: '1Gi'
+          cpu: '500m'
 test_basic_io:
   io_upper_limits:
     Kb: 130

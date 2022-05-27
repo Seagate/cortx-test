@@ -1,4 +1,4 @@
-#!/usr/bin/python  # pylint: disable=C0302
+#!/usr/bin/python  # pylint: disable=too-many-lines
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -25,6 +25,7 @@ import json
 import logging
 import os
 import random
+import secrets
 import sys
 import time
 from ast import literal_eval
@@ -56,8 +57,8 @@ from scripts.s3_bench import s3bench
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=R0902
-# pylint: disable=R0904
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-public-methods
 class HAK8s:
     """
     This class contains common utility methods for HA related operations.
@@ -78,6 +79,7 @@ class HAK8s:
         self.num_pods = ""
         self.s3_rest_obj = S3AccountOperationsRestAPI()
         self.parallel_ios = None
+        self.system_random = secrets.SystemRandom()
         self.dir_path = common_const.K8S_SCRIPTS_PATH
 
     def polling_host(self,
@@ -86,7 +88,7 @@ class HAK8s:
                      exp_resp: bool,
                      bmc_obj=None):
         """
-        Helper function to poll for host ping response.
+        Helper function to poll for host ping response
         :param max_timeout: Max timeout allowed for expected response from ping
         :param host: Host to ping
         :param exp_resp: Expected resp True/False for host state Reachable/Unreachable
@@ -107,7 +109,7 @@ class HAK8s:
                     common_cmd.CMD_VM_INFO.format(
                         self.vm_username, self.vm_password, vm_name))
                 if not vm_info[0]:
-                    LOGGER.info(f"Unable to get VM power status for {vm_name}")
+                    LOGGER.error("Unable to get VM power status for %s", vm_name)
                     return False
                 data = vm_info[1].split("\\n")
                 pw_state = ""
@@ -219,7 +221,7 @@ class HAK8s:
         :return: (bool, response)
         """
         check_rem_pod = [
-            pod_sts if num == pod_id else "online" for num in range(self.num_pods)]
+            pod_sts if num == pod_id else "online" for num in range(int(self.num_pods))]
         LOGGER.info("Checking pod-%s status is %s via REST", pod_id+1, pod_sts)
         resp = self.system_health.verify_node_health_status_rest(
             check_rem_pod)
@@ -255,23 +257,20 @@ class HAK8s:
                         response = s3_del.delete_multiple_objects(_bucket, obj_list[1], quiet=True)
                         LOGGER.debug("Delete multiple objects response %s", response)
                 return True, "Successfully performed Objects Delete operation"
-            else:
-                for details in s3_data.values():
-                    s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
-                                       access_key=details['accesskey'],
-                                       secret_key=details['secretkey'])
-                    response = s3_del.delete_all_buckets()
-                    if not response[0]:
-                        return response
-                    response = self.s3_rest_obj.delete_s3_account(details['user_name'])
-                    if not response[0]:
-                        return response
-                return True, "Successfully performed S3 operation clean up"
+            for details in s3_data.values():
+                s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
+                                   access_key=details['accesskey'],
+                                   secret_key=details['secretkey'])
+                response = s3_del.delete_all_buckets()
+                if not response[0]:
+                    return response
+                response = self.s3_rest_obj.delete_s3_account(details['user_name'])
+                if not response[0]:
+                    return response
+            return True, "Successfully performed S3 operation clean up"
         except (ValueError, KeyError, CTException) as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HAK8s.delete_s3_acc_buckets_objects.__name__,
-                         error)
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                             HAK8s.delete_s3_acc_buckets_objects.__name__, error)
             return False, error
 
     # pylint: disable=too-many-arguments
@@ -287,7 +286,7 @@ class HAK8s:
         """
         This function creates s3 acc, buckets and performs IO.
         This will perform DI check if is_di True and once done,
-        deletes all the buckets and s3 accounts created.
+        deletes all the buckets and s3 accounts created
         :param prefix_data: Prefix data for IO Operation
         :param nusers: Number of s3 user
         :param nbuckets: Number of buckets per s3 user
@@ -317,16 +316,14 @@ class HAK8s:
                 return del_resp
             return True, "Di check for IOs passed successfully"
         except ValueError as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HAK8s.perform_ios_ops.__name__,
-                         error)
+            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
+                             HAK8s.perform_ios_ops.__name__, error)
             return False, error
 
     def perform_io_read_parallel(self, di_data, is_di=True, start_read=True):
         """
         This function runs parallel async stop_io function until called again with
-        start_read with False.
+        start_read with False
         :param di_data: Tuple of RunDataCheckManager obj and User-bucket info from
         WRITEs call
         :param is_di: IF DI check is required on READ objects
@@ -358,10 +355,11 @@ class HAK8s:
             skipcleanup: bool = False,
             nsamples: int = 10,
             nclients: int = 10,
-            large_workload: bool = False):
+            large_workload: bool = False,
+            setup_s3bench: bool = True):
         """
         This function creates s3 acc, buckets and performs WRITEs/READs/DELETEs
-        operations on VM/HW.
+        operations on VM/HW
         :param log_prefix: Test number prefix for log file
         :param s3userinfo: S3 user info
         :param skipread: Skip reading objects created in this run if True
@@ -370,15 +368,17 @@ class HAK8s:
         :param nsamples: Number of samples of object
         :param nclients: Number of clients/workers
         :param large_workload: Flag to start large workload IOs
+        :param setup_s3bench: Flag if s3bench need to be setup
         :return: bool/operation response
         """
         workloads = copy.deepcopy(HA_CFG["s3_bench_workloads"])
         if self.setup_type == "HW" or large_workload:
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
 
-        resp = s3bench.setup_s3bench()
-        if not resp:
-            return resp, "Couldn't setup s3bench on client machine."
+        if setup_s3bench:
+            resp = s3bench.setup_s3bench()
+            if not resp:
+                return resp, "Couldn't setup s3bench on client machine."
         for workload in workloads:
             resp = s3bench.s3bench(
                 s3userinfo['accesskey'], s3userinfo['secretkey'],
@@ -392,29 +392,36 @@ class HAK8s:
                 return False, f"s3bench operation failed: {resp[1]}"
         return True, "Successfully completed s3bench operation"
 
-    def cortx_start_cluster(self, pod_obj):
+    def cortx_start_cluster(self, pod_obj, dir_path=None):
         """
         This function starts the cluster
         :param pod_obj : Pod object from which the command should be triggered
+        :param dir_path : Path to repo scripts
         :return: Boolean, response
         """
         LOGGER.info("Start the cluster")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD.format(self.dir_path),
+        cmd_path = dir_path if dir_path else self.dir_path
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD.format(cmd_path),
                                    read_lines=True, exc=False)
-        LOGGER.info("Cluster start response: {}".format(resp))
+        LOGGER.debug("Cluster start response: %s", resp)
         if resp[0]:
             return True, resp
         return False, resp
 
-    def cortx_stop_cluster(self, pod_obj):
+    def cortx_stop_cluster(self, pod_obj, dir_path=None):
         """
         This function stops the cluster
         :param pod_obj : Pod object from which the command should be triggered
+        :param dir_path : Path to repo scripts
         :return: Boolean, response
         """
         LOGGER.info("Stop the cluster")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD.format(self.dir_path),
-                                   read_lines=True, exc=False)
+        if dir_path:
+            resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD.format(dir_path),
+                                       read_lines=True, exc=False)
+        else:
+            resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD.format(self.dir_path),
+                                       read_lines=True, exc=False)
         LOGGER.info("Cluster stop response: %s", resp)
         if resp[0]:
             return True, resp
@@ -422,7 +429,7 @@ class HAK8s:
 
     def restart_cluster(self, pod_obj, sync=False):
         """
-        Restart the cluster and check all nodes health.
+        Restart the cluster and check all node's health
         :param pod_obj: pod object for stop/start cluster
         :param sync: Flag to run sync command
         """
@@ -469,10 +476,11 @@ class HAK8s:
                 return False, resp
         return True, resp
 
+    # pylint: disable=too-many-return-statements
     def create_bucket_to_complete_mpu(self, s3_data, bucket_name, object_name, file_size,
                                       total_parts, multipart_obj_path):
         """
-        Helper function to complete multipart upload.
+        Helper function to complete multipart upload
         :param s3_data: s3 account details
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
@@ -488,11 +496,15 @@ class HAK8s:
         s3_mp_test_obj = S3MultipartTestLib(access_key=access_key,
                                             secret_key=secret_key, endpoint_url=S3_CFG["s3_url"])
 
-        LOGGER.info("Creating a bucket with name : %s", bucket_name)
-        res = s3_test_obj.create_bucket(bucket_name)
-        if not res[0] or res[1] != bucket_name:
-            return res, "Failed in bucket creation"
-        LOGGER.info("Created a bucket with name : %s", bucket_name)
+        LOGGER.info("Checking if bucket %s already exists", bucket_name)
+        resp = s3_test_obj.bucket_list()
+        bkt_flag = bucket_name not in resp[1]
+        if bkt_flag:
+            LOGGER.info("Creating a bucket with name : %s", bucket_name)
+            res = s3_test_obj.create_bucket(bucket_name)
+            if not res[0] or res[1] != bucket_name:
+                return res, "Failed in bucket creation"
+            LOGGER.info("Created a bucket with name : %s", bucket_name)
         LOGGER.info("Initiating multipart upload")
         res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
         if not res[0]:
@@ -529,7 +541,7 @@ class HAK8s:
 
     def partial_multipart_upload(self, s3_data, bucket_name, object_name, part_numbers, **kwargs):
         """
-        Helper function to do partial multipart upload.
+        Helper function to do partial multipart upload
         :param s3_data: s3 account details
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
@@ -581,13 +593,14 @@ class HAK8s:
                 parts_etag.append({"PartNumber": part, "ETag": p_etag["ETag"]})
                 LOGGER.info("Uploaded part %s", part)
             return True, mpu_id, multipart_obj_path, parts_etag
-        except BaseException as error:
-            LOGGER.error("Error in %s: %s", HAK8s.partial_multipart_upload.__name__, error)
+        except CTException as error:
+            LOGGER.exception("Error in %s: %s", HAK8s.partial_multipart_upload.__name__, error)
             return False, error
 
     @staticmethod
     def create_multiple_data_parts(multipart_obj_path, multipart_obj_size, total_parts):
         """
+         Function to create multiple data parts
         :param multipart_obj_size: Size of the file to be created to upload
         :param total_parts: Total parts to be uploaded
         :param multipart_obj_path: Path of the file to be uploaded
@@ -611,6 +624,9 @@ class HAK8s:
         return parts
 
     # pylint: disable-msg=too-many-locals
+    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-return-statements
     @staticmethod
     def create_bucket_copy_obj(event, s3_test_obj=None, bucket_name=None, object_name=None,
                                bkt_obj_dict=None, output=None, **kwargs):
@@ -677,7 +693,7 @@ class HAK8s:
                                                            source_object=object_name,
                                                            dest_bucket=bkt_name,
                                                            dest_object=obj_name)
-                LOGGER.info("Response: %s", response)
+                LOGGER.info("status is %s with Response: %s", status, response)
                 copy_etag = response['CopyObjectResult']['ETag']
                 if put_etag == copy_etag:
                     LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
@@ -686,7 +702,7 @@ class HAK8s:
                     LOGGER.error("Etags don't match for copy object %s to bucket %s with object "
                                  "name %s", object_name, bkt_name, obj_name)
             except CTException as error:
-                LOGGER.error("Error: %s", error)
+                LOGGER.exception("Error: %s", error)
                 if event.is_set():
                     exp_fail_bkt_obj_dict[bkt_name] = obj_name
                     event_clear_flg = True
@@ -740,8 +756,8 @@ class HAK8s:
             LOGGER.info("Response: %s", res)
             mpu_id = res[1]["UploadId"]
             LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
-        except (Exception, CTException) as error:
-            LOGGER.error("Failed mpu due to error %s. Exiting from background process.", error)
+        except CTException as error:
+            LOGGER.exception("Failed mpu due to error %s. Exiting from background process.", error)
             sys.exit(1)
 
         LOGGER.info("Creating parts of data")
@@ -762,8 +778,8 @@ class HAK8s:
                 LOGGER.debug("Part : %s", str(p_tag))
                 parts_etag.append({"PartNumber": i, "ETag": p_tag["ETag"]})
                 LOGGER.info("Uploaded part %s", i)
-            except BaseException as error:
-                LOGGER.error("Error: %s", error)
+            except CTException as error:
+                LOGGER.exception("Error: %s", error)
                 if event.is_set():
                     exp_failed_parts.append(i)
                 else:
@@ -773,15 +789,18 @@ class HAK8s:
         res = (exp_failed_parts, failed_parts, parts_etag, mpu_id)
         output.put(res)
 
-    def check_cluster_status(self, pod_obj, pod_list=None):
+    def check_cluster_status(self, pod_obj, pod_list=None, dir_path=None):
         """
+        Function to check cluster status
         :param pod_obj: Object for master node
         :param pod_list: Data pod name list to get the hctl status
+        :param dir_path : Path to repo scripts
         :return: boolean, response
         """
         LOGGER.info("Check the overall K8s cluster status.")
         try:
-            resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
+            cmd_path = dir_path if dir_path else self.dir_path
+            resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(cmd_path))
         except IOError as error:
             LOGGER.error("Error: Cluster status has some failures.")
             return False, error
@@ -798,7 +817,7 @@ class HAK8s:
                 command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- "
                                f"{common_cmd.MOTR_STATUS_CMD}", decode=True)
             for line in res.split("\n"):
-                if 'm0_client' not in line:
+                if common_const.MOTR_CLIENT not in line:
                     if "failed" in line or "offline" in line or "unknown" in line:
                         LOGGER.error("Response for data pod %s's hctl status: %s", pod_name, res)
                         return False, f"Cortx HCTL status has Failures in pod {pod_name}"
@@ -821,8 +840,7 @@ class HAK8s:
 
         if not compare:
             return md5_list
-        else:
-            return all(md5_list[0] == x for x in md5_list)
+        return all(md5_list[0] == x for x in md5_list)
 
     def poll_cluster_status(self, pod_obj, timeout=1200):         # default 20mins timeout
         """
@@ -831,6 +849,7 @@ class HAK8s:
         :param timeout: Timeout value
         :return: bool, response
         """
+        resp = False
         LOGGER.info("Polling cluster status")
         start_time = int(time.time())
         while timeout > int(time.time()) - start_time:
@@ -853,6 +872,7 @@ class HAK8s:
         :param restore_params: Dict which has parameters required to restore pods
         :return: Bool, response
         """
+        resp = False
         deployment_name = restore_params["deployment_name"]
         deployment_backup = restore_params.get("deployment_backup", None)
 
@@ -866,12 +886,13 @@ class HAK8s:
 
         return resp
 
-    def event_s3_operation(self, event, log_prefix=None, s3userinfo=None, skipread=False,
-                           skipwrite=False, skipcleanup=False, nsamples=10, nclients=10,
-                           output=None):
+    def event_s3_operation(self, event, setup_s3bench=True, log_prefix=None, s3userinfo=None,
+                           skipread=False, skipwrite=False, skipcleanup=False, nsamples=10,
+                           nclients=10, output=None):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
         :param event: Thread event to be sent in case of parallel IOs
+        :param setup_s3bench: Flag to setup or not s3bench
         :param log_prefix: Test number prefix for log file
         :param s3userinfo: S3 user info
         :param skipread: Skip reading objects created in this run if True
@@ -890,11 +911,12 @@ class HAK8s:
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
         # Flag to store next workload status after/while event gets clear from test function
         event_clear_flg = False
-        resp = s3bench.setup_s3bench()
-        if not resp:
-            status = (resp, "Couldn't setup s3bench on client machine.")
-            output.put(status)
-            sys.exit(1)
+        if setup_s3bench:
+            resp = s3bench.setup_s3bench()
+            if not resp:
+                status = (resp, "Couldn't setup s3bench on client machine.")
+                output.put(status)
+                sys.exit(1)
         for workload in workloads:
             resp = s3bench.s3bench(
                 s3userinfo['accesskey'], s3userinfo['secretkey'],
@@ -942,7 +964,7 @@ class HAK8s:
     # pylint: disable=too-many-branches
     def put_get_delete(self, event, s3_test_obj, **kwargs):
         """
-        Helper function to put, get and delete objects.
+        Helper function to put, get and delete objects
         :param event: Thread event to be sent for parallel IOs
         :param s3_test_obj: s3 test object for the buckets to be deleted
         :param kwargs:
@@ -984,7 +1006,7 @@ class HAK8s:
                     upload_chm = self.cal_compare_checksum(file_list=[file_path], compare=False)[0]
                     s3_data.update({bucket_name: (object_name, upload_chm)})
                 except CTException as error:
-                    LOGGER.error("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                    LOGGER.exception("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
                     if event.is_set():
                         event_bkt_put.append(bucket_name)
                     else:
@@ -1009,7 +1031,7 @@ class HAK8s:
                     resp = s3_test_obj.object_download(bkt, s3_data[bkt][0], download_path)
                     LOGGER.info("Download object response: %s", resp)
                 except CTException as error:
-                    LOGGER.error("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                    LOGGER.exception("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
                     if event.is_set():
                         event_bkt_get.append(bkt)
                     else:
@@ -1039,7 +1061,7 @@ class HAK8s:
                     try:
                         s3_test_obj.delete_bucket(bucket_name=bucket_list[0], force=True)
                     except CTException as error:
-                        LOGGER.error("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                        LOGGER.exception("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
                         if event.is_set():
                             event_del_bkt.append(bucket_list[0])
                         else:
@@ -1048,7 +1070,7 @@ class HAK8s:
                     count += 1
                     if count >= bkts_to_del:
                         break
-                    elif not bkt_list and not bucket_list:
+                    if not bkt_list and not bucket_list:
                         while True:
                             time.sleep(HA_CFG["common_params"]["5sec_delay"])
                             bucket_list = s3_test_obj.bucket_list()[1]
@@ -1065,7 +1087,7 @@ class HAK8s:
     def get_data_pod_no_ha_control(data_pod_list: list, pod_obj):
         """
         Helper function to get the data pod name which is not hosted on same node
-        as that of HA or control pod.
+        as that of HA or control pod
         :param data_pod_list: list for all data pods in cluster
         :param pod_obj: object for master node for pods_helper
         :return: data_pod_name, data_pod_fqdn
@@ -1108,7 +1130,7 @@ class HAK8s:
     def get_nw_iface_node_down(host_list: list, node_list: list, node_fqdn: str):
         """
         Helper function to get the network interface of data node, put it down
-        and check if its not pinging.
+        and check if it's not pinging
         :param host_list: list of worker nodes' hosts
         :param node_list: node object list for all worker nodes
         :param node_fqdn: fqdn of the data node
@@ -1134,14 +1156,14 @@ class HAK8s:
                 resp = system_utils.check_ping(host=node_ip)
                 if not resp:
                     return False, node_ip, node_iface, new_worker_obj
-                else:
-                    return True, node_ip, node_iface, new_worker_obj
+                return True, node_ip, node_iface, new_worker_obj
+        return False, "Worker node and Fqdn of data node not same"
 
     @staticmethod
     def create_bucket_chunk_upload(s3_data, bucket_name, file_size, chunk_obj_path, output,
                                    bkt_op=True):
         """
-        Helper function to do chunk upload.
+        Helper function to do chunk upload
         :param s3_data: s3 account details
         :param bucket_name: Name of the bucket
         :param file_size: Size of the file to be created to upload
@@ -1210,6 +1232,7 @@ class HAK8s:
     @staticmethod
     def get_config_value(pod_obj, pod_list=None):
         """
+        Function to fetch data from file (e.g. conf files)
         :param pod_obj: Object for master node
         :param pod_list: Data pod name list to get the cluster.conf File
         :return: (bool, response)
@@ -1224,7 +1247,7 @@ class HAK8s:
         try:
             resp_node = pod_obj.execute_cmd(cmd=conf_cp, read_lines=False)
         except IOError as error:
-            LOGGER.error("Error: Not able to get cluster config file")
+            LOGGER.exception("Error: Not able to get cluster config file")
             return False, error
         LOGGER.debug("%s response %s ", conf_cp, resp_node)
         local_conf = os.path.join(os.getcwd(), "cluster.conf")
@@ -1235,8 +1258,12 @@ class HAK8s:
         if not resp[0]:
             LOGGER.error("Error: Failed to copy cluster.conf to local")
             return False, resp
-        conf_fd = open(local_conf, 'r')
-        data = yaml.safe_load(conf_fd)
+        try:
+            with open(local_conf, "r", encoding="utf-8") as file_data:
+                data = yaml.safe_load(file_data)
+        except IOError as error:
+            LOGGER.exception("Error: Not able to read local config file")
+            return False, error
 
         return True, data
 
@@ -1268,8 +1295,8 @@ class HAK8s:
                 common_const.MOCK_MONITOR_REMOTE_PATH, ha_pod,
                 common_const.MOCK_MONITOR_REMOTE_PATH))
         except IOError as error:
-            LOGGER.error("Failed to copy %s inside ha pod %s due to error: %s",
-                         common_const.MOCK_MONITOR_LOCAL_PATH, ha_pod, error)
+            LOGGER.exception("Failed to copy %s inside ha pod %s due to error: %s",
+                             common_const.MOCK_MONITOR_LOCAL_PATH, ha_pod, error)
             return False
         return True
 
@@ -1277,19 +1304,20 @@ class HAK8s:
                                   resource_type: str, node_type: str = 'data',
                                   resource_cnt: int = 1, node_cnt: int = 1, **kwargs):
         """
+        Function to simulate disk cvg failure
         :param node_obj: Object for node
         :param source: Source of the event | monitor, ha, hare, etc.
-        :param resource_status: recovering, online, failed, un
-        nown, degraded, repairing,
+        :param resource_status: recovering, online, failed, unknown, degraded, repairing,
         repaired, rebalancing, offline, etc.
         :param resource_type: node, cvg, disk, etc.
         :param node_type: Type of the node (data, server)
         :param resource_cnt: Count of the resources
         :param node_cnt: Count of the nodes on which failure to be simulated
-        :param delay: Delay between two events (Optional)
-        :param specific_info: Dictionary with Key-value pairs e.g. "generation_id": "xxxx"(Optional)
-        :param node_id: node_id of the pod (Optional)
-        :param resource_id: resource_id of the pod (Optional)
+        :keyword delay: Delay between two events (Optional)
+        :keyword specific_info: Dictionary with Key-value
+        pairs e.g. "generation_id": "xxxx"(Optional)
+        :keyword node_id: node_id of the pod (Optional)
+        :keyword resource_id: resource_id of the pod (Optional)
         Format of events file:
         {
         "events":
@@ -1304,9 +1332,9 @@ class HAK8s:
                     unknown, degraded, repairing, repaired, rebalancing, offline, etc.
                     "specific_info": {} # Key-value pairs e.g. "generation_id": "xxxx"
                     },
-                # Repeat the dictionary above with specific values if multiple events to be sent.
+                # Repeat the dictionary above with specific values if multiple events to be sent
             },
-        "delay": xxxx # If present this will add delay of specified seconds between the events.
+        "delay": xxxx # If present this will add delay of specified seconds between the events
         }
         :return: Bool, config_dict/error
         """
@@ -1365,7 +1393,7 @@ class HAK8s:
                 config_dict["events"][f"{count}"]["specific_info"] = specific_info
         if delay:
             config_dict["delay"] = delay
-        with open(config_json_file, "w") as outfile:
+        with open(config_json_file, "w", encoding="utf-8") as outfile:
             json.dump(config_dict, outfile)
         LOGGER.info("Publishing mock events: %s", config_dict)
         LOGGER.info("Get HA pod name for publishing event")
@@ -1388,7 +1416,7 @@ class HAK8s:
                                   namespace=common_const.NAMESPACE + " -- ", command_suffix=cmd,
                                   decode=True)
         except IOError as error:
-            LOGGER.error("Failed to publish the event due to error: %s", error)
+            LOGGER.exception("Failed to publish the event due to error: %s", error)
             return False, error
 
         return True, config_dict
@@ -1396,6 +1424,7 @@ class HAK8s:
     @staticmethod
     def get_node_resource_ids(node_obj, r_type, n_type=None, node_id=None):
         """
+        Function to get node resource ids
         :param node_obj: Object of master node
         :param r_type: Type of resource (node, disk, cvg)
         :param n_type: Type of the node (data, server)
@@ -1433,54 +1462,93 @@ class HAK8s:
             resp = literal_eval(resp)
         except IOError as error:
             LOGGER.error("Failed to get resource IDs for %s", r_type)
-            LOGGER.error("Error in %s: %s", HAK8s.get_node_resource_ids.__name__, error)
+            LOGGER.exception("Error in %s: %s", HAK8s.get_node_resource_ids.__name__, error)
             raise error
 
         LOGGER.info("Resource IDs for %s are: %s", r_type, resp)
         return resp
 
-    def delete_single_pod_setting_replica_0(self, master_node_obj, health_obj,
-                                            pod_prefix=common_const.POD_NAME_PREFIX):
+    def delete_kpod_with_shutdown_methods(self, master_node_obj, health_obj,
+                                          pod_prefix=None, kvalue=1,
+                                          down_method=common_const.RESTORE_SCALE_REPLICAS,
+                                          event=None):
         """
-        Delete Single pod by setting replica set to 0. Check service status is in degraded mode.
+        Delete K pods by given shutdown method. Check and verify deleted/remaining pod's services
+        status, cluster status
         :param master_node_obj: Master node object list
         :param health_obj: Health object
-        :param pod_prefix: Pod prefix to be deleted.
+        :param pod_prefix: Pod prefix to be deleted (Expected List type)
+        :param down_method: Pod shutdown/delete method
+        :param kvalue: Number of pod to be shutdown/deleted
+        :param event: Thread event to set/clear before/after pods/nodes
+        shutdown with parallel IOs
         return : tuple
         """
-        LOGGER.info("Get pod name to be deleted")
-        pod_list = master_node_obj.get_all_pods(pod_prefix=pod_prefix)
-        pod_name = random.sample(pod_list, 1)[0]
-        hostname = master_node_obj.get_pod_hostname(pod_name=pod_name)
+        if pod_prefix is None:
+            pod_prefix = [common_const.POD_NAME_PREFIX]
+        pod_info = dict()
+        total_pod_type = [common_const.POD_NAME_PREFIX, common_const.SERVER_POD_NAME_PREFIX]
+        pod_data = {"method": None, "deployment_name": None, "deployment_backup": None,
+                    "hostname": None}
+        delete_pods = list()
+        remaining = list()
+        for ptype in pod_prefix:
+            pod_list = master_node_obj.get_all_pods(pod_prefix=ptype)
+            # Get the list of Kvalue pods to be deleted for given pod_prefix list
+            delete_pods.extend(random.sample(pod_list, kvalue))
 
-        LOGGER.info("Deleting pod %s", pod_name)
-        resp = master_node_obj.create_pod_replicas(num_replica=0, pod_name=pod_name)
-        if resp[0]:
-            return False, f"Failed to delete pod {pod_name} by making replicas=0"
-        LOGGER.info("Successfully shutdown/deleted pod %s by making replicas=0", pod_name)
+        LOGGER.info("Get the list of all pods of total pod types.")
+        for ptype in total_pod_type:
+            remaining.extend(master_node_obj.get_all_pods(pod_prefix=ptype))
+
+        LOGGER.info("Delete %s by %s method", delete_pods, down_method)
+        for pod in delete_pods:
+            hostname = master_node_obj.get_pod_hostname(pod_name=pod)
+            if event is not None:
+                LOGGER.debug("Setting the Thread event")
+                event.set()
+            LOGGER.info("Deleting pod %s by %s method", pod, down_method)
+            if down_method == common_const.RESTORE_SCALE_REPLICAS:
+                resp = master_node_obj.create_pod_replicas(num_replica=0, pod_name=pod)
+                if resp[0]:
+                    return False, pod_info
+                pod_info[pod] = pod_data.copy()
+                pod_info[pod]['deployment_name'] = resp[1]
+            elif down_method == common_const.RESTORE_DEPLOYMENT_K8S:
+                resp = master_node_obj.delete_deployment(pod_name=pod)
+                if resp[0]:
+                    return False, pod_info
+                pod_info[pod] = pod_data.copy()
+                pod_info[pod]['deployment_backup'] = resp[1]
+                pod_info[pod]['deployment_name'] = resp[2]
+            pod_info[pod]['method'] = down_method
+            pod_info[pod]['hostname'] = hostname
+            if event is not None:
+                LOGGER.debug("Clearing the Thread event")
+                event.clear()
+            LOGGER.info("Check services status that were running on pod %s", pod)
+            resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
+                                                 hostname=pod_info[pod]['hostname'])
+            LOGGER.debug("Response: %s", resp)
+            if not resp[0]:
+                return False, pod_info
+        LOGGER.info("Successfully deleted %s by %s method", delete_pods, down_method)
 
         LOGGER.info("Check cluster status")
         resp = self.check_cluster_status(master_node_obj)
         if resp[0]:
-            return False,resp
-        LOGGER.info("Cluster is in degraded state")
+            return False, pod_info
+        LOGGER.info("Cluster has failures as pod %s has been shutdown", delete_pods)
 
-        LOGGER.info(" Check services status that were running on pod %s", pod_name)
-        resp = health_obj.get_pod_svc_status(pod_list=[pod_name], fail=True, hostname=hostname)
+        # Get the remaining pods except deleted one, to check its service status not affected
+        remaining_pods = list(set(remaining) - set(delete_pods))
+        LOGGER.info("Check services status on remaining pods %s", remaining_pods)
+        resp = health_obj.get_pod_svc_status(pod_list=remaining_pods, fail=False)
         LOGGER.debug("Response: %s", resp)
         if not resp[0]:
-            return False,resp
-
-        LOGGER.info("Services of pod are in offline state")
-        pod_list.remove(pod_name)
-
-        LOGGER.info("Check services status on remaining pods %s", pod_list)
-        resp = health_obj.get_pod_svc_status(pod_list=pod_list, fail=False)
-        LOGGER.debug("Response: %s", resp)
-        if not resp[0]:
-            return False, resp
-        LOGGER.info("Services of pod are in online state")
-        return True, pod_name
+            return False, pod_info
+        LOGGER.info("Services of remaining pods are in online state")
+        return True, pod_info
 
     def get_replace_recursively(self, search_dict, field, replace_key=None, replace_val=None):
         """
@@ -1556,15 +1624,14 @@ class HAK8s:
         return True, modified_yaml, yaml_path
 
     @staticmethod
-    def failover_pod(pod_obj, pod_list, failover_node):
+    def change_pod_node(pod_obj, pod_node):
         """
-        Function to failover given pod
+        Function to change the node of given pod list (NodeSelector)
         :param pod_obj: Object of the pod
-        :param pod_list: List of the pods to be failed over
-        :param failover_node: Node to which pod is to be failed over
+        :param pod_node: Dict of the pod: failover_node (Node to which pod is to be failed over)
         :return: bool, str (status, response)
         """
-        for pod in pod_list:
+        for pod, failover_node in pod_node.items():
             pod_prefix = '-'.join(pod.split("-")[:2])
             cur_node = pod_obj.get_pods_node_fqdn(pod_prefix).get(pod)
             LOGGER.info("Pod %s is hosted on %s", pod, cur_node)
@@ -1578,6 +1645,258 @@ class HAK8s:
                 LOGGER.info("Successfully failed over pod %s to node %s", pod, failover_node)
                 return True, resp
             except IOError as error:
-                LOGGER.error("Failed to failover pod %s to %s due to error: %s", pod,
-                             failover_node, error)
+                LOGGER.exception("Failed to failover pod %s to %s due to error: %s", pod,
+                                 failover_node, error)
                 return False, error
+
+    def mark_resource_failure(self, mnode_obj, pod_list: list, go_random: bool = True,
+                              rsc_opt: str = "mark_node_failure", rsc: str = "node",
+                              validate_set: bool = True):
+        """
+        Helper function to set resource status to Failed random if go_random
+        :param pod_list: List of resource to be marked as failed
+        :param go_random: If True, send mark failure signal to resource randomly
+        :param mnode_obj: Master node object to fetch the resource ID
+        :param rsc_opt: Operation to be performed on resource (e.g. mark_node_failure)
+        :param rsc: resource type (e.g. node, cluster)
+        :param validate_set: If set to TRUE, its validate SET failure for resource
+        :return: bool, response
+        """
+        if rsc == 'node':
+            pod_info = {}
+            pod_data = {'id': None, 'status': 'offline'}
+            for pod in pod_list:
+                pod_info[pod] = pod_data.copy()
+                pod_info[pod]['id'] = mnode_obj.get_machine_id_for_pod(pod)
+
+            for pod in pod_list:
+                set_fail = self.system_random.choice([True, False]) if go_random else True
+                if set_fail:
+                    LOGGER.info('Marking %s pod as failed', pod)
+                    data_val = {"operation": rsc_opt,
+                                "arguments": {"id": f"{pod_info[pod]['id']}"}}
+                    resp = self.system_health.set_resource_signal(req_body=data_val, resource=rsc)
+                    if not resp[0]:
+                        return False, pod_info, f"Failed to set failure status for {pod}"
+                    pod_info[pod]['status'] = 'failed'
+                    LOGGER.info("Sleeping for %s sec.", HA_CFG["common_params"]["30sec_delay"])
+                    time.sleep(HA_CFG["common_params"]["30sec_delay"])
+            if validate_set:
+                LOGGER.info("Validating nodes/pods status is SET as expected.")
+                return self.get_validate_resource_status(rsc_info=pod_info)
+            return True, pod_info, f"{pod_list} marked as failed"
+        return False, f"Mark failure for {rsc} is not supported yet"
+
+    # pylint: disable=W1624
+    def get_validate_resource_status(self, rsc_info, exp_sts=None,
+                                     mnode_obj=None, rsc: str = "node"):
+        """
+        Helper function to get and validate resource status
+        :param exp_sts: Expected status of resource
+        :param rsc_info: Required resource to get its status,
+        dict with {pod1:{'id':, 'status':},..} or list of pods
+        :param rsc: resource type (e.g. node, cluster)
+        :param mnode_obj: Master node object to fetch the resource ID
+        :return: bool, response
+        """
+        if rsc == "node":
+            if not isinstance(rsc_info, dict):
+                # Get the node ID and set expected status if only list of pods is passed
+                LOGGER.info("Get the nodes ID for GET API.")
+                pod_info = {}
+                pod_data = {'id': None, 'status': "online"}
+                for pod in rsc_info:
+                    pod_info[pod] = pod_data.copy()
+                    pod_info[pod]['id'] = mnode_obj.get_machine_id_for_pod(pod)
+                    pod_info[pod]['status'] = exp_sts
+            else:
+                pod_info = rsc_info.copy()
+            for pod in pod_info.keys():
+                LOGGER.info("Get and verify pod %s status is as expected", pod)
+                resp = self.poll_to_get_resource_status(exp_sts=pod_info[pod]['status'], rsc=rsc,
+                                                        rsc_id=pod_info[pod]['id'])
+                if not resp:
+                    return False, f"Failed to get expected status for {pod}"
+        elif rsc == "cluster":
+            # Get the cluster ID and verify the cluster status to Expected
+            LOGGER.info("Get the cluster ID for GET API and verify cluster status.")
+            data = self.get_config_value(mnode_obj)
+            if not data[0]:
+                return False, "Failed to get cluster ID"
+            if not exp_sts and isinstance(rsc_info, dict):
+                exp_sts = "online"
+                for pod in rsc_info.keys():
+                    # If 1 node is offline, cluster will be in degraded
+                    if rsc_info[pod]['status'] == "offline" or rsc_info[pod]['status'] == "failed":
+                        exp_sts = "degraded"
+                        break
+            LOGGER.info("Get and verify cluster status is set to %s", exp_sts)
+            resp = self.poll_to_get_resource_status(exp_sts=exp_sts, rsc=rsc,
+                                                    rsc_id=data[1]["cluster"]["id"])
+            if not resp:
+                return False, "Failed to get expected status for Cluster"
+        return True, f"Got expected status for {rsc}"
+
+    def poll_to_get_resource_status(self, exp_sts, rsc, rsc_id,
+                                    timeout=HA_CFG["common_params"]["90sec_delay"]):
+        """
+        Helper function to GET and Poll for expected resource status till timeout
+        :param exp_sts: Expected status of resource
+        :param rsc_id: Required resource ID to GET the resource status
+        :param rsc: resource type (e.g. node, cluster)
+        :param timeout: Poll for expected status till timeout
+        :return: bool
+        """
+        resp = self.system_health.get_resource_status(resource_id=rsc_id, resource=rsc)
+        if not resp[0]:
+            return False
+        status = resp[1]['status']
+        poll = time.time() + timeout
+        sleep_time = HA_CFG["common_params"]["2sec_delay"]
+        while status != exp_sts and poll > time.time():
+            LOGGER.info("Current %s status is %s. Sleeping for %s sec", rsc, status, sleep_time)
+            time.sleep(sleep_time)
+            resp = self.system_health.get_resource_status(resource_id=rsc_id, resource=rsc)
+            if not resp[0]:
+                return False
+            status = resp[1]['status']
+            # Gradually increase in time by multiple of 2 to get node/pod status
+            sleep_time = sleep_time * 2
+        # Verify we got the expected status within Polling time
+        if status != exp_sts:
+            return False
+        return True
+
+    @staticmethod
+    def get_rc_node(node_obj):
+        """
+        To get the primary cortx node name (RC node)
+        :param node_obj: object for master node
+        :return: Primary(RC) node name in the cluster
+        :rtype: str
+        """
+        data_pod = node_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)[1]
+        cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
+        rc_node = node_obj.send_k8s_cmd(operation="exec", pod=data_pod,
+                                        namespace=common_const.NAMESPACE,
+                                        command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+                                        f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}", decode=True)
+        return rc_node
+
+    def failover_pod(self, pod_obj, pod_yaml, failover_node):
+        """
+        Helper function to delete, recreate and failover pod
+        :param pod_obj: Object of the pod
+        :param pod_yaml: Dict containing pod name and yaml file to be used for recreation
+        :param failover_node: Node FQDN to which pod is to be failed over
+        :return: bool, tuple
+        """
+        for pod, yaml_f in pod_yaml.items():
+            LOGGER.info("Deleting deployment for pod %s", pod)
+            resp = pod_obj.delete_deployment(pod_name=pod)
+            if resp[0]:
+                return False, f"Failed to delete pod {pod} by deleting deployment"
+            deploy = resp[2]
+            LOGGER.info("Recreating deployment for pod %s using yaml file %s", pod, yaml_f)
+            resp = pod_obj.recover_deployment_k8s(yaml_f, deploy)
+            if not resp[0]:
+                return resp
+            new_pod = pod_obj.get_recent_pod_name(deployment_name=deploy)
+            LOGGER.info("Changing host node of pod %s to %s", pod, failover_node)
+            resp = self.change_pod_node(pod_obj, pod_node={new_pod: failover_node})
+            if not resp[0]:
+                return resp
+            LOGGER.info("Check cluster status")
+            resp = self.poll_cluster_status(pod_obj)
+            if not resp[0]:
+                return resp
+
+        return True, f"Successfully failed over pods {list(pod_yaml.keys())}"
+
+    def iam_bucket_cruds(self, event, s3_obj, user_crud=False, num_users=None, bkt_crud=False,
+                         num_bkts=None, output=None):
+        """
+        Function to perform iam user and bucket crud operations in loop (To be used for background)
+        :param event: event to intimate thread about main thread operations
+        :param s3_obj: s3 test lib object
+        :param user_crud: Flag for performing iam user crud operations
+        :param num_users: Number of iam users to be created and deleted
+        :param bkt_crud: Flag for performing bucket crud operations
+        :param num_bkts: Number of buckets to be created and deleted
+        :param output: Output queue in which results should be put
+        :return: Queue containing output lists
+        """
+        exp_fail = list()
+        failed = list()
+        user_del_failed = list()
+        user = None
+        if user_crud:
+            LOGGER.info("Create and delete %s IAM users in loop", num_users)
+            for i in range(num_users):
+                try:
+                    LOGGER.debug("Creating %s user", i)
+                    user = None
+                    user = self.mgnt_ops.create_account_users(nusers=1)
+                    if user is None:
+                        if event.is_set():
+                            exp_fail.append(user)
+                        else:
+                            failed.append(user)
+                        break
+                    LOGGER.debug("Deleting %s user", i)
+                    resp = self.delete_s3_acc_buckets_objects(user)
+                    if not resp[0]:
+                        user_del_failed.append(user)
+                        if event.is_set():
+                            exp_fail.append(user)
+                        else:
+                            failed.append(user)
+                    else:
+                        LOGGER.debug("Created and deleted %s user successfully", i)
+                except CTException as error:
+                    LOGGER.exception("Error: %s", error)
+                    if event.is_set():
+                        exp_fail.append(user)
+                    else:
+                        failed.append(user)
+
+            result = (exp_fail, failed, user_del_failed)
+            output.put(result)
+        elif bkt_crud:
+            self.bucket_cruds(event, s3_obj, num_bkts=num_bkts, output=output)
+
+    @staticmethod
+    def bucket_cruds(event, s3_obj, num_bkts=None, output=None):
+        """
+        Function to perform iam user and bucket crud operations in loop (To be used for background)
+        :param event: event to intimate thread about main thread operations
+        :param s3_obj: s3 test lib object
+        :param num_bkts: Number of buckets to be created and deleted
+        :param output: Output queue in which results should be put
+        :return: Queue containing output lists
+        """
+        LOGGER.info("Create and delete %s buckets in loop", num_bkts)
+        exp_fail = list()
+        failed = list()
+        bucket_name = None
+        for i in range(num_bkts):
+            try:
+                bucket_name = f"bkt-loop-{i}"
+                res = s3_obj.create_bucket(bucket_name)
+                if res[1] != bucket_name:
+                    if event.is_set():
+                        exp_fail.append(bucket_name)
+                    else:
+                        failed.append(bucket_name)
+                    break
+                s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
+                LOGGER.debug("Created and deleted %s bucket successfully", i)
+            except CTException as error:
+                LOGGER.exception("Error: %s", error)
+                if event.is_set():
+                    exp_fail.append(bucket_name)
+                else:
+                    failed.append(bucket_name)
+
+        result = (exp_fail, failed)
+        output.put(result)

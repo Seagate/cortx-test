@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python # pylint: disable=C0302
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -19,22 +19,26 @@
 
 """Test Network Faults"""
 
-import time
-import random
 import logging
-import pytest
+import random
+import time
+
 import pandas as pd
-from libs.ras.ras_test_lib import RASTestLib
-from commons.helpers.node_helper import Node
-from commons.helpers.health_helper import Health
-from libs.s3 import S3H_OBJ
-from commons.utils.assert_utils import *
-from libs.csm.rest.csm_rest_alert import SystemAlerts
-from commons.alerts_simulator.generate_alert_lib import \
-     GenerateAlertLib, AlertType
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
-from commons import constants as cons
+import pytest
+
 from commons import commands as common_cmd
+from commons import constants as cons
+from commons.alerts_simulator.generate_alert_lib import AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
+from commons.helpers.health_helper import Health
+from commons.helpers.node_helper import Node
+from commons.utils import assert_utils
+from config import CMN_CFG
+from config import RAS_TEST_CFG
+from config import RAS_VAL
+from libs.csm.rest.csm_rest_alert import SystemAlerts
+from libs.ras.ras_test_lib import RASTestLib
+from libs.s3 import S3H_OBJ
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +55,8 @@ class TestNetworkFault:
         LOGGER.info("Total number of nodes in cluster: %s", cls.node_cnt)
 
         LOGGER.info("Randomly picking node to create fault")
-        cls.test_node = random.randint(1, cls.node_cnt)
+        cls.system_random = random.SystemRandom()
+        cls.test_node = cls.system_random.randint(1, cls.node_cnt)
 
         LOGGER.info("Fault testing will be done on node: %s", cls.test_node)
         cls.host = CMN_CFG["nodes"][cls.test_node - 1]["host"]
@@ -73,11 +78,9 @@ class TestNetworkFault:
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
 
         resp = cls.ras_test_obj.get_nw_infc_names(node_num=cls.test_node-1)
-        cls.nw_interfaces = resp[1] if resp[0] else assert_true(resp[0],
-                                                                "Failed to "
-                                                                "get network "
-                                                                "interface "
-                                                                "names")
+        cls.nw_interfaces = resp[1] if resp[0] else assert_utils.assert_true(resp[0],
+                                                                             "Failed to get network"
+                                                                             " interface names")
         cls.mgmt_device = cls.nw_interfaces["MGMT"]
         cls.public_data_device = cls.nw_interfaces["PUBLIC_DATA"]
         cls.private_data_device = cls.nw_interfaces["PRIVATE_DATA"]
@@ -91,7 +94,7 @@ class TestNetworkFault:
 
         node_d = cls.health_obj.get_current_srvnode()
         cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
-            cls.hostname.split('.')[0] in node_d.keys() else assert_true(
+            cls.hostname.split('.')[0] in node_d.keys() else assert_utils.assert_true(
             False, "Node name not found")
 
         cls.csm_alerts_obj = SystemAlerts()
@@ -105,7 +108,7 @@ class TestNetworkFault:
         LOGGER.info("Running setup_method")
         LOGGER.info("Checking health of cluster")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         self.starttime = time.time()
         LOGGER.info("Retaining the original/default config")
@@ -124,7 +127,7 @@ class TestNetworkFault:
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd()
-            assert_true(resp, "Failed to start RMQ channel")
+            assert_utils.assert_true(resp, "Failed to start RMQ channel")
             LOGGER.info(
                 "Successfully started read_message_bus.py script on node")
 
@@ -133,11 +136,11 @@ class TestNetworkFault:
                     self.nw_interfaces["PUBLIC_DATA"],
                     self.nw_interfaces["PRIVATE_DATA"]]
         status = self.health_obj.check_nw_interface_status(nw_infcs=nw_infcs)
-        for k, v in status.items():
-            if "DOWN" in v:
+        for key, value in status.items():
+            if "DOWN" in value:
                 LOGGER.info("%s is down. Please check network connections and "
-                            "restart tests.", k)
-                assert False, f"{k} is down. Please check network connections " \
+                            "restart tests.", key)
+                assert False, f"{key} is down. Please check network connections " \
                               f"and restart tests."
         LOGGER.info("All network interfaces are up.")
         LOGGER.info("Change sspl log level to DEBUG")
@@ -169,10 +172,11 @@ class TestNetworkFault:
 
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()
-        assert_true(res[0], res[1])
+        assert_utils.assert_true(res[0], res[1])
         LOGGER.info("Started collection of sspl logs")
         LOGGER.info("Successfully performed Setup operations")
 
+    # pylint: disable=too-many-statements
     def teardown_method(self):
         """
         Teardown operations
@@ -188,7 +192,7 @@ class TestNetworkFault:
                 input_parameters={'device': self.mgmt_device})
 
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0], "{} up".format(network_fault_params["error_msg"]))
+            assert_utils.assert_true(resp[0], f"{network_fault_params['error_msg']} up")
 
         if self.public_data_fault_flag:
             LOGGER.info("Resolving Public data Network port Fault")
@@ -198,8 +202,7 @@ class TestNetworkFault:
                               'host_password': self.passwd},
                 input_parameters={'device': self.public_data_device})
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0],
-                        "{} up".format(network_fault_params["error_msg"]))
+            assert_utils.assert_true(resp[0], f"{network_fault_params['error_msg']} up")
 
         if self.mgmt_cable_fault:
             network_cable_fault = RAS_TEST_CFG["nw_cable_fault"]
@@ -211,8 +214,7 @@ class TestNetworkFault:
                 input_parameters={'device': self.mgmt_device,
                                   'action': network_cable_fault["connect"]})
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0],
-                        network_fault_params["error_msg"].format("connect"))
+            assert_utils.assert_true(resp[0], network_fault_params["error_msg"].format("connect"))
             LOGGER.info("Successfully resolved management network "
                         "port fault on %s", self.hostname)
 
@@ -225,8 +227,7 @@ class TestNetworkFault:
                 input_parameters={'device': self.public_data_device,
                                   'action': network_cable_fault["connect"]})
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0],
-                        network_fault_params["error_msg"].format("connect"))
+            assert_utils.assert_true(resp[0], network_fault_params["error_msg"].format("connect"))
             self.public_data_cable_fault = False
             LOGGER.info("Step 2: Successfully resolved management network "
                         "port fault on %s", self.hostname)
@@ -285,10 +286,11 @@ class TestNetworkFault:
 
         LOGGER.info("Checking health of cluster")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("ENDED: Successfully performed the Teardown Operations")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.tags("TEST-21493")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -327,13 +329,13 @@ class TestNetworkFault:
                           'host_password': self.passwd},
             input_parameters={'device': self.mgmt_device})
         LOGGER.info("Response: %s", resp)
-        assert_true(resp[0], "{} down".format(network_fault_params["error_msg"]))
+        assert_utils.assert_true(resp[0], f"{network_fault_params['error_msg']} down")
         self.mgmt_fault_flag = True
         LOGGER.info("Step 1.1: Successfully created management network "
                     "port fault on %s", self.hostname)
 
-        wait_time = random.randint(common_params["min_wait_time"],
-                                   common_params["max_wait_time"])
+        wait_time = self.system_random.randint(common_params["min_wait_time"],
+                                               common_params["max_wait_time"])
 
         LOGGER.info("Waiting for %s seconds", wait_time)
         time.sleep(wait_time)
@@ -348,7 +350,7 @@ class TestNetworkFault:
             resp = ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
 
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 1.2: Successfully checked generated alerts")
 
         if self.setup_type != "VM":
@@ -359,7 +361,7 @@ class TestNetworkFault:
                             network_fault_params["resource_id_csm"].format(
                                           resource_id))
             LOGGER.info("Response: %s", resp)
-            assert_true(resp, "Failed to get alert in CSM REST")
+            assert_utils.assert_true(resp, "Failed to get alert in CSM REST")
             LOGGER.info("Step 1.3: Successfully Validated csm alert response")
 
         LOGGER.info("Checking health of cluster")
@@ -374,10 +376,10 @@ class TestNetworkFault:
                           'host_password': self.passwd},
             input_parameters={'device': self.mgmt_device})
         LOGGER.info("Response: %s", resp)
-        assert_true(resp[0], "{} up".format(network_fault_params["error_msg"]))
+        assert_utils.assert_true(resp[0], f"{network_fault_params['error_msg']} up")
         self.mgmt_fault_flag = False
-        LOGGER.info("Step 2: Successfully resolved management network "
-                    "port fault on %s", self.hostname)
+        LOGGER.info("Step 2: Successfully resolved management network port fault on %s",
+                    self.hostname)
 
         wait_time = common_params["min_wait_time"]
 
@@ -393,7 +395,7 @@ class TestNetworkFault:
             LOGGER.info("RAS checks: %s", alert_list)
             resp = ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 2.1: Successfully checked generated alerts")
 
         if self.setup_type != "VM":
@@ -407,7 +409,7 @@ class TestNetworkFault:
                             network_fault_params["resource_id_csm"].format(
                                           resource_id))
             LOGGER.info("Response: %s", resp)
-            assert_true(resp, "Failed to get alert in CSM REST")
+            assert_utils.assert_true(resp, "Failed to get alert in CSM REST")
             LOGGER.info(
                 "Step 2.2: Successfully validated csm alert response after "
                 "resolving fault")
@@ -419,6 +421,7 @@ class TestNetworkFault:
         LOGGER.info("ENDED: Verifying management network port fault and "
                     "fault-resolved scenarios")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.tags("TEST-21506")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -448,13 +451,13 @@ class TestNetworkFault:
                           'host_password': self.passwd},
             input_parameters={'device': self.public_data_device})
         LOGGER.info("Response: %s", resp)
-        assert_true(resp[0], "{} down".format(network_fault_params["error_msg"]))
+        assert_utils.assert_true(resp[0], f"{network_fault_params['error_msg']} down")
         self.public_data_fault_flag = True
-        LOGGER.info("Step 1.1: Successfully created public_data network port "
-                    f"fault on %s", self.hostname)
+        LOGGER.info("Step 1.1: Successfully created public_data network port fault on %s",
+                    self.hostname)
 
-        wait_time = random.randint(common_params["min_wait_time"],
-                                   common_params["max_wait_time"])
+        wait_time = self.system_random.randint(common_params["min_wait_time"],
+                                               common_params["max_wait_time"])
 
         LOGGER.info("Waiting for %s seconds", wait_time)
         time.sleep(wait_time)
@@ -470,7 +473,7 @@ class TestNetworkFault:
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
 
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 1.2: Successfully checked generated alerts")
 
             LOGGER.info("Step 1.3: Validating csm alert response")
@@ -482,7 +485,7 @@ class TestNetworkFault:
                             network_fault_params["host_id"].format(
                               self.test_node))
             LOGGER.info("Response: %s", resp)
-            assert_true(resp, "Failed to get alert in CSM REST")
+            assert_utils.assert_true(resp, "Failed to get alert in CSM REST")
             LOGGER.info("Step 1.3: Successfully Validated csm alert response")
 
         LOGGER.info("Checking health of cluster")
@@ -497,10 +500,10 @@ class TestNetworkFault:
                           'host_password': self.passwd},
             input_parameters={'device': self.public_data_device})
         LOGGER.info("Response: %s", resp)
-        assert_true(resp[0], "{} up".format(network_fault_params["error_msg"]))
+        assert_utils.assert_true(resp[0], f"{network_fault_params['error_msg']} up")
         self.public_data_fault_flag = False
-        LOGGER.info("Step 2: Successfully resolved public_data network port "
-                    f"fault on %s", self.hostname)
+        LOGGER.info("Step 2: Successfully resolved public_data network port fault on %s",
+                    self.hostname)
 
         wait_time = common_params["min_wait_time"]
 
@@ -517,7 +520,7 @@ class TestNetworkFault:
             LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 2.1: Successfully checked generated alerts")
 
         LOGGER.info(
@@ -531,7 +534,7 @@ class TestNetworkFault:
                                       resource_id),
                         network_fault_params["host_id"].format(self.test_node))
         LOGGER.info("Response: %s", resp)
-        assert_true(resp, "Failed to get alert in CSM REST")
+        assert_utils.assert_true(resp, "Failed to get alert in CSM REST")
         LOGGER.info(
             "Step 2.2: Successfully validated csm alert response after "
             "resolving fault")
@@ -543,6 +546,9 @@ class TestNetworkFault:
         LOGGER.info("ENDED: Verifying public data network port fault and "
                     "fault-resolved scenarios")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-branches
     @pytest.mark.tags("TEST-21510")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -570,12 +576,12 @@ class TestNetworkFault:
                                                 'flag':
                                                     self.public_data_fault_flag}
                           }
-        df = pd.DataFrame(columns=f"{list(nw_port_faults.keys())[0]} "
-                                  f"{list(nw_port_faults.keys())[1]}".split(),
-                          index='Step1 Step2 Step3 Step4 Step5 Step6 Step7 '
-                                'Step8 Step9 Step10'.split())
+        d_f = pd.DataFrame(columns=f"{list(nw_port_faults.keys())[0]} "
+                                   f"{list(nw_port_faults.keys())[1]}".split(),
+                           index='Step1 Step2 Step3 Step4 Step5 Step6 Step7 '
+                                 'Step8 Step9 Step10'.split())
         for key, value in nw_port_faults.items():
-            df[key] = 'Pass'
+            d_f[key] = 'Pass'
             host = value['host']
             host_user = value['host_user']
             host_password = value['host_password']
@@ -602,8 +608,8 @@ class TestNetworkFault:
                                                services=[service["sspl_service"]],
                                                decode=True, exc=False)
             if resp[0] != "inactive":
-                df[key]['Step1'] = 'Fail'
-                compare(resp[0], "inactive")
+                d_f[key]['Step1'] = 'Fail'
+                assert_utils.compare(resp[0], "inactive")
             else:
                 LOGGER.info("Step 1: Successfully stopped SSPL service")
 
@@ -615,7 +621,7 @@ class TestNetworkFault:
                 input_parameters={'device': resource_id})
             LOGGER.info("Response: %s", resp)
             if not resp[0]:
-                df[key]['Step2'] = 'Fail'
+                d_f[key]['Step2'] = 'Fail'
                 LOGGER.error("Step 2: Failed to create fault %s", key)
             else:
                 value['flag'] = True
@@ -633,13 +639,13 @@ class TestNetworkFault:
                                                services=[service["sspl_service"]],
                                                decode=True, exc=False)
             if resp[0] != "active":
-                df[key]['Step3'] = 'Fail'
-                compare(resp[0], "active")
+                d_f[key]['Step3'] = 'Fail'
+                assert_utils.compare(resp[0], "active")
             else:
                 LOGGER.info("Step 3: Successfully started SSPL service")
 
-            wait_time = random.randint(common_params["min_wait_time"],
-                                       common_params["max_wait_time"])
+            wait_time = self.system_random.randint(common_params["min_wait_time"],
+                                                   common_params["max_wait_time"])
 
             LOGGER.info("Waiting for %s seconds", wait_time)
             time.sleep(wait_time)
@@ -654,7 +660,7 @@ class TestNetworkFault:
                 resp = ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
-                    df[key]['Step4'] = 'Fail'
+                    d_f[key]['Step4'] = 'Fail'
                     LOGGER.error("Step 4: %s", resp[1])
                 else:
                     LOGGER.info("Step 4: Successfully checked generated alerts")
@@ -668,7 +674,7 @@ class TestNetworkFault:
                         resource_id))
                 LOGGER.info("Response: %s", resp)
                 if not resp:
-                    df[key]['Step5'] = 'Fail'
+                    d_f[key]['Step5'] = 'Fail'
                     LOGGER.error("Step 5: Failed to get alert in CSM REST")
                 else:
                     LOGGER.info("Step 5: Successfully Validated csm alert "
@@ -688,8 +694,8 @@ class TestNetworkFault:
                                                          "sspl_service"]],
                                                decode=True, exc=False)
             if resp[0] != "inactive":
-                df[key]['Step6'] = 'Fail'
-                compare(resp[0], "inactive")
+                d_f[key]['Step6'] = 'Fail'
+                assert_utils.compare(resp[0], "inactive")
             else:
                 LOGGER.info("Step 6: Successfully stopped SSPL service")
 
@@ -701,7 +707,7 @@ class TestNetworkFault:
                 input_parameters={'device': resource_id})
             LOGGER.info("Response: %s", resp)
             if not resp[0]:
-                df[key]['Step7'] = 'Fail'
+                d_f[key]['Step7'] = 'Fail'
                 LOGGER.error("Step 7: %s up", network_fault_params["error_msg"])
             else:
                 value['flag'] = False
@@ -720,8 +726,8 @@ class TestNetworkFault:
                                                                "sspl_service"]],
                                                decode=True, exc=False)
             if resp[0] != "active":
-                df[key]['Step8'] = 'Fail'
-                compare(resp[0], "active")
+                d_f[key]['Step8'] = 'Fail'
+                assert_utils.compare(resp[0], "active")
             else:
                 LOGGER.info("Step 8: Successfully started SSPL service")
 
@@ -740,7 +746,7 @@ class TestNetworkFault:
                 resp = ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
-                    df[key]['Step9'] = 'Fail'
+                    d_f[key]['Step9'] = 'Fail'
                     LOGGER.error("Step 9: %s", resp[1])
                 else:
                     LOGGER.info("Step 9: Successfully checked generated alerts")
@@ -757,20 +763,21 @@ class TestNetworkFault:
                         resource_id))
                 LOGGER.info("Response: %s", resp)
                 if not resp:
-                    df[key]['Step10'] = 'Fail'
+                    d_f[key]['Step10'] = 'Fail'
                     LOGGER.error("Step 10: Failed to get alert in CSM "
                                  "REST")
                 else:
                     LOGGER.info("Step 10: Successfully validated csm alert "
                                 "response after resolving fault")
 
-        LOGGER.info("Summary of test: \n%s", df)
-        result = False if 'Fail' in df.values else True
-        assert_true(result, "Test failed. Please check summary for failed "
-                            "step.")
+        LOGGER.info("Summary of test: \n%s", d_f)
+        result = False if 'Fail' in d_f.values else True
+        assert_utils.assert_true(result, "Test failed. Please check summary for failed "
+                                         "step.")
         LOGGER.info("ENDED: Verifying alerts in persistent cache for network "
                     "faults when SSPL is stopped and started in between")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.tags("TEST-21507")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -800,13 +807,13 @@ class TestNetworkFault:
             input_parameters={'device': self.mgmt_device, 'action':
                               network_fault_params["disconnect"]})
         LOGGER.info("Response: %s", resp)
-        assert_true(resp[0], network_fault_params["error_msg"].format("disconnect"))
+        assert_utils.assert_true(resp[0], network_fault_params["error_msg"].format("disconnect"))
         self.mgmt_cable_fault = True
         LOGGER.info("Step 1.1: Successfully created management network "
                     "port fault on %s", self.hostname)
 
-        wait_time = random.randint(common_params["min_wait_time"],
-                                   common_params["max_wait_time"])
+        wait_time = self.system_random.randint(common_params["min_wait_time"],
+                                               common_params["max_wait_time"])
 
         LOGGER.info("Waiting for %s seconds", wait_time)
         time.sleep(wait_time)
@@ -821,7 +828,7 @@ class TestNetworkFault:
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
 
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 1.2: Successfully checked generated alerts")
 
         LOGGER.info("Step 1.3: Validating csm alert response")
@@ -831,7 +838,7 @@ class TestNetworkFault:
             network_fault_params["resource_id_csm"].format(
                 resource_id), host_id)
         LOGGER.info("Response: %s", resp)
-        assert_true(resp, "Failed to get alert in CSM REST")
+        assert_utils.assert_true(resp, "Failed to get alert in CSM REST")
         LOGGER.info("Step 1.3: Successfully Validated csm alert response")
 
         LOGGER.info("Checking health of cluster")
@@ -847,7 +854,7 @@ class TestNetworkFault:
             input_parameters={'device': self.mgmt_device,
                               'action': network_fault_params["connect"]})
         LOGGER.info("Response: %s", resp)
-        assert_true(resp[0], network_fault_params["error_msg"].format("connect"))
+        assert_utils.assert_true(resp[0], network_fault_params["error_msg"].format("connect"))
         self.mgmt_cable_fault = False
         LOGGER.info("Step 2: Successfully resolved management network "
                     "port fault on %s", self.hostname)
@@ -866,7 +873,7 @@ class TestNetworkFault:
             LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 2.1: Successfully checked generated alerts")
 
         LOGGER.info(
@@ -879,7 +886,7 @@ class TestNetworkFault:
             network_fault_params["resource_id_csm"].format(
                 resource_id), host_id)
         LOGGER.info("Response: %s", resp)
-        assert_true(resp, "Failed to get alert in CSM REST")
+        assert_utils.assert_true(resp, "Failed to get alert in CSM REST")
         LOGGER.info(
             "Step 2.2: Successfully validated csm alert response after "
             "resolving fault")
@@ -891,6 +898,7 @@ class TestNetworkFault:
         LOGGER.info("ENDED: Verifying alerts when management network cable is"
                     " disconnected/connected")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.tags("TEST-21508")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -920,14 +928,13 @@ class TestNetworkFault:
             input_parameters={'device': self.public_data_device,
                               'action': network_fault_params["disconnect"]})
         LOGGER.info("Response: %s", resp)
-        assert_true(resp[0],
-                    network_fault_params["error_msg"].format("disconnect"))
+        assert_utils.assert_true(resp[0], network_fault_params["error_msg"].format("disconnect"))
         self.public_data_cable_fault = True
         LOGGER.info("Step 1.1: Successfully created public data cable "
                     "fault on %s", self.hostname)
 
-        wait_time = random.randint(common_params["min_wait_time"],
-                                   common_params["max_wait_time"])
+        wait_time = self.system_random.randint(common_params["min_wait_time"],
+                                               common_params["max_wait_time"])
 
         LOGGER.info("Waiting for %s seconds", wait_time)
         time.sleep(wait_time)
@@ -942,7 +949,7 @@ class TestNetworkFault:
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
 
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 1.2: Successfully checked generated alerts")
 
         LOGGER.info("Step 1.3: Validating csm alert response")
@@ -952,7 +959,7 @@ class TestNetworkFault:
             network_fault_params["resource_id_csm"].format(
                 resource_id), host_id)
         LOGGER.info("Response: %s", resp)
-        assert_true(resp, "Failed to get alert in CSM REST")
+        assert_utils.assert_true(resp, "Failed to get alert in CSM REST")
         LOGGER.info("Step 1.3: Successfully Validated csm alert response")
 
         LOGGER.info("Checking health of cluster")
@@ -968,8 +975,7 @@ class TestNetworkFault:
             input_parameters={'device': self.public_data_device,
                               'action': network_fault_params["connect"]})
         LOGGER.info("Response: %s", resp)
-        assert_true(resp[0],
-                    network_fault_params["error_msg"].format("connect"))
+        assert_utils.assert_true(resp[0], network_fault_params["error_msg"].format("connect"))
         self.public_data_cable_fault = False
         LOGGER.info("Step 2: Successfully resolved public data cable "
                     "fault on %s", self.hostname)
@@ -988,7 +994,7 @@ class TestNetworkFault:
             LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 2.1: Successfully checked generated alerts")
 
         LOGGER.info(
@@ -1001,7 +1007,7 @@ class TestNetworkFault:
             network_fault_params["resource_id_csm"].format(
                 resource_id), host_id)
         LOGGER.info("Response: %s", resp)
-        assert_true(resp, "Failed to get alert in CSM REST")
+        assert_utils.assert_true(resp, "Failed to get alert in CSM REST")
         LOGGER.info(
             "Step 2.2: Successfully validated csm alert response after "
             "resolving fault")
@@ -1013,6 +1019,9 @@ class TestNetworkFault:
         LOGGER.info("ENDED: Verifying alerts when public data network cable is"
                     " disconnected/connected")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-branches
     @pytest.mark.tags("TEST-21509")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -1038,11 +1047,11 @@ class TestNetworkFault:
                                                 'flag':
                                                     self.public_data_fault_flag}
                           }
-        df = pd.DataFrame(columns=f"{list(nw_port_faults.keys())[0]} "
-                                  f"{list(nw_port_faults.keys())[1]}".split(),
-                          index='Step1 Step2 Step3 Step4 Step5 Step6 Step7'.split())
+        d_f = pd.DataFrame(columns=f"{list(nw_port_faults.keys())[0]} "
+                                   f"{list(nw_port_faults.keys())[1]}".split(),
+                           index='Step1 Step2 Step3 Step4 Step5 Step6 Step7'.split())
         for key, value in nw_port_faults.items():
-            df[key] = 'Pass'
+            d_f[key] = 'Pass'
             host = value['host']
             host_user = value['host_user']
             host_password = value['host_password']
@@ -1064,7 +1073,7 @@ class TestNetworkFault:
                 input_parameters={'device': resource_id})
             LOGGER.info("Response: %s", resp)
             if not resp[0]:
-                df[key]['Step1'] = 'Fail'
+                d_f[key]['Step1'] = 'Fail'
                 LOGGER.error(
                             "Step 1: %s down", network_fault_params["error_msg"])
             else:
@@ -1072,8 +1081,8 @@ class TestNetworkFault:
                 LOGGER.info("Step 1: Successfully created %s "
                             "port fault on %s", key, host)
 
-            wait_time = random.randint(common_params["min_wait_time"],
-                                       common_params["max_wait_time"])
+            wait_time = self.system_random.randint(common_params["min_wait_time"],
+                                                   common_params["max_wait_time"])
 
             LOGGER.info("Waiting for %s seconds", wait_time)
             time.sleep(wait_time)
@@ -1088,7 +1097,7 @@ class TestNetworkFault:
                 resp = ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
-                    df[key]['Step2'] = 'Fail'
+                    d_f[key]['Step2'] = 'Fail'
                     LOGGER.error("Step 2: %s", resp[1])
                 else:
                     LOGGER.info("Step 2: Successfully checked generated alerts")
@@ -1102,7 +1111,7 @@ class TestNetworkFault:
                         resource_id))
                 LOGGER.info("Response: %s", resp)
                 if not resp:
-                    df[key]['Step3'] = 'Fail'
+                    d_f[key]['Step3'] = 'Fail'
                     LOGGER.error("Step 3: Failed to get alert in CSM REST")
                 else:
                     LOGGER.info("Step 3: Successfully Validated csm alert "
@@ -1127,7 +1136,7 @@ class TestNetworkFault:
                 input_parameters={'device': resource_id})
             LOGGER.info("Response: %s", resp)
             if not resp[0]:
-                df[key]['Step5'] = 'Fail'
+                d_f[key]['Step5'] = 'Fail'
                 LOGGER.error(
                             "Step 5: %s up", network_fault_params["error_msg"])
             else:
@@ -1150,7 +1159,7 @@ class TestNetworkFault:
                 resp = ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
-                    df[key]['Step6'] = 'Fail'
+                    d_f[key]['Step6'] = 'Fail'
                     LOGGER.error("Step 6: %s", resp[1])
                 else:
                     LOGGER.info("Step 6: Successfully checked generated alerts")
@@ -1167,20 +1176,23 @@ class TestNetworkFault:
                         resource_id))
                 LOGGER.info("Response: %s", resp)
                 if not resp:
-                    df[key]['Step7'] = 'Fail'
+                    d_f[key]['Step7'] = 'Fail'
                     LOGGER.error("Step 7: Failed to get alert in CSM REST")
                 else:
                     LOGGER.info(
                         "Step 7: Successfully validated csm alert response "
                         "after resolving fault")
 
-        LOGGER.info("Summary of test: \n%s", df)
-        result = False if 'Fail' in df.values else True
-        assert_true(result, "Test failed. Please check summary for failed "
-                            "step.")
+        LOGGER.info("Summary of test: \n%s", d_f)
+        result = False if 'Fail' in d_f.values else True
+        assert_utils.assert_true(result, "Test failed. Please check summary for failed "
+                                         "step.")
         LOGGER.info("ENDED: Verifying alerts in persistent cache for network "
                     "faults when SSPL is stopped and started in between")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-branches
     @pytest.mark.tags("TEST-25292")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -1205,11 +1217,11 @@ class TestNetworkFault:
                                'device': self.public_data_device,
                                'flag': self.public_data_fault_flag}}
 
-        df = pd.DataFrame(columns=f"{list(nw_cable_faults.keys())[0]} "
-                                  f"{list(nw_cable_faults.keys())[1]}".split(),
-                          index='Step1 Step2 Step3 Step4 Step5 Step6 Step7'.split())
+        d_f = pd.DataFrame(columns=f"{list(nw_cable_faults.keys())[0]} "
+                                   f"{list(nw_cable_faults.keys())[1]}".split(),
+                           index='Step1 Step2 Step3 Step4 Step5 Step6 Step7'.split())
         for key, value in nw_cable_faults.items():
-            df[key] = 'Pass'
+            d_f[key] = 'Pass'
             resource_id = value['device']
             LOGGER.info("Generating %s fault", key)
             LOGGER.info("Step 1: Creating fault")
@@ -1220,7 +1232,7 @@ class TestNetworkFault:
                                   'action': create_fault})
             LOGGER.info("Response: %s", resp)
             if not resp[0]:
-                df[key]['Step1'] = 'Fail'
+                d_f[key]['Step1'] = 'Fail'
                 LOGGER.error(
                             "Step 1: %s down", network_fault_params["error_msg"])
             else:
@@ -1228,8 +1240,8 @@ class TestNetworkFault:
                 LOGGER.info("Step 1: Successfully created %s "
                             "port fault on %s", key, self.hostname)
 
-            wait_time = random.randint(common_params["min_wait_time"],
-                                       common_params["max_wait_time"])
+            wait_time = self.system_random.randint(common_params["min_wait_time"],
+                                                   common_params["max_wait_time"])
 
             LOGGER.info("Waiting for %s seconds", wait_time)
             time.sleep(wait_time)
@@ -1245,7 +1257,7 @@ class TestNetworkFault:
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
-                    df[key]['Step2'] = 'Fail'
+                    d_f[key]['Step2'] = 'Fail'
                     LOGGER.error("Step 2: %s", resp[1])
                 else:
                     LOGGER.info("Step 2: Successfully checked generated alerts")
@@ -1258,7 +1270,7 @@ class TestNetworkFault:
                        resource_id), host_id)
             LOGGER.info("Response: %s", resp)
             if not resp:
-                df[key]['Step3'] = 'Fail'
+                d_f[key]['Step3'] = 'Fail'
                 LOGGER.error("Step 3: Failed to get alert in CSM REST")
             else:
                 LOGGER.info("Step 3: Successfully Validated csm alert "
@@ -1283,7 +1295,7 @@ class TestNetworkFault:
                                   'action': resolve_fault})
             LOGGER.info("Response: %s", resp)
             if not resp[0]:
-                df[key]['Step5'] = 'Fail'
+                d_f[key]['Step5'] = 'Fail'
                 LOGGER.error(
                             "Step 5: %s up", network_fault_params["error_msg"])
             else:
@@ -1307,7 +1319,7 @@ class TestNetworkFault:
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
-                    df[key]['Step6'] = 'Fail'
+                    d_f[key]['Step6'] = 'Fail'
                     LOGGER.error("Step 6: %s", resp[1])
                 else:
                     LOGGER.info("Step 6: Successfully checked generated alerts")
@@ -1323,20 +1335,23 @@ class TestNetworkFault:
                 host_id)
             LOGGER.info("Response: %s", resp)
             if not resp:
-                df[key]['Step7'] = 'Fail'
+                d_f[key]['Step7'] = 'Fail'
                 LOGGER.error("Step 7: Failed to get alert in CSM "
                              "REST")
             else:
                 LOGGER.info("Step 7: Successfully validated csm alert "
                             "response after resolving fault")
 
-        LOGGER.info("Summary of test: \n%s", df)
-        result = False if 'Fail' in df.values else True
-        assert_true(result, "Test failed. Please check summary for failed "
-                            "step.")
+        LOGGER.info("Summary of test: \n%s", d_f)
+        result = False if 'Fail' in d_f.values else True
+        assert_utils.assert_true(result, "Test failed. Please check summary for failed "
+                                         "step.")
         LOGGER.info("ENDED: Verifying alerts in persistent cache for network "
                     "faults when SSPL is stopped and started in between")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-branches
     @pytest.mark.tags("TEST-25293")
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
@@ -1362,12 +1377,12 @@ class TestNetworkFault:
                               'device': self.public_data_device,
                               'flag': self.public_data_fault_flag}}
 
-        df = pd.DataFrame(columns=f"{list(nw_cable_faults.keys())[0]} "
-                                  f"{list(nw_cable_faults.keys())[1]}".split(),
-                          index='Step1 Step2 Step3 Step4 Step5 Step6 Step7 '
-                                'Step8 Step9 Step10'.split())
+        d_f = pd.DataFrame(columns=f"{list(nw_cable_faults.keys())[0]} "
+                                   f"{list(nw_cable_faults.keys())[1]}".split(),
+                           index='Step1 Step2 Step3 Step4 Step5 Step6 Step7 '
+                                 'Step8 Step9 Step10'.split())
         for key, value in nw_cable_faults.items():
-            df[key] = 'Pass'
+            d_f[key] = 'Pass'
             resource_id = value['device']
             LOGGER.info("Generating %s port fault", key)
             LOGGER.info("Step 1: Stopping pcs resource for SSPL: %s",
@@ -1384,8 +1399,8 @@ class TestNetworkFault:
                                                                   "sspl_service"]],
                                                     decode=True, exc=False)
             if resp[0] != "inactive":
-                df[key]['Step1'] = 'Fail'
-                compare(resp[0], "inactive")
+                d_f[key]['Step1'] = 'Fail'
+                assert_utils.compare(resp[0], "inactive")
             else:
                 LOGGER.info("Step 1: Successfully stopped SSPL service")
 
@@ -1397,7 +1412,7 @@ class TestNetworkFault:
                                   'action': create_fault})
             LOGGER.info("Response: %s", resp)
             if not resp[0]:
-                df[key]['Step2'] = 'Fail'
+                d_f[key]['Step2'] = 'Fail'
                 LOGGER.error(
                             "Step 2: %s down", network_fault_params["error_msg"])
             else:
@@ -1417,13 +1432,13 @@ class TestNetworkFault:
                                                                   "sspl_service"]],
                                                     decode=True, exc=False)
             if resp[0] != "active":
-                df[key]['Step3'] = 'Fail'
-                compare(resp[0], "active")
+                d_f[key]['Step3'] = 'Fail'
+                assert_utils.compare(resp[0], "active")
             else:
                 LOGGER.info("Step 3: Successfully started SSPL service")
 
-            wait_time = random.randint(common_params["min_wait_time"],
-                                       common_params["max_wait_time"])
+            wait_time = self.system_random.randint(common_params["min_wait_time"],
+                                                   common_params["max_wait_time"])
 
             LOGGER.info("Waiting for %s seconds", wait_time)
             time.sleep(wait_time)
@@ -1439,7 +1454,7 @@ class TestNetworkFault:
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
-                    df[key]['Step4'] = 'Fail'
+                    d_f[key]['Step4'] = 'Fail'
                     LOGGER.error("Step 4: %s", resp[1])
                 else:
                     LOGGER.info("Step 4: Successfully checked generated alerts")
@@ -1452,7 +1467,7 @@ class TestNetworkFault:
                        resource_id), host_id)
             LOGGER.info("Response: %s", resp)
             if not resp:
-                df[key]['Step5'] = 'Fail'
+                d_f[key]['Step5'] = 'Fail'
                 LOGGER.error("Step 5: Failed to get alert in CSM REST")
             else:
                 LOGGER.info("Step 5: Successfully Validated csm alert "
@@ -1472,8 +1487,8 @@ class TestNetworkFault:
                                                                   "sspl_service"]],
                                                     decode=True, exc=False)
             if resp[0] != "inactive":
-                df[key]['Step6'] = 'Fail'
-                compare(resp[0], "inactive")
+                d_f[key]['Step6'] = 'Fail'
+                assert_utils.compare(resp[0], "inactive")
             else:
                 LOGGER.info("Step 6: Successfully stopped SSPL service")
 
@@ -1485,7 +1500,7 @@ class TestNetworkFault:
                                   'action': resolve_fault})
             LOGGER.info("Response: %s", resp)
             if not resp[0]:
-                df[key]['Step7'] = 'Fail'
+                d_f[key]['Step7'] = 'Fail'
                 LOGGER.error(
                             "Step 7: %s up", network_fault_params["error_msg"])
             else:
@@ -1505,8 +1520,8 @@ class TestNetworkFault:
                                                                   "sspl_service"]],
                                                     decode=True, exc=False)
             if resp[0] != "active":
-                df[key]['Step8'] = 'Fail'
-                compare(resp[0], "active")
+                d_f[key]['Step8'] = 'Fail'
+                assert_utils.compare(resp[0], "active")
             else:
                 LOGGER.info("Step 8: Successfully started SSPL service")
 
@@ -1526,7 +1541,7 @@ class TestNetworkFault:
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
-                    df[key]['Step9'] = 'Fail'
+                    d_f[key]['Step9'] = 'Fail'
                     LOGGER.error("Step 9: %s", resp[1])
                 else:
                     LOGGER.info("Step 9: Successfully checked generated alerts")
@@ -1542,16 +1557,16 @@ class TestNetworkFault:
                        resource_id), host_id)
             LOGGER.info("Response: %s", resp)
             if not resp:
-                df[key]['Step10'] = 'Fail'
+                d_f[key]['Step10'] = 'Fail'
                 LOGGER.error("Step 10: Failed to get alert in CSM "
                              "REST")
             else:
                 LOGGER.info("Step 10: Successfully validated csm alert "
                             "response after resolving fault")
 
-        LOGGER.info("Summary of test: \n%s", df)
-        result = False if 'Fail' in df.values else True
-        assert_true(result, "Test failed. Please check summary for failed "
-                            "step.")
+        LOGGER.info("Summary of test: \n%s", d_f)
+        result = False if 'Fail' in d_f.values else True
+        assert_utils.assert_true(result, "Test failed. Please check summary for failed "
+                                         "step.")
         LOGGER.info("ENDED: Verifying alerts in persistent cache for network "
                     "faults when SSPL is stopped and started in between")
