@@ -300,7 +300,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 4: Perform READs-Verify on already written data in Step 1")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix, skipwrite=True,
-                                                    skipcleanup=True, nclients=10, nsamples=30)
+                                                    skipcleanup=True, nclients=test_cfg['nclients'],
+                                                    nsamples=test_cfg['nsamples'])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Successfully performed READs-Verify on already written data in "
                       "Step 1")
