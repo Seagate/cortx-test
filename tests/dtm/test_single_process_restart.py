@@ -143,7 +143,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, f"Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for Read Operation to complete.")
         if proc_read_op.is_alive():
@@ -182,7 +182,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, f"Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
 
         self.log.info("Step 3: Wait for Write Operation to complete.")
         if proc_write_op.is_alive():
@@ -269,7 +269,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=rc_datapod,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, f"Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
         self.log.info("Step 2: Successfully performed single restart of m0d process on pod hosted "
                       "on RC node and checked hctl status is good")
         event.clear()
@@ -328,7 +328,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, f"Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
         self.log.info("Step 2: m0d restarted and recovered successfully")
 
         self.log.info("Step 3: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
