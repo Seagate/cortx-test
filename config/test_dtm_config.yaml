@@ -17,3 +17,7 @@ test_41235:
 test_41230:
   max_object_size: 512 #Mb
   overwrite_cnt: 200
+
+test_42246:
+  num_wr_bkts: 150
+

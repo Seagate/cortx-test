@@ -52,8 +52,6 @@ from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
-from libs.s3.s3_test_lib import S3TestLib
-from scripts.s3_bench import s3bench
 
 
 # pylint: disable=too-many-instance-attributes
@@ -116,9 +114,8 @@ class TestSingleProcessRestart:
         if not self.test_completed:
             self.log.info("Test Failure observed, collecting support bundle")
             path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
-            resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
-                                                                   scripts_path=
-                                                                   const.K8S_SCRIPTS_PATH)
+            resp = support_bundle_utils.collect_support_bundle_k8s(
+                local_dir_path=path, scripts_path=const.K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
         if os.path.exists(self.test_dir_path):
             system_utils.remove_dirs(self.test_dir_path)
