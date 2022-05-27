@@ -284,8 +284,9 @@ class TestSingleProcessRestart:
         fail_logs = list(x[1] for x in responses["fail_res"])
         self.log.debug("Fail logs list: %s", fail_logs)
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background during m0d"
-                                                f"restart. Logs which contain failures: {resp[1]}")
+        assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background before and "
+                                                "after m0d restart. Logs which contain failures: "
+                                                f"{resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background during m0d"
                                                 f"restart. Logs which contain failures: {resp[1]}")
