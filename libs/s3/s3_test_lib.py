@@ -183,7 +183,7 @@ class S3TestLib(S3Lib):
                 CopySource=f'/{source_bucket}/{source_object}',
                 Key=dest_object,
                 **kwargs
-                )
+            )
             LOGGER.debug(response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
@@ -511,7 +511,7 @@ class S3TestLib(S3Lib):
 
         return True, response
 
-    def create_multiple_buckets(self,bucket_count: int, bucket_prefix: str ) -> tuple:
+    def create_multiple_buckets(self, bucket_count: int, bucket_prefix: str) -> tuple:
         """
         Create given number of buckets with specified prefix.
 
@@ -526,7 +526,7 @@ class S3TestLib(S3Lib):
                 resp_bucket = self.create_bucket(bucket_name)
                 if not resp_bucket[0]:
                     LOGGER.error('Bucket name does not match as requested,'
-                                    ' Expected : %s, Received : %s',bucket_name, resp_bucket[1])
+                                 ' Expected : %s, Received : %s', bucket_name, resp_bucket[1])
                     raise Exception('Bucket name does not match')
                 response.append(resp_bucket[1])
         except (ClientError, Exception) as error:
@@ -537,7 +537,6 @@ class S3TestLib(S3Lib):
             raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
-
 
     def put_random_size_objects(self,
                                 bucket_name: str = None,
@@ -567,7 +566,7 @@ class S3TestLib(S3Lib):
                 with open(file_path, 'wb') as fout:
                     fout.write(
                         os.urandom(
-                            randint(
+                            randint(  # nosec
                                 1024000 *
                                 int(min_size),
                                 1024000 *
