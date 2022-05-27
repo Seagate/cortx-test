@@ -4538,7 +4538,6 @@ class TestIamUserRGW():
         count = resp_dict["count"]
         last_uid = resp_dict["marker"]
         assert_utils.assert_equals(count, 5, "Entries not returned as expected")
-        counter = 0
         flag = True
         while flag:
             self.log.info("Step 3: Get next two entries")
@@ -4552,6 +4551,7 @@ class TestIamUserRGW():
                 get_user_list.append(resp_new_dict["users"])
                 last_uid = resp_new_dict["marker"]
                 assert_utils.assert_equals(count_new, 2, "Entries not returned as expected")
+        counter = 0
         for user in users_list:
             if user in get_user_list:
                 self.log.info("%s user is listed in response", user)
