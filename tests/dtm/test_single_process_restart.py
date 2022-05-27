@@ -36,6 +36,7 @@ from commons import configmanager
 from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
+from commons.params import TEST_DATA_FOLDER
 from commons.params import LATEST_LOG_FOLDER
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
