@@ -374,13 +374,13 @@ class TestSingleProcessRestart:
                                               args=(workload_info, que, True, False, False))
         proc_del_op.start()
 
-        self.log.info("Step 3: Perform Single m0d Process Restart During Read Operations")
+        self.log.info("Step 3: Perform Single m0d Process Restart During Delete Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for Delete Operation to complete.")
         if proc_del_op.is_alive():
