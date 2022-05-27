@@ -349,7 +349,7 @@ class TestSingleProcessRestart:
         self.log.info("ENDED: Verify bucket creation and IOs after m0d restart using pkill")
 
     @pytest.mark.lc
-    @pytest.mark.dtm0
+    @pytest.mark.dtm
     @pytest.mark.tags("TEST-41223")
     def test_delete_during_m0d_restart(self):
         """Verify DELETE during m0d restart."""
