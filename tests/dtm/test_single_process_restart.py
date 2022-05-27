@@ -37,6 +37,7 @@ from commons import configmanager
 from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
+from commons.params import TEST_DATA_FOLDER
 from commons.params import LATEST_LOG_FOLDER
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
@@ -1025,6 +1026,7 @@ class TestSingleProcessRestart:
             proc_cp_op.join()
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
+
         self.log.info("Step 5: Perform Download and verify on copied Objects")
         for size in self.test_cfg["size_list"]:
             file_name_copy = "{}{}".format("dtm-test-42254-copy", size)
