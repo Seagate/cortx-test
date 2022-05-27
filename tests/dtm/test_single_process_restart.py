@@ -33,12 +33,17 @@ import pytest
 
 from commons import configmanager
 from commons import constants as const
-from commons.constants import K8S_SCRIPTS_PATH, POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX
+from commons.constants import K8S_SCRIPTS_PATH
+from commons.constants import MOTR_CONTAINER_PREFIX
+from commons.constants import POD_NAME_PREFIX
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
-from commons.utils import support_bundle_utils, assert_utils
-from config import CMN_CFG, HA_CFG, DTM_CFG
+from commons.utils import assert_utils
+from commons.utils import support_bundle_utils
+from config import CMN_CFG
+from config import DTM_CFG
+from config import HA_CFG
 from config.s3 import S3_CFG
 from conftest import LOG_DIR
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
@@ -108,7 +113,7 @@ class TestSingleProcessRestart:
         # TODO : Redeploy setup after test completion.
 
     @pytest.mark.lc
-    @pytest.mark.dtm0
+    @pytest.mark.dtm
     @pytest.mark.tags("TEST-41204")
     def test_read_during_m0d_restart(self):
         """Verify READ during m0d restart using pkill."""
@@ -155,7 +160,7 @@ class TestSingleProcessRestart:
         self.log.info("ENDED: Verify READ during m0d restart using pkill")
 
     @pytest.mark.lc
-    @pytest.mark.dtm0
+    @pytest.mark.dtm
     @pytest.mark.tags("TEST-41219")
     def test_write_during_m0d_restart(self):
         """Verify WRITE during m0d restart using pkill."""
@@ -202,7 +207,7 @@ class TestSingleProcessRestart:
     # pylint: disable=too-many-statements
     # pylint: disable-msg=too-many-locals
     @pytest.mark.lc
-    @pytest.mark.dtm0
+    @pytest.mark.dtm
     @pytest.mark.tags("TEST-41234")
     def test_ios_during_rc_m0d_restart(self):
         """Verify IOs during RC pod m0d restart using pkill."""
@@ -303,7 +308,7 @@ class TestSingleProcessRestart:
         self.log.info("ENDED: Verify IOs before and after RC pod m0d restart using pkill")
 
     @pytest.mark.lc
-    @pytest.mark.dtm0
+    @pytest.mark.dtm
     @pytest.mark.tags("TEST-41235")
     def test_bkt_creation_ios_after_m0d_restart(self):
         """Verify bucket creation and IOs after m0d restart using pkill."""
