@@ -360,13 +360,15 @@ class MotrCoreK8s():
         :file2: second file
         :node: compare files on which node
         """
-
+        diff_utils_install = common_cmd.INSTALL_DIFF_UTIL
         cmd = common_cmd.DIFF.format(file1, file2)
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
-        log.info("DIFF Resp: %s", resp)
+        cmd_list = [diff_utils_install, cmd]
+        for cmd in cmd_list:
+            resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
+                                              namespace=common_const.NAMESPACE,
+                                              command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+                                                             f"-- {cmd}", decode=True)
+            log.info("DIFF Resp: %s", resp)
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
