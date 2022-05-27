@@ -373,14 +373,16 @@ class TestSingleProcessRestart:
         proc_del_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
                                               args=(workload_info, que, True, False, False))
         proc_del_op.start()
-        self.log.info("Step 3 : Perform Single m0d Process Restart During DELETE Operations")
-        self.dtm_obj.process_restart(self.master_node_list[0],
-                                     POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX, self.m0d_process)
-        self.log.info("Step 4: Check hctl status if all services are online")
-        resp = self.health_obj.is_motr_online()
-        assert_utils.assert_true(resp, 'All services are not online.')
 
-        self.log.info("Step 5: Wait for Delete Operation to complete.")
+        self.log.info("Step 3: Perform Single m0d Process Restart During Read Operations")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=POD_NAME_PREFIX,
+                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+
+        self.log.info("Step 4: Wait for Delete Operation to complete.")
         if proc_del_op.is_alive():
             proc_del_op.join()
         resp = que.get()
