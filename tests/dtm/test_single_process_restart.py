@@ -177,7 +177,7 @@ class TestSingleProcessRestart:
 
         que = multiprocessing.Queue()
 
-        self.log.info("Step 1: Start write Operations :")
+        self.log.info("Step 1: Start write Operations in background:")
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
                                                 args=(bucket_name, object_prefix,
                                                       self.test_cfg['clients'],
@@ -208,13 +208,13 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
 
-        self.log.info("Step 6: Perform Delete Operations on data written in Step 1:")
+        self.log.info("Step 5: Perform Delete Operations on data written in Step 1:")
         self.dtm_obj.perform_ops(workload_info, que, True, True, False)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
 
         self.test_completed = True
-        self.log.info("ENDED: Verify READ during m0d restart using pkill")
+        self.log.info("ENDED: Verify write during m0d restart using pkill")
 
     # pylint: disable=too-many-statements
     # pylint: disable-msg=too-many-locals
@@ -381,7 +381,7 @@ class TestSingleProcessRestart:
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
-        self.log.info("Step 2: Perform Delete Operations :")
+        self.log.info("Step 2: Perform Delete Operations in background:")
         proc_del_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
                                               args=(workload_info, que, True, False, False))
         proc_del_op.start()
@@ -424,12 +424,12 @@ class TestSingleProcessRestart:
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
-        self.log.info("Step 2: Start READ Operations :")
+        self.log.info("Step 2: Start READ Operations in loop in background:")
         proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
                                                args=(workload_info, que,
                                                      True,
                                                      True,
-                                                     True, 10))
+                                                     True, self.test_cfg['loop_count']))
         proc_read_op.start()
 
         self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
@@ -440,14 +440,14 @@ class TestSingleProcessRestart:
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
 
-        self.log.info("Step 5: Wait for READ Operation to complete.")
+        self.log.info("Step 4: Wait for READ Operation to complete.")
         if proc_read_op.is_alive():
             proc_read_op.join()
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
 
-        self.log.info("Step 6: Perform Delete Operations on data written in Step 1:")
+        self.log.info("Step 5: Perform Delete Operations on data written in Step 1:")
         self.dtm_obj.perform_ops(workload_info, que, True, True, False)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
@@ -466,17 +466,17 @@ class TestSingleProcessRestart:
         log_file_prefix = 'test-41226'
         que = multiprocessing.Queue()
 
-        self.log.info("Step 1: Start write Operations in loop:")
+        self.log.info("Step 1: Start write Operations in loop in background:")
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
                                                 args=(bucket_name, object_prefix,
                                                       self.test_cfg['clients'],
                                                       self.test_cfg['samples'],
                                                       self.test_cfg['size'],
                                                       log_file_prefix,
-                                                      que, 10))
+                                                      que, self.test_cfg['loop_count']))
         proc_write_op.start()
 
-        self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
+        self.log.info("Step 2 : Perform Single m0d Process Restart During Write Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=POD_NAME_PREFIX,
@@ -484,14 +484,14 @@ class TestSingleProcessRestart:
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
 
-        self.log.info("Step 4: Wait for Write Operation to complete.")
+        self.log.info("Step 3: Wait for Write Operation to complete.")
         if proc_write_op.is_alive():
             proc_write_op.join()
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
 
-        self.log.info("Step 5: Perform Validate and Delete Operations on data written in Step 1:")
+        self.log.info("Step 4: Perform Validate and Delete Operations on data written in Step 1:")
         self.dtm_obj.perform_ops(workload_info, que, True, True, False)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
@@ -516,11 +516,12 @@ class TestSingleProcessRestart:
                                       no_of_clients=self.test_cfg['clients'],
                                       no_of_samples=self.test_cfg['samples'],
                                       obj_size=self.test_cfg['size'],
-                                      log_file_prefix=log_file_prefix, queue=que, loop=10)
+                                      log_file_prefix=log_file_prefix, queue=que,
+                                      loop=self.test_cfg['loop_count'])
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
-        self.log.info("Step 2: Start DELETE Operations :")
+        self.log.info("Step 2: Start DELETE Operations in background:")
         proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
                                                args=(workload_info, que,
                                                      True,
@@ -534,7 +535,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for DELETE Operation to complete.")
         if proc_read_op.is_alive():
