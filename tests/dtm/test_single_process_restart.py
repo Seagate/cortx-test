@@ -91,6 +91,7 @@ class TestSingleProcessRestart:
         cls.rest_obj = S3AccountOperations()
         cls.setup_type = CMN_CFG["setup_type"]
         cls.system_random = secrets.SystemRandom()
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "DTMTestData")
 
     def setup_method(self):
         """Setup Method"""
@@ -105,6 +106,8 @@ class TestSingleProcessRestart:
         self.object_name = f"dps-obj-{self.random_time}"
         self.deploy = False
         self.iam_user = dict()
+        if not os.path.exists(self.test_dir_path):
+            system_utils.make_dirs(self.test_dir_path)
 
     def teardown_method(self):
         """Teardown class method."""
@@ -114,6 +117,8 @@ class TestSingleProcessRestart:
             resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                                    scripts_path=K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
+        if not os.path.exists(self.test_dir_path):
+            system_utils.remove_dirs(self.test_dir_path)
         # TODO : Redeploy setup after test completion.
 
     @pytest.mark.lc
@@ -553,18 +558,16 @@ class TestSingleProcessRestart:
     @pytest.mark.lc
     @pytest.mark.dtm
     @pytest.mark.tags("TEST-41244")
-    def test_mpu_after_m0d_restart(self):
-        """Verify multipart upload after m0d is restarted."""
-        self.log.info("STARTED: Verify multipart upload after m0d is restarted")
+    def test_mpu_m0d_restart(self):
+        """Verify multipart upload and download before/after m0d is restarted."""
+        self.log.info("STARTED: Verify multipart upload and download before/after m0d is restarted")
 
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
         part_numbers = list(range(1, total_parts + 1))
         self.system_random.shuffle(part_numbers)
-        test_dir_path = os.path.join(TEST_DATA_FOLDER, "DTMTestMultipartUpload")
-        system_utils.make_dirs(test_dir_path)
-        multipart_obj_path = os.path.join(test_dir_path, "test_41244_file")
-        download_path = os.path.join(test_dir_path, "test_41244_file_download")
+        multipart_obj_path = os.path.join(self.test_dir_path, "test_41244_file")
+        download_path = os.path.join(self.test_dir_path, "test_41244_file_download")
 
         self.log.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
@@ -606,10 +609,12 @@ class TestSingleProcessRestart:
         self.log.info("Step 2: Successfully downloaded the object and verified the checksum")
 
         self.log.info("Step 3: Perform Single m0d Process Restart")
-        resp = self.dtm_obj.process_restart(self.master_node_list[0], self.health_obj,
-                                            POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX,
-                                            self.m0d_process)
-        assert_utils.assert_true(resp, f"Response: {resp} \nhctl status is not as expected")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=POD_NAME_PREFIX,
+                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
         self.log.info("Step 3: m0d restarted and recovered successfully")
 
         self.log.info("Step 4: Download the uploaded object after m0d recovery and verify checksum")
@@ -625,4 +630,4 @@ class TestSingleProcessRestart:
         self.log.info("Step 4: Successfully downloaded the object and verified the checksum after "
                       "m0d recovery")
 
-        self.log.info("ENDED: Verify multipart upload after m0d is restarted")
+        self.log.info("ENDED: Verify multipart upload and download before/after m0d is restarted")
