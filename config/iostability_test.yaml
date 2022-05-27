@@ -17,5 +17,5 @@ nearfull_storage_percentage: 95
 bucket_creation_healthy_mode: True
 
 #write,partial delete test cases.
-write_percent_per_iter: 40
+write_percent_per_iter: 3
 delete_percent_per_iter: 20

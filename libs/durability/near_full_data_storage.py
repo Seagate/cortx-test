@@ -20,6 +20,7 @@
 disk near full data storage utility methods
 """
 import logging
+import time
 
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
@@ -62,12 +63,12 @@ class NearFullStorage:
             LOGGER.debug("Durability Values (SNS) %s", sns_values)
             data_sns = sns_values['data']
             sum_sns = sum(sns_values.values())
-            LOGGER.debug("Current usage : %s Expected disk usage : %s", current_usage_per,
-                         memory_percent)
+            LOGGER.debug("Current usage percent : %s Expected disk usage percent : %s",
+                         current_usage_per, memory_percent)
             write_percent = memory_percent - current_usage_per
             expected_writes = (write_percent * total_cap) / 100
             user_data_writes = data_sns / sum_sns * expected_writes
-            LOGGER.info("User writes to be performed %s bytes to attain %s full disk space",
+            LOGGER.info("User writes to be performed %s bytes to attain %s percent full disk space",
                         user_data_writes, memory_percent)
             return True, user_data_writes
         LOGGER.info("Current Memory usage(%s) is already more than expected memory usage(%s)",
@@ -82,25 +83,31 @@ class NearFullStorage:
         :param s3userinfo: S3user dictionary with access/secret key
         :param user_data_writes: Write operation to be performed for specific bytes
         :param bucket_prefix: Bucket prefix for the data written
+        :param client (Optional): Number of client sessions
+        :param bucket_list (Optional): List of pre-created buckets.
         :return : list of dictionary
                 format : [{'bucket': bucket_name, 'obj_name_pref': obj_name, 'num_clients':
                 client, 'obj_size': obj_size, 'num_sample': sample}]
         """
         client = kwargs.get("client", 10)
-        workload = [128, 256, 512, 1024, 2048, ]  # workload in mb
+        bucket_list = kwargs.get('bucket_list', None)
+        workload = [128, 256, 512, 1024, 2048]  # workload in mb
         if CMN_CFG["setup_type"] == "HW":
             workload.extend([3072, 4096])
 
         workload = [each * MB for each in workload]  # convert to bytes
         each_workload_byte = user_data_writes / len(workload)
         return_list = []
+        bucket_iter = iter(bucket_list)
         for obj_size in workload:
             samples = int(each_workload_byte / obj_size)
             if samples > 0:
                 temp_client = client
                 if temp_client > samples:
                     temp_client = samples
-                bucket_name = f'{bucket_prefix}-{obj_size}b'
+                bucket_name = f'{bucket_prefix}-{obj_size}b-{int(time.time())}'
+                if bucket_list:
+                    bucket_name = next(bucket_iter)
                 obj_name = f'obj_{obj_size}'
                 resp = s3bench.s3bench(s3userinfo['accesskey'],
                                        s3userinfo['secretkey'],
@@ -148,7 +155,7 @@ class NearFullStorage:
                                    skip_write=True,
                                    skip_read=skipread,
                                    validate=validate,
-                                   log_file_prefix=f"read_workload_{each['obj_size']}mb",
+                                   log_file_prefix=f"read_workload_{each['obj_size']}b",
                                    end_point=S3_CFG["s3_url"],
                                    validate_certs=S3_CFG["validate_certs"])
             LOGGER.info("Workload: %s objects of %s with %s parallel clients ", each['num_sample'],

@@ -19,10 +19,8 @@
 """Test Suite for IO stability Degraded Path workloads."""
 import logging
 import os
-import time
-from datetime import datetime
-from datetime import timedelta
 import random
+import time
 from datetime import datetime, timedelta
 
 import pytest
@@ -39,10 +37,8 @@ from libs.dtm.ProcPathStasCollection import EnableProcPathStatsCollection
 from libs.durability.near_full_data_storage import NearFullStorage
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.iostability.iostability_lib import IOStabilityLib, send_mail_notification
-from libs.s3 import ACCESS_KEY
-from libs.s3 import SECRET_KEY
-from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3.s3_test_lib import S3TestLib
 
 
 class TestIOWorkloadDegradedPath:
@@ -224,38 +220,55 @@ class TestIOWorkloadDegradedPath:
         self.log.info("ENDED: Perform disk storage near full once and read in loop for %s days",
                       self.duration_in_days)
 
-
     @pytest.mark.lc
     @pytest.mark.io_stability
     @pytest.mark.tags("TEST-40174")
     def test_degraded_iteration_write_read_partial_delete(self):
-        """Perform 40% Writes of user data capacity (Healthy mode) and perform Object CRUD
-         (40% write,Read, 20% delete) operation(degraded mode)."""
-        self.log.info("STARTED: Test for Perform 40% Writes of user data capacity (Healthy mode) "
-                      "and perform Object CRUD(40% write,Read,20% delete) operation(degraded mode)")
-
+        """Perform 30% Writes of user data capacity (Healthy mode) and perform Object CRUD
+         (30% write,Read, 20% delete) operation(degraded mode)."""
         write_percent_per_iter = self.test_cfg['write_percent_per_iter']
         delete_percent_per_iter = self.test_cfg['delete_percent_per_iter']
-        max_cluster_capacity_percent = self.test_cfg['max_cluster_capacity_percent']
 
+        self.log.info(
+            "STARTED: Test for Perform %s percent Writes of user data capacity (Healthy mode) "
+            "and perform Object CRUD(%s write,Read,%s delete) operation(degraded mode)",
+            write_percent_per_iter, write_percent_per_iter, delete_percent_per_iter)
+
+        test_case_name = cortxlogging.get_frame()
+        self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
+                                                  test_case_name, self.health_obj_list[0])
+
+        max_cluster_capacity_percent = self.test_cfg['max_cluster_capacity_percent']
         duration_in_days = self.test_cfg['degraded_path_durations_days']
         clients = (len(self.worker_node_list) - 1) * self.test_cfg['sessions_per_node_vm']
-        s3userinfo = {'accesskey':ACCESS_KEY,'secretkey':SECRET_KEY}
+        s3userinfo = {'accesskey': ACCESS_KEY, 'secretkey': SECRET_KEY}
         bucket_prefix = "test-40174-bkt"
         end_time = datetime.now() + timedelta(days=duration_in_days)
 
-        self.log.info("Step 1: Get the used percentage of disk space.")
+        self.log.info("Step 1: Create 50 buckets in healthy mode ")
+        bucket_creation_healthy_mode = self.test_cfg['bucket_creation_healthy_mode']
+        avail_buckets = []
+        if bucket_creation_healthy_mode:
+            resp = self.s3t_obj.create_multiple_buckets(50, 'test-40174')
+            for each in resp[1]:
+                avail_buckets.append(each)
+            self.log.info("Step 1: Bucket created in healthy mode ")
+        else:
+            self.log.info("Step 1: Skipped bucket creation in healthy mode ")
+
+        self.log.info("Step 2: Get the used percentage of disk space.")
         total_cap, avail_cap, used_cap = self.health_obj_list[0].get_sys_capacity()
         current_usage_per = round(used_cap / total_cap * 100)
-        self.log.info("Step 1: Current used percent : %s", current_usage_per)
+        self.log.info("Step 2: Current used percent : %s", current_usage_per)
 
-        self.log.info("Step 2: Perform %s writes and Read the written data in healthy mode",
+        self.log.info("Step 3: Perform %s percent writes and Read the written data in healthy mode",
                       write_percent_per_iter)
         write_per = write_percent_per_iter + current_usage_per
         workload_info_list = []
         if write_per < max_cluster_capacity_percent:
-            assert_utils.assert_true(False,"Expected write percents is greater than the max cluster"
-                                           "capacity percent")
+            assert_utils.assert_true(False,
+                                     "Expected write percents is greater than the max cluster"
+                                     "capacity percent")
         else:
             self.log.info("Perform write and read operations")
             resp = NearFullStorage.get_user_data_space_in_bytes(
@@ -268,19 +281,22 @@ class TestIOWorkloadDegradedPath:
                     s3userinfo=s3userinfo,
                     user_data_writes=resp[1],
                     bucket_prefix=bucket_prefix,
-                    clients=clients)
+                    clients=clients,
+                    buckets_list=avail_buckets)
                 assert_utils.assert_true(resp[0], resp[1])
+                for each in resp[1]:
+                    avail_buckets.remove(each['bucket'])
                 workload_info_list.extend(resp[1])
                 self.log.info("Write Completed.")
 
-        self.log.info("Step 3 : Perform Single pod shutdown")
+        self.log.info("Step 4 : Perform Single pod shutdown")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.master_node_list[0],
-                                                            self.health_obj_list[0])
+                                                             self.health_obj_list[0])
         assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
         self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
 
-        self.log.info("Step 4: Perform Write/Reads/Delete on data written in healthy mode"
-                      " as well as degraded mode")
+        self.log.info("Step 5: Perform Reads/Delete on data written in healthy mode"
+                      " and Write/Reads/Delete on data written in degraded mode")
         loop = 0
         while datetime.now() < end_time:
             self.log.info(" Loop count : %s", loop)
@@ -288,10 +304,12 @@ class TestIOWorkloadDegradedPath:
             self.log.info("Get Current disk usage capacity")
             total_cap, avail_cap, used_cap = self.health_obj_list[0].get_sys_capacity()
             current_usage_per = round(used_cap / total_cap * 100)
-            self.log.info("Current usage : %s",current_usage_per)
+            self.log.info("Current usage percent : %s", current_usage_per)
+            self.log.info("Write Percent per Iteration : %s", write_percent_per_iter)
             write_per = current_usage_per + write_percent_per_iter
+
             if write_per < max_cluster_capacity_percent:
-                self.log.info("Perform Write operation to fill %s disk capacity", write_per)
+                self.log.info("Perform Write operation to fill %s percent disk capacity", write_per)
                 resp = NearFullStorage.get_user_data_space_in_bytes(
                     master_obj=self.master_node_list[0],
                     memory_percent=write_per)
@@ -302,52 +320,52 @@ class TestIOWorkloadDegradedPath:
                         s3userinfo=s3userinfo,
                         user_data_writes=resp[1],
                         bucket_prefix=bucket_prefix,
-                        clients=clients)
+                        clients=clients,
+                        buckets_list=avail_buckets)
                     assert_utils.assert_true(resp[0], resp[1])
+                    for each in resp[1]:
+                        avail_buckets.remove(each['bucket'])
                     workload_info_list.extend(resp[1])
                     self.log.info("Write Completed.")
                 else:
-                    self.log.info("No bytes to be written to fill %s capacity", write_per)
+                    self.log.info("No bytes to be written to fill %s precent capacity", write_per)
 
-                self.log.info("Validate all the written data of the cluster")
+                self.log.info("Read and Validate all the written data of the cluster")
                 if len(workload_info_list) > 0:
                     resp = NearFullStorage.perform_near_full_sys_operations(
                         s3userinfo=s3userinfo,
                         workload_info=workload_info_list,
-                        skipread=True,
+                        skipread=False,
                         validate=True,
                         skipcleanup=True)
                     assert_utils.assert_true(resp[0], resp[1])
                 else:
-                    self.log.info("No buckets available to perform read operations %s",
-                                  workload_info_list)
-                    assert_utils.assert_true(False,
-                                             "No buckets available to perform read operations")
-
+                    self.log.warning("No buckets available to perform read operations %s",
+                                     workload_info_list)
                 self.log.info("Delete %s percent of the written data")
                 if len(workload_info_list) > 0:
-                    self.log.info("Delete 2 random buckets.")
                     num_buckets_delete = int(
                         delete_percent_per_iter * len(workload_info_list) / 100)
                     delete_list = []
+                    self.log.info("Number of buckets to be deleted : %s", num_buckets_delete)
                     for i in range(num_buckets_delete):
                         bucket_info = workload_info_list[
                             random.randint(1, len(workload_info_list) - 1)]
                         delete_list.append(bucket_info)
                         workload_info_list.remove(bucket_info)
-
+                    self.log.info("Buckets to be deleted %s", delete_list)
                     resp = NearFullStorage.perform_near_full_sys_operations(
                         s3userinfo=s3userinfo,
                         workload_info=delete_list,
-                        skipread=True,
+                        skipread=False,
                         validate=True,
                         skipcleanup=False)
                     assert_utils.assert_true(resp[0], resp[1])
+                    for each in delete_list:
+                        avail_buckets.append(each['bucket'])
                 else:
-                    self.log.info("No buckets available to perform delete operations %s",
-                                  workload_info_list)
-                    assert_utils.assert_true(False,
-                                             "No buckets available to perform read operations")
+                    self.log.warning("No buckets available to perform delete operations %s",
+                                     workload_info_list)
             else:
                 self.log.info("Write percentage(%s) exceeding the max cluster capacity(%s)",
                               write_per, max_cluster_capacity_percent)
@@ -355,11 +373,15 @@ class TestIOWorkloadDegradedPath:
                 resp = NearFullStorage.perform_near_full_sys_operations(
                     s3userinfo=s3userinfo,
                     workload_info=workload_info_list,
-                    skipread=True,
-                    validate=False,
+                    skipread=False,
+                    validate=True,
                     skipcleanup=False)
                 assert_utils.assert_true(resp[0], resp[1])
+                for each in workload_info_list:
+                    avail_buckets.append(each['bucket'])
                 self.log.info("Deletion completed.")
         self.test_completed = True
-        self.log.info("ENDED: Test for Perform 40% Writes of user data capacity (Healthy mode) "
-                      "and perform Object CRUD(40% write,Read,20% delete) operation(degraded mode)")
+        self.log.info(
+            "ENDED: Test for Perform %s percent Writes of user data capacity (Healthy mode) "
+            "and perform Object CRUD(%s write,Read,%s delete) operation(degraded mode)",
+            write_percent_per_iter, write_percent_per_iter, delete_percent_per_iter)

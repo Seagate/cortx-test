@@ -201,7 +201,7 @@ class TestIOWorkload:
     @pytest.mark.io_stability
     @pytest.mark.tags("TEST-40042")
     def test_iteration_write_read_partial_delete(self):
-        """Perform iterations of 40% writes of user capacity ,
+        """Perform iterations of 30% writes of user capacity ,
         reads entire data, and delete 20% of the data."""
         write_percent_per_iter = self.test_cfg['write_percent_per_iter']
         delete_percent_per_iter = self.test_cfg['delete_percent_per_iter']
@@ -220,8 +220,8 @@ class TestIOWorkload:
         clients = len(self.worker_node_list) * self.test_cfg['sessions_per_node_vm']
         bucket_prefix = "test-40042-bkt"
 
-        self.log.info("Step: Perform %s writes and Read the written data and %s deletes."
-                      "Delete all the written data once %s is reached",
+        self.log.info("Step: Perform %s percent writes and Read the written data and %s percent"
+                      " deletes. Delete all the written data once %s is reached",
                       write_percent_per_iter, delete_percent_per_iter, max_cluster_capacity_percent)
         workload_info_list = []
         end_time = datetime.now() + timedelta(days=duration_in_days)
@@ -236,7 +236,7 @@ class TestIOWorkload:
             self.log.info("Write percentage per iteration : %s", write_percent_per_iter)
             if write_per < max_cluster_capacity_percent:
 
-                self.log.info("Perform Write operation to fill %s disk capacity", write_per)
+                self.log.info("Perform Write operation to fill %s percent disk capacity", write_per)
                 resp = NearFullStorage.get_user_data_space_in_bytes(
                     master_obj=self.master_node_list[0],
                     memory_percent=write_per)
@@ -297,8 +297,8 @@ class TestIOWorkload:
                 resp = NearFullStorage.perform_near_full_sys_operations(
                     s3userinfo=s3userinfo,
                     workload_info=workload_info_list,
-                    skipread=True,
-                    validate=False,
+                    skipread=False,
+                    validate=True,
                     skipcleanup=False)
                 assert_utils.assert_true(resp[0], resp[1])
                 self.log.info("Deletion completed.")
