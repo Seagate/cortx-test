@@ -911,8 +911,6 @@ class HAK8s:
         workloads = HA_CFG["s3_bench_workloads"]
         if self.setup_type == "HW":
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
-        # Flag to store next workload status after/while event gets clear from test function
-        event_clear_flg = False
         if setup_s3bench:
             resp = s3bench.setup_s3bench()
             if not resp:
@@ -927,14 +925,11 @@ class HAK8s:
                 skip_write=skipwrite, skip_read=skipread, obj_size=workload,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
                 end_point=S3_CFG["s3_url"], validate_certs=S3_CFG["validate_certs"])
-            if event.is_set():
+            if event.is_set() or (isinstance(event_set_clr, list) and event_set_clr[0]):
+                LOGGER.debug("The state of event set clear Flag is %s", event_set_clr)
                 fail_res.append(resp)
-                event_clear_flg = True
+                event_set_clr[0] = False
             else:
-                if event_clear_flg or event_set_clr[0]:
-                    fail_res.append(resp)
-                    event_clear_flg = False
-                    continue
                 pass_res.append(resp)
         results["pass_res"] = pass_res
         results["fail_res"] = fail_res
@@ -1528,9 +1523,10 @@ class HAK8s:
             pod_info[pod]['method'] = down_method
             pod_info[pod]['hostname'] = hostname
             if event is not None:
-                LOGGER.debug("Clearing the Thread event")
+                LOGGER.debug("Clearing the Thread event and setting event set_clear flag")
                 event.clear()
-                event_set_clr[0] = True
+                if isinstance(event_set_clr, list):
+                    event_set_clr[0] = True
             LOGGER.info("Check services status that were running on pod %s", pod)
             resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
                                                  hostname=pod_info[pod]['hostname'])
