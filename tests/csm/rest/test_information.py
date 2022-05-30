@@ -66,7 +66,7 @@ class TestCortxInformation():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("[START] Testing Version Compatability")
+        self.log.info("[START] Testing Version Compatability with compatible versions")
         # For Happy path with valid inputs
         # call api compatible version
         payload = self.csm_obj.get_version_compatibility_payload("compatible")
@@ -78,6 +78,19 @@ class TestCortxInformation():
         assert res_dict["reason"] == "Versions are compatible for update.", "response reason is not correct"
         self.log.info("[END] Testing Version Compatability")
 
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.parallel
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-42789')
+    def test_42789(self):
+        """
+        Test that user can check version compatability.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
         self.log.info("[START] Testing Version Compatability with incompatible version rules")
         payload = self.csm_obj.get_version_compatibility_payload("incompatible")
         self.log.info("payload :  %s", payload)
@@ -87,8 +100,30 @@ class TestCortxInformation():
         assert res_dict["compatible"] == False, "Compatibility Check failed"
         assert res_dict["reason"] != "Versions are compatible for update.", "response reason is not correct"
         self.log.info("[END] Testing Version Compatability with incompatible version rules")
+
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+
+    @pytest.mark.lc
+    @pytest.mark.parallel
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-42790')
+    def test_42790(self):
+        """
+        Test that user can check version compatability for invalid payload.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info("[START] Testing Version Compatability with invalid resource")
+        # For Non-Happy path with invalid inputs
+        payload = self.csm_obj.get_version_compatibility_payload()
+        self.log.info("payload :  %s", payload)
+        response = self.csm_obj.verify_version_compatibility("cluster", "cortx-cluster", payload)
+        assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed for invalid resource"
+
+        self.log.info("[END] Testing Version Compatability with invalid resource")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
     @pytest.mark.parallel
@@ -100,16 +135,32 @@ class TestCortxInformation():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("[START] Testing Version Compatability")
-        # For Happy path with valid inputs
-        payload = self.csm_obj.get_version_compatibility_payload()
-        self.log.info("payload :  %s", payload)
-        response = self.csm_obj.verify_version_compatibility("cluster", "cortx-cluster", payload)
-        assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed for invalid resource"
 
+        self.log.info("[START] Testing Version Compatability with invalid rules")
         payload = self.csm_obj.get_version_compatibility_payload("invalid_rules")
         self.log.info("payload :  %s", payload)
-        response = self.csm_obj.verify_version_compatibility("cluster", "cortx-cluster", payload)
-        assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed for invalid resource"
+        response = self.csm_obj.verify_version_compatibility("node", "cortx-cluster", payload)
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR, "Status code check failed for invalid rules"
 
-        self.log.info("[END] Testing Version Compatability")
+        self.log.info("[END] Testing Version Compatability  with invalid rules")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.parallel
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-42792')
+    def test_42792(self):
+        """
+        Test that user can check version compatability for invalid request body.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info("[START] Testing Version Compatability with invalid request body")
+        payload = self.csm_obj.get_version_compatibility_payload("invalid_request_body")
+        self.log.info("payload :  %s", payload)
+        response = self.csm_obj.verify_version_compatibility("node", "cortx-cluster", payload)
+        assert response.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed for invalid rules"
+
+        self.log.info("[END] Testing Version Compatability  with invalid  request body")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
