@@ -23,9 +23,9 @@ import logging
 from botocore.exceptions import ClientError
 
 from commons.utils.s3_utils import poll
-from config.s3 import S3_CFG
 from commons import errorcodes as err
 from commons.exceptions import CTException
+from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.iam_core_lib import IamPolicy
 
@@ -89,7 +89,7 @@ class IamPolicyTestLib(IamPolicy):
             LOGGER.exception("Error in  %s: %s",
                              IamPolicyTestLib.create_policy.__name__,
                              error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args)
+            raise CTException(err.S3_CLIENT_ERROR, error.args) from error
 
         return True, policy
 
