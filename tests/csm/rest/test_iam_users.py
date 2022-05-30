@@ -22,6 +22,8 @@ from string import Template
 import time
 from http import HTTPStatus
 import os
+import secrets
+import string
 from random import SystemRandom
 import pytest
 import yaml
@@ -4650,14 +4652,14 @@ class TestIamUserRGW():
         self.log.info("Deleted user %s is not listed in users list: %s", user_id, get_user_list)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lc
     @pytest.mark.csmrest
+    @pytest.mark.lc
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-42273')
     def test_42273(self):
         """
-        Test GET IAM user with invalid max_entries
+        Test GET IAM user with invalid max_entries 
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -4669,72 +4671,28 @@ class TestIamUserRGW():
         msg_1 = resp_data[resp_msg_index]
         resp_msg_index = test_cfg["message_index_2"]
         msg_2 = resp_data[resp_msg_index]
-        self.log.info("Step 1: List IAM users with max_entries as -1")
-        resp = self.csm_obj.list_iam_users_rgw(max_entries=-1)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
-                                 "Get list of IAM User failed")
-        if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")
-            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
-            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(resp.json()["message"], msg_1)
-        self.log.info("Step 2: List IAM users with max_entries as 0")
-        resp = self.csm_obj.list_iam_users_rgw(max_entries=0)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
-                                 "Get list of IAM User failed")
-        if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")
-            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
-            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(resp.json()["message"], msg_1)
-        self.log.info("Step 3: List IAM users with max_entries as 0x89")
-        resp = self.csm_obj.list_iam_users_rgw(max_entries=0x89)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
-                                 "Get list of IAM User failed")
-        if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")
-            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
-            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(resp.json()["message"], msg_2)
-        self.log.info("Step 4: List IAM users with max_entries as random string")
         random_str = ''.join(secrets.choice(string.ascii_uppercase +
                                             string.ascii_lowercase) for i in range(7))
-        resp = self.csm_obj.list_iam_users_rgw(max_entries=random_str)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
-                                 "Get list of IAM User failed")
-        if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")
-            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
-            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(resp.json()["message"], msg_2)
-        self.log.info("Step 5: List IAM users with max_entries as special chars")
         special_str = ''.join(secrets.choice(string.punctuation) for i in range(7))
-        resp = self.csm_obj.list_iam_users_rgw(max_entries=special_str)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
-                                 "Get list of IAM User failed")
-        if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")
-            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
-            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(resp.json()["message"], msg_2)
-        self.log.info("Step 6: List IAM users with max_entries as null")
-        resp = self.csm_obj.list_iam_users_rgw(max_entries=None)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
-                                 "Get list of IAM User failed")
-        if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")
-            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
-            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(resp.json()["message"], msg_2)
-        self.log.info("Step 7: List IAM users with max_entries as empty")
-        resp = self.csm_obj.list_iam_users_rgw(max_entries="")
-        assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
-                                 "Get list of IAM User failed")
-        if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")
-            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
-            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(resp.json()["message"], msg_2)
+        invalid_values = ["-1", "0", "0x89", random_str, special_str, "null", " "]
+        for key_value in invalid_values:
+            self.log.info("Testing for key value %s", key_value)
+            resp = self.csm_obj.list_iam_users_rgw(max_entries=key_value)
+            self.log.info("Verify Response : %s", resp)
+            assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
+                                     "Patch request status code failed")
+            if CSM_REST_CFG["msg_check"] == "enable":
+                self.log.info("Verifying error response...")
+                if key_value is "-1" or key_value is "0":
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                    assert_utils.assert_equals(resp.json()["message"].lower(),
+                                           Template(msg_1).substitute(str_part="Max_entries").lower())
+                else:
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                    assert_utils.assert_equals(resp.json()["message"].lower(),
+                                           Template(msg_2).substitute(A="Max_entries").lower())
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -4750,29 +4708,16 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_42274"]
         ran_int = test_cfg["ran_int"]
-        self.log.info("Step 1: List IAM users with marker as random integer")
         random_num = self.csm_obj.random_gen.randrange(1, ran_int)
-        resp = self.csm_obj.list_iam_users_rgw(marker=random_num)
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK,
-                                   "List IAM User failed")
-        assert_utils.assert_equals(len(resp["keys"]), 0, "Users list is not empty")
-        self.log.info("Step 2: List IAM users with marker as alphanumeric string")
         random_str = ''.join(secrets.choice(string.digits +
                                             string.ascii_lowercase) for i in range(7))
-        resp = self.csm_obj.list_iam_users_rgw(marker=random_str)
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK,
+        invalid_markers = [random_num, random_str, "null", '""']
+        for marker in invalid_markers:
+            self.log.info("Testing for invalid marker %s:", marker)
+            resp = self.csm_obj.list_iam_users_rgw(marker=marker)
+            assert_utils.assert_equals(resp.status_code, HTTPStatus.OK,
                                    "List IAM User failed")
-        assert_utils.assert_equals(len(resp["keys"]), 0, "Users list is not empty")
-        self.log.info("Step 3: List IAM users with marker as null")
-        resp = self.csm_obj.list_iam_users_rgw(marker=None)
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK,
-                                   "List IAM User failed")
-        assert_utils.assert_equals(len(resp["keys"]), 0, "Users list is not empty")
-        self.log.info("Step 4: List IAM users with marker as empty")
-        resp = self.csm_obj.list_iam_users_rgw(marker="")
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK,
-                                   "List IAM User failed")
-        assert_utils.assert_equals(len(resp["keys"]), 0, "Users list is not empty")
+            assert_utils.assert_equals(len(resp.json()["users"]), 0, "Users list is not empty")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -4825,12 +4770,14 @@ class TestIamUserRGW():
         self.created_iam_users = users_list
 
         self.log.info("Step 2: Send GET request with max_entries as 5")
-        resp = self.csm_obj.list_iam_users_rgw(max_entries=5)
+        resp = self.csm_obj.list_iam_users_rgw(
+                                max_entries=self.csm_conf["common"]["max_entries"])
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
         resp_dict = resp.json()
         get_user_list = resp_dict["users"]
         count = resp_dict["count"]
-        assert_utils.assert_equals(count, 5, "Entries not returned as expected")
+        assert_utils.assert_equals(count, self.csm_conf["common"]["max_entries"], 
+                                 "Entries not returned as expected")
         user_index = self.csm_obj.random_gen.randrange(1, count)
         marker = get_user_list[user_index]
 

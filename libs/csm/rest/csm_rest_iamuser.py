@@ -20,9 +20,9 @@ import time
 from http import HTTPStatus
 from random import SystemRandom
 from string import Template
-from requests.models import Response
 import string
 import secrets
+from requests.models import Response
 import commons.errorcodes as err
 from commons.constants import Rest as const
 from commons.constants import S3_ENGINE_RGW
@@ -801,7 +801,7 @@ class RestIamUser(RestTestLib):
                                             string.ascii_lowercase) for i in range(15))
         else:
             self.headers.update(self.config["Login_headers"])
-     
+ 
         # Fetching api response
         response = self.restapi.rest_call("get", endpoint=endpoint, headers=self.headers,
                                           params={"max_entries": max_entries, "marker": marker})

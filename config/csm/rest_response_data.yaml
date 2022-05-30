@@ -58,7 +58,7 @@
     - "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.']}"
     - "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.'], 'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
     - "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"], 'role': ['Must be one of: admin, manage, monitor.']}"
-    - "$A: Must be greater than or equal to 1."
+    - "$str_part: Must be greater than or equal to 1."
 4103:
   users_already_exists:
     - "User already exists:"
