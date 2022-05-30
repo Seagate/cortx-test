@@ -641,6 +641,33 @@ class TestMultipartUploadGetPut:
 
     # @pytest.mark.skip(reason="need to execute on hw as vm has limited space")
     @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-42770')
+    @CTFailOn(error_handler)
+    def test_multipart_upload_test_42770(self):
+        """
+        This test is for uploading 5TB max size object using multipart upload
+        """
+        self.log.info("STARTED: Multipart upload of 500GB object ")
+        mp_config = MPART_CFG["test_42770"]
+        mpu_id = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name)
+        status, output = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
+        if status:
+            self.file_path = self.mp_obj_path
+            self.log.info(output)
+        status, mpu_upload = self.s3_mpu_test_obj.upload_precalculated_parts(
+            mpu_id, self.bucket_name, self.object_name, multipart_obj_path=self.file_path,
+            part_sizes=MPART_CFG["test_42770"]["part_sizes"],
+            chunk_size=MPART_CFG["test_42770"]["chunk_size"])
+        assert_utils.assert_true(status, f"Failed to upload parts: {mpu_upload}")
+        sorted_part_list = sorted(mpu_upload["uploaded_parts"], key=lambda x: x['PartNumber'])
+        res = self.list_parts_completempu(mpu_id, self.bucket_name,
+                                          object_name=self.object_name,
+                                          parts_list=sorted_part_list)
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, res[1]["ETag"])
+        self.log.info("ENDED: Test multipart upload of 500GB object")
+
+    # @pytest.mark.skip(reason="need to execute on hw as vm has limited space")
+    @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-28526')
     @CTFailOn(error_handler)
     def test_multipart_upload_test_28526(self):
@@ -788,8 +815,8 @@ class TestMultipartUploadGetPut:
                 mp_config, self.mp_obj_path, log_prefix="TEST-40265_s3bench_ios", duration="0h5m",
                 s3_test_lib_obj=self.s3_test_obj)
         value_list = list(parts.values())
-        parts[1] = value_list[0]
-        parts[2] = value_list[1]
+        parts[1] = value_list[1]
+        parts[2] = value_list[0]
         obj_list = []
         for cnt in range(1000):
             obj_list.append(self.object_name+str(cnt))
