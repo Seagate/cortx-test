@@ -114,12 +114,44 @@ class TestResourceLimits():
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-yyyyy")
     def test_yyyyy(self):
+        """Test sessions qouta."""
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started - %s #####", test_case_name)
+
+        sessions_quota = self.csm_conf["test_yyyyy"]["sessions_quota"]
+        tmp_user_password = self.csm_conf["test_yyyyy"]["tmp_user_password"]
+
+        msg = "Step 1: Create CSM user."
+        self.log.info(msg)
+        response = self.csm_obj.create_csm_user(
+            user_type="valid", user_role="manage",
+            user_password=tmp_user_password)
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.created_users.append(user_id)
+        msg = "Step 2: Fulfil the sessions quota by multiple login."
+        self.log.info(msg)
+        for _ in range(sessions_quota):
+            response = self.csm_obj.rest_login(
+                login_as={"username": username, "password": tmp_user_password})
+        msg = "Step 3: Try to login above the sessions quota."
+        self.log.info(msg)
+        response = self.csm_obj.rest_login(
+            login_as={"username": username, "password": tmp_user_password})
+        assert response.status_code == const.UNAUTHORIZED
+
+        self.log.info("################Test Passed##################")
+
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-zzzzz")
+    def test_zzzzz(self):
         """Test requests qouta."""
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started - %s #####", test_case_name)
 
-        requests_quota = self.csm_conf["test_yyyyy"]["requests_quota"]
-        api_endpoint = self.csm_conf["test_yyyyy"]["api_endpoint"]
+        requests_quota = self.csm_conf["test_zzzzz"]["requests_quota"]
+        api_endpoint = self.csm_conf["test_zzzzz"]["api_endpoint"]
 
         msg = f"Step 1: overflow {api_endpoint} with {requests_quota} requests"
         self.log.info(msg)
