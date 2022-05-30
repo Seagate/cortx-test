@@ -17,14 +17,13 @@
 """
 Tests various operations on Cortx Information using REST API
 """
-import pytest
 import logging
-
-from libs.csm.csm_setup import CSMConfigsCheck
+from http import HTTPStatus
+import pytest
 from commons import configmanager
 from commons import cortxlogging
+from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.csm_interface import csm_api_factory
-from http import HTTPStatus
 
 class TestCortxInformation():
     """
@@ -38,7 +37,8 @@ class TestCortxInformation():
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups")
-        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_information.yaml")
+        cls.csm_conf = configmanager.get_config_wrapper(
+                        fpath="config/csm/test_rest_information.yaml")
         cls.log.info("Ended test module setups")
         cls.config = CSMConfigsCheck()
         setup_ready = cls.config.check_predefined_s3account_present()
@@ -74,8 +74,9 @@ class TestCortxInformation():
         response = self.csm_obj.verify_version_compatibility("node", "control-control", payload)
         res_dict = response.json()
         assert response.status_code == HTTPStatus.OK, "Status code check failed"
-        assert res_dict["compatible"] == True, "Compatibility Check failed"
-        assert res_dict["reason"] == "Versions are compatible for update.", "response reason is not correct"
+        assert res_dict["compatible"], "Compatibility Check failed"
+        success_reason_msg = "Versions are compatible for update."
+        assert res_dict["reason"] == success_reason_msg, "response reason is not correct"
         self.log.info("[END] Testing Version Compatability")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -97,8 +98,9 @@ class TestCortxInformation():
         response = self.csm_obj.verify_version_compatibility("node", "control-control", payload)
         res_dict = response.json()
         assert response.status_code == HTTPStatus.OK, "Status code check failed"
-        assert res_dict["compatible"] == False, "Compatibility Check failed"
-        assert res_dict["reason"] != "Versions are compatible for update.", "response reason is not correct"
+        assert not res_dict["compatible"], "Compatibility Check failed"
+        success_reason_msg = "Versions are compatible for update."
+        assert res_dict["reason"] != success_reason_msg, "response reason is not correct"
         self.log.info("[END] Testing Version Compatability with incompatible version rules")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -120,7 +122,7 @@ class TestCortxInformation():
         payload = self.csm_obj.get_version_compatibility_payload()
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.verify_version_compatibility("cluster", "cortx-cluster", payload)
-        assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed for invalid resource"
+        assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed"
 
         self.log.info("[END] Testing Version Compatability with invalid resource")
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -140,7 +142,7 @@ class TestCortxInformation():
         payload = self.csm_obj.get_version_compatibility_payload("invalid_rules")
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.verify_version_compatibility("node", "cortx-cluster", payload)
-        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR, "Status code check failed for invalid rules"
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR, "Status code check failed"
 
         self.log.info("[END] Testing Version Compatability  with invalid rules")
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -160,7 +162,7 @@ class TestCortxInformation():
         payload = self.csm_obj.get_version_compatibility_payload("invalid_request_body")
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.verify_version_compatibility("node", "cortx-cluster", payload)
-        assert response.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed for invalid rules"
+        assert response.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
 
         self.log.info("[END] Testing Version Compatability  with invalid  request body")
         self.log.info("##### Test ended -  %s #####", test_case_name)
