@@ -82,16 +82,16 @@ class TestNodeHealthHelper:
         self.log.info("Restarting cluster stop/start/cleanup")
         resp = self.node_list[0].execute_cmd(
             f"cortx cluster stop {node}", read_lines=True, exc=False)
-        self.log.info("cortx cluster stop resp = {}".format(resp[0]))
+        self.log.info("cortx cluster stop resp = %s", resp[0])
         time.sleep(120)
         resp = self.node_list[0].execute_cmd(
             f"cortx cluster start {node}", read_lines=True, exc=False)
         time.sleep(120)
-        self.log.info("cortx cluster start resp = {}".format(resp[0]))
+        self.log.info("cortx cluster start resp = %s", resp[0])
         resp = self.node_list[0].execute_cmd(
             "pcs resource cleanup --all", read_lines=True, exc=False)
         time.sleep(120)
-        self.log.info("pcs resource cleanup --all resp = {}".format(resp[0]))
+        self.log.info("pcs resource cleanup --all resp = %s", resp[0])
         resp = self.hlt_list[0].check_node_health()
         self.log.info("check_node_health resp = %s", resp)
         return resp
@@ -142,7 +142,7 @@ class TestNodeHealthHelper:
         self.log.info("Get s3server fids.")
         self.restored = False
         _resp, get_s3server_fids = S3H_OBJ.get_s3server_fids()
-        self.log.info("Get s3server fids. resp = {}".format(get_s3server_fids))
+        self.log.info("Get s3server fids. resp = %s", get_s3server_fids)
 
         for index, hlt_obj in enumerate(self.hlt_list):
             self.log.info(
