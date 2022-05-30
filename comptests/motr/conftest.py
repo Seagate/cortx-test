@@ -25,7 +25,7 @@ from libs.motr.layouts import BSIZE_LAYOUT_MAP
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 @pytest.fixture(scope="module")
-def motr():
+def motr_inst():
     """
     To initiate the motr core lib instance
     """
@@ -35,20 +35,20 @@ def motr():
 
 
 @pytest.fixture(scope="function")
-def run_m0_io(motr):
+def run_m0_io(motr_inst):
     """
     This will run the motr IO using m0cp, m0cat, m0unlink utilities and returns the dict of objects
     """
-    object_dict = None
+    object_dict = {}
     cortx_node = None
     def _run_m0_io(node, bsize_layout_map=BSIZE_LAYOUT_MAP, block_count=FILE_BLOCK_COUNT,
                     run_m0cat=True, delete_objs=True):
         nonlocal object_dict, cortx_node
-        obj_dict = motr.run_motr_io(node, bsize_layout_map, block_count, run_m0cat, delete_objs)
+        obj_dict = motr_inst.run_motr_io(node, bsize_layout_map, block_count, run_m0cat, delete_objs)
         object_dict = obj_dict
         cortx_node = node
         return obj_dict
     yield _run_m0_io
     for obj in object_dict:
-        if object_dict[obj]['deleted'] == False:
-            motr.unlink_cmd(obj, object_dict[obj]['block_size'], cortx_node)
+        if not object_dict[obj]['deleted']:
+            motr_inst.unlink_cmd(obj, object_dict[obj]['block_size'], cortx_node)
