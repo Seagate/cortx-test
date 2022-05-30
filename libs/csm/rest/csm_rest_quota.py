@@ -216,4 +216,3 @@ class GetSetQuota(RestTestLib):
         user_id = const.IAM_USER + str(int(time.time()))
         display_name = const.IAM_USER + str(int(time.time()))
         return user_id, display_name
-
