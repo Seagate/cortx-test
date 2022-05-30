@@ -360,7 +360,7 @@ class MotrCoreK8s():
         :file2: second file
         :node: compare files on which node
         """
-        diff_utils_install = common_cmd.INSTALL_DIFF_UTIL
+        diff_utils_install = common_cmd.CMD_INSTALL_TOOL.format("diffutils") + " -y"
         cmd = common_cmd.DIFF.format(file1, file2)
         cmd_list = [diff_utils_install, cmd]
         for cmd in cmd_list:
