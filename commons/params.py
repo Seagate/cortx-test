@@ -52,8 +52,8 @@ DATA_PATH_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3/test_data_path_validate.yam
 HA_TEST_CONFIG_PATH = "config/ha_test.yaml"
 DEL_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "test_delayed_delete.yaml")
 IAM_POLICY_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "s3_iam_policy_test.yaml")
-S3_VER_CFG_PATH = os.path.join(CONFIG_DIR,  "s3", "test_versioning.yaml")
 PROV_CONFIG_PATH = "config/prov/test_prov_config.yaml"
+DTM_TEST_CFG_PATH = os.path.join(CONFIG_DIR, "test_dtm_config.yaml")
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 JIRA_TEST_LIST = 'test_lists.csv'

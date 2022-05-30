@@ -36,7 +36,6 @@ from commons.utils import s3_utils
 from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_multipart import Multipart
-from libs.s3.s3_common_test_lib import S3BackgroundIO
 
 LOGGER = logging.getLogger(__name__)
 
@@ -95,7 +94,7 @@ class S3MultipartTestLib(Multipart):
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.create_multipart_upload.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -136,6 +135,7 @@ class S3MultipartTestLib(Multipart):
 
         return True, response
 
+    # pylint: disable-msg=too-many-locals
     def upload_parts(self,
                      mpu_id: int = None,
                      bucket_name: str = None,
@@ -194,6 +194,7 @@ class S3MultipartTestLib(Multipart):
                              error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
+    # pylint: disable-msg=too-many-locals
     def upload_precalculated_parts(self,
                                    upload_id: int = None,
                                    bucket_name: str = None,
@@ -225,10 +226,12 @@ class S3MultipartTestLib(Multipart):
                         data, bucket_name, object_name, upload_id=upload_id,
                         part_number=int(partnum) + 1)
                     LOGGER.debug("Part : %s", str(part))
-                    uploaded_parts.append({"PartNumber": int(partnum) + 1, "ETag": part["ETag"]})
-                    md5_digests[int(partnum)] = md5(data).digest()
+                    uploaded_parts.append({"PartNumber": int(partnum) + 1,
+                                           "ETag": part["ETag"]})
+                    md5_digests[int(partnum)] = md5(data).digest() # nosec
             multipart_etag = '"%s"' % \
-                             (md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests)))
+                             (md5(b''.join(md5_digests)).hexdigest() + \
+                              '-' + str(len(md5_digests))) # nosec
             return True, {'uploaded_parts': uploaded_parts, 'expected_etag': multipart_etag}
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
@@ -269,7 +272,7 @@ class S3MultipartTestLib(Multipart):
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.upload_parts_parallel.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error)
+            raise CTException(err.S3_CLIENT_ERROR, error) from error
 
     def upload_parts_sequential(self,
                                 upload_id: int = None,
@@ -524,6 +527,7 @@ class S3MultipartTestLib(Multipart):
 
         return True, response
 
+    # pylint: disable = too-many-arguments
     def simple_multipart_upload(
             self,
             bucket_name: str,
@@ -628,27 +632,3 @@ class S3MultipartTestLib(Multipart):
 
         return response
 
-    @staticmethod
-    def start_ios_get_precalc_parts(
-            mp_config: dict,
-            obj_path: str,
-            **kwargs):
-        """
-        This creates file, starts IOs, Initiates mpu and gets the precalculated parts for uploading
-        to multipart upload
-        :param mp_config: configuration dict for multipart upload
-        :param obj_path: path to object file
-        """
-        log_prefix = kwargs.get("log_prefix", None)
-        duration = kwargs.get("duration", None)
-        s3_test_obj = kwargs.get("s3_test_lib_obj", "s3_test_lib_obj")
-        if os.path.exists(obj_path):
-            os.remove(obj_path)
-        create_file(obj_path, mp_config["file_size"])
-        s3_background_io = S3BackgroundIO(s3_test_lib_obj=s3_test_obj)
-        LOGGER.info("start s3 IO's")
-        s3_background_io.start(log_prefix, duration)
-        precalc_parts = s3_utils.get_precalculated_parts(obj_path, mp_config["part_sizes"],
-                                                 chunk_size=mp_config["chunk_size"])
-        keys = list(precalc_parts.keys())
-        return precalc_parts, keys, s3_background_io
