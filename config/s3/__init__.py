@@ -31,7 +31,6 @@ from commons.params import S3_MPART_CFG_PATH
 from commons.params import DEL_CFG_PATH
 from commons.params import IAM_POLICY_CFG_PATH
 from commons.params import S3_LDAP_TEST_CONFIG
-from commons.params import S3_VER_CFG_PATH
 from config import S3_CFG as s3_config
 
 S3_CFG = s3_config
@@ -45,4 +44,3 @@ S3_TMP_CRED_CFG = configmanager.get_config_wrapper(fpath=S3_TEMP_CRED_CONFIG_PAT
 MPART_CFG = configmanager.get_config_wrapper(fpath=S3_MPART_CFG_PATH)
 S3_LDAP_TST_CFG = configmanager.get_config_wrapper(fpath=S3_LDAP_TEST_CONFIG)
 IAM_POLICY_CFG = configmanager.get_config_wrapper(fpath=IAM_POLICY_CFG_PATH)
-S3_VER_CFG = configmanager.get_config_wrapper(fpath=S3_VER_CFG_PATH)
