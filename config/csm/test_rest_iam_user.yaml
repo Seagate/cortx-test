@@ -1,3 +1,6 @@
+common:
+  num_users: 10
+  iterations: 5
 test_1133:
   status_code: 401
 

@@ -23,6 +23,7 @@ import logging
 
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
+from commons.constants import MB
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.durability.disk_failure_recovery_libs import DiskFailureRecoveryLib
@@ -47,6 +48,8 @@ class NearFullStorage:
         # Get available data disk space
         health_obj = Health(master_obj.hostname, master_obj.username, master_obj.password)
         total_cap, avail_cap, used_cap = health_obj.get_sys_capacity()
+        LOGGER.info("Total Capacity: %s Available Capacity: %s Used Capacity: %s", total_cap,
+                    avail_cap, used_cap)
         current_usage_per = round(used_cap / total_cap * 100)
 
         if memory_percent > current_usage_per:
@@ -67,10 +70,9 @@ class NearFullStorage:
             LOGGER.info("User writes to be performed %s bytes to attain %s full disk space",
                         user_data_writes, memory_percent)
             return True, user_data_writes
-        else:
-            LOGGER.info("Current Memory usage(%s) is already more than expected memory usage(%s)",
-                        current_usage_per, memory_percent)
-            return True, 0
+        LOGGER.info("Current Memory usage(%s) is already more than expected memory usage(%s)",
+                    current_usage_per, memory_percent)
+        return True, 0
 
     @staticmethod
     def perform_near_full_sys_writes(s3userinfo, user_data_writes, bucket_prefix: str,
@@ -85,12 +87,11 @@ class NearFullStorage:
                 client, 'obj_size': obj_size, 'num_sample': sample}]
         """
         client = kwargs.get("client", 10)
-        workload = [1, 16, 128, 256, 512]  # workload in mb
+        workload = [128, 256, 512]  # workload in mb
         if CMN_CFG["setup_type"] == "HW":
             workload.extend([1024, 2048, 3072, 4096])
 
-        mb = 1024 * 1024
-        workload = [each * mb for each in workload]  # convert to bytes
+        workload = [each * MB for each in workload]  # convert to bytes
         each_workload_byte = user_data_writes / len(workload)
         return_list = []
         for obj_size in workload:
@@ -111,9 +112,9 @@ class NearFullStorage:
                                        log_file_prefix=f"workload_{obj_size}b",
                                        end_point=S3_CFG["s3_url"],
                                        validate_certs=S3_CFG["validate_certs"])
-                LOGGER.info(f"Workload: %s objects of %s with %s parallel clients ", samples,
+                LOGGER.info("Workload: %s objects of %s with %s parallel clients ", samples,
                             obj_size, temp_client)
-                LOGGER.info(f"Log Path {resp[1]}")
+                LOGGER.info("Log Path %s", resp[1])
                 if s3bench.check_log_file_error(resp[1]):
                     return False, f"S3bench workload for failed for {obj_size}." \
                                   f" Please read log file {resp[1]}"
@@ -150,10 +151,10 @@ class NearFullStorage:
                                    log_file_prefix=f"read_workload_{each['obj_size']}mb",
                                    end_point=S3_CFG["s3_url"],
                                    validate_certs=S3_CFG["validate_certs"])
-            LOGGER.info(f"Workload: %s objects of %s with %s parallel clients ", each['num_sample'],
+            LOGGER.info("Workload: %s objects of %s with %s parallel clients ", each['num_sample'],
                         each['obj_size'], each['num_clients'])
-            LOGGER.info(f"Log Path {resp[1]}")
+            LOGGER.info("Log Path %s", resp[1])
             if s3bench.check_log_file_error(resp[1]):
                 return False, f"S3bench workload for failed for {each['obj_size']}." \
                               f" Please read log file {resp[1]}"
-        return True, f'S3bench workload successful'
+        return True, "S3bench workload successful"
