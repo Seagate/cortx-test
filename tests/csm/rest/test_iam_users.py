@@ -24,6 +24,7 @@ from http import HTTPStatus
 import os
 from random import SystemRandom
 import pytest
+import yaml
 from botocore.exceptions import ClientError
 from commons import configmanager
 from commons import cortxlogging
@@ -4871,7 +4872,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp[0], resp[1])
         stream = open(self.local_csm_path, 'r')
         data = yaml.load(stream, Loader=yaml.Loader)
-        internal_user = data["common"]["rgw"]["auth_user"]
+        internal_user = data["cortx"]["rgw"]["auth_user"]
         self.log.info("Step 1: Send get request for fetching iam users list")
         resp = self.csm_obj.list_iam_users_rgw()
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
@@ -4916,7 +4917,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp[0], resp[1])
         stream = open(self.local_csm_path, 'r')
         data = yaml.load(stream, Loader=yaml.Loader)
-        internal_user = data["common"]["rgw"]["auth_user"]
+        internal_user = data["cortx"]["rgw"]["auth_user"]
         self.log.info("Step 1: Send delete request for deleting internal iam user")
         resp = self.csm_obj.delete_iam_user(user=internal_user)
         self.log.debug("Verify Response : %s", resp)
@@ -4962,7 +4963,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp[0], resp[1])
         stream = open(self.local_csm_path, 'r')
         data = yaml.load(stream, Loader=yaml.Loader)
-        internal_user = data["common"]["rgw"]["auth_user"]
+        internal_user = data["cortx"]["rgw"]["auth_user"]
         payload = {"access_key":"sgiamadmin", "secret_key":"null"}
         resp = self.csm_obj.modify_iam_user_rgw(internal_user, payload)
         assert_utils.assert_true(resp.status_code == HTTPStatus.FORBIDDEN,
@@ -4981,7 +4982,7 @@ class TestIamUserRGW():
     @pytest.mark.tags('TEST-42289')
     def test_42289(self):
         """
-        Test that internal user should be visible on the GET IAM user list
+        Test Create IAM user with same name as internal IAM user should fail
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -5007,7 +5008,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp[0], resp[1])
         stream = open(self.local_csm_path, 'r')
         data = yaml.load(stream, Loader=yaml.Loader)
-        internal_user = data["common"]["rgw"]["auth_user"]
+        internal_user = data["cortx"]["rgw"]["auth_user"]
         self.log.info("Step 1: Create IAM user with same name as internal IAM user")
         payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
         payload["uid"] = internal_user
