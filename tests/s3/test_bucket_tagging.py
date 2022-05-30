@@ -793,7 +793,7 @@ class TestBucketTagging:
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            self.log.info(error)
+            self.log.exception(error)
             assert_utils.assert_in(errmsg.NO_BUCKET_OBJ_ERR_KEY, str(error.message), error.message)
         self.log.info("Step 2: Retrieved tag of non existing bucket failed with NoSuchBucket")
         self.log.info("ENDED: Verify GET bucket tagging to non-existing bucket")
