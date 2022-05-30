@@ -20,6 +20,7 @@
 disk near full data storage utility methods
 """
 import logging
+import random
 import time
 
 from commons.helpers.health_helper import Health
@@ -85,7 +86,7 @@ class NearFullStorage:
         :param bucket_prefix: Bucket prefix for the data written
         :param client (Optional): Number of client sessions
         :param bucket_list (Optional): List of pre-created buckets.
-        :return : list of dictionary
+        :return : boolean, list of dictionary
                 format : [{'bucket': bucket_name, 'obj_name_pref': obj_name, 'num_clients':
                 client, 'obj_size': obj_size, 'num_sample': sample}]
         """
@@ -135,8 +136,9 @@ class NearFullStorage:
         return True, return_list
 
     @staticmethod
-    def perform_near_full_sys_operations(s3userinfo, workload_info: list, skipread: bool = True,
-                                         validate: bool = True, skipcleanup: bool = False):
+    def perform_near_full_sys_operations(s3userinfo: dict, workload_info: list,
+                                         skipread: bool = True, validate: bool = True,
+                                         skipcleanup: bool = False):
         """
         Perform Read/Validate/Delete operations on the workload info using s3bench
         :param s3userinfo: S3user dictionary with access/secret key
@@ -167,6 +169,7 @@ class NearFullStorage:
                 return False, f"S3bench workload for failed for {each['obj_size']}." \
                               f" Please read log file {resp[1]}"
         return True, "S3bench workload successful"
+
     @staticmethod
     def delete_workload(workload_info_list: list, s3userinfo: dict, delete_percent: int):
         """
@@ -179,8 +182,10 @@ class NearFullStorage:
         num_buckets_delete = int(delete_percent * len(workload_info_list) / 100)
         delete_list = []
         LOGGER.info("Delete %s random buckets.", num_buckets_delete)
-        for i in range(num_buckets_delete):
-            bucket_info = workload_info_list[random.randint(1, len(workload_info_list) - 1)]
+
+        for _ in range(num_buckets_delete):
+            bucket_info = workload_info_list[
+                random.SystemRandom().randint(1, len(workload_info_list) - 1)]
             delete_list.append(bucket_info)
             workload_info_list.remove(bucket_info)
         LOGGER.info("Deleting buckets : %s", delete_list)
@@ -197,6 +202,7 @@ class NearFullStorage:
             return True, deleted_buckets
         return resp
 
+    # pylint: disable=too-many-arguments
     @staticmethod
     def perform_write_to_fill_system_percent(master_node: LogicalNode, write_per: int, s3userinfo,
                                              bucket_prefix, clients, bucket_list=None):

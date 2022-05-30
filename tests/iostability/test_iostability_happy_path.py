@@ -229,20 +229,18 @@ class TestIOWorkload:
             loop += 1
             write_per = write_per + write_percent_per_iter
             self.log.info("Write percentage per iteration : %s", write_percent_per_iter)
-            self.log.info("Write percentage to be written in this iteration: %s",write_per)
+            self.log.info("Write percentage to be written in this iteration: %s", write_per)
             if write_per < max_cluster_capacity_percent:
                 # Write data to fill cluster upto "write_per" percent
                 resp = NearFullStorage.perform_write_to_fill_system_percent(
                     self.master_node_list[0], write_per, s3userinfo, bucket_prefix, clients)
                 assert_utils.assert_true(resp[0], resp[1])
-                if resp[1] is None:
-                    self.log.info("No data written to buckets")
-                else:
+                if resp[1] is not None:
                     workload_info_list.extend(resp[1])
-                self.log.info("Read/Validate all the written data of the cluster")
 
+                self.log.info("Read/Validate all the written data of the cluster")
                 # Read and validate all written data
-                if len(workload_info_list):
+                if len(workload_info_list) > 0:
                     resp = NearFullStorage.perform_near_full_sys_operations(s3userinfo,
                                                                             workload_info_list,
                                                                             False, True, True)
@@ -253,7 +251,7 @@ class TestIOWorkload:
 
                 # Delete "delete_percent_per_iter" data of all the written data
                 self.log.info("Delete %s percent of the written data", delete_percent_per_iter)
-                if len(workload_info_list):
+                if len(workload_info_list) > 0:
                     resp = NearFullStorage.delete_workload(workload_info_list, s3userinfo,
                                                            delete_percent_per_iter)
                     assert_utils.assert_true(resp[0], resp[1])
