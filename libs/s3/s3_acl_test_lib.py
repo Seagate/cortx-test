@@ -88,7 +88,7 @@ class S3AclTestLib(Acl):
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.get_object_acl.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -109,10 +109,11 @@ class S3AclTestLib(Acl):
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.get_bucket_acl.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
+    # pylint: disable=too-many-arguments
     def copy_object_acl(self,
                         source_bucket: str = None,
                         source_object: str = None,
@@ -134,7 +135,7 @@ class S3AclTestLib(Acl):
         try:
             response = poll(self.s3_client.copy_object,
                             Bucket=dest_bucket,
-                            CopySource='/{}/{}'.format(source_bucket, source_object),
+                            CopySource=f"/{source_bucket}/{source_object}",
                             Key=dest_object,
                             ACL=acl)
 
@@ -143,7 +144,7 @@ class S3AclTestLib(Acl):
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.copy_object_acl.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return response, response
 
@@ -168,7 +169,7 @@ class S3AclTestLib(Acl):
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_acl.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -193,7 +194,7 @@ class S3AclTestLib(Acl):
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_acp.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -235,7 +236,7 @@ class S3AclTestLib(Acl):
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.add_grantee.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -286,7 +287,7 @@ class S3AclTestLib(Acl):
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_canned_acl.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -319,7 +320,7 @@ class S3AclTestLib(Acl):
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_with_acl2.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -364,7 +365,7 @@ class S3AclTestLib(Acl):
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_with_acl.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -404,7 +405,7 @@ class S3AclTestLib(Acl):
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.create_bucket_with_acl.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -452,7 +453,7 @@ class S3AclTestLib(Acl):
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_bucket_acl.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -489,7 +490,7 @@ class S3AclTestLib(Acl):
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_bucket_multiple_permission.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -525,7 +526,7 @@ class S3AclTestLib(Acl):
                 "Error in %s: %s",
                 S3AclTestLib.get_bucket_acl_using_iam_credentials.__name__,
                 error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
         finally:
             del s3_iam_resource
 

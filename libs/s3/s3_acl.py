@@ -97,6 +97,7 @@ class Acl(S3Lib):
 
         return response
 
+    # pylint: disable-msg=too-many-branches
     def put_object_canned_acl(self,
             bucket_name: str = None,
             key: str = None,
@@ -210,6 +211,7 @@ class Acl(S3Lib):
 
         return response
 
+    # pylint: disable-msg=too-many-branches
     def put_object_with_acl(self,
             bucket_name: str = None,
             key: str = None,
@@ -296,6 +298,7 @@ class Acl(S3Lib):
 
         return response
 
+    # pylint: disable-msg=too-many-branches
     def create_bucket_with_acl(self,
             bucket_name: str = None,
             acl: str = None,
