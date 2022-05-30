@@ -56,7 +56,7 @@ from scripts.s3_bench import s3bench
 START_LOG_FORMAT = "##### Test started -  "
 END_LOG_FORMAT = "##### Test Ended -  "
 
-
+# pylint: disable-msg=too-many-lines
 # pylint: disable-msg=too-many-public-methods
 # pylint: disable-msg=too-many-instance-attributes
 class TestIAMUserManagement:
@@ -1389,6 +1389,7 @@ class TestIAMUserManagement:
             "ENDED: Test create, get, edit and delete max number of IAM User with custom"
             " AWS access key and secret key")
 
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.skip("EOS-24624")
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
@@ -1471,6 +1472,7 @@ class TestIAMUserManagement:
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("####### Test Completed! #########")
 
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.skip("EOS-24624")
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
