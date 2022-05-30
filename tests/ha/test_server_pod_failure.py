@@ -442,7 +442,7 @@ class TestServerPodFailure:
         event_set_clr = [False]
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
                 'nclients': 2, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
-                'output': output, 'setup_s3bench': False, 'event_set_clr': event_set_clr}
+                'output': output, 'event_set_clr': event_set_clr}
         thread = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
@@ -494,7 +494,7 @@ class TestServerPodFailure:
         self.test_prefix = 'test-39907-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True,
-                                                    nsamples=2, nclients=2)
+                                                    nsamples=2, nclients=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Successfully created IAM user with multiple buckets and ran IOs.")
 
