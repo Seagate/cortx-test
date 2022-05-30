@@ -560,7 +560,7 @@ class MotrCoreK8s():
         :return: object dictionary containing objects block size, count, md5sum and delete flag
                 {'10:20':{'block_size':'4k', 'deleted': False, 'count': 4,
                 'md5sum': '2322f8a66f9eab2925e90182bad21dae'},
-                '10:21':{'block_size':'8k', 'deleted': False, 'count': 1,
+                '10:21':{'block_size':'8k', 'deleted': False, 'count': 2,
                 'md5sum': 'bcf5e0570940a834455b6c5d449af5a7'}
                 }
         :rtype: dict
