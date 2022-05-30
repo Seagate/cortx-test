@@ -117,7 +117,7 @@ class TestSingleProcessRestart:
             resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                                    scripts_path=K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
-        if not os.path.exists(self.test_dir_path):
+        if os.path.exists(self.test_dir_path):
             system_utils.remove_dirs(self.test_dir_path)
         # TODO : Redeploy setup after test completion.
 
@@ -157,7 +157,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for Read Operation to complete.")
         if proc_read_op.is_alive():
@@ -202,7 +202,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 3: Wait for Write Operation to complete.")
         if proc_write_op.is_alive():
@@ -295,7 +295,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=rc_datapod,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 2: Successfully performed single restart of m0d process on pod hosted "
                       "on RC node and checked hctl status is good")
         event.clear()
@@ -355,7 +355,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 2: m0d restarted and recovered successfully")
 
         self.log.info("Step 3: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
@@ -614,7 +614,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 3: m0d restarted and recovered successfully")
 
         self.log.info("Step 4: Download the uploaded object after m0d recovery and verify checksum")
