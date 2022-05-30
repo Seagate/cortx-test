@@ -26,6 +26,7 @@ import re
 import time
 
 from commons import constants as const
+from commons.exceptions import CTException
 from config import S3_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
@@ -48,6 +49,7 @@ class DTMRecoveryTestLib:
         self.access_key = access_key
         self.secret_key = secret_key
         self.ha_obj = HAK8s()
+        self.s3_obj = S3TestLib()
 
     # pylint: disable=too-many-arguments
     def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples, obj_size,
@@ -280,17 +282,20 @@ class DTMRecoveryTestLib:
         :param que: Multiprocessing Queue to be used for returning values (Boolean,dict)
         """
         results = list()
+        failed_obj_name = ""
         for obj_name in workload["obj_list"]:
-            resp = self.s3_obj.copy_object(source_bucket=workload["source_bucket"],
-                                           source_object=obj_name,
-                                           dest_bucket=workload["dest_bucket"],
-                                           dest_object=obj_name)
-            if resp[0]:
+            try:
+                self.s3_obj.copy_object(source_bucket=workload["source_bucket"],
+                                        source_object=obj_name,dest_bucket=workload["dest_bucket"],
+                                        dest_object=obj_name)
+
                 results.append(True)
-            else:
+            except CTException as error:
+                self.log.exception("Error: %s", error)
+                failed_obj_name = obj_name
                 results.append(False)
                 break
         if all(results):
-            que.put([True])
+            que.put([True, "Copy Object operation successful"])
         else:
-            que.put([False, "Copy Object operation failed"])
+            que.put([False, f"Copy Object operation failed for {failed_obj_name}"])

@@ -661,14 +661,15 @@ class TestSingleProcessRestart:
             system_utils.create_file(file_path, size)
             resp = self.s3_obj.put_object(bucket_name_1, f"{object_name}_{size}", file_path)
             assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 2 : Perform Single m0d Process Restart During Write Operations")
-        self.dtm_obj.process_restart(self.master_node_list[0],
-                                     POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX, self.m0d_process)
-        self.log.info("Step 3: Check hctl status if all services are online")
-        resp = self.health_obj.is_motr_online()
-        assert_utils.assert_true(resp, 'All services are not online.')
-        self.log.info("Step 4: Perform Copy Download and verify Object Operation on data written "
-                      "in Step 1:")
+        self.log.info("Step 2: Perform Single m0d Process Restart During Delete Operations")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=POD_NAME_PREFIX,
+                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+        self.log.info("Step 3: Perform Copy Object to bucket-2, download and verify on copied "
+                      "Objects")
         for size in self.test_cfg["size_list"]:
             resp = self.s3_obj.copy_object(source_bucket=bucket_name_1,
                                            source_object=f"{object_name}_{size}",
@@ -688,8 +689,6 @@ class TestSingleProcessRestart:
                 self.log.info("Validated checksums.")
             else:
                 assert False, "Checksum validation Failed"
-        self.log.info("Step 5: Perform Download Object Operation on data written in Step 4:")
-
         self.test_completed = True
         self.log.info("ENDED: Verify copy object after m0d restart using pkill")
 
@@ -697,8 +696,8 @@ class TestSingleProcessRestart:
     @pytest.mark.dtm
     @pytest.mark.tags("TEST-41233")
     def test_copy_object_during_m0d_restart(self):
-        """Verify copy object after m0d restart using pkill."""
-        self.log.info("STARTED: Verify copy object after m0d restart using pkill")
+        """Verify copy object during m0d restart using pkill."""
+        self.log.info("STARTED: Verify copy object during m0d restart using pkill")
         bucket_name_1 = 'bucket-test-41233-1'
         bucket_name_2 = 'bucket-test-41233-2'
         object_name = 'object-test-41233'
@@ -719,7 +718,7 @@ class TestSingleProcessRestart:
             obj_list.append(f"{object_name}_{size}")
             assert_utils.assert_true(resp[0], resp[1])
 
-        self.log.info("Step 2: Perform Copy Operations on the data written in step 1 in background")
+        self.log.info("Step 2: Perform Copy object to bucket-2 in background")
         workload["source_bucket"] = bucket_name_1
         workload["dest_bucket"] = bucket_name_2
         workload["obj_list"] = obj_list
@@ -727,20 +726,20 @@ class TestSingleProcessRestart:
                                              args=(workload, que))
         proc_cp_op.start()
 
-        self.log.info("Step 3 : Perform Single m0d Process Restart During Write Operations")
-        self.dtm_obj.process_restart(self.master_node_list[0],
-                                     POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX, self.m0d_process)
-        self.log.info("Step 4: Check hctl status if all services are online")
-        resp = self.health_obj.is_motr_online()
-        assert_utils.assert_true(resp, 'All services are not online.')
+        self.log.info("Step 3: Perform Single m0d Process Restart During Delete Operations")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=POD_NAME_PREFIX,
+                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 5: Wait for copy object to finish")
         if proc_cp_op.is_alive():
             proc_cp_op.join()
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 6: Perform Download and verify Object Operation on data written "
-                      "in Step 1:")
+        self.log.info("Step 6: Perform Download and verify on copied Objects")
         for size in self.test_cfg["size_list"]:
             file_name_copy = "{}{}".format("dtm-test-41233-copy", size)
             file_path_copy = os.path.join(self.dir_path, file_name_copy)
@@ -754,8 +753,7 @@ class TestSingleProcessRestart:
             if resp:
                 self.log.info("Validated checksums.")
             else:
-                assert False, "Checksum validation Failed"
-        self.log.info("Step 5: Perform Download Object Operation on data written in Step 4:")
-
+                self.log.info("Checksum validation Failed.")
+                assert False, "Checksum validation Failed."
         self.test_completed = True
-        self.log.info("ENDED: Verify copy object after m0d restart using pkill")
+        self.log.info("ENDED: Verify copy object after m0d restart using pkill.")
