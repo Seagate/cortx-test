@@ -95,7 +95,7 @@ class S3MultipartTestLib(Multipart):
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.create_multipart_upload.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -136,6 +136,7 @@ class S3MultipartTestLib(Multipart):
 
         return True, response
 
+    # pylint: disable-msg=too-many-locals
     def upload_parts(self,
                      mpu_id: int = None,
                      bucket_name: str = None,
@@ -194,6 +195,7 @@ class S3MultipartTestLib(Multipart):
                              error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
+    # pylint: disable-msg=too-many-locals
     def upload_precalculated_parts(self,
                                    upload_id: int = None,
                                    bucket_name: str = None,
@@ -225,10 +227,12 @@ class S3MultipartTestLib(Multipart):
                         data, bucket_name, object_name, upload_id=upload_id,
                         part_number=int(partnum) + 1)
                     LOGGER.debug("Part : %s", str(part))
-                    uploaded_parts.append({"PartNumber": int(partnum) + 1, "ETag": part["ETag"]})
-                    md5_digests[int(partnum)] = md5(data).digest()
+                    uploaded_parts.append({"PartNumber": int(partnum) + 1,
+                                           "ETag": part["ETag"]})
+                    md5_digests[int(partnum)] = md5(data).digest() # nosec
             multipart_etag = '"%s"' % \
-                             (md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests)))
+                             (md5(b''.join(md5_digests)).hexdigest() + \
+                              '-' + str(len(md5_digests))) # nosec
             return True, {'uploaded_parts': uploaded_parts, 'expected_etag': multipart_etag}
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
@@ -269,7 +273,7 @@ class S3MultipartTestLib(Multipart):
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.upload_parts_parallel.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error)
+            raise CTException(err.S3_CLIENT_ERROR, error) from error
 
     def upload_parts_sequential(self,
                                 upload_id: int = None,
@@ -524,6 +528,7 @@ class S3MultipartTestLib(Multipart):
 
         return True, response
 
+    # pylint: disable = too-many-arguments
     def simple_multipart_upload(
             self,
             bucket_name: str,
