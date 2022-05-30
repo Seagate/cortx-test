@@ -634,6 +634,7 @@ class TestBucketTagging:
         self.log.info("ENDED: Create bucket tags with invalid "
                       "(characters outside the allowed set) special characters")
 
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_tags
