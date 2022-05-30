@@ -40,7 +40,7 @@ def run_m0_io(motr):
     This will run the motr IO using m0cp, m0cat, m0unlink utilities and returns the dict of objects
     """
     object_dict = None
-    cortx_node =None
+    cortx_node = None
     def _run_m0_io(node, bsize_layout_map=BSIZE_LAYOUT_MAP, block_count=FILE_BLOCK_COUNT,
                     run_m0cat=True, delete_objs=True):
         nonlocal object_dict, cortx_node

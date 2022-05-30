@@ -593,10 +593,11 @@ class MotrCoreK8s():
             log.exception("Test has failed with execption: %s", exc)
             raise exc
 
-    def run_io_in_parallel(self, node, block_count=FILE_BLOCK_COUNT,
-                        run_m0cat=True, delete_objs=True, return_dict=None):
+    def run_io_in_parallel(self, node, bsize_layout_map=BSIZE_LAYOUT_MAP,
+            block_count=FILE_BLOCK_COUNT, run_m0cat=True, delete_objs=True, return_dict=None):
         """
         :param: str node: Cortx node on which utilities to be executed
+        :param: dict bsize_layout_map: mapping of block size and layout for IOs to run
         :param: list block_count: List containing the integer values. If block count is 1,
                 then size of object file will vary from 4K to 32M,
                 i.e multiple of supported object block sizes
@@ -607,7 +608,7 @@ class MotrCoreK8s():
         if return_dict is None:
             return_dict = {}
         try:
-            obj_dict = self.run_motr_io(node, block_count, run_m0cat, delete_objs)
+            obj_dict = self.run_motr_io(node, bsize_layout_map, block_count, run_m0cat, delete_objs)
             return_dict[node] = obj_dict
             return return_dict
         except (OSError, AssertionError, IOError) as exc:
