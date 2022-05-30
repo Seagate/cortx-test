@@ -19,6 +19,7 @@
 """
 disk near full data storage utility methods
 """
+import copy
 import logging
 import random
 import time
@@ -26,7 +27,8 @@ import time
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.constants import MB
-from config import CMN_CFG, NEAR_FULL_STORAGE_CFG
+from config import CMN_CFG
+from config import DURABILITY_CFG
 from config.s3 import S3_CFG
 from libs.durability.disk_failure_recovery_libs import DiskFailureRecoveryLib
 from scripts.s3_bench import s3bench
@@ -92,16 +94,16 @@ class NearFullStorage:
         """
         client = kwargs.get("client", 10)
         bucket_list = kwargs.get('bucket_list', None)
-        workload = NEAR_FULL_STORAGE_CFG['full_sys_writes']['vm_workload']    # workload in mb
+        workload = copy.deepcopy(DURABILITY_CFG['full_sys_writes']['vm_workload']) # in mb
         if CMN_CFG["setup_type"] == "HW":
-            workload.extend(NEAR_FULL_STORAGE_CFG['full_sys_writes']['extended_hw_workload'])
+            workload.extend(DURABILITY_CFG['full_sys_writes']['extended_hw_workload'])
 
         workload = [each * MB for each in workload]  # convert to bytes
         each_workload_byte = user_data_writes / len(workload)
         return_list = []
         if bucket_list:
             bucket_iter = iter(bucket_list)
-        LOGGER.info("Perform Write operation for object size : %s",workload)
+        LOGGER.info("Perform Write operation for object size : %s", workload)
         for obj_size in workload:
             samples = int(each_workload_byte / obj_size)
             if samples > 0:
@@ -175,7 +177,7 @@ class NearFullStorage:
         """
         Delete specified percent of buckets(with written data) from workload info list.
         :param workload_info_list: Workload info list returned after write operation
-        :param s3userinfo: User info for S3 user
+        :param s3userinfo: User info for IAM user
         :param delete_percent: Percentage for deletion
         :return : Tuple(boolean,str)
         """
@@ -210,7 +212,7 @@ class NearFullStorage:
         Retrieve user data space to attain specific percent of near full storage.
         :param master_node: Master node object
         :param write_per: Percentage of near full storage to be attained.
-        :param s3userinfo: User info for S3 user
+        :param s3userinfo: User info for IAM user
         :param bucket_prefix: Bucket prefix to be used for IO operations
         :param clients: No of clients to be used for IO operations.
         :param bucket_list: List of created buckets.(Used for degraded path)
