@@ -1,15 +1,8 @@
-test_dummy:
-  object_size:
-    start_range: 10
-    stop_range: 100
+update_seconds: 600
 test_33899:
-  update_seconds: 600
   err_margin: 0
 test_33919:
   err_margin: 10
-  object_size:
-    start_range: 10
-    stop_range: 100
 test_33920:
   err_margin: 0
   object_size:

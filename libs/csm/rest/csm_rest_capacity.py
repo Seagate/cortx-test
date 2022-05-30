@@ -345,17 +345,91 @@ class SystemCapacity(RestTestLib):
 
         self.log.info("[Start] Fetch degraded capacity on CSM")
         resp = self.get_degraded_capacity()
-        assert(resp.status_code == HTTPStatus.OK.value, "Status code check failed.")
+        assert resp.status_code == HTTPStatus.OK.value, "Status code check failed."
         resp = resp.json()["bytecount"]
         self.log.info("[End] Fetch degraded capacity on CSM")
 
-        assert(hctl_op["healthy"] == consul_op["healthy"], "HCTL & Consul healthy byte mismatch")
-        assert(hctl_op["degraded"] == consul_op["degraded"], "HCTL & Consul degraded byte mismatch")
-        assert(hctl_op["critical"] == consul_op["critical"], "HCTL & Consul critical byte mismatch")
-        assert(hctl_op["damaged"] == consul_op["damaged"], "HCTL & Consul healthy byte mismatch")
-        assert(resp["healthy"] == consul_op["healthy"], "CSM & Consul healthy byte mismatch")
-        assert(resp["degraded"] == consul_op["degraded"], "CSM & Consul degraded byte mismatch")
-        assert(resp["critical"] == consul_op["critical"], "CSM & Consul critical byte mismatch")
-        assert(resp["damaged"] == consul_op["damaged"], "CSM & Consul healthy byte mismatch")
-
+        assert hctl_op["healthy"] == consul_op["healthy"], "HCTL & Consul healthy byte mismatch"
+        assert hctl_op["degraded"] == consul_op["degraded"], "HCTL & Consul degraded byte mismatch"
+        assert hctl_op["critical"] == consul_op["critical"], "HCTL & Consul critical byte mismatch"
+        assert hctl_op["damaged"] == consul_op["damaged"], "HCTL & Consul healthy byte mismatch"
+        assert resp["healthy"] == consul_op["healthy"], "CSM & Consul healthy byte mismatch"
+        assert resp["degraded"] == consul_op["degraded"], "CSM & Consul degraded byte mismatch"
+        assert resp["critical"] == consul_op["critical"], "CSM & Consul critical byte mismatch"
+        assert resp["damaged"] == consul_op["damaged"], "CSM & Consul healthy byte mismatch"
         return resp
+
+    def verify_bytecount_all(self, resp, failure_cnt, kvalue, err_margin, total_written,new_write=0):
+        """
+        """
+        if failure_cnt == 0:
+            self.log.info("Checking for %s greater than to K value", failure_cnt)
+            result = self.verify_degraded_capacity(resp, healthy=total_written,
+            degraded=0, critical=0, damaged=0, err_margin=err_margin,
+            total=total_written)
+        elif failure_cnt < kvalue:
+            self.log.info("Checking for %s greater than to K value", failure_cnt)
+            result = self.verify_degraded_capacity(resp, healthy=new_write,
+            degraded=total_written-new_write, critical=0, damaged=0, err_margin=err_margin,
+            total=total_written)
+        elif failure_cnt == kvalue:
+            self.log.info("Checking for %s greater than to K value", failure_cnt)
+            result = self.verify_degraded_capacity(resp, healthy=new_write,
+            degraded=0, critical=total_written-new_write, damaged=0, err_margin=err_margin,
+            total=total_written)
+        else:
+            self.log.info("Checking for %s less than to K value", failure_cnt)
+            result = self.verify_degraded_capacity(resp, healthy=new_write,
+            degraded=0, critical=0, damaged=total_written-new_write, err_margin=err_margin,
+            total=total_written)
+        return result
+
+    def append_df(self, cap_df, failed_pod, data_written):
+        """Append the value to the data frame created in the test
+        """
+        new_row={"data_written":data_written}
+        deploy_list = list(cap_df.columns)
+        if "data_written" in deploy_list:
+            deploy_list.remove("data_written")
+        for deploy in deploy_list:
+            new_row[deploy] = not deploy in failed_pod
+        cap_df = cap_df.append(new_row, ignore_index=True)
+        return cap_df
+
+    def verify_flexi_protection(self, resp, cap_df, failed_pod:list, kvalue:int, err_margin:int):
+        """Check byte count based on flexible protection
+        """
+        healthy=0
+        degraded=0
+        critical=0
+        damaged=0
+        host_list = cap_df.columns.values.tolist()
+        if "data_written" in host_list:
+            host_list.remove("data_written")
+
+        for row in cap_df.index:
+            written_on = []
+            for node in host_list:
+                if cap_df[node][row]:
+                    written_on.append(node)
+            corrupt_shards = len(set(written_on) & set(failed_pod))
+            
+            if corrupt_shards == 0:
+                self.log.debug("Checking for %s less than to K value", corrupt_shards)
+                healthy += cap_df["data_written"][row]
+            elif corrupt_shards < kvalue:
+                self.log.debug("Checking for %s greater than to K value", corrupt_shards)
+                degraded += cap_df["data_written"][row]
+            elif corrupt_shards == kvalue:
+                self.log.debug("Checking for %s greater than to K value", corrupt_shards)
+                critical += cap_df["data_written"][row]
+            else:
+                self.log.debug("Checking for %s less than to K value", corrupt_shards)
+                damaged += cap_df["data_written"][row]
+
+        total_written = healthy + degraded + critical + damaged
+        result = self.verify_degraded_capacity(resp, healthy=healthy,
+        degraded=degraded, critical=critical, damaged=damaged, err_margin=err_margin,
+        total=total_written)
+
+        return result
