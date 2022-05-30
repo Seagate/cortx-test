@@ -1,0 +1,3 @@
+full_sys_writes:
+  vm_workload: [128, 256, 512, 1024, 2048]
+  extended_hw_workload: [3072, 4096]

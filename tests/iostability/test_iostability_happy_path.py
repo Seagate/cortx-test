@@ -177,7 +177,7 @@ class TestIOWorkload:
         while datetime.now() < end_time:
             loop += 1
             self.log.info("%s remaining time for reading loop", (end_time - datetime.now()))
-            read_ret = NearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+            read_ret = NearFullStorage.perform_operations_on_pre_written_data(s3userinfo=s3userinfo,
                                                                         workload_info=ret[1],
                                                                         skipread=False,
                                                                         validate=True,
@@ -186,7 +186,7 @@ class TestIOWorkload:
             assert_utils.assert_true(read_ret[0], read_ret[1])
 
         self.log.info("Step 4: Performing delete operations.")
-        del_ret = NearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+        del_ret = NearFullStorage.perform_operations_on_pre_written_data(s3userinfo=s3userinfo,
                                                                    workload_info=ret[1],
                                                                    skipread=True,
                                                                    validate=False,
@@ -223,7 +223,8 @@ class TestIOWorkload:
                       write_percent_per_iter, delete_percent_per_iter, max_cluster_capacity_percent)
         workload_info_list = []
         end_time = datetime.now() + timedelta(days=self.duration_in_days)
-        write_per = loop = 0
+        write_per = 0
+        loop = 1
         while datetime.now() < end_time:
             self.log.info("LOOP COUNT : %s", loop)
             loop += 1
@@ -241,7 +242,7 @@ class TestIOWorkload:
                 self.log.info("Read/Validate all the written data of the cluster")
                 # Read and validate all written data
                 if len(workload_info_list) > 0:
-                    resp = NearFullStorage.perform_near_full_sys_operations(s3userinfo,
+                    resp = NearFullStorage.perform_operations_on_pre_written_data(s3userinfo,
                                                                             workload_info_list,
                                                                             False, True, True)
                     assert_utils.assert_true(resp[0], resp[1])

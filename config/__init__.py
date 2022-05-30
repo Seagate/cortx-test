@@ -158,7 +158,7 @@ DTM_CFG = configmanager.get_config_wrapper(fpath=DTM_TEST_CFG_PATH)
 
 DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH)
 DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
-
+NEAR_FULL_STORAGE_CFG = configmanager.get_config_wrapper(fpath=NEAR_FULL_STORAGE_CFG_PATH)
 # Munched configs. These can be used by dot "." operator.
 
 di_cfg = munch.munchify(DI_CFG)

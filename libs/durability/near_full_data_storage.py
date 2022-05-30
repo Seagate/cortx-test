@@ -26,7 +26,7 @@ import time
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.constants import MB
-from config import CMN_CFG
+from config import CMN_CFG, NEAR_FULL_STORAGE_CFG
 from config.s3 import S3_CFG
 from libs.durability.disk_failure_recovery_libs import DiskFailureRecoveryLib
 from scripts.s3_bench import s3bench
@@ -92,9 +92,9 @@ class NearFullStorage:
         """
         client = kwargs.get("client", 10)
         bucket_list = kwargs.get('bucket_list', None)
-        workload = [128, 256, 512, 1024, 2048]  # workload in mb
+        workload = NEAR_FULL_STORAGE_CFG['full_sys_writes']['vm_workload']    # workload in mb
         if CMN_CFG["setup_type"] == "HW":
-            workload.extend([3072, 4096])
+            workload.extend(NEAR_FULL_STORAGE_CFG['full_sys_writes']['extended_hw_workload'])
 
         workload = [each * MB for each in workload]  # convert to bytes
         each_workload_byte = user_data_writes / len(workload)
@@ -136,7 +136,7 @@ class NearFullStorage:
         return True, return_list
 
     @staticmethod
-    def perform_near_full_sys_operations(s3userinfo: dict, workload_info: list,
+    def perform_operations_on_pre_written_data(s3userinfo: dict, workload_info: list,
                                          skipread: bool = True, validate: bool = True,
                                          skipcleanup: bool = False):
         """
@@ -189,7 +189,7 @@ class NearFullStorage:
             delete_list.append(bucket_info)
             workload_info_list.remove(bucket_info)
         LOGGER.info("Deleting buckets : %s", delete_list)
-        resp = NearFullStorage.perform_near_full_sys_operations(
+        resp = NearFullStorage.perform_operations_on_pre_written_data(
             s3userinfo=s3userinfo,
             workload_info=delete_list,
             skipread=False,
@@ -197,7 +197,7 @@ class NearFullStorage:
             skipcleanup=False)
 
         if resp[0]:
-            deleted_buckets = [each['bucket'] for each in resp[1]]
+            deleted_buckets = [each['bucket'] for each in delete_list]
             LOGGER.info("Buckets deleted : %s", deleted_buckets)
             return True, deleted_buckets
         return resp

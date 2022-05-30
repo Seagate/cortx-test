@@ -207,7 +207,7 @@ class TestIOWorkloadDegradedPath:
         while datetime.now() < end_time:
             loop += 1
             self.log.info("%s remaining time for reading loop", (end_time - datetime.now()))
-            read_ret = NearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+            read_ret = NearFullStorage.perform_operations_on_pre_written_data(s3userinfo=s3userinfo,
                                                                         workload_info=ret[1],
                                                                         skipread=False,
                                                                         validate=True,
@@ -248,7 +248,8 @@ class TestIOWorkloadDegradedPath:
         bucket_creation_healthy_mode = self.test_cfg['bucket_creation_healthy_mode']
         avail_buckets = []
         if bucket_creation_healthy_mode:
-            resp = self.s3t_obj.create_multiple_buckets(50, "test-40174-bkt")
+            resp = self.s3t_obj.create_multiple_buckets(self.test_cfg['create_bucket_count'],
+                                                        "test-40174-bkt")
             for each in resp[1]:
                 avail_buckets.append(each)
             self.log.info("Step 1: Bucket created in healthy mode ")
@@ -280,7 +281,7 @@ class TestIOWorkloadDegradedPath:
 
         self.log.info("Step 4: Perform Reads/Delete on data written in healthy mode"
                       " and Write/Reads/Delete on data written in degraded mode")
-        loop = 0
+        loop = 1
         while datetime.now() < end_time:
             self.log.info(" Loop count : %s", loop)
             loop += 1
@@ -300,7 +301,7 @@ class TestIOWorkloadDegradedPath:
 
                 self.log.info("Read and Validate all the written data of the cluster")
                 if len(workload_info_list) > 0:
-                    resp = NearFullStorage.perform_near_full_sys_operations(
+                    resp = NearFullStorage.perform_operations_on_pre_written_data(
                         s3userinfo=s3userinfo, workload_info=workload_info_list,
                         skipread=False, validate=True, skipcleanup=True)
                     assert_utils.assert_true(resp[0], resp[1])
