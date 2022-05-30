@@ -440,8 +440,7 @@ class Provisioner:
             LOGGER.debug("confstore template command output for %s's %s: %s", chk, key, resp1)
             if resp1:
                 return True, "Key from pillar and confstore match."
-            else:
-                return False, "Key doesn't match."
+            return False, "Key doesn't match."
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
