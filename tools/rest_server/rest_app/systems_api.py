@@ -42,7 +42,7 @@ class SearchSystems(Resource):
        For performing search operation on r2_systems collection.
     """
 
-    # pylint-disable-message=too-many-return-statements
+    # pylint: disable=too-many-return-statements
     @staticmethod
     def get():
         """Get for systems"""

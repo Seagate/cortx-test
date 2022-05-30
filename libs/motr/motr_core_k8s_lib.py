@@ -27,7 +27,7 @@ from random import SystemRandom
 
 from libs.motr import TEMP_PATH
 from libs.motr import FILE_BLOCK_COUNT
-from libs.motr import BSIZE_LAYOUT_MAP
+from libs.motr.layouts import BSIZE_LAYOUT_MAP
 from libs.ha.ha_common_libs_k8s import HAK8s
 from config import CMN_CFG
 from commons.utils import system_utils
@@ -215,12 +215,12 @@ class MotrCoreK8s():
         :node: on which node file need to create
         """
 
-        cmd = common_cmd.CREATE_FILE.format("/dev/urandom", file, b_size, count)
+        cmd = common_cmd.CREATE_FILE.format("/dev/urandom", file, b_size, count)  # nosec
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                                          f"-- {cmd}", decode=True)
-        log.info("Resp: %s", resp)
+        log.info("DD Resp: %s", resp)
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
@@ -245,13 +245,52 @@ class MotrCoreK8s():
                                      node_dict["hax_ep"],
                                      node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
                                      self.profile_fid, b_size.lower(),
-                                     count, obj, layout, file)
+                                     count, obj, layout, file)  # nosec
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                                          f"-- {cmd}", decode=True)
 
-        log.info("Resp: %s", resp)
+        log.info("CP Resp: %s", resp)
+
+        assert_utils.assert_not_in("ERROR" or "Error", resp,
+                                   f'"{cmd}" Failed, Please check the log')
+
+    def cp_corrupt_cmd(self, **kwargs):
+        """
+        M0CP command creation
+
+        :b_size: Block size
+        :count: Block count
+        :obj: Object ID
+        :layout: Layout ID
+        :file: Output file name
+        :node: on which node m0cp cmd need to perform
+        :client_num: perform operation on motr_client
+        """
+        b_size = kwargs.get('b_size')
+        count = kwargs.get('count')
+        obj = kwargs.get('obj')
+        layout = kwargs.get('layout')
+        file = kwargs.get('file')
+        node = kwargs.get('node')
+        offset = kwargs.get('offset')
+        client_num = kwargs.get('client_num', None)
+        if client_num is None:
+            client_num = 0
+        node_dict = self.get_cortx_node_endpoints(node)
+        cmd = common_cmd.M0CP_U.format(
+            node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+            node_dict["hax_ep"],
+            node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+            self.profile_fid, b_size.lower(),
+            count, obj, layout, offset, file)  # nosec
+        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
+                                          namespace=common_const.NAMESPACE,
+                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+                                                         f"-- {cmd}", decode=True)
+
+        log.info("CP Resp: %s", resp)
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
@@ -282,7 +321,7 @@ class MotrCoreK8s():
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                                          f"-- {cmd}", decode=True)
 
-        log.info("Resp: %s", resp)
+        log.info("CAT Resp: %s", resp)
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
@@ -308,7 +347,7 @@ class MotrCoreK8s():
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                                          f"-- {cmd}", decode=True)
 
-        log.info("Resp: %s", resp)
+        log.info("UNLINK Resp: %s", resp)
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
@@ -327,7 +366,7 @@ class MotrCoreK8s():
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                                          f"-- {cmd}", decode=True)
-        log.info("Resp: %s", resp)
+        log.info("DIFF Resp: %s", resp)
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
@@ -346,7 +385,7 @@ class MotrCoreK8s():
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                                          f"-- {cmd}", decode=True)
-        log.info("Resp: %s", resp)
+        log.info("MD5SUM Resp: %s", resp)
         chksum = resp.split()
         assert_utils.assert_equal(chksum[0], chksum[2], f'Failed {cmd}, Checksum did not match')
 

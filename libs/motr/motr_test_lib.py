@@ -37,6 +37,8 @@ from config import CMN_CFG
 logger = logging.getLogger(__name__)
 
 
+# pylint:disable=too-many-public-methods
+# pylint:disable=too-many-instance-attributes
 class MotrTestLib():
     """
     This class contain Motr test related operations
@@ -78,7 +80,7 @@ class MotrTestLib():
         """To calculate motr client number"""
         count = 0
         for temp in my_svcs_info:
-            if (temp["name"] == "m0_client"):
+            if temp["name"] == "m0_client":
                 count = count + 1
         return count - 1
 

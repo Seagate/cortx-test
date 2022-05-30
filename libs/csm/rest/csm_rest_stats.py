@@ -39,6 +39,7 @@ class SystemStats(RestTestLib):
     """SystemStats contains all the Rest API calls for reading system stats"""
 
     @RestTestLib.authenticate_and_login
+    # pylint: disable=too-many-arguments
     def get_stats(self, stats_id=None, panel=None, metrics=None,
                   from_time=None, to_time=None, interval=None,
                   total_sample=None, op_format=None):
@@ -134,6 +135,8 @@ class SystemStats(RestTestLib):
                 self.log.error("Interval and total sample both were None")
         return samples
 
+    # pylint: disable=too-many-arguments
+    # pylint: disable-msg=too-many-branches
     def _add_parameters(self, endpoint, stats_id=None, panel=None,
                         metrics=False, from_time=None, to_time=None,
                         interval=None, total_sample=None, op_format=None):

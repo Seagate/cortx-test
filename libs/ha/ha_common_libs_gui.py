@@ -40,8 +40,7 @@ class HAGUILibs:
     def __init__(self):
         self.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
         self.csm_url = "https://" + self.mgmt_vip + "/#"
-        self.cwd = os.getcwd()
-        self.robot_gui_path = os.path.join(self.cwd + '/robot_gui/')
+        self.robot_gui_path = os.path.join(os.getcwd() + '/robot_gui/')
         self.robot_test_path = self.robot_gui_path + 'testsuites/gui/.'
         self.browser_type = 'chrome'
         self.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]

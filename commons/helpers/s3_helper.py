@@ -437,13 +437,15 @@ class S3Helper:
                 for line in output:
                     if "s3server" in line:
                         LOGGER.info(line.split())
-                        fid = "{}@{}".format(line.split()[1], line.split()[2])
+                        fid = f"{line.split()[1]}@{line.split()[2]}"
                         fids.append(fid)
                 LOGGER.info("Fids: %s", str(fids))
                 return status, fids
             if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 health = Health(hostname=host, username=user, password=pwd)
-                return health.hctl_status_get_service_fids(service_name="s3server")
+                status, fids = health.hctl_status_get_svc_fids()
+                if status:
+                    return True, fids['rgw_s3']
 
             return False, "Failed to get s3server fids"
         except (SSHException, OSError) as error:
@@ -533,9 +535,9 @@ class S3Helper:
         section = section if section else self.s3_cfg["aws_cred_section"]
         try:
             if not os.path.isfile(path):
-                raise FileNotFoundError("{} file is not present. Please "
+                raise FileNotFoundError(f"{path} file is not present. Please "
                                         "configure aws in the system if you are"
-                                        " running s3 test".format(path))
+                                        " running s3 test")
             access_key = config_utils.get_config(path, section, "aws_access_key_id")
             secret_key = config_utils.get_config(path, section, "aws_secret_access_key")
 

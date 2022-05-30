@@ -20,10 +20,13 @@
 """
 Utility Method for IO stability testing
 """
+import json
 import logging
+import threading
 import time
 from datetime import datetime, timedelta
 
+from commons.mail_script_utils import Mail
 from commons.utils import system_utils
 from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
@@ -32,6 +35,9 @@ from scripts.s3_bench import s3bench
 
 
 class IOStabilityLib:
+    """
+    This class contains common utility methods for IO stability.
+    """
 
     def __init__(cls, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
         cls.log = logging.getLogger(__name__)
@@ -93,3 +99,65 @@ class IOStabilityLib:
                             obj_list = []
                     self.log.info("Objects deletion completed")
             loop += 1
+
+
+class MailNotification(threading.Thread):
+    """
+    This class contains common utility methods for Mail Notification.
+    """
+
+    # pylint: disable=too-few-public-methods
+    def __init__(self, sender, receiver, test_id, health_obj):
+        """
+        Init method:
+        :param sender: sender of mail
+        :param receiver: receiver of mail
+        :param test_id : Test ID to be sent in subject.
+        :param health_obj: Health object to monitor health.
+        """
+        threading.Thread.__init__(self)
+        self.event_pass = threading.Event()
+        self.event_fail = threading.Event()
+        self.mail_obj = Mail(sender=sender, receiver=receiver)
+        self.test_id = test_id
+        self.health_obj = health_obj
+        self.interval = 4  # Mail to be sent periodically after 4 hours.
+
+    def run(self):
+        """
+        Send Mail notification periodically.
+        """
+        while not self.event_pass.is_set() and not self.event_fail.is_set():
+            status = json.dumps(self.health_obj.hctl_status_json(), indent=4)
+            subject = f"Test {self.test_id} in progress on {self.health_obj.hostname}"
+            body = f"hctl Status: {status} \n"
+            self.mail_obj.send_mail(subject=subject, body=body)
+            current_time = time.time()
+            while time.time() < current_time + self.interval * 60 * 60:
+                if self.event_pass.is_set() or self.event_fail.is_set():
+                    break
+                time.sleep(60)
+        test_status = "Failed"
+        if self.event_pass.is_set():
+            test_status = "Passed"
+        status = json.dumps(self.health_obj.hctl_status_json(), indent=4)
+        subject = f"Test {self.test_id} {test_status} on {self.health_obj.hostname}"
+        body = f"hctl Status: {status} \n"
+        self.mail_obj.send_mail(subject=subject, body=body)
+
+
+def send_mail_notification(sender_mail_id, receiver_mail_id, test_id, health_obj):
+    """
+    Send mail notification
+    :param sender_mail_id: Sender Mail ID
+    :param receiver_mail_id: Receiver Mail ID
+    :param test_id: Test ID
+    :param health_obj: Health object.
+    :return MailNotification Object.
+    """
+    mail_notify = MailNotification(sender=sender_mail_id,
+                                   receiver=receiver_mail_id,
+                                   test_id=test_id,
+                                   health_obj=health_obj)
+    mail_notify.start()
+    return mail_notify

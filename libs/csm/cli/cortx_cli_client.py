@@ -27,7 +27,7 @@ try:
 except ModuleNotFoundError as error:
     logging.error(error)
 
-
+# pylint: disable=too-many-instance-attributes
 class CortxCliClient:
     """
     This class is responsible to establish connection to CSM server

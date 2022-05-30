@@ -18,33 +18,38 @@
 
 """Test S3 utility library module."""
 
-import os
-import time
 import logging
-from random import shuffle
+import os
 from hashlib import md5
+from random import shuffle
+from time import perf_counter_ns
 
 import pytest
 
+from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
 from commons.utils import s3_utils
 from commons.utils import system_utils
-from commons.utils import assert_utils
-from commons.params import TEST_DATA_FOLDER
 
 
 class TestS3Utils:
     """Test S3 utility library class."""
 
+    @classmethod
+    def setup_class(cls):
+        """Initialize variables."""
+        cls.log = logging.getLogger(__name__)
+        cls.dpath = os.path.join(TEST_DATA_FOLDER, "TestS3Utils")
+        cls.fpath = None
+
     def setup_method(self):
-        """Function will be invoked prior to each test case."""
-        self.log = logging.getLogger(__name__)
-        self.dpath = os.path.join(TEST_DATA_FOLDER, "TestS3Utils")
-        self.fpath = os.path.join(self.dpath, "s3utils-{}".format(time.perf_counter_ns()))
+        """Pre-requisite will be invoked prior to each test case."""
+        self.fpath = os.path.join(self.dpath, f"s3utils-{perf_counter_ns()}")
         if not system_utils.path_exists(self.dpath):
             system_utils.make_dirs(self.dpath)
 
     def teardown_method(self):
-        """Function will be invoked after each test case."""
+        """Teardown will be invoked after each test case."""
         if system_utils.path_exists(self.dpath):
             system_utils.remove_dirs(self.dpath)
 
@@ -76,16 +81,16 @@ class TestS3Utils:
     def test_create_multipart_json(self):
         """Test create multipart json."""
         json_path = os.path.join(self.dpath, "sample.json")
-        parts = list()
+        parts = []
         num_list = list(range(1, 11))
         for i in num_list:
-            parts.append({"PartNumber": i, "ETag": md5(os.urandom(10)).hexdigest()})
+            parts.append({"PartNumber": i, "ETag": md5(os.urandom(10)).hexdigest()})  # nosec
         resp = s3_utils.create_multipart_json(json_path, parts)
         assert_utils.assert_true(resp[0], resp)
         shuffle(num_list)
-        parts = list()
-        for i in num_list:
-            parts.append({"PartNumber": i, "ETag": md5(os.urandom(10)).hexdigest()})
+        parts = []
+        for j in num_list:
+            parts.append({"PartNumber": j, "ETag": md5(os.urandom(10)).hexdigest()})  # nosec
         resp = s3_utils.create_multipart_json(json_path, parts)
         assert_utils.assert_true(resp[0], resp)
 

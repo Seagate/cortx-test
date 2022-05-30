@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python # pylint: disable=C0302
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -19,25 +19,30 @@
 
 """Test suite for server fru related tests"""
 
-import os
-import time
-import random
+import ast
 import logging
-import pytest
+import os
+import random
+import time
+
 import pandas as pd
-from commons.helpers.node_helper import Node
-from commons.helpers.health_helper import Health
-from commons.helpers.bmc_helper import Bmc
-from commons.helpers.controller_helper import ControllerLib
+import pytest
+
+from commons import commands as common_cmd
+from commons import constants as cons
+from commons.alerts_simulator.generate_alert_lib import AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons import constants as cons
-from commons import commands as common_cmd
+from commons.helpers.bmc_helper import Bmc
+from commons.helpers.controller_helper import ControllerLib
+from commons.helpers.health_helper import Health
+from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
-from commons.alerts_simulator.generate_alert_lib import \
-    GenerateAlertLib, AlertType
 from commons.utils import system_utils
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from config import CMN_CFG
+from config import RAS_TEST_CFG
+from config import RAS_VAL
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.s3 import S3H_OBJ
@@ -48,6 +53,7 @@ LOGGER = logging.getLogger(__name__)
 class TestServerFruAlerts:
     """SSPL Server FRU Test Suite."""
 
+    # pylint: disable=R0902
     @classmethod
     def setup_class(cls):
         """Setup for module."""
@@ -57,7 +63,8 @@ class TestServerFruAlerts:
         LOGGER.info("Total number of nodes in cluster: %s", cls.node_cnt)
 
         LOGGER.info("Randomly picking node to create fault")
-        cls.test_node = random.randint(1, cls.node_cnt)
+        cls.system_random = random.SystemRandom()
+        cls.test_node = cls.system_random.randint(1, cls.node_cnt)
 
         LOGGER.info("Fault testing will be done on node: %s", cls.test_node)
         cls.host = CMN_CFG["nodes"][cls.test_node-1]["host"]
@@ -111,6 +118,7 @@ class TestServerFruAlerts:
         cls.server_psu_fault = False
         LOGGER.info("Successfully ran setup_class")
 
+    # pylint: disable=too-many-statements
     def setup_method(self):
         """Setup operations per test."""
         LOGGER.info("Running setup_method")
@@ -152,8 +160,7 @@ class TestServerFruAlerts:
         service = self.cm_cfg["service"]
         services = [service["sspl_service"], service["kafka_service"]]
         resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
-                                                    resources=[
-                                                        self.sspl_resource_id])
+                                                    resources=[self.sspl_resource_id])
         time.sleep(self.cm_cfg["sleep_val"])
 
         for svc in services:
@@ -190,6 +197,7 @@ class TestServerFruAlerts:
 
         LOGGER.info("Successfully performed Setup operations")
 
+    # pylint: disable=too-many-statements
     def teardown_method(self):
         """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
@@ -254,7 +262,7 @@ class TestServerFruAlerts:
                       f"node_slot='{self.lpdu_details['port']}', " \
                       f"status='{status}')"
                 LOGGER.info("Command: %s", cmd)
-                res = eval(cmd)
+                res = ast.literal_eval(cmd)
                 LOGGER.debug(res)
                 LOGGER.info("Making right pdu port up")
                 cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
@@ -264,7 +272,7 @@ class TestServerFruAlerts:
                       f"node_slot='{self.rpdu_details['port']}', " \
                       f"status='{status}')"
                 LOGGER.info("Command: %s", cmd)
-                res = eval(cmd)
+                res = ast.literal_eval(cmd)
             LOGGER.debug(res)
             self.power_failure_flag = False
             time.sleep(test_cfg["wait_10_min"])
@@ -318,12 +326,14 @@ class TestServerFruAlerts:
 
         LOGGER.info("Restarting SSPL service")
         resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
-                                                    resources=[
-                                                        self.sspl_resource_id])
+                                                    resources=[self.sspl_resource_id])
         time.sleep(self.cm_cfg["sleep_val"])
 
         LOGGER.info("Successfully performed Teardown operation")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-branches
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -337,9 +347,9 @@ class TestServerFruAlerts:
         LOGGER.info("STARTED: Test alerts for OS disk removal and insertion")
 
         test_cfg = RAS_TEST_CFG["TEST-23606"]
-        df = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6'.split(),
-                          columns='Iteration0'.split())
-        df = df.assign(Iteration0='Pass')
+        d_f = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6'.split(),
+                           columns='Iteration0'.split())
+        d_f = d_f.assign(Iteration0='Pass')
 
         # TODO: Start CRUD operations in one thread
         # TODO: Start IOs in one thread
@@ -349,21 +359,21 @@ class TestServerFruAlerts:
                     self.hostname)
         resp = self.ras_test_obj.get_raid_array_details()
         if not resp[0]:
-            df['Iteration0']['Step1'] = 'Fail'
+            d_f['Iteration0']['Step1'] = 'Fail'
         md_arrays = resp[1] if resp[0] else assert_utils.assert_true(
             resp[0], "Step 1: Failed" " to get raid " "array details")
 
         LOGGER.info("MDRAID arrays: %s", md_arrays)
-        for k, v in md_arrays.items():
-            if v["state"] != "Active":
-                df['Iteration0']['Step1'] = 'Fail'
+        for k_k, v_v in md_arrays.items():
+            if v_v["state"] != "Active":
+                d_f['Iteration0']['Step1'] = 'Fail'
                 assert_utils.assert_true(
-                    False, f"Step 1: Array {k} is in degraded state")
+                    False, f"Step 1: Array {k_k} is in degraded state")
 
         LOGGER.info("Step 1: Getting details of drive to be removed")
         resp = self.ras_test_obj.get_node_drive_details()
         if not resp[0]:
-            df['Iteration0']['Step1'] = 'Fail'
+            d_f['Iteration0']['Step1'] = 'Fail'
 
         assert_utils.assert_true(
             resp[0],
@@ -386,7 +396,7 @@ class TestServerFruAlerts:
             input_parameters={"drive_name": drive_name.split("/")[-1],
                               "drive_count": drive_count})
         if not resp[0]:
-            df['Iteration0']['Step2'] = 'Fail'
+            d_f['Iteration0']['Step2'] = 'Fail'
             LOGGER.error("Step 2: Failed to create fault. Error: %s", resp[1])
         else:
             LOGGER.info(
@@ -395,7 +405,7 @@ class TestServerFruAlerts:
 
         time.sleep(self.cm_cfg["sleep_val"])
         LOGGER.info("Check health of node %s", self.test_node)
-        resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+        resp = ast.literal_eval(f"srv{self.test_node}_hlt.check_node_health()")
         assert_utils.assert_true(resp[0], resp[1])
 
         if self.start_msg_bus:
@@ -404,7 +414,7 @@ class TestServerFruAlerts:
                 "missing"], f"srvnode-{self.test_node}.mgmt.public"]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
-                df['Iteration0']['Step3'] = 'Fail'
+                d_f['Iteration0']['Step3'] = 'Fail'
                 LOGGER.error("Step 3: Expected alert not found. Error: %s",
                              resp[1])
             else:
@@ -416,7 +426,7 @@ class TestServerFruAlerts:
             self.starttime, self.alert_types["missing"], False, test_cfg["resource_type"])
 
         if not resp_csm:
-            df['Iteration0']['Step4'] = 'Fail'
+            d_f['Iteration0']['Step4'] = 'Fail'
             LOGGER.error("Step 4: Expected alert not found. Error: %s",
                          test_cfg["csm_error_msg"])
         else:
@@ -433,7 +443,7 @@ class TestServerFruAlerts:
                               "drive_count": drive_count})
 
         if not resp[0]:
-            df['Iteration0']['Step5'] = 'Fail'
+            d_f['Iteration0']['Step5'] = 'Fail'
             LOGGER.error("Step 5: Failed to resolve fault.")
         else:
             LOGGER.info(
@@ -448,7 +458,7 @@ class TestServerFruAlerts:
             filepath=RAS_VAL['ras_sspl_alert']['file']['fdisk_file'],
             drive=new_drive)
         if not resp[0]:
-            df['Iteration0']['Step6'] = 'Fail'
+            d_f['Iteration0']['Step6'] = 'Fail'
         raid_parts = resp[1] if resp[0] else assert_utils.assert_true(
             resp[0], f"Step 6: Failed to " f"get partition " f"details of " f"{new_drive}")
 
@@ -458,14 +468,14 @@ class TestServerFruAlerts:
             alert_lib_obj=self.alert_api_obj, alert_type=AlertType,
             raid_parts=raid_parts, md_arrays=md_arrays)
         if not resp[0]:
-            df['Iteration0']['Step7'] = 'Fail'
+            d_f['Iteration0']['Step7'] = 'Fail'
         new_array = resp[1] if resp[0] else assert_utils.assert_true(
             resp[0], "Step 7: Failed to " "add drive in raid " "array")
         LOGGER.info("New MDARRAY: %s", new_array)
 
         time.sleep(self.cm_cfg["sleep_val"])
         LOGGER.info("Check health of node %s", self.test_node)
-        resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+        resp = ast.literal_eval(f"srv{self.test_node}_hlt.check_node_health()")
         assert_utils.assert_true(resp[0], resp[1])
 
         if self.start_msg_bus:
@@ -474,7 +484,7 @@ class TestServerFruAlerts:
                           self.alert_types["insertion"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
-                df['Iteration0']['Step8'] = 'Fail'
+                d_f['Iteration0']['Step8'] = 'Fail'
                 LOGGER.error("Step 8: Expected alert not found. Error: %s",
                              resp[1])
             else:
@@ -491,7 +501,7 @@ class TestServerFruAlerts:
                                                               "resource_type"])
 
         if not resp_csm:
-            df['Iteration0']['Step9'] = 'Fail'
+            d_f['Iteration0']['Step9'] = 'Fail'
             LOGGER.error("Step 9: Expected alert not found. Error: %s",
                          test_cfg["csm_error_msg"])
         else:
@@ -502,14 +512,17 @@ class TestServerFruAlerts:
         # TODO: Check status of IOs
         # TODO: Check status of random alert generation
 
-        LOGGER.info("Summary of test: %s", df)
-        result = False if 'Fail' in df.values else True
+        LOGGER.info("Summary of test: %s", d_f)
+        result = False if 'Fail' in d_f.values else True
         assert_utils.assert_true(
             result,
             "Test failed. Please check summary for failed "
             "step.")
         LOGGER.info("ENDED: Test alerts for OS disk removal and insertion")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-branches
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -547,12 +560,12 @@ class TestServerFruAlerts:
                              'resolved_alert': self.alert_types["insertion"]
                              }
         }
-        df = pd.DataFrame(columns=f"{list(os_disk_faults.keys())[0]} ".split(),
-                          index='Step1 Step2 Step3 Step4 Step5 Step6 '
-                                'Step7 Step8'.split())
+        d_f = pd.DataFrame(columns=f"{list(os_disk_faults.keys())[0]} ".split(),
+                           index='Step1 Step2 Step3 Step4 Step5 Step6 '
+                                 'Step7 Step8'.split())
 
         for key, value in os_disk_faults.items():
-            df[key] = 'Pass'
+            d_f[key] = 'Pass'
             alert_enum = value['alert_enum']
             resolve_enum = value['resolve_enum']
             fault_alert = value['fault_alert']
@@ -562,16 +575,16 @@ class TestServerFruAlerts:
                         self.hostname)
             resp = self.ras_test_obj.get_raid_array_details()
             if not resp[0]:
-                df['Iteration0']['Step1'] = 'Fail'
+                d_f['Iteration0']['Step1'] = 'Fail'
             md_arrays = resp[1] if resp[0] else assert_utils.assert_true(
                 resp[0], "Step 1: Failed" " to get raid " "array details")
 
             LOGGER.info("MDRAID arrays: %s", md_arrays)
-            for k, v in md_arrays.items():
-                if v["state"] != "Active":
-                    df['Iteration0']['Step1'] = 'Fail'
+            for k_k, v_v in md_arrays.items():
+                if v_v["state"] != "Active":
+                    d_f['Iteration0']['Step1'] = 'Fail'
                     assert_utils.assert_true(
-                        False, f"Step 1: Array {k} is in degraded state")
+                        False, f"Step 1: Array {k_k} is in degraded state")
 
             LOGGER.info("Step 1: Generating %s os disk fault on drive %s",
                         key, drive_name)
@@ -582,7 +595,7 @@ class TestServerFruAlerts:
                 input_parameters={"drive_name": drive_name,
                                   "drive_count": drive_count})
             if not resp[0]:
-                df[key]['Step1'] = 'Fail'
+                d_f[key]['Step1'] = 'Fail'
                 LOGGER.error("Step 1: Failed to create fault. Error: %s",
                              resp[1])
             else:
@@ -591,7 +604,7 @@ class TestServerFruAlerts:
 
             time.sleep(self.cm_cfg["sleep_val"])
             LOGGER.info("Check health of node %s", self.test_node)
-            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+            resp = ast.literal_eval(f"srv{self.test_node}_hlt.check_node_health()")
             # Revisit when health state information is available
             LOGGER.info("Response: %s", resp)
 
@@ -601,7 +614,7 @@ class TestServerFruAlerts:
                               fault_alert]
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 if not resp[0]:
-                    df[key]['Step2'] = 'Fail'
+                    d_f[key]['Step2'] = 'Fail'
                     LOGGER.error("Step 2: Expected alert not found. Error: %s",
                                  resp[1])
                 else:
@@ -614,7 +627,7 @@ class TestServerFruAlerts:
                 self.starttime, fault_alert, False, test_cfg["resource_type"])
 
             if not resp_csm[0]:
-                df[key]['Step3'] = 'Fail'
+                d_f[key]['Step3'] = 'Fail'
                 LOGGER.error("Step 3: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
             else:
@@ -628,7 +641,7 @@ class TestServerFruAlerts:
                 "Step 4: Rebooted node: %s, Response: %s", self.hostname, resp)
             time.sleep(self.cm_cfg["reboot_delay"])
             LOGGER.info("Check health of node %s", self.test_node)
-            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+            resp = ast.literal_eval(f"srv{self.test_node}_hlt.check_node_health()")
             # Revisit when health state information is available
             LOGGER.info("Response: %s", resp)
 
@@ -638,7 +651,7 @@ class TestServerFruAlerts:
                 self.starttime, fault_alert, False, test_cfg["resource_type"])
 
             if not resp_csm:
-                df[key]['Step5'] = 'Fail'
+                d_f[key]['Step5'] = 'Fail'
                 LOGGER.error("Step 5: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
             else:
@@ -655,7 +668,7 @@ class TestServerFruAlerts:
                                   "drive_count": drive_count})
 
             if not resp[0]:
-                df[key]['Step6'] = 'Fail'
+                d_f[key]['Step6'] = 'Fail'
                 LOGGER.error("Step 6: Failed to resolve fault on %s",
                              resp[1])
             else:
@@ -671,7 +684,7 @@ class TestServerFruAlerts:
                 filepath=RAS_VAL['ras_sspl_alert']['file']['fdisk_file'],
                 drive=new_drive)
             if not resp[0]:
-                df['Iteration0']['Step6'] = 'Fail'
+                d_f['Iteration0']['Step6'] = 'Fail'
             raid_parts = resp[1] if resp[0] else LOGGER.error(
                 "Step 6: Failed to "
                 "get partition "
@@ -685,7 +698,7 @@ class TestServerFruAlerts:
                 alert_lib_obj=self.alert_api_obj, alert_type=AlertType,
                 raid_parts=raid_parts, md_arrays=md_arrays)
             if not resp[0]:
-                df['Iteration0']['Step7'] = 'Fail'
+                d_f['Iteration0']['Step7'] = 'Fail'
             new_array = resp[1] if resp[0] else LOGGER.error(
                 "Step 7: Failed to "
                 "add drive in raid "
@@ -699,7 +712,7 @@ class TestServerFruAlerts:
                               resolved_alert]
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 if not resp[0]:
-                    df[key]['Step7'] = 'Fail'
+                    d_f[key]['Step7'] = 'Fail'
                     LOGGER.error("Step 7: Expected alert not found. Error: %s",
                                  resp[1])
                 else:
@@ -712,7 +725,7 @@ class TestServerFruAlerts:
                 self.starttime, resolved_alert, True, test_cfg["resource_type"])
 
             if not resp_csm:
-                df[key]['Step8'] = 'Fail'
+                d_f[key]['Step8'] = 'Fail'
                 LOGGER.error("Step 8: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
             else:
@@ -720,11 +733,11 @@ class TestServerFruAlerts:
                             "fault alert. Response: %s", resp_csm)
 
             LOGGER.info("Check health of node %s", self.test_node)
-            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+            resp = ast.literal_eval(f"srv{self.test_node}_hlt.check_node_health()")
             assert_utils.assert_true(resp[0], resp[1])
 
-        LOGGER.info("Summary of test: \n%s", df)
-        result = False if 'Fail' in df.values else True
+        LOGGER.info("Summary of test: \n%s", d_f)
+        result = False if 'Fail' in d_f.values else True
         assert_utils.assert_true(
             result,
             "Test failed. Please check summary for failed "
@@ -733,6 +746,9 @@ class TestServerFruAlerts:
         LOGGER.info("ENDED: Test alerts for OS disk are persistent across "
                     "node reboot")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-branches
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -771,12 +787,12 @@ class TestServerFruAlerts:
                              'resolved_alert': self.alert_types["insertion"]
                              }
         }
-        df = pd.DataFrame(columns=f"{list(os_disk_faults.keys())[0]} ".split(),
-                          index='Step1 Step2 Step3 Step4 Step5 Step6 '
-                                'Step7 Step8 Step9 Step10'.split())
+        d_f = pd.DataFrame(columns=f"{list(os_disk_faults.keys())[0]} ".split(),
+                           index='Step1 Step2 Step3 Step4 Step5 Step6 '
+                                 'Step7 Step8 Step9 Step10'.split())
 
         for key, value in os_disk_faults.items():
-            df[key] = 'Pass'
+            d_f[key] = 'Pass'
             alert_enum = value['alert_enum']
             resolve_enum = value['resolve_enum']
             fault_alert = value['fault_alert']
@@ -786,16 +802,16 @@ class TestServerFruAlerts:
                         self.hostname)
             resp = self.ras_test_obj.get_raid_array_details()
             if not resp[0]:
-                df['Iteration0']['Step1'] = 'Fail'
+                d_f['Iteration0']['Step1'] = 'Fail'
             md_arrays = resp[1] if resp[0] else assert_utils.assert_true(
                 resp[0], "Step 1: Failed" " to get raid " "array details")
 
             LOGGER.info("MDRAID arrays: %s", md_arrays)
-            for k, v in md_arrays.items():
-                if v["state"] != "Active":
-                    df['Iteration0']['Step1'] = 'Fail'
+            for k_k, v_v in md_arrays.items():
+                if v_v["state"] != "Active":
+                    d_f['Iteration0']['Step1'] = 'Fail'
                     assert_utils.assert_true(
-                        False, f"Step 1: Array {k} is in degraded state")
+                        False, f"Step 1: Array {k_k} is in degraded state")
 
             LOGGER.info("Step 1: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
@@ -803,7 +819,7 @@ class TestServerFruAlerts:
                 command="ban", resources=[self.sspl_resource_id],
                 srvnode=self.current_srvnode)
             if not resp:
-                df[key]['Step1'] = 'Fail'
+                d_f[key]['Step1'] = 'Fail'
                 assert_utils.assert_true(
                     resp, f"Failed to ban/stop {self.sspl_resource_id} "
                     f"on node {self.current_srvnode}")
@@ -814,7 +830,7 @@ class TestServerFruAlerts:
                                                         "sspl_service"]],
                                                     decode=True, exc=False)
             if resp[0] != "inactive":
-                df[key]['Step1'] = 'Fail'
+                d_f[key]['Step1'] = 'Fail'
                 assert_utils.compare(resp[0], "inactive")
             else:
                 LOGGER.info("Step 1: Successfully stopped SSPL service")
@@ -828,7 +844,7 @@ class TestServerFruAlerts:
                 input_parameters={"drive_name": drive_name,
                                   "drive_count": drive_count})
             if not resp[0]:
-                df[key]['Step2'] = 'Fail'
+                d_f[key]['Step2'] = 'Fail'
                 LOGGER.error("Step 2: Failed to create fault. Error: %s",
                              resp[1])
             else:
@@ -840,7 +856,7 @@ class TestServerFruAlerts:
                 command="clear", resources=[
                     self.sspl_resource_id], srvnode=self.current_srvnode)
             if not resp:
-                df[key]['Step3'] = 'Fail'
+                d_f[key]['Step3'] = 'Fail'
                 LOGGER.error("Failed to clear/start %s on node %s",
                              self.sspl_resource_id, self.current_srvnode)
             LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
@@ -850,7 +866,7 @@ class TestServerFruAlerts:
                                                         "sspl_service"]],
                                                     decode=True, exc=False)
             if resp[0] != "active":
-                df[key]['Step3'] = 'Fail'
+                d_f[key]['Step3'] = 'Fail'
                 LOGGER.error("SSPL state: %s", resp[0])
             else:
                 LOGGER.info("Step 3: Successfully started SSPL service")
@@ -862,7 +878,7 @@ class TestServerFruAlerts:
                               fault_alert]
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 if not resp[0]:
-                    df[key]['Step4'] = 'Fail'
+                    d_f[key]['Step4'] = 'Fail'
                     LOGGER.error("Step 4: Expected alert not found. Error: %s",
                                  resp[1])
                 else:
@@ -875,7 +891,7 @@ class TestServerFruAlerts:
                 self.starttime, fault_alert, False, test_cfg["resource_type"])
 
             if not resp_csm:
-                df[key]['Step5'] = 'Fail'
+                d_f[key]['Step5'] = 'Fail'
                 LOGGER.error("Step 5: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
             else:
@@ -883,7 +899,7 @@ class TestServerFruAlerts:
                             "fault alert. Response: %s", resp_csm)
 
             LOGGER.info("Check health of node %s", self.test_node)
-            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+            resp = ast.literal_eval(f"srv{self.test_node}_hlt.check_node_health()")
             # Revisit when health state information is available
             LOGGER.info("Response: %s", resp)
 
@@ -893,7 +909,7 @@ class TestServerFruAlerts:
                 command="ban", resources=[self.sspl_resource_id],
                 srvnode=self.current_srvnode)
             if not resp:
-                df[key]['Step6'] = 'Fail'
+                d_f[key]['Step6'] = 'Fail'
                 LOGGER.error("Failed to ban/stop %s on node %s",
                              self.sspl_resource_id, self.current_srvnode)
             LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
@@ -903,7 +919,7 @@ class TestServerFruAlerts:
                                                         "sspl_service"]],
                                                     decode=True, exc=False)
             if resp[0] != "inactive":
-                df[key]['Step6'] = 'Fail'
+                d_f[key]['Step6'] = 'Fail'
                 LOGGER.error("SSPL state: %s", resp[0])
             else:
                 LOGGER.info("Step 6: Successfully stopped SSPL service")
@@ -917,7 +933,7 @@ class TestServerFruAlerts:
                                   "drive_count": drive_count})
 
             if not resp[0]:
-                df[key]['Step7'] = 'Fail'
+                d_f[key]['Step7'] = 'Fail'
                 LOGGER.error("Step 7: Failed to resolve fault on %s",
                              resp[1])
             else:
@@ -933,7 +949,7 @@ class TestServerFruAlerts:
                 filepath=RAS_VAL['ras_sspl_alert']['file']['fdisk_file'],
                 drive=new_drive)
             if not resp[0]:
-                df['Iteration0']['Step6'] = 'Fail'
+                d_f['Iteration0']['Step6'] = 'Fail'
             raid_parts = resp[1] if resp[0] else LOGGER.error("Step 6: Failed "
                                                               "to get partition"
                                                               " details of %s",
@@ -946,7 +962,7 @@ class TestServerFruAlerts:
                 alert_lib_obj=self.alert_api_obj, alert_type=AlertType,
                 raid_parts=raid_parts, md_arrays=md_arrays)
             if not resp[0]:
-                df['Iteration0']['Step7'] = 'Fail'
+                d_f['Iteration0']['Step7'] = 'Fail'
             new_array = resp[1] if resp[0] else LOGGER.error(
                 "Step 7: Failed to "
                 "add drive in raid "
@@ -958,7 +974,7 @@ class TestServerFruAlerts:
                 command="clear", resources=[
                     self.sspl_resource_id], srvnode=self.current_srvnode)
             if not resp:
-                df[key]['Step8'] = 'Fail'
+                d_f[key]['Step8'] = 'Fail'
                 LOGGER.error("Failed to clear/start %s on node %s",
                              self.sspl_resource_id, self.current_srvnode)
             LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
@@ -968,7 +984,7 @@ class TestServerFruAlerts:
                                                         "sspl_service"]],
                                                     decode=True, exc=False)
             if resp[0] != "active":
-                df[key]['Step8'] = 'Fail'
+                d_f[key]['Step8'] = 'Fail'
                 LOGGER.error("SSPL state: %s", resp[0])
             else:
                 LOGGER.info("Step 8: Successfully started SSPL service")
@@ -980,7 +996,7 @@ class TestServerFruAlerts:
                               resolved_alert]
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 if not resp[0]:
-                    df[key]['Step9'] = 'Fail'
+                    d_f[key]['Step9'] = 'Fail'
                     LOGGER.error("Step 7: Expected alert not found. Error: %s",
                                  resp[1])
                 else:
@@ -993,7 +1009,7 @@ class TestServerFruAlerts:
                 self.starttime, resolved_alert, True, test_cfg["resource_type"])
 
             if not resp_csm:
-                df[key]['Step10'] = 'Fail'
+                d_f[key]['Step10'] = 'Fail'
                 LOGGER.error("Step 10: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
             else:
@@ -1001,11 +1017,11 @@ class TestServerFruAlerts:
                             "fault alert. Response: %s", resp_csm)
 
             LOGGER.info("Check health of node %s", self.test_node)
-            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+            resp = ast.literal_eval(f"srv{self.test_node}_hlt.check_node_health()")
             assert_utils.assert_true(resp[0], resp[1])
 
-        LOGGER.info("Summary of test: \n%s", df)
-        result = False if 'Fail' in df.values else True
+        LOGGER.info("Summary of test: \n%s", d_f)
+        result = False if 'Fail' in d_f.values else True
         assert_utils.assert_true(
             result,
             "Test failed. Please check summary for failed "
@@ -1115,6 +1131,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: TEST-23715: Test alerts for assembling and dissembling RAID array")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -1144,7 +1161,7 @@ class TestServerFruAlerts:
                 "disk": self.disk2})
         assert_utils.assert_true(resp[0], resp[1])
         self.failed_disk = self.disk2
-        resource_id = "{}:{}".format(self.md_device, self.disk2)
+        resource_id = f"{self.md_device}:{self.disk2}"
         LOGGER.info(
             "Step 1: Ran ALERT API for generating RAID fault alert by failing "
             "a disk from array")
@@ -1295,6 +1312,7 @@ class TestServerFruAlerts:
             "ENDED: Test alerts for failing drive, removing drive"
             "from RAID array and adding drive in RAID array")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -1322,7 +1340,7 @@ class TestServerFruAlerts:
                 "disk": self.disk2})
         assert_utils.assert_true(resp[0], resp[1])
         self.failed_disk = self.disk2
-        resource_id = "{}:{}".format(self.md_device, self.disk2)
+        resource_id = f"{self.md_device}:{self.disk2}"
         LOGGER.info(
             "Step 1: Ran ALERT API for generating RAID fault alert by failing "
             "a disk from array")
@@ -1486,6 +1504,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: Test alert persistence of RAID array alerts across node reboot")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -1535,7 +1554,7 @@ class TestServerFruAlerts:
                 "disk": self.disk2})
         assert_utils.assert_true(resp[0], resp[1])
         self.failed_disk = self.disk2
-        resource_id = "{}:{}".format(self.md_device, self.disk2)
+        resource_id = f"{self.md_device}:{self.disk2}"
         LOGGER.info(
             "Step 2: Ran ALERT API for generating RAID fault alert by failing "
             "a disk from array")
@@ -1719,6 +1738,8 @@ class TestServerFruAlerts:
             "ENDED: Test alert persistence of RAID array alerts across sspl "
             "stop and start")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -1745,8 +1766,7 @@ class TestServerFruAlerts:
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node %s",
                         other_host)
-            resp = eval("srv{}_ras.start_message_bus_reader_cmd()".format(
-                other_node))
+            resp = ast.literal_eval(f"srv{other_node}_ras.start_message_bus_reader_cmd()")
             assert_utils.assert_true(resp, "Failed to start message bus "
                                            "channel")
             LOGGER.info(
@@ -1774,7 +1794,7 @@ class TestServerFruAlerts:
                   f"node_slot='{self.lpdu_details['port']}', " \
                   f"status='{status}')"
             LOGGER.info("Command: %s", cmd)
-            res = eval(cmd)
+            res = ast.literal_eval(cmd)
             LOGGER.debug(res)
             LOGGER.info("Making right pdu port down")
             cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
@@ -1784,7 +1804,7 @@ class TestServerFruAlerts:
                   f"node_slot='{self.rpdu_details['port']}', " \
                   f"status='{status}')"
             LOGGER.info("Command: %s", cmd)
-            res = eval(cmd)
+            res = ast.literal_eval(cmd)
 
         LOGGER.debug("Response: %s", res)
 
@@ -1799,8 +1819,7 @@ class TestServerFruAlerts:
             LOGGER.info("Step 2: Verifying alert logs for get alert ")
             alert_list = [test_cfg["resource_type"], self.alert_types["get"],
                           fault_description]
-            resp = eval("srv{}_ras.list_alert_validation({})".format(
-                other_node, alert_list))
+            resp = ast.literal_eval(f"srv{other_node}_ras.list_alert_validation({alert_list})")
             assert_utils.assert_true(resp[0], f"Step 2: Expected alert not "
                                               f"found. Error: {resp[1]}")
 
@@ -1841,7 +1860,7 @@ class TestServerFruAlerts:
                   f"node_slot='{self.lpdu_details['port']}', " \
                   f"status='{status}')"
             LOGGER.info("Command: %s", cmd)
-            res = eval(cmd)
+            res = ast.literal_eval(cmd)
             LOGGER.debug(res)
             LOGGER.info("Making right pdu port up")
             cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
@@ -1851,7 +1870,7 @@ class TestServerFruAlerts:
                   f"node_slot='{self.rpdu_details['port']}', " \
                   f"status='{status}')"
             LOGGER.info("Command: %s", cmd)
-            res = eval(cmd)
+            res = ast.literal_eval(cmd)
         LOGGER.debug("Response: %s", res)
 
         time.sleep(test_cfg["wait_10_min"])
@@ -1862,9 +1881,8 @@ class TestServerFruAlerts:
         LOGGER.info("Step 4: Successfully powered on node using APC/BMC.")
 
         LOGGER.info("Step 5: Check cluster health")
-        resp = eval("srv{}_hlt.check_node_health()".format(other_node))
-        assert_utils.assert_true(resp[0], "Step 5: Cluster health is not good. "
-                                 "\nResponse: {resp}")
+        resp = ast.literal_eval(f"srv{other_node}_hlt.check_node_health()")
+        assert_utils.assert_true(resp[0], f"Step 5: Cluster health is not good. \nResponse: {resp}")
         LOGGER.info("Step 5: Cluster health is good. \nResponse: %s", resp)
 
         if self.start_msg_bus:
@@ -1872,10 +1890,8 @@ class TestServerFruAlerts:
             LOGGER.info("Step 6: Verifying alert logs for get alert ")
             alert_list = [test_cfg["resource_type"],
                           self.alert_types["resolved"], fault_res_desc]
-            resp = eval("srv{}_ras.list_alert_validation({})".format(
-                other_node, alert_list))
-            assert_utils.assert_true(resp[0], f"Step 6: Expected alert not "
-                                              f"found. Error: {resp[1]}")
+            resp = ast.literal_eval(f"srv{other_node}_ras.list_alert_validation({alert_list})")
+            assert_utils.assert_true(resp[0], f"Step 6: Expected alert not found. Error: {resp[1]}")
 
             LOGGER.info("Step 6: Successfully checked generated alert logs. "
                         "Response: %s", resp)
@@ -1901,8 +1917,7 @@ class TestServerFruAlerts:
 
         if self.start_msg_bus:
             LOGGER.info("Terminating the process read_message_bus.py")
-            eval("srv{}_ras.kill_remote_process('read_message_bus.py')".format(
-                other_node))
+            ast.literal_eval(f"srv{other_node}_ras.kill_remote_process('read_message_bus.py')")
             files = [self.cm_cfg["file"]["alert_log_file"],
                      self.cm_cfg["file"]["extracted_alert_file"],
                      self.cm_cfg["file"]["screen_log"]]
@@ -1910,7 +1925,7 @@ class TestServerFruAlerts:
                 LOGGER.info("Removing log file %s from the Node", file)
                 cmd = f"srv{other_node}_nd.remove_remote_file(filename='{file}')"
                 LOGGER.info("Command: %s", cmd)
-                eval(cmd)
+                ast.literal_eval(cmd)
 
         LOGGER.info("ENDED: Test alert when one of the node's power cable is "
                     "disconnected and connected")
@@ -1931,7 +1946,6 @@ class TestServerFruAlerts:
             "STARTED: Test alerts for server psu faults")
         common_cfg = RAS_VAL["ras_sspl_alert"]
         test_cfg = RAS_TEST_CFG["test_23682"]
-        alert_types = RAS_TEST_CFG["alert_types"]
 
         for state, alert in test_cfg["sensor_states"].items():
             LOGGER.info(
@@ -2028,7 +2042,6 @@ class TestServerFruAlerts:
             "STARTED: Test system power supply alert persistency across node reboot")
         common_cfg = RAS_VAL["ras_sspl_alert"]
         test_cfg = RAS_TEST_CFG["test_23682"]
-        alert_types = RAS_TEST_CFG["alert_types"]
 
         for state, alert in test_cfg["sensor_states"].items():
             LOGGER.info(
@@ -2119,6 +2132,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: Test system power supply alert persistency across node reboot")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -2132,7 +2146,6 @@ class TestServerFruAlerts:
             "STARTED: Test system power supply alert persistency across sspl stop and start")
         common_cfg = RAS_VAL["ras_sspl_alert"]
         test_cfg = RAS_TEST_CFG["test_23682"]
-        alert_types = RAS_TEST_CFG["alert_types"]
         service = common_cfg["service"]
 
         LOGGER.info(
