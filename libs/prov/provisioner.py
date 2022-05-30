@@ -431,7 +431,7 @@ class Provisioner:
             chk = "srvnode-{}".format(node_id)
             cmd = common_cmd.CMD_PILLAR_DATA.format(chk, key)
             resp = node_obj.execute_cmd(cmd, read_lines=True)
-            LOGGER.debug(f"pillar command output for {chk}'s {key}: {resp}")
+            LOGGER.debug("pillar command output for %s's %s: %s", chk, key, resp)
             data1 = ansi_escape.sub('', resp[1])
             out = data1.strip()
             LOGGER.info("%s for %s is %s", key, chk, out)
@@ -462,8 +462,7 @@ class Provisioner:
             resp = node_obj.execute_cmd(cmd, read_lines=True)
             if resp:
                 return True, f"Executed {cmd}"
-            else:
-                return False, f"Failed {cmd}"
+            return False, f"Failed {cmd}"
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -482,8 +481,8 @@ class Provisioner:
         grep_chrony = node_obj.execute_cmd(cmd, read_lines=True)
         if time_server in grep_chrony[0]:
             return True, grep_chrony
-        else:
-            return False, f"{time_server} is not in /etc/chrony.conf"
+
+        return False, f"{time_server} is not in /etc/chrony.conf"
 
     @staticmethod
     def get_ntpsysconfg(key: list, node_obj, node_id: int):
