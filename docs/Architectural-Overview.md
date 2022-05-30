@@ -36,7 +36,7 @@ yet scales to support more complex integration and system level tests. It was ev
 requirement with small tests and some of which are mentioned below
 *  Supports parallel execution
 *  Supports tagging
-*  Modular fixtures for short and long-lived resources
+*   Modular fixtures for short and long-lived resources
 *  Plugin architecture and 300+ community supported plugins
 
 ## High level repository structure
