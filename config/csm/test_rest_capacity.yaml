@@ -125,4 +125,27 @@ test_41758:
   max_size: 12288
 test_41954:
   max_size: 12288
-
+test_40600:
+  max_size: 12288
+  max_objects: 10
+  enabled: True
+test_40601:
+  max_size: -1
+  max_objects: -1
+  enabled: True
+test_40602:
+  max_size: -1
+  max_objects: -1
+  enabled: True
+test_40603:
+  max_size: -1
+  max_objects: -1
+  enabled: True
+test_40604:
+  max_size: -1
+  max_objects: -1
+  enabled: True
+test_40605:
+  max_size: -1
+  max_objects: -1
+  enabled: False
