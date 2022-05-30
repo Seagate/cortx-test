@@ -52,7 +52,7 @@ from libs.csm.rest.csm_rest_capacity import SystemCapacity
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_s3user import RestS3user
-from libs.s3.s3_common_test_lib import create_s3_acc
+from libs.s3.s3_common_test_lib import create_s3_acc_get_s3testlib
 from libs.s3.s3_common_test_lib import perform_s3_io
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
@@ -431,7 +431,8 @@ class TestAuditLogs:
         self.log.info("Step 1: Create 10 S3 users.")
         for _ in range(10):
             s3_user = self.s3_account_prefix.format(perf_counter_ns())
-            resp = create_s3_acc(s3_user, self.s3_email_prefix.format(s3_user), self.s3acc_passwd)
+            resp = create_s3_acc_get_s3testlib(s3_user, self.s3_email_prefix.format(s3_user),
+                                               self.s3acc_passwd)
             assert_utils.assert_true(resp[0], f"Failed to create s3 account, resp: {resp[1]}")
             self.s3_objs.append(resp[0])
             self.s3_accounts.append(s3_user)
@@ -488,7 +489,8 @@ class TestAuditLogs:
                       "operation on S3 audit log.")
         s3_user = self.s3_account_prefix.format(perf_counter_ns())
         self.log.info("Step 1: Pre-requisite, Create admin, S3, IAM users if not created.")
-        resp = create_s3_acc(s3_user, self.s3_email_prefix.format(s3_user), self.s3acc_passwd)
+        resp = create_s3_acc_get_s3testlib(s3_user, self.s3_email_prefix.format(s3_user),
+                                           self.s3acc_passwd)
         assert_utils.assert_true(resp[0], f"Failed to create s3 account, resp: {resp[1]}")
         s3_obj = resp[0]
         self.s3_accounts.append(s3_user)
@@ -537,7 +539,7 @@ class TestAuditLogs:
         s3_invalid_bkt = (self.s3_bucket_prefix.format(perf_counter_ns())).upper()
         start_time = int(time.time()) - self.epoc_time_diff
         self.log.info("Step 1: Pre-requisite, Create new S3 account")
-        resp = create_s3_acc(s3_user, self.s3_email_prefix.format(s3_user),
+        resp = create_s3_acc_get_s3testlib(s3_user, self.s3_email_prefix.format(s3_user),
                              self.s3acc_passwd)
         assert_utils.assert_true(resp[0], f"Failed to create s3 account, resp: {resp[1]}")
         s3_obj = resp[0]
@@ -596,7 +598,8 @@ class TestAuditLogs:
         s3_bkt = self.s3_bucket_prefix.format(perf_counter_ns())
         self.log.info("Step 1: Create an S3 user which is the same as the specified number of"
                       " iteration.")
-        resp = create_s3_acc(s3_user, self.s3_email_prefix.format(s3_user), self.s3acc_passwd)
+        resp = create_s3_acc_get_s3testlib(s3_user, self.s3_email_prefix.format(s3_user),
+                                           self.s3acc_passwd)
         assert_utils.assert_true(resp[0], f"Failed to create s3 account, resp: {resp[1]}")
         s3_obj = resp[0]
         self.log.info("Step 2: Login using above S3 account.")
@@ -1051,7 +1054,8 @@ class TestAuditLogs:
         s3_user = self.s3_account_prefix.format(perf_counter_ns())
         s3_bkt = self.s3_bucket_prefix.format(perf_counter_ns())
         self.log.info("Create an S3 user.")
-        resp = create_s3_acc(s3_user, self.s3_email_prefix.format(s3_user), self.s3acc_passwd)
+        resp = create_s3_acc_get_s3testlib(s3_user, self.s3_email_prefix.format(s3_user),
+                                           self.s3acc_passwd)
         assert_utils.assert_true(resp[0], f"Failed to create s3 account, resp: {resp[1]}")
         s3_obj = resp[0]
         self.log.info("Login using above S3 account.")
