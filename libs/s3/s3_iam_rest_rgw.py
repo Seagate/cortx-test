@@ -252,29 +252,41 @@ class RestApiRgw:
             'POST', "/", query_params=user_params)
         return status
 
-    async def delete_user_policy(self,user_params) -> Tuple[HTTPStatus, Dict[str, Any]]:
+    async def delete_user_policy(self, user_params, access_key= None,
+                                 secret_key=None) -> Tuple[HTTPStatus, Dict[str, Any]]:
         """
-        Illustrate S3Client signed_http_request work.
-        Create IAM user by specifying parameters, HTTP method and path.
+        Delete IAM User Policy
+        :param user_params: User Parameters.
+        :param access_key: Access Key.
+        :param secret_key: Secret Key.
         :returns: HTTP status code and user information as parsed json.
         """
+        if access_key and secret_key:
+            rgw_client = S3Client(
+                access_key, secret_key, self.HOST, self.PORT, tls_enabled=False)
+            status = await rgw_client.signed_http_request('POST', "/", query_params=user_params)
+            return status
 
         rgwcli = S3Client(
-            self.ACCESS_KEY , self.SECRET_KEY, self.HOST, self.PORT, tls_enabled=False)
-        status = await rgwcli.signed_http_request(
-            'POST', "/", query_params=user_params)
+        self.ACCESS_KEY , self.SECRET_KEY, self.HOST, self.PORT, tls_enabled=False)
+        status = await rgwcli.signed_http_request('POST', "/", query_params=user_params)
         return status
 
-    # pylint: disable=C0103
-    async def delete_policy_with_user_keys(
-        self,user_params,access_key,secret_key) -> Tuple[HTTPStatus, Dict[str, Any]]:
+    async def get_user_policy(self,user_params, access_key=None,
+                              secret_key=None) -> Tuple[HTTPStatus, Dict[str, Any]]:
         """
         Illustrate S3Client signed_http_request work.
         Create IAM user by specifying parameters, HTTP method and path.
         :returns: HTTP status code and user information as parsed json.
         """
+
+        if access_key and secret_key:
+            rgw_client = S3Client(
+                access_key, secret_key, self.HOST, self.PORT, tls_enabled=False)
+            status = await rgw_client.signed_http_request('POST', "/", query_params=user_params)
+            return status
+
         rgwcli = S3Client(
-             access_key, secret_key, self.HOST, self.PORT, tls_enabled=False)
-        status = await rgwcli.signed_http_request(
-            'POST', "/", query_params=user_params)
+        self.ACCESS_KEY , self.SECRET_KEY, self.HOST, self.PORT, tls_enabled=False)
+        status = await rgwcli.signed_http_request('POST', "/", query_params=user_params)
         return status

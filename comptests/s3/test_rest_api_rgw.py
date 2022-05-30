@@ -327,6 +327,15 @@ class TestRestApiRgw:
         loop = asyncio.get_event_loop()
         status = loop.run_until_complete(self.obj.delete_user_policy(user_params3))
         assert status[0] == HTTPStatus.OK, "Not able to delete policy"
+        user_params4 = {
+            'UserName' : user_name,
+            'PolicyName' : 'Policy1',
+            'Action' : 'GetUserPolicy',
+            'format' : 'json'
+        }
+        loop = asyncio.get_event_loop()
+        status = loop.run_until_complete(self.obj.get_user_policy(user_params4))
+        assert status[0] == HTTPStatus.NOT_FOUND
         self.log.info("Step 8: IAM policy deleted successfully")
         self.log.info("Step 9: Deleting created IAM user")
         self.created_users.append(user_params1)
@@ -350,18 +359,17 @@ class TestRestApiRgw:
                 }
             ]
         }
-        self.log.info("Step 1: Applying user policy to invalid user")
+        self.log.info("Step 1: Deleting user policy to invalid user")
         self.log.info(policy_document)
         user_params2 = {
             'UserName' : user_name,
             'PolicyName' : 'Policy1',
-            'PolicyDocument' : policy_document,
             'Action' : 'DeleteUserPolicy',
             'format' : 'json'
         }
         loop = asyncio.get_event_loop()
         status = loop.run_until_complete(self.obj.delete_user_policy(user_params2))
-        self.log.info("Step 2: verifying Applied user policy to invalid user")
+        self.log.info("Step 2: verifying delete user policy to invalid user")
         assert status[0] == HTTPStatus.NOT_FOUND, "User policy applied"
         self.log.info("END: Test to verify delete policy for invalid user")
 
@@ -424,6 +432,15 @@ class TestRestApiRgw:
         status = loop.run_until_complete(self.obj.delete_user_policy(user_params3))
         self.log.info(status)
         assert status[0] == HTTPStatus.OK, "Not able to delete policy"
+        user_params4 = {
+            'UserName' : self.tenant +'$'+user_name,
+            'PolicyName' : 'Policy1',
+            'Action' : 'GetUserPolicy',
+            'format' : 'json'
+        }
+        loop = asyncio.get_event_loop()
+        status = loop.run_until_complete(self.obj.get_user_policy(user_params4))
+        assert status[0] == HTTPStatus.NOT_FOUND
         self.log.info("Step 9: Deleted Applied user policy to the tenant user")
         self.created_users.append(user_params2)
         self.log.info("END: %s",test_case_name)
@@ -493,6 +510,11 @@ class TestRestApiRgw:
                     "Effect": "Allow",
                     "Action": "iam:DeleteUserPolicy",
                     "Resource": "arn:aws:iam:::user/"+f"{user_name}"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": "iam:GetUserPolicy",
+                    "Resource": "arn:aws:iam:::user/"+f"{user_name}"
                 }
             ]
         }
@@ -520,7 +542,7 @@ class TestRestApiRgw:
         }
         self.log.info("Step 7: Deleting Policy by using user Access key and Secret key")
         status = loop.run_until_complete(
-            self.obj.delete_policy_with_user_keys(user_params3, access_key, secret_key))
+            self.obj.delete_user_policy(user_params3, access_key, secret_key))
         assert status[0] == HTTPStatus.OK, "Not able to delete policy"
         self.log.info("Step 8: Successfully delete policy by self")
         self.created_users.append(user_params)
@@ -581,7 +603,7 @@ class TestRestApiRgw:
             'format' : 'json'
         }
         status = loop.run_until_complete(
-            self.obj.delete_policy_with_user_keys(user_params3, access_key, secret_key))
+            self.obj.delete_user_policy(user_params3, access_key, secret_key))
         assert status[0] == HTTPStatus.FORBIDDEN, "Able to delete user policy"
         self.log.info("Step 6: Validated the deletion of policy by self")
         self.created_users.append(user_params)
