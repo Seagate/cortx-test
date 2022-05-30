@@ -42,6 +42,7 @@ from libs.s3 import s3_multipart_test_lib
 from libs.s3 import s3_tagging_test_lib
 from libs.s3.iam_policy_test_lib import IamPolicyTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from scripts.s3_bench import s3bench
 
 LOG = logging.getLogger(__name__)
@@ -101,43 +102,49 @@ def create_s3_acc(
         email_id: str = None,
         password: str = None) -> tuple:
     """
-    Function will create s3 accounts with specified account name and email-id.
+    Create an S3 account with specified account name and email-id.
 
     :param str account_name: Name of account to be created.
     :param str email_id: Email id for account creation.
     :param password: account password.
-    :return tuple: It returns multiple values such as access_key,
-    secret_key and s3 objects which required to perform further operations.
+    :return tuple: access key and secret key of the newly created S3 account.
     """
-    rest_obj = S3AccountOperations()
-    LOG.info(
-        "Step : Creating account with name %s and email_id %s",
-        account_name,
-        email_id)
-    s3_account = rest_obj.create_s3_account(
-        account_name, email_id, password)
+    rest_obj = S3AccountOperationsRestAPI()
+    LOG.info("Step: Creating account with name %s and email_id %s", account_name, email_id)
+    s3_account = rest_obj.create_s3_account(user_name=account_name, email_id=email_id,
+                                            passwd=password)
     del rest_obj
     assert_utils.assert_true(s3_account[0], s3_account[1])
     access_key = s3_account[1]["access_key"]
     secret_key = s3_account[1]["secret_key"]
     LOG.info("Step Successfully created the s3 account")
-    s3_obj = s3_test_lib.S3TestLib(
-        access_key,
-        secret_key,
-        endpoint_url=S3_CFG["s3_url"],
-        s3_cert_path=S3_CFG["s3_cert_path"],
-        region=S3_CFG["region"])
-    response = (
-        s3_obj,
-        access_key,
-        secret_key)
 
-    return response
+    return access_key, secret_key
+
+
+def create_s3_acc_get_s3testlib(
+        account_name: str = None,
+        email_id: str = None,
+        password: str = None) -> tuple:
+    """
+    Create an S3 account and return S3 test library object.
+
+    :param str account_name: Name of account to be created.
+    :param str email_id: Email id for account creation.
+    :param password: account password.
+    :return tuple: It returns multiple values such as access_key,
+    secret_key and S3 objects which required to perform further operations.
+    """
+    access_key, secret_key = create_s3_acc(account_name=account_name, email_id=email_id,
+                                           password=password)
+    s3_obj = s3_test_lib.S3TestLib(access_key, secret_key, endpoint_url=S3_CFG["s3_url"],
+                                   s3_cert_path=S3_CFG["s3_cert_path"], region=S3_CFG["region"])
+    return s3_obj, access_key, secret_key
 
 
 def create_s3_account_get_s3lib_objects(account_name: str, email_id: str, password: str) -> tuple:
     """
-    function will create s3 account with specified account name and email-id and returns s3 objects.
+    Create an s3 account with specified account name and email-id and returns s3 objects.
 
     :param account_name: Name of account to be created
     :param email_id: Email id for account creation
@@ -145,6 +152,9 @@ def create_s3_account_get_s3lib_objects(account_name: str, email_id: str, passwo
     :return: It returns account details such as canonical_id, access_key, secret_key,
     account_id and s3 objects which will be required to perform further operations.
     """
+    # Function needs to be refactored for CORTX RGW once Canonical IDs and/or Account ID
+    # concepts are supported in CORTX RGW; retaining the code for the sake of completeness of
+    # legacy (pre-CORTX RGW) S3 tests.
     LOG.info(
         "Step : Creating account with name %s and email_id %s",
         account_name, email_id)
