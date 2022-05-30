@@ -83,7 +83,6 @@ class TestIOWorkload:
         cls.mail_notify = None
         cls.s3userinfo = {'accesskey': ACCESS_KEY, 'secretkey': SECRET_KEY}
 
-
     def setup_method(self):
         """Setup Method"""
         self.log.info("Setup Method Started")
@@ -178,20 +177,22 @@ class TestIOWorkload:
         while datetime.now() < end_time:
             loop += 1
             self.log.info("%s remaining time for reading loop", (end_time - datetime.now()))
-            read_ret = NearFullStorage.perform_operations_on_pre_written_data(s3userinfo=s3userinfo,
-                                                                        workload_info=ret[1],
-                                                                        skipread=False,
-                                                                        validate=True,
-                                                                        skipcleanup=True)
+            read_ret = NearFullStorage.perform_operations_on_pre_written_data(
+                s3userinfo=self.s3userinfo,
+                workload_info=ret[1],
+                skipread=False,
+                validate=True,
+                skipcleanup=True)
             self.log.info("%s interation is done", loop)
             assert_utils.assert_true(read_ret[0], read_ret[1])
 
         self.log.info("Step 4: Performing delete operations.")
-        del_ret = NearFullStorage.perform_operations_on_pre_written_data(s3userinfo=s3userinfo,
-                                                                   workload_info=ret[1],
-                                                                   skipread=True,
-                                                                   validate=False,
-                                                                   skipcleanup=False)
+        del_ret = NearFullStorage.perform_operations_on_pre_written_data(
+            s3userinfo=self.s3userinfo,
+            workload_info=ret[1],
+            skipread=True,
+            validate=False,
+            skipcleanup=False)
         assert_utils.assert_true(del_ret[0], del_ret[1])
         self.test_completed = True
         self.log.info("ENDED: Perform disk storage near full once and read in loop for %s days",
@@ -242,9 +243,8 @@ class TestIOWorkload:
                 self.log.info("Read/Validate all the written data of the cluster")
                 # Read and validate all written data
                 if len(workload_info_list) > 0:
-                    resp = NearFullStorage.perform_operations_on_pre_written_data(self.s3userinfo,
-                                                                            workload_info_list,
-                                                                            False, True, True)
+                    resp = NearFullStorage.perform_operations_on_pre_written_data(
+                        self.s3userinfo, workload_info_list, False, True, True)
                     assert_utils.assert_true(resp[0], resp[1])
                 else:
                     self.log.warning("No buckets available to perform read operations %s",
