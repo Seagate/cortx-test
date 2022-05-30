@@ -281,21 +281,17 @@ class DTMRecoveryTestLib:
         :param workload: Python dict containing source and destination bucket and object
         :param que: Multiprocessing Queue to be used for returning values (Boolean,dict)
         """
-        results = list()
-        failed_obj_name = ""
+        failed_obj_name = list()
         for obj_name in workload["obj_list"]:
             try:
                 self.s3_obj.copy_object(source_bucket=workload["source_bucket"],
                                         source_object=obj_name,dest_bucket=workload["dest_bucket"],
                                         dest_object=obj_name)
 
-                results.append(True)
             except CTException as error:
                 self.log.exception("Error: %s", error)
-                failed_obj_name = obj_name
-                results.append(False)
-                break
-        if all(results):
-            que.put([True, "Copy Object operation successful"])
-        else:
+                failed_obj_name.append(obj_name)
+        if failed_obj_name.count() > 0:
             que.put([False, f"Copy Object operation failed for {failed_obj_name}"])
+        else:
+            que.put([True, "Copy Object operation successful"])
