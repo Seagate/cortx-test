@@ -80,7 +80,7 @@ class Health(Host):
                        container_name: str = const.HAX_CONTAINER_NAME,
                        namespace: str = const.NAMESPACE) -> float:
         """
-        Function will return disk usage associated with given path.
+        Function will return disk usage associated with given path
         :param dir_path: Directory path of which size is to be calculated
         :param field_val: 0, 1, 2 and 3 for total, used, free in bytes and
         percent used space respectively
@@ -106,10 +106,8 @@ class Health(Host):
                 assert_true(resp[0], resp[1])
                 pod_name = resp[1]
 
-            res = node.send_k8s_cmd(
-                operation="exec", pod=pod_name, namespace=namespace,
-                command_suffix=f"-c {container_name} -- {cmd}",
-                decode=True)
+            res = node.send_k8s_cmd(operation="exec", pod=pod_name, namespace=namespace,
+                                    command_suffix=f"-c {container_name} -- {cmd}", decode=True)
             LOG.debug("Response of %s:\n %s ", cmd, res)
         return float(res.replace('\n', ''))
 
@@ -118,7 +116,6 @@ class Health(Host):
                       namespace: str = const.NAMESPACE) -> float:
         """
         Function with fetch the system cpu usage percentage from remote host
-
         :param pod_name: name of the pod
         :param container_name: name of the container
         :param namespace: namespace name
@@ -138,10 +135,9 @@ class Health(Host):
                 resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
                 assert_true(resp[0], resp[1])
                 pod_name = resp[1]
-            res = node.send_k8s_cmd(
-                operation="exec", pod=pod_name, namespace=namespace,
-                command_suffix=f"-c {container_name} -- {commands.CPU_USAGE_CMD}",
-                decode=True)
+            res = node.send_k8s_cmd(operation="exec", pod=pod_name, namespace=namespace,
+                                    command_suffix=f"-c {container_name} -"
+                                                   f"- {commands.CPU_USAGE_CMD}", decode=True)
             LOG.debug("Response of %s:\n %s ", commands.CPU_USAGE_CMD, res)
         cpu_usage = float(res.replace('\n', ''))
         return cpu_usage
@@ -152,8 +148,7 @@ class Health(Host):
         :param namespace: namespace name
         :return: system memory usage in percent
         """
-        LOG.debug(
-            "Fetching system memory usage from node %s", self.hostname)
+        LOG.debug("Fetching system memory usage from node %s", self.hostname)
         LOG.debug(commands.MEM_USAGE_CMD)
         if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
                 CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
@@ -169,8 +164,7 @@ class Health(Host):
             pod_name = resp[1]
             res = node.send_k8s_cmd(
                 operation="exec", pod=pod_name, namespace=namespace,
-                command_suffix=f"-c {container} -- {commands.MEM_USAGE_CMD}",
-                decode=True)
+                command_suffix=f"-c {container} -- {commands.MEM_USAGE_CMD}", decode=True)
             LOG.debug("Response of %s:\n %s ", commands.MEM_USAGE_CMD, res)
         mem_usage = float(res.replace('\n', ''))
         return mem_usage
@@ -219,9 +213,9 @@ class Health(Host):
 
     def pcs_status_grep(self, service: str) -> str or None:
         """
-        Function to return grepped pcs status services.
+        Function to return grepped pcs status services
         :param str service: Name of the pcs resource service
-        :return: pcs staus str response)
+        :return: pcs status str response
         """
         cmd = commands.GREP_PCS_SERVICE_CMD.format(service)
         LOG.debug("Executing cmd: %s", cmd)
@@ -270,7 +264,8 @@ class Health(Host):
                 for service in services:
                     if service["name"] != const.MOTR_CLIENT:
                         if service["status"] != "started":
-                            LOG.error("%s service not started on pod %s", service["name"], pod_name)
+                            LOG.error("%s service not started on pod %s", service["name"],
+                                      pod_name)
                             return False
                 if not services:
                     LOG.critical("No service found on pod %s", pod_name)
@@ -330,8 +325,7 @@ class Health(Host):
         LOG.debug("command :%s", mero_status_cmd)
         if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
                 CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
-            cmd_output = self.execute_cmd(mero_status_cmd,\
-                                          timeout=timeout, read_lines=True)
+            cmd_output = self.execute_cmd(mero_status_cmd, timeout=timeout, read_lines=True)
             if not cmd_output[0]:
                 LOG.error("Command %s failed..!", mero_status_cmd)
                 return False, cmd_output[1]
@@ -359,13 +353,13 @@ class Health(Host):
     def hctl_status_json(self, pod_name=None, namespace: str = const.NAMESPACE):
         """
         This will Check Node status, Logs the output in debug.log file and
-        returns the response in json format.
+        returns the response in json format
         :param pod_name: Running data pod name to fetch the hctl status
         :param namespace: namespace name
         :return: Json response of stdout
         :rtype: dict
         """
-        result = {}
+        result = dict()
         if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
                 CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
             LOG.info("Executing command for LR product family....")
@@ -553,7 +547,7 @@ class Health(Host):
                 return False, f"Failed to get HCTL status {hctl_result}"
 
             resp = self.hctl_status_json()
-            hctl_services_failed = {}
+            hctl_services_failed = dict()
             svcs_elem = {'service': None, 'status': None}
             for node_data in resp['nodes']:
                 hctl_services_failed[node_data['name']] = list()
@@ -566,7 +560,7 @@ class Health(Host):
                         is_data = True
                     if is_data:
                         hctl_services_failed[node_data['name']].append(temp_svc)
-            node_hctl_failure = {}
+            node_hctl_failure = dict()
             for key, val in hctl_services_failed.items():
                 if val:
                     node_hctl_failure[key] = val
@@ -588,7 +582,7 @@ class Health(Host):
             if not status:
                 return False, f"Failed to get PCS status {pcs_result}"
 
-            pcs_failed_data = {}
+            pcs_failed_data = dict()
             daemons = ["corosync:", "pacemaker:", "pcsd:"]
             LOG.info("Checking status of Daemons: %s", daemons)
             for daemon in daemons:
@@ -626,7 +620,7 @@ class Health(Host):
             for group, value in group_dict.items():
                 if value['status'] != 'Started':
                     pcs_failed_data[group] = value
-            node_health_failure = {}
+            node_health_failure = dict()
             if pcs_failed_data:
                 LOG.debug(" ********* PCS status Response for %s ********* \n %s \n",
                           self.hostname, pcs_result)
@@ -686,7 +680,7 @@ class Health(Host):
         param: no_node: no of nodes
         return: dict
         """
-        clone_set = {}
+        clone_set = dict()
         node_dflt = [f'srvnode-{node}.data.private' for node in range(1, no_node + 1)]
         setup_type = ''
         try:
@@ -701,8 +695,8 @@ class Health(Host):
                 elif clone_elem_resp["@id"] == 'io_group-clone':
                     for resource_ele in clone_elem_resp['group']['resource']:
                         resources.append(resource_ele)
-                temp_dict = {}
-                clone_set[clone_elem_resp["@id"]] = {}
+                temp_dict = dict()
+                clone_set[clone_elem_resp["@id"]] = dict()
                 for resource in resources:
                     if int(resource['@nodes_running_on']):
                         node = resource['node']['@name']
@@ -724,8 +718,8 @@ class Health(Host):
                         resource = clone_elem_resp['group']['resource']
                 else:
                     resource = clone_elem_resp['resource']
-                temp_dict = {}
-                clone_set[clone_elem_resp["@id"]] = {}
+                temp_dict = dict()
+                clone_set[clone_elem_resp["@id"]] = dict()
                 if no_node == 1:
                     if int(resource['@nodes_running_on']):
                         node = resource['node']['@name']
@@ -760,10 +754,10 @@ class Health(Host):
         param: crm_mon_res: pcs response from pcs status xml command
         return: dict
         """
-        clone_set = {}
+        clone_set = dict()
         for resource_elem in crm_mon_res['resource']:
             temp_dict = {'status': None, 'srvnode': None}
-            clone_set[resource_elem["@id"]] = {}
+            clone_set[resource_elem["@id"]] = dict()
             if int(resource_elem['@nodes_running_on']):
                 if resource_elem['@blocked'] == 'true':
                     temp_dict['status'] = 'FAILED'
@@ -783,7 +777,7 @@ class Health(Host):
         param: crm_mon_res: pcs response from pcs status xml command
         return: dict
         """
-        clone_set = {}
+        clone_set = dict()
         for group in crm_mon_res['group']:
             resource = []
             if isinstance(group['resource'], dict):
@@ -796,7 +790,7 @@ class Health(Host):
 
             for group_elem in resource:
                 temp_dict = {'status': None, 'srvnode': None}
-                clone_set[group_elem["@id"]] = {}
+                clone_set[group_elem["@id"]] = dict()
                 if int(group_elem['@nodes_running_on']):
                     if group_elem['@blocked'] == 'true':
                         temp_dict['status'] = 'FAILED'
@@ -823,7 +817,7 @@ class Health(Host):
         time.sleep(10)
         resp = self.pcs_cluster_start_stop("--all", stop_flag=False)
         LOG.info(resp)
-        time.sleep(30)  # Hardcoded: Default time is between 10 to 30 seconds.
+        time.sleep(30)  # Hardcoded: Default time is between 10 and 30 seconds.
         response = self.pcs_resource_cleanup(options="--all")
         if "Cleaned up all resources on all nodes" not in str(response):
             return False, "Failed to clean up all resources on all nodes"
@@ -870,12 +864,12 @@ class Health(Host):
             nw_infcs = list(filter(None, res.decode("utf-8").split('\n')))
         LOG.debug(nw_infcs)
         LOG.info("Check status of all available network interfaces")
-        status = {}
-        for nw in nw_infcs:
-            stat_cmd = commands.IP_LINK_SHOW_CMD.format(nw, "DOWN")
+        status = dict()
+        for net_work in nw_infcs:
+            stat_cmd = commands.IP_LINK_SHOW_CMD.format(net_work, "DOWN")
             nw_st = self.execute_cmd(stat_cmd, exc=False)
             nw_st = list(filter(None, nw_st.decode("utf-8").split('\n')))
-            status[nw] = nw_st
+            status[net_work] = nw_st
 
         return status
 
@@ -902,7 +896,7 @@ class Health(Host):
         return d_node
 
     def disable_pcs_resource(self, resource: str, wait_time: int = 30) \
-            -> Tuple[bool, str]:
+            -> bool:
         """
         Disable given resource using pcs resource command
         :param resource: resource name from pcs resource
@@ -913,13 +907,13 @@ class Health(Host):
         LOG.info("Disabling resource : %s", resource)
         cmd = commands.PCS_RESOURCE_DISABLE_CMD.format(resource)
 
-        resp = self.execute_cmd(cmd, read_lines=True)
+        self.execute_cmd(cmd, read_lines=True)
         time.sleep(wait_time)
 
         return True
 
     def enable_pcs_resource(self, resource: str, wait_time: int = 30) \
-            -> Tuple[bool, str]:
+            -> bool:
         """
         Enable given resource using pcs resource command
         :param resource: resource name from pcs resource
@@ -930,7 +924,7 @@ class Health(Host):
         LOG.info("Enabling resource : %s", resource)
         cmd = commands.PCS_RESOURCE_ENABLE_CMD.format(resource)
 
-        resp = self.execute_cmd(cmd, read_lines=True)
+        self.execute_cmd(cmd, read_lines=True)
         time.sleep(wait_time)
 
         return True
@@ -938,6 +932,7 @@ class Health(Host):
     @staticmethod
     def check_cortx_cluster_health(node, retry=3):
         """
+        Function to check cortx cluster health
         :param node: node of a cluster
         :param retry: number of attempts to perform health check
         :return bool
@@ -958,8 +953,8 @@ class Health(Host):
                 capacity_result = ha_used_percent < 98.0
                 health.disconnect()
                 break
-            except BaseException as exec:
-                LOG.warning("%s exception occurred while performing Health check", exec)
+            except BaseException as error:
+                LOG.warning("%s exception occurred while performing Health check", error)
                 delay = pow(r_try, 4)
                 LOG.info("Retrying in %s seconds", delay)
                 time.sleep(delay)
