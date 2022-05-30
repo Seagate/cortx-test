@@ -784,7 +784,7 @@ class RestIamUser(RestTestLib):
         return random_cap[:-1]
 
     @RestTestLib.authenticate_and_login
-    def list_iam_users_rgw(self, max_entries=None, marker=None, auth_header=False):
+    def list_iam_users_rgw(self, max_entries=None, marker=None, auth_header=None):
         """
         This function will list all IAM users.
         :param max_entries: Number of users to be returned
@@ -796,13 +796,12 @@ class RestIamUser(RestTestLib):
         self.log.debug("Listing of iam users")
         endpoint = self.config["iam_users_endpoint"]
         self.log.debug("Endpoint for iam user is %s", endpoint)
-        if auth_header:
-            self.headers['Authorization'] = ''.join(secrets.choice(string.digits +
-                                            string.ascii_lowercase) for i in range(15))
+        if auth_header is not None:
+            header = {'Authorization': auth_header}
         else:
-            self.headers.update(self.config["Login_headers"])
+            header = self.header
  
         # Fetching api response
-        response = self.restapi.rest_call("get", endpoint=endpoint, headers=self.headers,
+        response = self.restapi.rest_call("get", endpoint=endpoint, headers=header,
                                           params={"max_entries": max_entries, "marker": marker})
         return response

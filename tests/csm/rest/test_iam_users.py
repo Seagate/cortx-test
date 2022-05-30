@@ -4987,7 +4987,9 @@ class TestIamUserRGW():
         resp_msg_index = test_cfg["message_index"]
         msg = resp_data[resp_msg_index]
         self.log.info("Step 1: Send GET request with max_entries as 1 and invalid header")
-        resp = self.csm_obj.list_iam_users_rgw(max_entries=1, auth_header=True)
+        header= ''.join(secrets.choice(string.digits +
+                                            string.ascii_lowercase) for i in range(15))
+        resp = self.csm_obj.list_iam_users_rgw(max_entries=1, auth_header=header)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.UNAUTHORIZED,
                                                 "Status code check failed")
         if CSM_REST_CFG["msg_check"] == "enable":
