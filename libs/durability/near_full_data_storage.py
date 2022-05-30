@@ -167,3 +167,67 @@ class NearFullStorage:
                 return False, f"S3bench workload for failed for {each['obj_size']}." \
                               f" Please read log file {resp[1]}"
         return True, "S3bench workload successful"
+    @staticmethod
+    def delete_workload(workload_info_list: list, s3userinfo: dict, delete_percent: int):
+        """
+        Delete specified percent of buckets(with written data) from workload info list.
+        :param workload_info_list: Workload info list returned after write operation
+        :param s3userinfo: User info for S3 user
+        :param delete_percent: Percentage for deletion
+        :return : Tuple(boolean,str)
+        """
+        num_buckets_delete = int(delete_percent * len(workload_info_list) / 100)
+        delete_list = []
+        LOGGER.info("Delete %s random buckets.", num_buckets_delete)
+        for i in range(num_buckets_delete):
+            bucket_info = workload_info_list[random.randint(1, len(workload_info_list) - 1)]
+            delete_list.append(bucket_info)
+            workload_info_list.remove(bucket_info)
+        LOGGER.info("Deleting buckets : %s", delete_list)
+        resp = NearFullStorage.perform_near_full_sys_operations(
+            s3userinfo=s3userinfo,
+            workload_info=delete_list,
+            skipread=False,
+            validate=True,
+            skipcleanup=False)
+
+        if resp[0]:
+            deleted_buckets = [each['bucket'] for each in resp[1]]
+            LOGGER.info("Buckets deleted : %s", deleted_buckets)
+            return True, deleted_buckets
+        return resp
+
+    @staticmethod
+    def perform_write_to_fill_system_percent(master_node: LogicalNode, write_per: int, s3userinfo,
+                                             bucket_prefix, clients, bucket_list=None):
+        """
+        Retrieve user data space to attain specific percent of near full storage.
+        :param master_node: Master node object
+        :param write_per: Percentage of near full storage to be attained.
+        :param s3userinfo: User info for S3 user
+        :param bucket_prefix: Bucket prefix to be used for IO operations
+        :param clients: No of clients to be used for IO operations.
+        :param bucket_list: List of created buckets.(Used for degraded path)
+        :return Tuple(boolean,Union(str,dict))
+        """
+        LOGGER.info("Perform Write operation to fill %s percent disk capacity", write_per)
+        resp = NearFullStorage.get_user_data_space_in_bytes(master_obj=master_node,
+                                                            memory_percent=write_per)
+        if not resp[0]:
+            return resp
+
+        if resp[1] == 0:
+            LOGGER.warning("No bytes to be written to fill %s capacity", write_per)
+            return True, None
+
+        resp = NearFullStorage.perform_near_full_sys_writes(
+            s3userinfo=s3userinfo,
+            user_data_writes=resp[1],
+            bucket_prefix=bucket_prefix,
+            clients=clients,
+            bucket_list=bucket_list)
+        if not resp[0]:
+            return resp
+        LOGGER.info("Writes Completed.!!")
+        LOGGER.info("Written buckets : %s", resp[1])
+        return True, resp[1]

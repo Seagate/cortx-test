@@ -19,7 +19,6 @@
 """Test Suite for IO stability Degraded Path workloads."""
 import logging
 import os
-import random
 import time
 from datetime import datetime, timedelta
 
@@ -238,12 +237,12 @@ class TestIOWorkloadDegradedPath:
         self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
                                                   test_case_name, self.health_obj_list[0])
 
-        max_cluster_capacity_percent = self.test_cfg['max_cluster_capacity_percent']
-        duration_in_days = self.test_cfg['degraded_path_durations_days']
+        max_cluster_capacity_percent = self.test_cfg['nearfull_storage_percentage']
+
         clients = (len(self.worker_node_list) - 1) * self.test_cfg['sessions_per_node_vm']
         s3userinfo = {'accesskey': ACCESS_KEY, 'secretkey': SECRET_KEY}
         bucket_prefix = "test-40174-bkt"
-        end_time = datetime.now() + timedelta(days=duration_in_days)
+        end_time = datetime.now() + timedelta(days=self.duration_in_days)
 
         self.log.info("Step 1: Create 50 buckets in healthy mode ")
         bucket_creation_healthy_mode = self.test_cfg['bucket_creation_healthy_mode']
@@ -265,25 +264,20 @@ class TestIOWorkloadDegradedPath:
                       write_percent_per_iter)
         write_per = write_percent_per_iter + current_usage_per
         workload_info_list = []
-        if write_per < max_cluster_capacity_percent:
+        if write_per > max_cluster_capacity_percent:
             assert_utils.assert_true(False,
-                                     "Expected write percents is greater than the max cluster"
-                                     "capacity percent")
+                                     f"Expected write percent {write_per} is greater than the max "
+                                     f"cluster capacity percent {max_cluster_capacity_percent}")
         else:
-            self.log.info("Perform write and read operations")
-            resp = NearFullStorage.get_user_data_space_in_bytes(
-                master_obj=self.master_node_list[0],
-                memory_percent=write_per)
-            assert_utils.assert_true(resp[0], resp[1])
+            resp = NearFullStorage.perform_write_to_fill_system_percent(self.master_node_list[0],
+                                                                        write_per,
+                                                                        s3userinfo,
+                                                                        bucket_prefix=None,
+                                                                        clients=clients,
+                                                                        bucket_list=avail_buckets)
 
-            if resp[1] != 0:
-                resp = NearFullStorage.perform_near_full_sys_writes(
-                    s3userinfo=s3userinfo,
-                    user_data_writes=resp[1],
-                    bucket_prefix=bucket_prefix,
-                    clients=clients,
-                    buckets_list=avail_buckets)
-                assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
+            if resp[1] is not None:
                 for each in resp[1]:
                     avail_buckets.remove(each['bucket'])
                 workload_info_list.extend(resp[1])
@@ -302,33 +296,25 @@ class TestIOWorkloadDegradedPath:
             self.log.info(" Loop count : %s", loop)
             loop += 1
             self.log.info("Get Current disk usage capacity")
-            total_cap, avail_cap, used_cap = self.health_obj_list[0].get_sys_capacity()
-            current_usage_per = round(used_cap / total_cap * 100)
-            self.log.info("Current usage percent : %s", current_usage_per)
-            self.log.info("Write Percent per Iteration : %s", write_percent_per_iter)
-            write_per = current_usage_per + write_percent_per_iter
+            write_per = write_per + write_percent_per_iter
 
             if write_per < max_cluster_capacity_percent:
-                self.log.info("Perform Write operation to fill %s percent disk capacity", write_per)
-                resp = NearFullStorage.get_user_data_space_in_bytes(
-                    master_obj=self.master_node_list[0],
-                    memory_percent=write_per)
+                resp = NearFullStorage.perform_write_to_fill_system_percent(
+                    self.master_node_list[0],
+                    write_per,
+                    s3userinfo,
+                    bucket_prefix=None,
+                    clients=clients,
+                    bucket_list=avail_buckets)
                 assert_utils.assert_true(resp[0], resp[1])
-
-                if resp[1] != 0:
-                    resp = NearFullStorage.perform_near_full_sys_writes(
-                        s3userinfo=s3userinfo,
-                        user_data_writes=resp[1],
-                        bucket_prefix=bucket_prefix,
-                        clients=clients,
-                        buckets_list=avail_buckets)
-                    assert_utils.assert_true(resp[0], resp[1])
+                if resp[1] is not None:
                     for each in resp[1]:
                         avail_buckets.remove(each['bucket'])
                     workload_info_list.extend(resp[1])
                     self.log.info("Write Completed.")
                 else:
-                    self.log.info("No bytes to be written to fill %s precent capacity", write_per)
+                    self.log.warning("No bytes to be written to fill %s percent capacity",
+                                     write_per)
 
                 self.log.info("Read and Validate all the written data of the cluster")
                 if len(workload_info_list) > 0:
@@ -342,27 +328,14 @@ class TestIOWorkloadDegradedPath:
                 else:
                     self.log.warning("No buckets available to perform read operations %s",
                                      workload_info_list)
+
                 self.log.info("Delete %s percent of the written data")
                 if len(workload_info_list) > 0:
-                    num_buckets_delete = int(
-                        delete_percent_per_iter * len(workload_info_list) / 100)
-                    delete_list = []
-                    self.log.info("Number of buckets to be deleted : %s", num_buckets_delete)
-                    for i in range(num_buckets_delete):
-                        bucket_info = workload_info_list[
-                            random.randint(1, len(workload_info_list) - 1)]
-                        delete_list.append(bucket_info)
-                        workload_info_list.remove(bucket_info)
-                    self.log.info("Buckets to be deleted %s", delete_list)
-                    resp = NearFullStorage.perform_near_full_sys_operations(
-                        s3userinfo=s3userinfo,
-                        workload_info=delete_list,
-                        skipread=False,
-                        validate=True,
-                        skipcleanup=False)
+                    resp = NearFullStorage.delete_workload(workload_info_list, s3userinfo,
+                                                           delete_percent_per_iter)
                     assert_utils.assert_true(resp[0], resp[1])
-                    for each in delete_list:
-                        avail_buckets.append(each['bucket'])
+                    for each in resp[1]:
+                        avail_buckets.append(each)
                 else:
                     self.log.warning("No buckets available to perform delete operations %s",
                                      workload_info_list)
@@ -370,16 +343,12 @@ class TestIOWorkloadDegradedPath:
                 self.log.info("Write percentage(%s) exceeding the max cluster capacity(%s)",
                               write_per, max_cluster_capacity_percent)
                 self.log.info("Deleting all the written data.")
-                resp = NearFullStorage.perform_near_full_sys_operations(
-                    s3userinfo=s3userinfo,
-                    workload_info=workload_info_list,
-                    skipread=False,
-                    validate=True,
-                    skipcleanup=False)
+                resp = NearFullStorage.delete_workload(workload_info_list, s3userinfo, 100)
                 assert_utils.assert_true(resp[0], resp[1])
                 for each in workload_info_list:
                     avail_buckets.append(each['bucket'])
                 self.log.info("Deletion completed.")
+
         self.test_completed = True
         self.log.info(
             "ENDED: Test for Perform %s percent Writes of user data capacity (Healthy mode) "
