@@ -1,6 +1,7 @@
 clients: 1
 samples: 500
 size: '128Mb'
+loop_count: 10
 
 test_41234:
   nclients: 10
