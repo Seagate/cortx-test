@@ -2,7 +2,7 @@
 CORTX-TEST is a repository for multiple automation projects developed for testing [CORTX](https://github.com/Seagate/cortx/blob/main/README.md#get-started) and supported solutions/systems. These frameworks are reusable for any opensource object stores with minimal configurations. 
 
 It is logically divided into following components:
-*  Test Automation framework (Autobot)
+*  Test Automation framework (Corbot)
 *  Test Execution Framework  (drunner)
 *  Robot framework UI Tests and
 *  Tools ( Reporting Dashboards, Data Integrity, Clone Test Plans etc.)
