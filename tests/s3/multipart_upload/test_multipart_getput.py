@@ -645,9 +645,9 @@ class TestMultipartUploadGetPut:
     @CTFailOn(error_handler)
     def test_multipart_upload_test_42770(self):
         """
-        This test is for uploading 5TB max size object using multipart upload
+        This test is for uploading 350GB size object using multipart upload
         """
-        self.log.info("STARTED: Multipart upload of 500GB object ")
+        self.log.info("STARTED: Multipart upload of 350GB object ")
         mp_config = MPART_CFG["test_42770"]
         mpu_id = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name)
         status, output = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
@@ -664,7 +664,7 @@ class TestMultipartUploadGetPut:
                                           object_name=self.object_name,
                                           parts_list=sorted_part_list)
         self.get_obj_compare_checksums(self.bucket_name, self.object_name, res[1]["ETag"])
-        self.log.info("ENDED: Test multipart upload of 500GB object")
+        self.log.info("ENDED: Test multipart upload of 350GB object")
 
     # @pytest.mark.skip(reason="need to execute on hw as vm has limited space")
     @pytest.mark.s3_ops

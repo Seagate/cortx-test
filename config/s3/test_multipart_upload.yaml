@@ -230,21 +230,15 @@ test_28526:
             count: 1
 
 test_42770:
-  file_size: 512000
+  file_size: 358400
   chunk_size: 1048576
   part_sizes:
-    - part_size: 50.5
-      count: 1
-    - part_size: 5.9
-      count: 1
-    - part_size: 43.5
-      count: 2
-    - part_size: 8.4
+    - part_size: 5100
+      count: 69
+    - part_size: 1531.8
       count: 1
     - part_size: 6.6
       count: 1
-    - part_size: 5120
-      count: 99
     - part_size: 824
       count: 1
     - part_size: 4137.6
