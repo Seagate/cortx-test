@@ -85,7 +85,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
             LOGGER.error("Error in %s: %s",
                          CSMAccountOperations.csm_user_create.__name__,
                          error)
-            raise CTException(err.CLI_ERROR, error.args)
+            raise CTException(err.CLI_ERROR, error.args) from error
         finally:
             self.logout_cortx_cli()
             end = time.perf_counter()
@@ -411,7 +411,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
             LOGGER.error("Error in %s: %s",
                          _S3AccountOperations.create_account_cortxcli.__name__,
                          error)
-            raise CTException(err.CLI_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0]) from error
         finally:
             self.logout_cortx_cli()
             end = time.perf_counter()
