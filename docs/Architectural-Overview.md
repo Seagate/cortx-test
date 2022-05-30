@@ -192,30 +192,30 @@ EC2.
 
 ### Abbreviations and Definitions
 
-*   Target: A target is an application deployment under test.
+*   Target: A target is an application deployment under test
 
 *   Corbot: A program which sets up necessary environment and pre-requisites to run test automation pointing to a single
-  target.
+  target
 
 *   Test Execution Framework: Loosely coupled test framework module responsible for collecting test metadata from Jira and
-  executing optimized execution ticket provided by Kafka.
+  executing optimized execution ticket provided by Kafka
 
-*   Test Executor framework: Same as a test execution framework.
+*   Test Executor framework: Same as a test execution framework
 
 *   Dist Runner: Test execution framework module loosely coupled for test framework and consumer module of execution
   framework. It is responsible for collecting test metadata from Jira and creating an optimized test execution plan as
-  per Jira Test Plans.
+  per Jira Test Plans
 
 *   Chaos and destructive testing framework: A sub framework responsible for implementing libraries to generate
-  destructive test scenarios and chaos in Target deployments.
+  destructive test scenarios and chaos in Target deployments
 
 *   Object Store Data Integrity framework: A sub framework which stores s3 client state and provides library to test
-  versioned object Store data integrity interleaved across object store version upgrade and after object store downtime.
+  versioned object Store data integrity interleaved across object store version upgrade and after object store downtime
 
-*   HA Tests: High availability test cases which test Consistency, Availability and Reliability of Object Store.
+*   HA Tests: High availability test cases which test Consistency, Availability and Reliability of Object Store
 
 *   Test Client: A separate VM or Container configured with Python Environment and prerequisites Linux and Python site
-  packages to run automated test cases.
+  packages to run automated test cases
 
 ### Framework Components
 
@@ -303,22 +303,22 @@ Below diagram shows how this framework resides in any system and shows it’s us
 
 ### Benefits
 
-*   Can run on commodity H/W and light weight VMs. The run can be started on a single client VM for multiple targets. (
+*   Can run on commodity H/W and light weight VMs. The run can be started on a single client VM for multiple targets (
   Storage efficient)
 
 *   Framework will start parallel execution on multiple targets; depending on health of target, it will reschedule test
-  execution for errored or failed tests. This will ensure complete test execution of identified test plan.
+  execution for errored or failed tests. This will ensure complete test execution of identified test plan
 
 *   Framework will have parallel execution over a single target also which will reduce the time required for test
-  execution. (Time efficient)
+  execution (Time efficient)
 
-*   Maximum failures will get during the first few hours of execution.
+*   Maximum failures will get during the first few hours of execution
 
 *   Live test execution information will be available to users through dashboard and test management tool
 
 *   Complete history of test data will be available in database, so anyone can access any test related data at any time
   from dashboard.
 
-*   Logs will be archived on NFS share.
+*   Logs will be archived on NFS share
 
-*   No manual intervention is required for test configuration of different targets as the process is fully automated.
+*   No manual intervention is required for test configuration of different targets as the process is fully automated
