@@ -89,7 +89,7 @@ class TestListObjectVersions:
         if path_exists(self.test_dir_path):
             remove_dirs(self.test_dir_path)
         self.log.info("Cleanup test directory: %s", self.test_dir_path)
-        # TODO: DELETE Object with VersionId is WIP, uncomment once feature is available
+        # DELETE Object with VersionId is WIP, uncomment once feature is available
         # res = self.s3_test_obj.bucket_list()
         # pref_list = []
         # for bucket_name in res[1]:

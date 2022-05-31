@@ -30,14 +30,15 @@ assertions as well, with the main aim being to have leaner and cleaner code in t
 import logging
 import random
 
+from commons.constants import S3_ENGINE_RGW
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import s3_utils
+from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3.s3_common_test_lib import create_s3_acc
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
-from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 
 LOG = logging.getLogger(__name__)
 
@@ -59,6 +60,7 @@ def create_s3_user_get_s3lib_object(user_name: str, email_id: str,
                                  endpoint_url=S3_CFG["s3_url"], region=S3_CFG["region"])
     response = (s3_obj, access_key, secret_key)
     return response
+
 
 def parse_list_object_versions_response(list_response: dict) -> dict:
     """
@@ -206,6 +208,7 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
                                   "Unexpected DeleteMarker entry count in the response")
         LOG.info("Completed verifying bucket object versions list for expected contents")
 
+
 def check_list_objects(s3_test_obj: S3TestLib, bucket_name: str,
                        expected_objects: list) -> None:
     """
@@ -223,24 +226,26 @@ def check_list_objects(s3_test_obj: S3TestLib, bucket_name: str,
     assert_utils.assert_equal(sorted(expected_objects), sorted(list_response[1]),
                               "List Objects response does not contain expected object names")
 
-def check_get_head_object_version(s3_ver_test_obj: S3VersioningTestLib, version_id: str,
+
+def check_get_head_object_version(s3_ver_test_obj: S3VersioningTestLib,
                                   bucket_name: str, object_name: str, **kwargs) -> None:
     """
     Verify GET/HEAD Object response for specified version/object
 
     :param s3_ver_test_obj: S3VersioningTestLib object to perform S3 versioning calls
-    :param version_id: Optional version ID for GET/HEAD Object call.
-        In case it is not specified, object is retrieved instead of a specific version.
     :param bucket_name: Target bucket name
     :param object_name: Target object name
     :param **kwargs: Optional keyword arguments
         "etag": Expected ETag of the version/object
         "get_error_msg": Error message to verify for GET Object
         "head_error_msg": Error message to verify for HEAD Object
+        "version_id": version ID for GET/HEAD Object call. In case it is not specified,
+            object is retrieved instead of a specific version.
     """
     etag = kwargs.get("etag", None)
     get_error_msg = kwargs.get("get_error_msg", None)
     head_error_msg = kwargs.get("head_error_msg", None)
+    version_id = kwargs.get("version_id", None)
     LOG.info("Verifying GET Object with VersionId response")
     try:
         if version_id:
@@ -282,6 +287,7 @@ def check_get_head_object_version(s3_ver_test_obj: S3VersioningTestLib, version_
             raise CTException(error.S3_CLIENT_ERROR, error.args[0]) from error
         assert_utils.assert_in(head_error_msg, error.message, error.message)
 
+
 def download_and_check(s3_test_obj: S3TestLib, bucket_name: str, object_name: str,
                        file_path: str, download_path: str, **kwargs) -> None:
     """
@@ -308,10 +314,11 @@ def download_and_check(s3_test_obj: S3TestLib, bucket_name: str, object_name: st
     assert_utils.assert_equal(expected_checksum, download_checksum,
                               "Mismatch in object/version contents")
 
+
 # pylint: disable=too-many-arguments
 def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
-                    bucket_name: str, file_paths: list, obj_list: dict,
-                    pre_obj_list: list = None) -> None:
+                    bucket_name: str, file_paths: list, obj_list: list = None,
+                    pre_obj_list: list = None) -> dict:
     """
     Upload objects to a versioning enabled/suspended bucket and return dictionary of uploaded
     versions
@@ -332,6 +339,7 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
     :return: dict, containing details of versions uploaded in the format below
             {"<key_name1": "versions": {"version_id1": "etag1"} ...},
                            "delete_markers": [],
+                           "version_history": [version_id1],
                            "is_latest": "version_id1",
             ...
             }
@@ -344,25 +352,27 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
         LOG.info("Uploading objects before setting bucket versioning state")
         for object_name in pre_obj_list:
             file_path = random.choice(file_paths) #nosec
-            res = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
-                                         file_path=file_path)
-            assert_utils.assert_true(res[0], res[1])
+            upload_version(s3_test_obj, bucket_name=bucket_name, file_path=file_path,
+                           object_name=object_name, versions_dict=versions,
+                           is_unversioned=True)
 
     for versioning_config, object_name, count in obj_list:
         resp = s3_ver_test_obj.put_bucket_versioning(bucket_name=bucket_name,
                                                      status=versioning_config)
         assert_utils.assert_true(resp[0], resp[1])
         for _ in range(count):
+            file_path = random.choice(file_paths)  # nosec
             chk_null_version = True if versioning_config == "Enabled" else False
             upload_version(s3_test_obj, bucket_name=bucket_name, file_path=file_path,
                            object_name=object_name, versions_dict=versions,
                            chk_null_version=chk_null_version)
     return versions
 
+
 # pylint: disable=too-many-arguments
 def upload_version(s3_test_obj: S3TestLib, bucket_name: str, object_name: str,
                    file_path: str, versions_dict: dict,
-                   chk_null_version: bool = False) -> None:
+                   chk_null_version: bool = False, is_unversioned: bool = False) -> None:
     """ Upload objects to a versioning enabled/suspended bucket and return dictionary of uploaded
     versions
 
@@ -372,24 +382,86 @@ def upload_version(s3_test_obj: S3TestLib, bucket_name: str, object_name: str,
     :param file_path: File path that can be used for PUT Object call
     :param chk_null_version: True, if 'null' version id is expected, else False
     :param versions_dict: Dictionary to be updated with uploaded version metadata
+    :param is_unversioned: Set to true if object is uploaded to an unversioned bucket
+        Can be used for setting up pre-existing objects before enabling/suspending bucket
+        versioning
     """
     res = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
                                  file_path=file_path)
     assert_utils.assert_true(res[0], res[1])
-    version_id = res[1].get("VersionId", "null")
-    if chk_null_version:
-        assert_utils.assert_equal("null", version_id)
+    if is_unversioned:
+        version_id = "null"
     else:
-        assert_utils.assert_not_equal("null", version_id)
+        version_id = res[1].get("VersionId", "null")
+        if chk_null_version:
+            assert_utils.assert_equal("null", version_id)
+        else:
+            assert_utils.assert_not_equal("null", version_id)
 
     if object_name not in versions_dict:
         versions_dict[object_name] = {}
         versions_dict[object_name]["versions"] = {}
         versions_dict[object_name]["delete_markers"] = []
+        versions_dict[object_name]["version_history"] = []
         versions_dict[object_name]["is_latest"] = None
-
+    if version_id == "null":
+        if "null" in versions_dict[object_name]["delete_markers"]:
+            versions_dict[object_name]["delete_markers"].remove("null")
+            versions_dict[object_name]["version_history"].remove("null")
     versions_dict[object_name]["versions"][version_id] = res[1]["ETag"]
+    versions_dict[object_name]["version_history"].append(version_id)
     versions_dict[object_name]["is_latest"] = version_id
+
+
+def delete_version(s3_ver_test_obj: S3VersioningTestLib, bucket_name: str, object_name: str,
+                   versions_dict: dict, version_id: str = None,
+                   check_deletemarker: bool = False) -> None:
+    """ Delete object to a versioning enabled/suspended bucket and return dictionary of uploaded
+    versions
+
+    :param s3_ver_test_obj: S3VersioningTestLib object to perform S3 calls
+    :param bucket_name: Bucket name for calling DELETE Object
+    :param object_name: Object name for calling DELETE Object
+    :param version_id: Version ID to specify when calling DELETE Object
+    :param versions_dict: Dictionary to be updated with uploaded version metadata
+    :param check_deletemarker: True, if response needs to be checked for DeleteMarker flag
+        else False. Default: False
+    """
+    if version_id:
+        res = s3_ver_test_obj.delete_object_version(bucket=bucket_name, key=object_name,
+                                                    version_id=version_id)
+    else:
+        res = s3_ver_test_obj.delete_object(bucket_name=bucket_name, obj_name=object_name)
+
+    assert_utils.assert_true(res[0], res[1])
+    if check_deletemarker:
+        assert_utils.assert_true(res[1]["DeleteMarker"], res[1])
+
+    if version_id:
+        assert_utils.assert_equal(version_id, res[1]["VersionId"])
+        if version_id in versions_dict[object_name]["versions"].keys():
+            versions_dict[object_name]["versions"].pop(version_id)
+        else:
+            versions_dict[object_name]["delete_markers"].remove(version_id)
+
+        versions_dict[object_name]["version_history"].remove(version_id)
+        if version_id == versions_dict[object_name]["is_latest"]:
+            versions_dict[object_name]["is_latest"] =  \
+                versions_dict[object_name]["version_history"][-1]
+    else:
+        dm_count = len(versions_dict[object_name]["delete_markers"])
+        if S3_ENGINE_RGW != CMN_CFG["s3_engine"] or dm_count == 0:
+            # Additional delete markers are not placed for an object in RGW
+            dm_id = res[1]["VersionId"]
+            if dm_id == "null":
+                # Remove null version id from version list and history if it exists
+                if "null" in versions_dict[object_name]["versions"].keys():
+                    versions_dict[object_name]["versions"].pop("null")
+                    versions_dict[object_name]["version_history"].remove("null")
+            versions_dict[object_name]["delete_markers"].append(dm_id)
+            versions_dict[object_name]["version_history"].append(dm_id)
+            versions_dict[object_name]["is_latest"] = dm_id
+
 
 def empty_versioned_bucket(s3_ver_test_obj: S3VersioningTestLib,
                            bucket_name: str) -> None:
@@ -403,6 +475,5 @@ def empty_versioned_bucket(s3_ver_test_obj: S3VersioningTestLib,
     to_delete = list_response[1].get("Versions", [])
     to_delete.extend(list_response[1].get("DeleteMarkers", []))
     for version in to_delete:
-        s3_ver_test_obj.delete_object_version(bucket=bucket_name,
-                                              key=version["Key"],
+        s3_ver_test_obj.delete_object_version(bucket=bucket_name, key=version["Key"],
                                               version_id=version["VersionId"])
