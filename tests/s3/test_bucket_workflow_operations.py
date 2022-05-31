@@ -23,6 +23,7 @@ import logging
 import os
 import random
 import time
+import secrets
 
 import pytest
 
@@ -41,6 +42,8 @@ from libs.s3 import s3_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
 
+# pylint: disable=too-many-instance-attributes
+# pylint: disable-msg=too-many-public-methods
 class TestBucketWorkflowOperations:
     """Bucket Workflow Operations Test suite."""
 
@@ -62,6 +65,7 @@ class TestBucketWorkflowOperations:
         if not system_utils.path_exists(self.folder_path):
             system_utils.make_dirs(self.folder_path)
         self.rest_obj = S3AccountOperations()
+        self.system_random = secrets.SystemRandom()
         self.account_list = []
         self.bucket_list = []
         self.log.info("ENDED: Setup test operations")
@@ -245,10 +249,7 @@ class TestBucketWorkflowOperations:
     def test_name_special_characters_1981(self):
         """Bucket names with special characters."""
         self.log.info("STARTED: Bucket names with special characters")
-        count_limit = random.choice(
-            range(
-                4,
-                10))
+        count_limit = self.system_random.randrange(4,10)
         special_chars_list = ["!", "*", "(", ")", "%", "$"]
         special_chars = "".join(
             random.choices(

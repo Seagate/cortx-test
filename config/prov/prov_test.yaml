@@ -160,6 +160,7 @@ k8s_cortx_deploy:
   pre_check_log: "pre_check.log"
   deployment_type_data: "data-only"
   client_instance: 0
+  data_client_instance: 1
   cluster_yaml_path: "/etc/cortx/solution/cluster.yaml"
   cluster_conf_path: "/etc/cortx/cluster.conf"
   third_party_images:

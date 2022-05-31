@@ -32,7 +32,7 @@ from commons.utils.assert_utils import assert_true
 from commons.utils.assert_utils import assert_in
 from commons.constants import S3_ENGINE_RGW
 from config import CMN_CFG
-from config.s3 import S3_CFG, S3_BLKBOX_CFG
+from config.s3 import S3_CFG
 from config.s3 import S3_BLKBOX_CFG as S3FS_CNF
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
@@ -90,8 +90,8 @@ class JCloudClient:
         :return: True
         """
         resp = False
-        for prop_path in [S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"],
-                          S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_properties_path"]]:
+        for prop_path in [S3FS_CNF["jcloud_cfg"]["jclient_properties_path"],
+                          S3FS_CNF["jcloud_cfg"]["jcloud_properties_path"]]:
             LOGGER.info("Updating: %s", prop_path)
             prop_dict = config_utils.read_properties_file(prop_path)
             if prop_dict:
@@ -130,24 +130,19 @@ class JCloudClient:
         :param secret_key: Secret Key for S3 operation
         :return: str command: cli command to be executed
         """
-        if jtool == S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"]:
-            java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_cmd"]
-            aws_keys_str = "--access-key {} --secret-key {}".format(
-                access_key, secret_key)
-            bucket_url = "s3://{}".format(bucket)
-            cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
-                                          aws_keys_str, "-p")
+        if jtool == S3FS_CNF["jcloud_cfg"]["jcloud_tool"]:
+            java_cmd = S3FS_CNF["jcloud_cfg"]["jcloud_cmd"]
+            aws_keys_str = f"--access-key {access_key} --secret-key {secret_key}"
+            bucket_url = f"s3://{bucket}"
+            cmd = f"{java_cmd} {operation} {bucket_url} {aws_keys_str} -p"
         else:
-            java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
-            aws_keys_str = "--access_key {} --secret_key {}".format(
-                access_key, secret_key)
-            bucket_url = "s3://{}".format(bucket)
+            java_cmd = S3FS_CNF["jcloud_cfg"]["jclient_cmd"]
+            aws_keys_str = f"--access_key {access_key} --secret_key {secret_key}"
+            bucket_url = f"s3://{bucket}"
             if chunk:
-                cmd = "{} {} {} {} {} {}".format(java_cmd, operation, bucket_url,
-                                                 aws_keys_str, "-p", "-C")
+                cmd = f"{java_cmd} {operation} {bucket_url} {aws_keys_str} -p -C"
             else:
-                cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
-                                              aws_keys_str, "-p")
+                cmd = f"{java_cmd} {operation} {bucket_url} {aws_keys_str} -p"
 
         LOGGER.info("jcloud command: %s", cmd)
 
@@ -165,7 +160,7 @@ class MinIOClient:
         """
         val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
         self.validate_cert = f"{'' if val_cert else ' --insecure'}"
-        self.minio_cnf = S3_BLKBOX_CFG["minio_cfg"]
+        self.minio_cnf = S3FS_CNF["minio_cfg"]
 
     @staticmethod
     def configure_minio(access: str = None, secret: str = None, path: str = None) -> bool:
@@ -211,17 +206,17 @@ class MinIOClient:
             LOGGER.info("Installing minio client in current machine.")
             ACCESS = kwargs.get("access", None)
             SECRET = kwargs.get("secret", None)
-            run_local_cmd("wget {}".format(minio_repo))
+            run_local_cmd(f"wget {minio_repo}")
             run_local_cmd("chmod +x {}".format(os.path.basename(minio_repo)))
             run_local_cmd("./{} config host add s3 {} {} {} --api S3v4".format(os.path.basename(
                 minio_repo), endpoint_url, ACCESS, SECRET))
             for crt_path in minio_cert_path_list:
                 if not os.path.exists(crt_path):
-                    run_local_cmd("yes | cp -r {} {}".format(s3_cert_path, crt_path))
+                    run_local_cmd(f"yes | cp -r {s3_cert_path} {crt_path}")
             LOGGER.info("Installed minio client in current machine.")
 
             return True
-        except Exception as error:
+        except (RuntimeError, IOError) as error:
             LOGGER.error(str(error))
             return False
 
@@ -271,7 +266,7 @@ class S3FS:
         status, resp = run_local_cmd("s3fs --version")
         LOGGER.info(resp)
         if status:
-            with open(path, "w+") as f_write:
+            with open(path, "w+", encoding="utf8") as f_write:
                 f_write.write(f"{access}:{secret}")
         else:
             LOGGER.warning("S3fs is not present, please install it and then run the configuration.")

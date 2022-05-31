@@ -17,21 +17,23 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-import logging
 import json
-import time
-import xmltodict
+import logging
 import re
-from typing import Tuple, List, Any, Union
+import time
+from typing import Tuple, List, Any
+
+import xmltodict
+
+from commons import commands
 from commons import constants as const
 from commons.helpers.host import Host
-from commons import commands
 from commons.helpers.pods_helper import LogicalNode
+from commons.utils.assert_utils import assert_true
 from commons.utils.system_utils import check_ping
 from commons.utils.system_utils import run_remote_cmd
-from commons.utils.assert_utils import assert_true
-from config import RAS_VAL
 from config import CMN_CFG
+from config import RAS_VAL
 
 LOG = logging.getLogger(__name__)
 
@@ -392,6 +394,52 @@ class Health(Host):
             result = json.loads(out)
         return result
 
+    def hctl_disk_status(self, pod_name=None, namespace: str = const.NAMESPACE):
+        """
+        This will Check disk status of the nodes
+        returns the response in json format.
+        :param pod_name: Running data pod name to fetch the hctl status
+        :param namespace: namespace name
+        :return: disk dict{'ssc-vm-g3-rhev4-1330': {'/dev/sdb': 'online', '/dev/sdc': 'online'},
+            'ssc-vm-g3-rhev4-1331': {'/dev/sdb': 'online', '/dev/sdc':'failed'}}
+        :rtype: dict
+        """
+        result = {}
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
+                CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
+            LOG.info("Executing command for LR product family....")
+            cmd = "| sed -e '1,/Devices:/ d' -e 's/^[ \t]*//'"
+            hctl_command = commands.HCTL_DISK_STATUS + cmd
+            LOG.info("Executing Command %s on node %s",
+                     hctl_command, self.hostname)
+            result = self.execute_cmd(hctl_command, read_lines=False)
+            result = result.decode("utf-8")
+        elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            LOG.info("Executing command for LC product family....")
+            container = const.HAX_CONTAINER_NAME
+            node = LogicalNode(hostname=self.hostname, username=self.username,
+                               password=self.password)
+            cmd = "| sed -e '1,/Devices:/ d' -e 's/^[ \t]*//' | sed -n '/cortx-data/p;/\[/p'"
+            if pod_name is None:
+                resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
+                assert_true(resp[0], resp[1])
+                pod_name = resp[1]
+            result = node.send_k8s_cmd(
+                operation="exec", pod=pod_name, namespace=namespace,
+                command_suffix=f"-c {container} -- {commands.HCTL_DISK_STATUS} {cmd}",
+                decode=True)
+            LOG.debug("Response of %s:\n %s ", commands.HCTL_DISK_STATUS, result)
+        node_disks_dict = {}
+        for line in result.split("\n"):
+            if '/dev' not in line:
+                key = line.strip()
+                node_disks_dict[key] = {}
+            else:
+                status, disk = line.strip().split("  ")
+                node_disks_dict[key][disk] = status.strip("[]")
+        LOG.info("Node with Disk status %s:\n", node_disks_dict)
+        return node_disks_dict
+
     def hctl_status_service_status(self, service_name: str) -> Tuple[bool, dict]:
         """
         Checks all the services with given name are started using hctl status
@@ -421,40 +469,6 @@ class Health(Host):
             return True, result
         LOG.error("Product family: %s Unimplemented method", CMN_CFG.get("product_family"))
         return False, {}
-
-    def hctl_status_get_service_fids(
-            self,
-            service_name: str) -> Union[Tuple[bool, dict], Tuple[bool, list]]:
-        """
-        Get FIDs for given services using hctl status command
-        :param service_name: Service name to be checked in hctl status.
-        :return: List of FIDs found
-        """
-        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
-            result = self.hctl_status_json()
-            fids = []
-            for node in result["nodes"]:
-                pod_name = node["name"]
-                services = node["svcs"]
-                pod_fids = []
-                for service in services:
-                    if service_name in service["name"]:
-                        fid = service["fid"]
-                        pod_fids.append(fid)
-                        if service["status"] != "started":
-                            LOG.error("%s service (%s) not started on pod %s", service_name, fid,
-                                      pod_name)
-                            return False, result
-                if not services:
-                    LOG.critical("No service found on pod %s", pod_name)
-                    return False, result
-                if not pod_fids:
-                    LOG.critical("No %s service found on pod %s", service_name, pod_name)
-                    return False, result
-                fids.extend(pod_fids)
-            return True, fids
-        LOG.error("Product family: %s: Unimplemented method", CMN_CFG.get("product_family"))
-        return False, []
 
     def get_sys_capacity(self):
         """Parse the hctl response to extract used, available and total capacity
@@ -989,3 +1003,28 @@ class Health(Host):
             LOG.error("*ERROR* An exception occurred in %s: %s",
                       Health.get_pod_svc_status.__name__, error)
             return False, error
+
+    def hctl_status_get_svc_fids(self):
+        """
+        Get FIDs for all services using hctl status command
+        :return: Bool, List of FIDs
+        """
+        pod_fids = dict()
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            result = self.hctl_status_json()
+            for node in result["nodes"]:
+                pod_name = node["name"]
+                services = node["svcs"]
+                for service in services:
+                    if service["name"] not in pod_fids:
+                        pod_fids[service["name"]] = [service["fid"]]
+                    else:
+                        pod_fids[service["name"]].append(service["fid"])
+                LOG.info("Extracted FIDs from pod %s", pod_name)
+            if not pod_fids:
+                LOG.critical("No services found in cluster")
+                return False, result
+            return True, pod_fids
+
+        return False, f"Expected Product family is {const.PROD_FAMILY_LC}. " \
+                      f"\nActual product family is {CMN_CFG.get('product_family')}"
