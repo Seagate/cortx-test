@@ -34,6 +34,7 @@ from commons.utils import system_utils
 from commons.utils import config_utils
 from commons.utils import assert_utils
 from commons.helpers.pods_helper import LogicalNode
+from commons.helpers.health_helper import Health
 from commons import commands as common_cmd
 from commons import constants as common_const
 
@@ -48,6 +49,7 @@ class MotrCoreK8s():
         self.profile_fid = None
         self.cortx_node_list = None
         self.worker_node_list = []
+        self.worker_node_objs = []
         for node in range(len(CMN_CFG["nodes"])):
             if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
                 self.master_node = CMN_CFG["nodes"][node]["hostname"]
@@ -56,8 +58,15 @@ class MotrCoreK8s():
                 self.node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                             username=CMN_CFG["nodes"][node]["username"],
                                             password=CMN_CFG["nodes"][node]["password"])
+                self.health_obj = Health(hostname=CMN_CFG["nodes"][node]["hostname"],
+                                            username=CMN_CFG["nodes"][node]["username"],
+                                            password=CMN_CFG["nodes"][node]["password"])
             else:
                 self.worker_node_list.append(CMN_CFG["nodes"][node]["hostname"])
+                self.worker_node_objs.append(LogicalNode(
+                                            hostname=CMN_CFG["nodes"][node]["hostname"],
+                                            username=CMN_CFG["nodes"][node]["username"],
+                                            password=CMN_CFG["nodes"][node]["password"]))
         self.node_dict = self._get_cluster_info
         self.node_pod_dict = self.get_node_pod_dict()
         self.ha_obj = HAK8s()
@@ -126,7 +135,7 @@ class MotrCoreK8s():
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                            f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}",
             decode=True)
-        return primary_cortx_node
+        return primary_cortx_node.replace("data", "client")
 
     def get_cortx_node_endpoints(self, cortx_node=None):
         """
