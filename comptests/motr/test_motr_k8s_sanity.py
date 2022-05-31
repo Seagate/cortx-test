@@ -241,7 +241,7 @@ class TestExecuteK8Sanity:
         return_dict = multiprocessing.Manager().dict()
         for node in self.motr_obj.cortx_node_list:
             node_process = multiprocessing.Process(target=self.motr_obj.run_io_in_parallel,
-                args=[node, [4], False, True, return_dict])
+                args=[node, BSIZE_LAYOUT_MAP, [4], False, True, return_dict])
             node_process.start()
         logger.info("Let the motr IO run on all the nodes for 120 sec")
         time.sleep(120)

@@ -546,49 +546,58 @@ class MotrCoreK8s():
         self.dd_cmd(b_size.upper(), str(count), source_file, node)
         config_utils.write_yaml(config_file, m0cfg, backup=False, sort_keys=False)
 
-    def run_motr_io(self, node, block_count=FILE_BLOCK_COUNT, run_m0cat=True, delete_objs=True):
+    def run_motr_io(self, node, bsize_layout_map=BSIZE_LAYOUT_MAP, block_count=FILE_BLOCK_COUNT,
+                    run_m0cat=True, delete_objs=True):
         """
         Run m0cp, m0cat and m0unlink on a node for all the motr clients and returns the objects
         :param: str node: Cortx node on which utilities to be executed
+        :param: dict bsize_layout_map: mapping of block size and layout for IOs to run
         :param: list block_count: List containing the integer values. If block count is 1,
                 then size of object file will vary from 4K to 32M,
                 i.e multiple of supported object block sizes
         :param: bool run_m0cat: if True, will also run m0cat and compares the md5sum
         :param: bool delete_objs: if True, will delete the created objects
-        :return: object dictionary containing objects block size, md5sum and delete flag
+        :return: object dictionary containing objects block size, count, md5sum and delete flag
+                {'10:20':{'block_size':'4k', 'deleted': False, 'count': 4,
+                'md5sum': '2322f8a66f9eab2925e90182bad21dae'},
+                '10:21':{'block_size':'8k', 'deleted': False, 'count': 2,
+                'md5sum': 'bcf5e0570940a834455b6c5d449af5a7'}
+                }
         :rtype: dict
         """
         object_dict = {}
-        infile = TEMP_PATH + 'input'
-        outfile = TEMP_PATH + 'output'
+        infile = TEMP_PATH + '/input'
+        outfile = TEMP_PATH + '/output'
         try:
             for count in block_count:
-                for b_size in BSIZE_LAYOUT_MAP.keys():
+                for b_size in bsize_layout_map.keys():
                     object_id = str(SystemRandom().randint(1, 9999)) + ":" + \
                                     str(SystemRandom().randint(1, 9999))
                     object_dict[object_id] = {'block_size' : b_size }
                     object_dict[object_id]['deleted'] = False
+                    object_dict[object_id]['count'] = count
                     self.dd_cmd(b_size, str(count), infile, node)
-                    self.cp_cmd(b_size, str(count), object_id, BSIZE_LAYOUT_MAP[b_size],
+                    self.cp_cmd(b_size, str(count), object_id, bsize_layout_map[b_size],
                         infile, node)
                     if run_m0cat:
                         self.cat_cmd(b_size, str(count), object_id,
-                            BSIZE_LAYOUT_MAP[b_size], outfile, node)
+                            bsize_layout_map[b_size], outfile, node)
                         md5sum = self.get_md5sum(outfile, node)
                         object_dict[object_id]['md5sum'] = md5sum
                         self.md5sum_cmd(infile, outfile, node)
                     if delete_objs:
-                        self.unlink_cmd(object_id, BSIZE_LAYOUT_MAP[b_size], node)
+                        self.unlink_cmd(object_id, bsize_layout_map[b_size], node)
                         object_dict[object_id]['deleted'] = True
             return object_dict
         except Exception as exc:
             log.exception("Test has failed with execption: %s", exc)
             raise exc
 
-    def run_io_in_parallel(self, node, block_count=FILE_BLOCK_COUNT,
-                        run_m0cat=True, delete_objs=True, return_dict=None):
+    def run_io_in_parallel(self, node, bsize_layout_map=BSIZE_LAYOUT_MAP,
+            block_count=FILE_BLOCK_COUNT, run_m0cat=True, delete_objs=True, return_dict=None):
         """
         :param: str node: Cortx node on which utilities to be executed
+        :param: dict bsize_layout_map: mapping of block size and layout for IOs to run
         :param: list block_count: List containing the integer values. If block count is 1,
                 then size of object file will vary from 4K to 32M,
                 i.e multiple of supported object block sizes
@@ -599,7 +608,7 @@ class MotrCoreK8s():
         if return_dict is None:
             return_dict = {}
         try:
-            obj_dict = self.run_motr_io(node, block_count, run_m0cat, delete_objs)
+            obj_dict = self.run_motr_io(node, bsize_layout_map, block_count, run_m0cat, delete_objs)
             return_dict[node] = obj_dict
             return return_dict
         except (OSError, AssertionError, IOError) as exc:
