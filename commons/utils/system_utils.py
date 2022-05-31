@@ -516,7 +516,7 @@ def mkdirs(pth):
         os.makedirs(pth, exist_ok=True)
     except OSError as erroros:
         if erroros.errno != errno.EEXIST:
-            raise OSError
+            raise OSError("Not able to create directory")
 
 
 def remove_dir(dpath: str) -> bool:
@@ -601,7 +601,7 @@ def create_file(fpath: str, count: int, dev: str = "/dev/zero", b_size: str = "1
             raise IOError(f"Unable to create file. command: {cmd}, error: {error}")
 
         return os.path.exists(fpath), ", ".join([output, error])
-    except BaseException as ex:
+    except RuntimeError as ex:
         LOGGER.exception(ex)
         return fpath, ex
     finally:
