@@ -96,7 +96,7 @@ class GetSetQuota(RestTestLib):
         endpoint = self.config["get_set_quota"]
         endpoint = endpoint.format(uid)
         response = self.restapi.rest_call("put", endpoint=endpoint,
-                                          json_dict=json.dumps(payload),
+                                          json_dict=payload,
                                           headers=header)
         self.log.info("Set user quota request successfully sent...")
         return response
@@ -207,3 +207,12 @@ class GetSetQuota(RestTestLib):
                                           headers=header)
         self.log.info("Get user quota request successfully sent...")
         return response
+
+    def get_iam_user_payload(self):
+        """
+        Creates IAM user basic payload.
+        """
+        time.sleep(1)
+        user_id = const.IAM_USER + str(int(time.time()))
+        display_name = const.IAM_USER + str(int(time.time()))
+        return user_id, display_name

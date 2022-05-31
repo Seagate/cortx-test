@@ -156,7 +156,6 @@ class TestCapacityQuota():
         self.log.info("Uploaded parts into bucket: %s", parts)
         return mpu_id, parts
 
-
     @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1565,3 +1564,248 @@ class TestCapacityQuota():
             response = self.csm_obj.csm_user_logout(header)
             self.csm_obj.check_expected_response(response, HTTPStatus.OK)
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-40600')
+    def test_40600(self):
+        """
+        Test that user can set and get the User level quota/capacity.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Perform POST API to create user.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name = self.csm_obj.get_iam_user_payload()
+        payload = {"uid": user_id, "display_name": display_name}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Creating IAM user.")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed"
+        self.log.info("Step 2: Perform PUT API to set user level quota fields.")
+        test_cfg = self.csm_conf["test_40600"]
+        enabled = test_cfg["enabled"]
+        max_size = test_cfg["max_size"]
+        max_objects = test_cfg["max_objects"]
+        quota_payload = {"enabled": enabled, "max_size": max_size,
+                         "max_objects": max_objects}
+        resp = self.csm_obj.set_user_quota(user_id, quota_payload)
+        self.log.info("Set quota API response: %s", resp.json())
+        assert resp.status_code == HTTPStatus.OK, "Status code check failed"
+        self.log.info("Step 3: Perform GET API to get user level quota fields.")
+        res = self.csm_obj.get_user_quota(user_id)
+        assert res.status_code == HTTPStatus.OK, "Status code check failed"
+        self.log.info("Step 4: Verify the user level quota fields as per request.")
+        user_quota = res.json()
+        self.log.info("response: %s", user_quota)
+        assert_utils.assert_true(user_quota['enabled'], "Status check failed")
+        assert user_quota['max_size'] == max_size, "Max size field not matched"
+        assert user_quota['max_objects'] == max_objects, "Objects field not matched"
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-40601')
+    def test_40601(self):
+        """
+        Test that user can set and get the disabled User level quota/capacity fields for S3 user.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Perform POST API to create user.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name = self.csm_obj.get_iam_user_payload()
+        payload = {"uid": user_id, "display_name": display_name}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Creating IAM user.")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed"
+        self.log.info("Step 2: Perform PUT API to set user level quota fields.")
+        test_cfg = self.csm_conf["test_40601"]
+        max_size = test_cfg["max_size"]
+        max_objects = test_cfg["max_objects"]
+        enabled = test_cfg["enabled"]
+        quota_payload = {"enabled": enabled, "max_size": max_size,
+                         "max_objects": max_objects}
+        resp = self.csm_obj.set_user_quota(user_id, quota_payload)
+        assert resp.status_code == HTTPStatus.OK, "Status code check failed"
+        self.log.info("Step 3: Perform GET API to get user level quota fields.")
+        res = self.csm_obj.get_user_quota(user_id)
+        assert res.status_code == HTTPStatus.OK, "Status code check failed"
+        user_quota = res.json()
+        self.log.info("Step 4: Verify the user level quota fields as per request.")
+        assert_utils.assert_true(user_quota['enabled'], "Status check failed")
+        assert user_quota['max_size'] == max_size, "Max size field not matched"
+        assert user_quota['max_objects'] == max_objects, "Objects field not matched"
+        self.log.info("Step 5: Perform PUT API to set user level quota fields.")
+        test_cfg = self.csm_conf["test_40601"]
+        max_size = test_cfg["max_size"]
+        max_objects = test_cfg["max_objects"]
+        enabled = test_cfg["enabled"]
+        quota_payload = {"enabled": False, "max_size": max_size,
+                         "max_objects": max_objects}
+        resp = self.csm_obj.set_user_quota(user_id, quota_payload)
+        assert resp.status_code == HTTPStatus.OK, "Status code check failed"
+        self.log.info("Step 6: Perform GET API to get user level quota fields.")
+        res = self.csm_obj.get_user_quota(user_id)
+        assert res.status_code == HTTPStatus.OK, "Status code check failed"
+        user_quota = res.json()
+        self.log.info("Step 7: Verify the user level quota fields as per above request.")
+        assert_utils.assert_false(user_quota['enabled'], "Status check failed")
+        assert user_quota['max_size'] == max_size, "Max size field not matched"
+        assert user_quota['max_objects'] == max_objects, "Objects field not matched"
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-40602')
+    def test_40602(self):
+        """
+        Test that user can set and get the User level quota/capacity by get user info API.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Perform POST API to create user.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name = self.csm_obj.get_iam_user_payload()
+        payload = {"uid": user_id, "display_name": display_name}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Creating IAM user.")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed"
+        self.log.info("Step 2: Perform PUT API to set user level quota fields.")
+        test_cfg = self.csm_conf["test_40602"]
+        max_size = test_cfg["max_size"]
+        max_objects = test_cfg["max_objects"]
+        enabled = test_cfg["enabled"]
+        quota_payload = {"enabled": enabled, "max_size": max_size,
+                         "max_objects": max_objects}
+        resp = self.csm_obj.set_user_quota(user_id, quota_payload)
+        assert resp.status_code == HTTPStatus.OK, "Status code check failed"
+        self.log.info("Step 3: Perform GET I AM user info API to get user level quota")
+        res = self.csm_obj.get_iam_user(user_id)
+        assert res.status_code == HTTPStatus.OK, "Status code check failed"
+        user_quota = res.json()
+        self.log.info("Step 4: Verify the user info level quota fields as per request.")
+        assert_utils.assert_true(user_quota['user_quota']['enabled'], "Status check failed")
+        assert user_quota['user_quota']['max_size'] == max_size, "Maxsize field not matched"
+        assert user_quota['user_quota']['max_objects'] == max_objects, "Objects field not matched"
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-40603')
+    def test_40603(self):
+        """
+        Test that monitor user can not set the User level quota/capacity.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Perform POST API to create user.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name = self.csm_obj.get_iam_user_payload()
+        payload = {"uid": user_id, "display_name": display_name}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Creating IAM user.")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed"
+        self.log.info("Step 2: Perform PUT API to set user level quota fields.")
+        test_cfg = self.csm_conf["test_40603"]
+        max_size = test_cfg["max_size"]
+        max_objects = test_cfg["max_objects"]
+        enabled = test_cfg["enabled"]
+        quota_payload = {"enabled": enabled, "max_size": max_size,
+                         "max_objects": max_objects}
+        resp = self.csm_obj.set_user_quota(user_id, quota_payload,
+                                           login_as="csm_user_monitor")
+        assert resp.status_code == HTTPStatus.FORBIDDEN, "Status code check failed"
+        self.log.info("Step 3: Perform GET API to get user level quota fields.")
+        res = self.csm_obj.get_user_quota(user_id)
+        assert res.status_code == HTTPStatus.OK, "Status code check failed"
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-40604')
+    def test_40604(self):
+        """
+        Test that user can set and get the User level quota/capacity under the tenant.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Perform POST API to create user under the tenant.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name = self.csm_obj.get_iam_user_payload()
+        payload = {"uid": user_id, "tenant": user_id, "display_name": display_name}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Creating IAM user.")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed"
+        self.log.info("Step 2: Perform PUT API(tenant$uid) to set user level quota fields")
+        test_cfg = self.csm_conf["test_40604"]
+        max_size = test_cfg["max_size"]
+        max_objects = test_cfg["max_objects"]
+        tenant_user = user_id + "$" + user_id
+        enabled = test_cfg["enabled"]
+        quota_payload = {"enabled": enabled, "max_size": max_size,
+                         "max_objects": max_objects}
+        resp = self.csm_obj.set_user_quota(tenant_user, quota_payload)
+        assert resp.status_code == HTTPStatus.OK, "Status code check failed"
+        self.log.info("Step 3: Perform GET API(tenant$uid) to get user level quota fields.")
+        res = self.csm_obj.get_user_quota(tenant_user)
+        assert res.status_code == HTTPStatus.OK, "Status code check failed"
+        self.log.info("Step 4: Verify the user level quota fields as per request.")
+        user_quota = res.json()
+        assert_utils.assert_true(user_quota['enabled'], "Status check failed")
+        assert user_quota['max_size'] == max_size, "Max size field not matched"
+        assert user_quota['max_objects'] == max_objects, "Objects field not matched"
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-40605')
+    def test_40605(self):
+        """
+        Test set/get API for User level quota/capacity with Invalid/empty fields.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Perform POST API to create user.")
+        self.log.info("Creating IAM user payload.")
+        user_id, display_name = self.csm_obj.get_iam_user_payload()
+        payload = {"uid": user_id, "display_name": display_name}
+        self.log.info("payload :  %s", payload)
+        self.log.info("Creating IAM user.")
+        response = self.csm_obj.create_iam_user_rgw(payload)
+        assert response.status_code == HTTPStatus.CREATED, "Status code check failed"
+        self.log.info("Step 2: PUT API to set user level quota with empty fields")
+        quota_payload = {"enabled": "", "max_size": "",
+                         "max_objects": ""}
+        resp = self.csm_obj.set_user_quota(user_id, quota_payload)
+        self.log.info("response :  %s", resp)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
+        self.log.info("Step 3: Perform PUT API to set user quota with empty fields")
+        quota_payload = {"enabled": None, "max_size": None,
+                         "max_objects": None}
+        resp = self.csm_obj.set_user_quota(user_id, quota_payload)
+        assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
+        self.log.info("Step 4: PUT API to set user quota with invalid/empty user quota endpoint.")
+        resp = self.csm_obj.set_user_quota("", quota_payload)
+        assert resp.status_code == HTTPStatus.NOT_FOUND, "Status code check failed"
+        self.log.info("Step 5: GET API to get user quota fields with invalid/empty endpoint.")
+        res = self.csm_obj.get_user_quota("")
+        self.log.info("response :  %s", res)
+        assert res.status_code == HTTPStatus.NOT_FOUND, "Status code check failed"
+
