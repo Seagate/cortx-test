@@ -51,23 +51,25 @@ class DiskFailureRecoveryLib:
         :rtype byte count
         """
         resp = health_obj.hctl_status_json()
-        temp = resp['byte_count'][0]
+        temp = resp['bytecount']
         return temp[byte_count_type]
 
-    def change_disk_status_hctl(self, pod_obj: LogicalNode, pod_name: str, node_name: str,
+    def change_disk_status_hctl(self, pod_obj: LogicalNode, pod_name: str, data_pod_hostname: str,
                                 device: str, status: str):
         """
         This function is used to change the disk status(online, offline etc)
         using hctl command
         :param pod_obj: Object for master nodes
         :param pod_name: name of the pod
-        :param node_name: name of the node from which status of the disk will be changed
+        :param data_pod_hostname: hostname of the cortx data pod of which disk status
+                                    will be changed
         :param device: name of disk of which status will be changed
         :param status: status of the disk
         :rtype Json response of hctl command
         """
-        cmd = common_cmd.CHANGE_DISK_STATE_USING_HCTL.replace("node_val", str(node_name)). \
-            replace("device_val", str(device)).replace("status_val", str(status))
+        cmd = common_cmd.CHANGE_DISK_STATE_USING_HCTL.replace(
+                        "cortx_nod", str(data_pod_hostname)).replace("device_val", str(device)).\
+                        replace("status_val", str(status))
         out = pod_obj.send_k8s_cmd(operation="exec", pod=pod_name,
                                    namespace=common_const.NAMESPACE,
                                    command_suffix=f"-c {self.hax_container}"
@@ -84,6 +86,21 @@ class DiskFailureRecoveryLib:
         :rtype response of sns repair command
         """
         cmd = common_cmd.SNS_REPAIR_CMD.format(option)
+        out = pod_obj.send_k8s_cmd(operation="exec", pod=pod_name,
+                                   namespace=common_const.NAMESPACE,
+                                   command_suffix=f"-c {self.hax_container}"
+                                                  f" -- {cmd}", decode=True)
+        return out
+
+    def sns_rebalance(self, pod_obj: LogicalNode, option: str, pod_name: str):
+        """
+        This function will start the sns rebalance
+        :param pod_obj: Object for master nodes
+        :param option: Options supported in sns rebalance cmd, start stop etc
+        :param pod_name: name of the pod in which sns rebalance will start
+        :rtype response of sns rebalance command
+        """
+        cmd = common_cmd.SNS_REBALANCE_CMD.format(option)
         out = pod_obj.send_k8s_cmd(operation="exec", pod=pod_name,
                                    namespace=common_const.NAMESPACE,
                                    command_suffix=f"-c {self.hax_container}"
@@ -133,7 +150,7 @@ class DiskFailureRecoveryLib:
                 if values['type'] == 'data_node':
                     hostname = str(values['hostname'].split('svc')[1]).replace('-', '', 1)
                     if hostname in worker_node.hostname:
-                        for cvg in values['storage']['cvg']:
+                        for cvg in values['cvg']:
                             return_dict[cvg['name']] = cvg['devices']
                         break
             return True, return_dict
@@ -221,13 +238,13 @@ class DiskFailureRecoveryLib:
                 if node == value[0] and cvg == value[1]:
                     same_cvg_disks[key] = value
             all_disks = copy.deepcopy(same_cvg_disks)
-
         for cnt in range(disk_fail_cnt):
             selected_disk = random.choice(list(all_disks))  # nosec
             LOGGER.info("disk fail loop: %s, disk selected for failure: %s",
                         cnt + 1, all_disks[selected_disk])
-            resp = self.change_disk_status_hctl(master_obj, pod_name, all_disks[selected_disk][0],
-                                                all_disks[selected_disk][2], "failed")
+            resp = self.change_disk_status_hctl(master_obj, pod_name,
+                                common_const.CORTX_DATA_NODE_PREFIX + all_disks[selected_disk][0],
+                                all_disks[selected_disk][2], "failed")
             LOGGER.info("fail disk command resp: %s", resp)
             failed_disks_dict['disk' + str(cnt)] = all_disks[selected_disk]
             all_disks.pop(selected_disk)
