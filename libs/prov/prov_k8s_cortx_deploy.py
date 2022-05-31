@@ -73,7 +73,7 @@ class ProvDeployK8sCortxLib:
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         self.s3_engine = int(os.getenv("S3_ENGINE", CMN_CFG["s3_engine"]))
-        self.cortx_image = os.getenv("CORTX_IMAGE")
+        self.cortx_image = os.getenv("CORTX_CONTROL_IMAGE")
         self.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
         self.cortx_data_image = os.getenv("CORTX_DATA_IMAGE", None)
         self.service_type = os.getenv("SERVICE_TYPE", self.deploy_cfg["service_type"])
@@ -478,6 +478,8 @@ class ProvDeployK8sCortxLib:
         nodeport_https = kwargs.get("https_port", self.deploy_cfg['https_port'])
         control_nodeport_https = kwargs.get("control_https_port",
                                             self.deploy_cfg['control_port_https'])
+        deployment_type = kwargs.get("deployment_type", self.deployment_type)
+        client_instance = kwargs.get("client_instance", self.client_instance)
 
         LOGGER.debug("Service type & Ports are %s\n%s\n%s\n%s", service_type,
                      nodeport_http, nodeport_https, control_nodeport_https)
@@ -546,16 +548,20 @@ class ProvDeployK8sCortxLib:
                                                       control_nodeport_https=
                                                       self.control_nodeport_https,
                                                       service_type=self.service_type,
-                                                      deployment_type=self.deployment_type,
+                                                      deployment_type=deployment_type,
                                                       namespace=namespace,
                                                       lb_count=self.lb_count,
-                                                      client_instance=self.client_instance)
+                                                      client_instance=client_instance)
         if not resp_passwd[0]:
             return False, "Failed to update service type,deployment type, ports in solution file"
         # Update resources for third_party
         resource_resp = self.update_res_limit_third_party(filepath)
         if not resource_resp:
             return False, "Failed to update the resources for thirdparty"
+        # Update resources for cortx component
+        cortx_resource_resp = self.update_res_limit_cortx(filepath)
+        if not cortx_resource_resp:
+            return False, "Failed to update the resources for cortx components"
         # Update the solution yaml file with images
         resp_image = self.update_image_section_sol_file(filepath, third_party_images_dict,
                                                         cortx_image=cortx_image,
@@ -718,12 +724,16 @@ class ProvDeployK8sCortxLib:
         image_default_dict = {}
 
         for image_key in self.deploy_cfg['cortx_images_key']:
-            if self.cortx_server_image and image_key == "cortxserver":
-                cortx_im[image_key] = cortx_server_image
+            if image_key == "cortxcontrol":
+                cortx_im[image_key] = cortx_image
             elif self.cortx_data_image and image_key == "cortxdata":
                 cortx_im[image_key] = cortx_data_image
-            else:
+            elif self.cortx_server_image and image_key == "cortxserver":
+                cortx_im[image_key] = cortx_server_image
+            elif image_key == "cortxha":
                 cortx_im[image_key] = cortx_image
+            elif self.cortx_data_image and image_key == "cortxclient":
+                cortx_im[image_key] = cortx_data_image
 
         def _update_file(cortx_im):
             image_default_dict.update(self.deploy_cfg['third_party_images'])
@@ -1186,7 +1196,8 @@ class ProvDeployK8sCortxLib:
         return True
 
     def deploy_stage(self, sol_file_path, master_node_list,
-                     worker_node_list, namespace, system_disk_dict):
+                     worker_node_list, namespace, system_disk_dict,
+                     **kwargs):
         """
         This method is used to perform deploy,validate cluster and check services
         param: master_node_list: master_node_obj list
@@ -1196,6 +1207,7 @@ class ProvDeployK8sCortxLib:
          provisioner path
         returns True, resp
         """
+        deployment_type = kwargs.get("deployment_type", self.deployment_type)
         LOGGER.info("Step to Perform Cortx Cluster Deployment")
         deploy_resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
                                                 worker_node_list, system_disk_dict,
@@ -1216,7 +1228,8 @@ class ProvDeployK8sCortxLib:
             if not deploy_resp[1]:
                 LOGGER.info("Step to Check  ALL service status")
                 time.sleep(self.deploy_cfg["sleep_time"])
-                service_status = self.check_service_status(master_node_list[0])
+                service_status = self.check_service_status(master_node_list[0],
+                                                           deployment_type=deployment_type)
                 LOGGER.info("All service resp is %s", service_status)
                 assert_utils.assert_true(service_status[0], service_status[1])
                 if self.deployment_type != self.deploy_cfg["deployment_type_data"]:
@@ -1332,6 +1345,8 @@ class ProvDeployK8sCortxLib:
         report_path = kwargs.get("report_filepath", self.deploy_cfg["report_file"])
         data_disk_size = kwargs.get("data_disk_size", self.deploy_cfg["data_disk_size"])
         metadata_disk_size = kwargs.get("meta_disk_size", self.deploy_cfg["metadata_disk_size"])
+        deployment_type = kwargs.get("deployment_type", self.deployment_type)
+        client_instance = kwargs.get("client_instances", self.client_instance)
         row = list()
         row.append(len(worker_node_list))
         LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
@@ -1378,7 +1393,9 @@ class ProvDeployK8sCortxLib:
                                         namespace=namespace,
                                         https_port=self.nodeport_https,
                                         http_port=self.nodeport_http,
-                                        control_https_port=self.control_nodeport_https)
+                                        control_https_port=self.control_nodeport_https,
+                                        deployment_type=deployment_type,
+                                        client_instance=client_instance)
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
             with open(resp[1]) as file:
                 LOGGER.info("The detailed solution yaml file is\n")
@@ -1445,12 +1462,14 @@ class ProvDeployK8sCortxLib:
             return False, "All Services are not started."
         return response
 
-    def check_service_status(self, master_node_obj: LogicalNode):
+    def check_service_status(self, master_node_obj: LogicalNode, **kwargs):
         """
         Function to check all service status
         param: nodeObj of Master node.
         returns: dict of all pods with service status True/False and time taken
         """
+        deployment_type = kwargs.get("deployment_type", self.deployment_type)
+        LOGGER.debug("DEPLOYMENT TYPE IN SERVICE CHECK IS %s", deployment_type)
         resp = self.check_pods_status(master_node_obj)
         assert_utils.assert_true(resp, "All Pods are not in Running state")
         if self.deployment_type in self.data_only_list:
@@ -1949,6 +1968,58 @@ class ProvDeployK8sCortxLib:
                         third_party_resource[elem][res_type]['mem']
                     consul[elem]['resources'][res_type]['cpu'] = \
                         third_party_resource[elem][res_type]['cpu']
+            soln.close()
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(filepath, 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            soln.close()
+        return True, filepath
+
+    def update_res_limit_cortx(self, filepath):
+        """
+        This Method is used to update the resource limits for cortx services
+        param: filepath: solution.yaml filepath
+        returns True, filepath
+        """
+
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']  # Parent key
+            common = parent_key['common']
+            resource = common['resource_allocation']
+            hare_hax_res = resource['hare']['hax']['resources']
+            data_res = resource['data']
+            control_res = resource['control']['agent']['resources']
+            server_res = resource['server']['rgw']['resources']
+            ha_res = resource['ha']
+            type_list = ['requests', 'limits']
+            data_list = ['motr', 'confd']
+            ha_list = ['fault_tolerance', 'health_monitor', 'k8s_monitor']
+            cortx_resource = self.deploy_cfg['cortx_resource']
+
+            for res_type in type_list:
+                hare_hax_res[res_type]['memory'] = \
+                    cortx_resource['hax'][res_type]['mem']
+                hare_hax_res[res_type]['cpu'] = \
+                    cortx_resource['hax'][res_type]['cpu']
+                server_res[res_type]['memory'] = cortx_resource['rgw'][res_type]['mem']
+                server_res[res_type]['cpu'] = cortx_resource['rgw'][res_type]['cpu']
+                control_res[res_type]['memory'] = cortx_resource['agent'][res_type]['mem']
+                control_res[res_type]['cpu'] = cortx_resource['agent'][res_type]['cpu']
+            # updating the motr /confd requests and limits resources
+                for elem in data_list:
+                    data_res[elem]['resources'][res_type]['memory'] = \
+                        cortx_resource[elem][res_type]['mem']
+                    data_res[elem]['resources'][res_type]['cpu'] = \
+                        cortx_resource[elem][res_type]['cpu']
+            # updating the ha component resources
+                for ha_elem in ha_list:
+                    ha_res[ha_elem]['resources'][res_type]['memory'] = \
+                        cortx_resource[elem][res_type]['mem']
+                    ha_res[ha_elem]['resources'][res_type]['cpu'] = \
+                        cortx_resource[elem][res_type]['cpu']
             soln.close()
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True

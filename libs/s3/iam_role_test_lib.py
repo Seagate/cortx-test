@@ -20,14 +20,14 @@
 """Python library using boto3 module to perform AWS Identity & Access Management (IAM) role."""
 
 import logging
+
 from botocore.exceptions import ClientError
 
-from config.s3 import S3_CFG
 from commons import errorcodes as err
 from commons.exceptions import CTException
+from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.iam_core_lib import IamRole
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,13 +35,12 @@ LOGGER = logging.getLogger(__name__)
 class IamRoleTestLib(IamRole):
     """Class initialising s3 connection and including functions for iam role operations."""
 
-    def __init__(
-            self,
-            access_key: str = ACCESS_KEY,
-            secret_key: str = SECRET_KEY,
-            endpoint_url: str = S3_CFG["s3_url"],
-            s3_cert_path: str = S3_CFG["s3_cert_path"],
-            **kwargs) -> None:
+    def __init__(self,
+                 access_key: str = ACCESS_KEY,
+                 secret_key: str = SECRET_KEY,
+                 endpoint_url: str = S3_CFG["s3_url"],
+                 s3_cert_path: str = S3_CFG["s3_cert_path"],
+                 **kwargs) -> None:
         """
         Method to initializes members of IamPolicyTestLib and its parent class.
 
@@ -50,12 +49,8 @@ class IamRoleTestLib(IamRole):
         :param endpoint_url: endpoint url
         :param s3_cert_path: s3 certificate path
         """
-        super().__init__(
-            access_key,
-            secret_key,
-            endpoint_url,
-            s3_cert_path,
-            **kwargs)
+        super().__init__(access_key=access_key, secret_key=secret_key, endpoint_url=endpoint_url,
+                         iam_cert_path=s3_cert_path, **kwargs)
 
     def create_role(self, assume_role_policy_document: str = None,
                     role_name: str = None, **kwargs) -> tuple:
@@ -74,7 +69,7 @@ class IamRoleTestLib(IamRole):
             LOGGER.exception("Error in  %s: %s",
                              IamRoleTestLib.create_role.__name__,
                              error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args)
+            raise CTException(err.S3_CLIENT_ERROR, error.args) from error
 
         return True, response
 

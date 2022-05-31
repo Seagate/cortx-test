@@ -39,7 +39,7 @@ from commons import constants as common_const
 
 log = logging.getLogger(__name__)
 
-
+# pylint: disable=too-many-public-methods
 class MotrCoreK8s():
     """ Motr Kubernetes environment test library """
 
@@ -131,7 +131,7 @@ class MotrCoreK8s():
     def get_cortx_node_endpoints(self, cortx_node=None):
         """
         To get the endpoints details of the cortx node
-        
+
         :param cortx_node: Name of the cortx node
         :type: str
         :returns: Dict of a cortx node containing the endpoints details
@@ -360,13 +360,16 @@ class MotrCoreK8s():
         :file2: second file
         :node: compare files on which node
         """
-
+        diff_utils_install = common_cmd.CMD_INSTALL_TOOL.format("diffutils") + " -y"
         cmd = common_cmd.DIFF.format(file1, file2)
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
-        log.info("DIFF Resp: %s", resp)
+        cmd_list = [diff_utils_install, cmd]
+        for cmd in cmd_list:
+            resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
+                                              namespace=common_const.NAMESPACE,
+                                              command_suffix=
+                                              f"-c {common_const.HAX_CONTAINER_NAME} "
+                                              f"-- {cmd}", decode=True)
+            log.info("DIFF Resp: %s", resp)
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
@@ -512,7 +515,7 @@ class MotrCoreK8s():
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
-    
+
     def shutdown_cluster(self):
         """
         This will shutdown cluster and update the node_pod dict

@@ -480,3 +480,7 @@ MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}
 # Procpath Collection
 PID_WATCH_LIST = ['m0d', 'radosgw', 'hax']
 REQUIRED_MODULES = ["Procpath", "apsw-wheels"]
+
+DTM_RECOVERY_STATE = "RECOVERED"
+M0D_SVC = "ioservice"
+SERVER_SVC = "rgw_s3"

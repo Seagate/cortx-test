@@ -486,6 +486,7 @@ class Provisioner:
         grep_chrony = node_obj.execute_cmd(cmd, read_lines=True)
         if time_server in grep_chrony[0]:
             return True, grep_chrony
+
         return False, f"{time_server} is not in /etc/chrony.conf"
 
     @staticmethod

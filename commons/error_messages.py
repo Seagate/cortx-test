@@ -75,6 +75,7 @@ CRED_INVALID_ERR = "InvalidCredentials"
 NO_SUCH_ENTITY_ERR = "NoSuchEntity"
 NOT_FOUND_ERR = "Not Found"
 MALFORMED_XML_ERR = "MalformedXML"
+INVALID_ARG_ERR = "InvalidArgument"
 
 # S3 Bucket Tagging
 S3_BKT_SET_TAG_ERR = "NoSuchTagSetError"

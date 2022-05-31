@@ -48,7 +48,7 @@ def main():
     todo = len([test for test in res if test['latestStatus'] == 'TODO'])
     passed = len([test for test in res if test['latestStatus'] == 'PASS'])
     fail = len([test for test in res if test['latestStatus'] == 'FAIL'])
-    skip = len([test for test in res if test['latestStatus'] == 'SKIPPED'])
+    skip = len([test for test in res if test['latestStatus'] in ['SKIPPED', 'BLOCKED']])
     exe = len([test for test in res if test['latestStatus'] == 'EXECUTING'])
     with open(os.path.join(os.getcwd(), TOTAL_COUNT_CSV), 'w', newline='') as tp_info_csv:
         writer = csv.writer(tp_info_csv)

@@ -172,7 +172,8 @@ if __name__ == '__main__':
                  ssl=True, no_check_certificate=False,
                  host_port='host_port', host_bucket='host-bucket',
                  multipart_chunk_size_mb='15MB')
-    S3CmdFacade.upload_object_s3cmd(bucket_name='dummy', file_path='/tmp/tmpobject.db', **odict)
+    upload_file = os.path.join(tempfile.gettempdir(), 'tmpobject.db')
+    S3CmdFacade.upload_object_s3cmd(bucket_name='dummy', file_path=upload_file, **odict)
     dodict = dict(access_key='access_key', secret_key='secret_key',  # nosec
                   ssl=True, no_check_certificate=False,
                   host_port='host_port', object_uri='s3://host-bucket/tmpobject.db')
