@@ -20,10 +20,13 @@ Tests various operations on Cortx Information using REST API
 import logging
 from http import HTTPStatus
 import pytest
+from string import Template
 from commons import configmanager
 from commons import cortxlogging
+from commons.utils import assert_utils
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.csm_interface import csm_api_factory
+from config import CSM_REST_CFG
 
 class TestCortxInformation():
     """
@@ -39,6 +42,8 @@ class TestCortxInformation():
         cls.log.info("Initializing test setups")
         cls.csm_conf = configmanager.get_config_wrapper(
                         fpath="config/csm/test_rest_information.yaml")
+        cls.rest_resp_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/rest_response_data.yaml")
         cls.log.info("Ended test module setups")
         cls.config = CSMConfigsCheck()
         setup_ready = cls.config.check_predefined_s3account_present()
@@ -116,6 +121,12 @@ class TestCortxInformation():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_42790"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
 
         self.log.info("[START] Testing Version Compatability with invalid resource")
         # For Non-Happy path with invalid inputs
@@ -123,7 +134,13 @@ class TestCortxInformation():
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.verify_version_compatibility("cluster", "cortx-cluster", payload)
         assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed"
-
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(response.json()["message"], msg)
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="cluster"))
         self.log.info("[END] Testing Version Compatability with invalid resource")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -138,11 +155,24 @@ class TestCortxInformation():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
+        test_cfg = self.csm_conf["test_42719"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
+
         self.log.info("[START] Testing Version Compatability with invalid rules")
         payload = self.csm_obj.get_version_compatibility_payload("invalid_rules")
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.verify_version_compatibility("node", "cortx-cluster", payload)
-        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR, "Status code check failed"
+        assert response.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
+
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(response.json()["message"], msg)
 
         self.log.info("[END] Testing Version Compatability  with invalid rules")
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -158,11 +188,24 @@ class TestCortxInformation():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
+        test_cfg = self.csm_conf["test_42792"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
+
         self.log.info("[START] Testing Version Compatability with invalid request body")
-        payload = self.csm_obj.get_version_compatibility_payload("invalid_request_body")
+        payload = self.csm_obj.get_version_compatibility_payload("invalid_unknown_field")
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.verify_version_compatibility("node", "cortx-cluster", payload)
         assert response.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
 
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="random_key"))
         self.log.info("[END] Testing Version Compatability  with invalid  request body")
         self.log.info("##### Test ended -  %s #####", test_case_name)

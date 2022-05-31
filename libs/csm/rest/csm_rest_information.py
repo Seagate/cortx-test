@@ -44,8 +44,10 @@ class RestInformation(RestTestLib):
         payload.update({"requires": required})
         return payload
 
-    def get_invalid_request_body_payload(self):
+    def get_invalid_unknown_field_payload(self):
         payload = {}
+        required = ["CORTX >= 2.0.0-0"]
+        payload.update({"requires": required})
         payload.update({"random_key": "random_val"})
         return payload
 
@@ -53,7 +55,7 @@ class RestInformation(RestTestLib):
         "compatible" : get_valid_compatible_payload,
         "incompatible" : get_valid_incompatible_payload,
         "invalid_rules": get_invalid_rules_payload,
-        "invalid_request_body": get_invalid_request_body_payload,
+        "invalid_unknown_field": get_invalid_unknown_field_payload,
     }
 
     def get_version_compatibility_payload(self, payload_type="compatible"):
