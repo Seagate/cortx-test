@@ -229,6 +229,21 @@ test_28526:
           - part_size: 824
             count: 1
 
+test_42770:
+  file_size: 358400
+  chunk_size: 1048576
+  part_sizes:
+    - part_size: 5100
+      count: 69
+    - part_size: 1531.8
+      count: 1
+    - part_size: 6.6
+      count: 1
+    - part_size: 824
+      count: 1
+    - part_size: 4137.6
+      count: 1
+
 test_28528:
   file_size: 50300
   chunk_size: 1048576
@@ -332,6 +347,6 @@ test_40265:
   part_sizes:
     - part_size: 5
       count: 1
-    - part_size: 1
+    - part_size: 5
       count: 1
 
