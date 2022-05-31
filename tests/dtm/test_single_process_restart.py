@@ -44,8 +44,6 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import support_bundle_utils
 from commons.utils import system_utils
-from commons.params import TEST_DATA_FOLDER
-from commons.utils import support_bundle_utils, assert_utils, system_utils
 from commons.utils.system_utils import validate_checksum
 from config import CMN_CFG
 from config import DTM_CFG
@@ -88,9 +86,6 @@ class TestSingleProcessRestart:
         cls.m0d_process = 'm0d'
         cls.dtm_obj = DTMRecoveryTestLib()
         cls.s3_obj = S3TestLib()
-        cls.dir_path = os.path.join(os.getcwd(), TEST_DATA_FOLDER, "dtm")
-        if not os.path.exists(cls.dir_path):
-            os.makedirs(cls.dir_path)
         cls.log.info("Setup S3bench")
         resp = s3bench.setup_s3bench()
         assert_utils.assert_true(resp)
@@ -653,7 +648,7 @@ class TestSingleProcessRestart:
         bucket_list = self.s3_obj.bucket_list()[1]
         for size in self.test_cfg["size_list"]:
             file_name = "{}{}".format("dtm-test-41232", size)
-            file_path = os.path.join(self.dir_path, file_name)
+            file_path = os.path.join(self.test_dir_path, file_name)
             system_utils.create_file(file_path, size)
             resp = self.s3_obj.put_object(bucket_list[0], f"{object_name}_{size}", file_path)
             assert_utils.assert_true(resp[0], resp[1])
@@ -673,13 +668,13 @@ class TestSingleProcessRestart:
                                            dest_object=f"{object_name}_{size}")
             assert_utils.assert_true(resp[0], resp[1])
             file_name_copy = "{}{}".format("dtm-test-41232-copy", size)
-            file_path_copy = os.path.join(self.dir_path, file_name_copy)
+            file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
             resp = self.s3_obj.object_download(bucket_name=bucket_list[1],
                                                obj_name=f"{object_name}_{size}",
                                                file_path=file_path_copy)
             assert_utils.assert_true(resp[0], resp[1])
             file_name = "{}{}".format("dtm-test-41232-", size)
-            file_path = os.path.join(self.dir_path, file_name)
+            file_path = os.path.join(self.test_dir_path, file_name)
             resp = validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
             assert_utils.assert_true(resp, "Checksum validation Failed.")
         self.test_completed = True
@@ -703,7 +698,7 @@ class TestSingleProcessRestart:
         bucket_list = self.s3_obj.bucket_list()[1]
         for size in self.test_cfg["size_list"]:
             file_name = "{}{}".format("dtm-test-41233-", size)
-            file_path = os.path.join(self.dir_path, file_name)
+            file_path = os.path.join(self.test_dir_path, file_name)
             system_utils.create_file(file_path, size)
             resp = self.s3_obj.put_object(bucket_list[0], f"{object_name}_{size}",
                                           file_path)
@@ -734,13 +729,13 @@ class TestSingleProcessRestart:
         self.log.info("Step 5: Perform Download and verify on copied Objects")
         for size in self.test_cfg["size_list"]:
             file_name_copy = "{}{}".format("dtm-test-41233-copy", size)
-            file_path_copy = os.path.join(self.dir_path, file_name_copy)
+            file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
             resp = self.s3_obj.object_download(bucket_name=bucket_list[1],
                                                obj_name=f"{object_name}_{size}",
                                                file_path=file_path_copy)
             assert_utils.assert_true(resp[0], resp[1])
             file_name = "{}{}".format("dtm-test-41233-", size)
-            file_path = os.path.join(self.dir_path, file_name)
+            file_path = os.path.join(self.test_dir_path, file_name)
             resp = validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
             assert_utils.assert_true(resp, "Checksum validation Failed.")
         self.test_completed = True
