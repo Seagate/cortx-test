@@ -191,7 +191,7 @@ class TestIOWorkloadDegradedPath:
         assert_utils.assert_true(ret[0], ret[1])
         for each in ret[1]:
             each["num_clients"] = (len(self.worker_node_list) - 1) \
-                                  * self.test_cfg['sessions_per_node_vm']
+                                  * self.clients
         self.log.debug("Write operation data: %s", ret)
 
         self.log.info("Step 3: Shutdown the data pod safely by making replicas=0, "
