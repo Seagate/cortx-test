@@ -13,8 +13,10 @@ sessions_per_node_hw: 150
 
 happy_path_duration_days: 30
 degraded_path_durations_days: 7
-
-test_40172:
-  bucket_creation_healthy_mode: True
-
 nearfull_storage_percentage: 95
+bucket_creation_healthy_mode: True
+create_bucket_count: 50
+
+#write,partial delete test cases.
+write_percent_per_iter: 30
+delete_percent_per_iter: 20
