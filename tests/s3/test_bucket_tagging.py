@@ -444,6 +444,16 @@ class TestBucketTagging:
     def test_2443(self):
         """Create multiple tags with tag keys having special characters."""
         self.log.info("STARTED: Create multiple tags with tag keys having special characters")
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            lst_special_chars = [
+                                "~", "`", "!", "@", "#", "$",
+                                "%", "^", "&", "*", "(", ")",
+                                "-", "_", "+", "=", ";", ":",
+                                "|", "\\", ":", ";", "\"", "\'",
+                                "<", ",", ">", ".", "?", "\/"
+                                ]
+        else:
+            lst_special_chars = ["+", "-", "=", ".", "_", ":"]
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
         resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
@@ -451,7 +461,7 @@ class TestBucketTagging:
         assert_utils.assert_equal(resp[1], self.bucket_name, resp[1])
         self.log.info("Step 1: Created a bucket: %s", self.bucket_name)
         self.log.info("Step 2: Setting multiple tags with tag keys having special characters")
-        for char in ["+", "-", "=", ".", "_", ":"]:
+        for char in lst_special_chars:
             tag_key = f"{char}key{char}"
             resp = self.tag_obj.set_bucket_tag(self.bucket_name, tag_key, "testval")
             self.log.info(resp)
@@ -632,6 +642,7 @@ class TestBucketTagging:
         self.log.info("ENDED: Create bucket tags with invalid "
                       "(characters outside the allowed set) special characters")
 
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_tags
@@ -749,12 +760,21 @@ class TestBucketTagging:
         self.log.info("Step 1: Setting a tag for non existing bucket: %s", self.bucket_name)
         try:
             resp = self.tag_obj.set_bucket_tag(self.bucket_name, "testkey", "testvalue")
-            self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            self.log.info(error)
+            self.log.exception(error)
             assert_utils.assert_in(errmsg.NO_BUCKET_OBJ_ERR_KEY, str(error.message), error.message)
         self.log.info("Step 1: Setting a tag for non existing bucket failed with: NoSuchBucket")
+        self.log.info("Step 2: Retrieving tag of non existing bucket")
+        try:
+            resp = self.tag_obj.get_bucket_tags(self.bucket_name)
+            assert_utils.assert_false(resp[0], resp[1])
+        except CTException as error:
+            self.log.exception(error)
+            assert_utils.assert_in(errmsg.NO_BUCKET_OBJ_ERR_KEY, str(error.message), error.message)
+        self.log.info("Step 2: Retrieved tag of non existing bucket failed with NoSuchBucket")
+        self.log.info(
+            "Step 2: Verified PUT and GET tag of non existing bucket failed with NoSuchBucket")
         self.log.info("ENDED: Verify PUT bucket tagging to non-existing bucket")
 
     @pytest.mark.parallel
@@ -766,24 +786,14 @@ class TestBucketTagging:
         """verify GET bucket tagging to non-existing bucket."""
         self.log.info(
             "STARTED: Verify GET bucket tagging to non-existing bucket")
-        self.log.info("Step 1: Setting a tag for non existing bucket")
-        try:
-            resp = self.tag_obj.set_bucket_tag(self.bucket_name, "testkey", "testvalue")
-            self.log.info(resp)
-            assert_utils.assert_false(resp[0], resp[1])
-        except CTException as error:
-            self.log.info(error)
-            assert_utils.assert_in(errmsg.NO_BUCKET_OBJ_ERR_KEY, str(error.message), error.message)
-        self.log.info("Step 1: Setting a tag for non existing bucket failed with NoSuchBucket")
-        self.log.info("Step 2: Retrieving tag of non existing bucket")
+        self.log.info("Step 1: Retrieving tag of non existing bucket")
         try:
             resp = self.tag_obj.get_bucket_tags(self.bucket_name)
-            self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            self.log.info(error)
+            self.log.exception(error)
             assert_utils.assert_in(errmsg.NO_BUCKET_OBJ_ERR_KEY, str(error.message), error.message)
-        self.log.info("Step 2: Retrieved tag of non existing bucket failed with NoSuchBucket")
+        self.log.info("Step 1: Retrieved tag of non existing bucket failed with NoSuchBucket")
         self.log.info("ENDED: Verify GET bucket tagging to non-existing bucket")
 
     @pytest.mark.parallel
