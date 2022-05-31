@@ -4674,7 +4674,7 @@ class TestIamUserRGW():
         random_str = ''.join(secrets.choice(string.ascii_uppercase +
                                             string.ascii_lowercase) for i in range(7))
         special_str = ''.join(secrets.choice(string.punctuation) for i in range(7))
-        invalid_values = [-1, 0, hex(255), random_str, special_str, None, " "]
+        invalid_values = [-1, 0, hex(255), random_str, special_str, None, '""']
         for key_value in invalid_values:
             self.log.info("Testing for key value %s", key_value)
             resp = self.csm_obj.list_iam_users_rgw(max_entries=key_value)
@@ -4684,12 +4684,12 @@ class TestIamUserRGW():
             if CSM_REST_CFG["msg_check"] == "enable":
                 self.log.info("Verifying error response...")
                 if key_value is invalid_values[0] or key_value is invalid_values[1]:
-                    assert_utils.assert_equals(resp.json()["error_code"], str(resp_error_code))
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
                     assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
                     assert_utils.assert_equals(resp.json()["message"].lower(),
                                            Template(msg_1).substitute(str_part="Max_entries").lower())
                 else:
-                    assert_utils.assert_equals(resp.json()["error_code"], str(resp_error_code))
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
                     assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
                     assert_utils.assert_equals(resp.json()["message"].lower(),
                                            Template(msg_2).substitute(A="Max_entries").lower())
@@ -4711,7 +4711,7 @@ class TestIamUserRGW():
         random_num = self.csm_obj.random_gen.randrange(1, ran_int)
         random_str = ''.join(secrets.choice(string.digits +
                                             string.ascii_lowercase) for i in range(7))
-        invalid_markers = [random_num, random_str, None, '""']
+        invalid_markers = ['""', random_num, random_str, None]
         for marker in invalid_markers:
             self.log.info("Testing for invalid marker %s:", marker)
             resp = self.csm_obj.list_iam_users_rgw(marker=marker)
