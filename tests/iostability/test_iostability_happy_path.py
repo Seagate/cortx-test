@@ -240,25 +240,22 @@ class TestIOWorkload:
                 if resp[1] is not None:
                     workload_info_list.extend(resp[1])
 
-                self.log.info("Read/Validate all the written data of the cluster")
-                # Read and validate all written data
                 if len(workload_info_list) > 0:
+                    # Read and validate all written data
+                    self.log.info("Read/Validate all the written data of the cluster")
                     resp = NearFullStorage.perform_operations_on_pre_written_data(
                         self.s3userinfo, workload_info_list, False, True, True)
                     assert_utils.assert_true(resp[0], resp[1])
-                else:
-                    self.log.warning("No buckets available to perform read operations %s",
-                                     workload_info_list)
 
-                # Delete "delete_percent_per_iter" data of all the written data
-                self.log.info("Delete %s percent of the written data", delete_percent_per_iter)
-                if len(workload_info_list) > 0:
+                    # Delete "delete_percent_per_iter" data of all the written data
+                    self.log.info("Delete %s percent of the written data", delete_percent_per_iter)
                     resp = NearFullStorage.delete_workload(workload_info_list, self.s3userinfo,
                                                            delete_percent_per_iter)
                     assert_utils.assert_true(resp[0], resp[1])
+
                 else:
-                    self.log.warning("No buckets available to perform delete operations,"
-                                     "workload info list : %s", workload_info_list)
+                    self.log.warning("No buckets available to perform read,validate,delete"
+                                     " operations %s", workload_info_list)
             else:
                 self.log.info("Write percentage(%s) exceeding the max cluster capacity(%s)",
                               write_per, max_cluster_capacity_percent)

@@ -244,11 +244,11 @@ class TestIOWorkloadDegradedPath:
         clients = (len(self.worker_node_list) - 1) * self.clients
         end_time = datetime.now() + timedelta(days=self.duration_in_days)
 
-        self.log.info("Step 1: Create %s buckets in healthy mode",
-                      self.test_cfg['create_bucket_count'])
         bucket_creation_healthy_mode = self.test_cfg['bucket_creation_healthy_mode']
         avail_buckets = []
         if bucket_creation_healthy_mode:
+            self.log.info("Step 1: Create %s buckets in healthy mode",
+                          self.test_cfg['create_bucket_count'])
             resp = self.s3t_obj.create_multiple_buckets(self.test_cfg['create_bucket_count'],
                                                         "test-40174-bkt")
             for each in resp[1]:
@@ -300,26 +300,23 @@ class TestIOWorkloadDegradedPath:
                     workload_info_list.extend(resp[1])
                     self.log.info("Write Completed.")
 
-                self.log.info("Read and Validate all the written data of the cluster")
                 if len(workload_info_list) > 0:
+                    self.log.info("Read and Validate all the written data of the cluster")
                     resp = NearFullStorage.perform_operations_on_pre_written_data(
                         s3userinfo=self.s3userinfo, workload_info=workload_info_list,
                         skipread=False, validate=True, skipcleanup=True)
                     assert_utils.assert_true(resp[0], resp[1])
-                else:
-                    self.log.warning("No buckets available to perform read operations %s",
-                                     workload_info_list)
 
-                self.log.info("Delete %s percent of the written data")
-                if len(workload_info_list) > 0:
+                    self.log.info("Delete %s percent of the written data", delete_percent_per_iter)
                     resp = NearFullStorage.delete_workload(workload_info_list, self.s3userinfo,
                                                            delete_percent_per_iter)
                     assert_utils.assert_true(resp[0], resp[1])
                     for each in resp[1]:
                         avail_buckets.append(each)
                 else:
-                    self.log.warning("No buckets available to perform delete operations %s",
-                                     workload_info_list)
+                    self.log.warning("No buckets available to perform read,validate and"
+                                     " delete operations %s", workload_info_list)
+
             else:
                 self.log.info("Write percentage(%s) exceeding the max cluster capacity(%s)",
                               write_per, max_percentage)
