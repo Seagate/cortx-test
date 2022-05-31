@@ -637,7 +637,7 @@ class RestIamUser(RestTestLib):
             keys_list1 = new_keys
         key_match_cnt = 0
         existing_keys_matching = False
-        diff_key = []  
+        diff_key = []
         for key in keys_list2:
             found = False
             for key1 in keys_list1:
