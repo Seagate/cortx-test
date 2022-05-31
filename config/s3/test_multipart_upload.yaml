@@ -347,6 +347,6 @@ test_40265:
   part_sizes:
     - part_size: 5
       count: 1
-    - part_size: 1
+    - part_size: 5
       count: 1
 
