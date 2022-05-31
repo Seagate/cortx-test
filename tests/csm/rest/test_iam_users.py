@@ -2606,23 +2606,22 @@ class TestIamUserRGW():
         payload.update({"display_name": uid})
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
         uid = payload["tenant"] + "$" + uid
         self.created_iam_users.add(uid)
         get_resp = self.csm_obj.get_iam_user(user=uid)
-        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        assert get_resp.status_code == HTTPStatus.OK, "Get IAM user failed"
         valid_key = self.csm_conf["test_36448"]["valid_key"]
         valid_key = valid_key + system_utils.random_string_generator(5)
         self.log.info("Adding key to user")
         add_resp = self.csm_obj.add_key_to_iam_user(uid=uid, access_key=valid_key)
-        assert_utils.assert_true(add_resp.status_code == HTTPStatus.OK, "Add key failed")
+        assert add_resp.status_code == HTTPStatus.OK, "Add key failed"
         resp = self.csm_obj.validate_added_deleted_keys(get_resp.json()["keys"], add_resp.json())
         self.log.info("Validate response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1][0]['access_key']
         secret_key = resp[1][0]['secret_key']
-        assert_utils.assert_true(valid_key == access_key,
-                                 "Added key is not matching to provided key")
+        assert valid_key == access_key, "Added key is not matching to provided key"
         bucket_name = "iam_user_bucket_" + str(int(time.time()))
         self.log.info("Create bucket and perform IO")
         s3_obj = S3TestLib(access_key=access_key,
