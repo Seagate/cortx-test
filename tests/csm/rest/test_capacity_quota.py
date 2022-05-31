@@ -1808,4 +1808,3 @@ class TestCapacityQuota():
         res = self.csm_obj.get_user_quota("")
         self.log.info("response :  %s", res)
         assert res.status_code == HTTPStatus.NOT_FOUND, "Status code check failed"
-
