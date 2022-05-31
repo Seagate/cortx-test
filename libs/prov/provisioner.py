@@ -256,7 +256,7 @@ class Provisioner:
             bootstrap_cmd = "{0} {1}:{2}".format(bootstrap_cmd, node, hostname)
         LOGGER.info("Running Bootstrap command %s", bootstrap_cmd)
         node1_obj = node_obj_list[0]
-        node1_obj.connect(shell=True)
+        node1_obj.connect(shell=True)  #nosec
         channel = node1_obj.shell_obj
         output = ""
         current_output = ""
@@ -656,7 +656,7 @@ class Provisioner:
         :return: True/False and message
         """
         try:
-            node_obj.connect(shell=True)
+            node_obj.connect(shell=True)  #nosec
             output = ''
             time.sleep(1)
             output += node_obj.shell_obj.recv(2048).decode("utf-8")
