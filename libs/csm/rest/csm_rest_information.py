@@ -28,13 +28,27 @@ class RestInformation(RestTestLib):
     
     def get_valid_compatible_payload(self):
         payload = {}
-        required = ["CORTX >= 2.0.0-0"]
+        required = ["CORTX >= 2.0.0-0",
+        "cortx-motr >= 2.0.0-0",
+        "cortx-rgw >= 2.0.0-0",
+        "cortx-hare >= 2.0.0-0",
+        "cortx-py-utils >= 2.0.0-0",
+        "cortx-csm_agent >= 2.0.0-0",
+        "cortx-ha >= 2.0.0-0",
+        "cortx-prvsnr >= 2.0.0-0"]
         payload.update({"requires": required})
         return payload
 
     def get_valid_incompatible_payload(self):
         payload = {}
-        required = ["CORTX >= 3.0.0-0"]
+        required = ["CORTX >= 3.0.0-0",
+        "cortx-motr >= 2.0.0-0",
+        "cortx-rgw >= 2.0.0-0",
+        "cortx-hare >= 2.0.0-0",
+        "cortx-py-utils >= 2.0.0-0",
+        "cortx-csm_agent >= 2.0.0-0",
+        "cortx-ha >= 2.0.0-0",
+        "cortx-prvsnr >= 2.0.0-0"]
         payload.update({"requires": required})
         return payload
 

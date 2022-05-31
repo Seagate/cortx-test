@@ -76,11 +76,11 @@ class TestCortxInformation():
         # call api compatible version
         payload = self.csm_obj.get_version_compatibility_payload("compatible")
         self.log.info("payload :  %s", payload)
-        response = self.csm_obj.verify_version_compatibility("node", "control-control", payload)
+        response = self.csm_obj.verify_version_compatibility("node", "cortx-control", payload)
         res_dict = response.json()
         assert response.status_code == HTTPStatus.OK, "Status code check failed"
         assert res_dict["compatible"], "Compatibility Check failed"
-        success_reason_msg = "Versions are compatible for update."
+        success_reason_msg = "Versions are Compatible"
         assert res_dict["reason"] == success_reason_msg, "response reason is not correct"
         self.log.info("[END] Testing Version Compatability")
 
@@ -100,11 +100,11 @@ class TestCortxInformation():
         self.log.info("[START] Testing Version Compatability with incompatible version rules")
         payload = self.csm_obj.get_version_compatibility_payload("incompatible")
         self.log.info("payload :  %s", payload)
-        response = self.csm_obj.verify_version_compatibility("node", "control-control", payload)
+        response = self.csm_obj.verify_version_compatibility("node", "cortx-control", payload)
         res_dict = response.json()
         assert response.status_code == HTTPStatus.OK, "Status code check failed"
         assert not res_dict["compatible"], "Compatibility Check failed"
-        success_reason_msg = "Versions are compatible for update."
+        success_reason_msg = "Versions are Compatible"
         assert res_dict["reason"] != success_reason_msg, "response reason is not correct"
         self.log.info("[END] Testing Version Compatability with incompatible version rules")
 
