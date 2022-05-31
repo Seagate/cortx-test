@@ -641,7 +641,7 @@ class TestDiskFailureRecovery:
 
         if workload_info:
             LOGGER.info("Step 13: Read data written in step 1")
-            NearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+            NearFullStorage.perform_operations_on_pre_written_data(s3userinfo=s3userinfo,
                                                              workload_info=workload_info)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("COMPLETED: Test SNS repair works fine on near full system with failed disks "
@@ -761,7 +761,7 @@ class TestDiskFailureRecovery:
 
         if workload_info:
             LOGGER.info("Step 13: Read data written in step 1")
-            resp = NearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+            resp = NearFullStorage.perform_operations_on_pre_written_data(s3userinfo=s3userinfo,
                                                                     workload_info=workload_info)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("COMPLETED: Test SNS repair works fine on near full system with failed disks "
@@ -979,7 +979,7 @@ class TestDiskFailureRecovery:
 
         if workload_info:
             LOGGER.info("Step 13: Read data written in step 1")
-            resp = NearFullStorage.perform_near_full_sys_operations(s3userinfo=s3userinfo,
+            resp = NearFullStorage.perform_operations_on_pre_written_data(s3userinfo=s3userinfo,
                                                                     workload_info=workload_info)
             assert_utils.assert_true(resp[0],resp[1])
         LOGGER.info("COMPLETED: Validate SNS repair works fine on near full system with failed "
