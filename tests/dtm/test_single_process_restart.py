@@ -24,6 +24,7 @@ Test suite for testing Single Process Restart with DTM enabled.
 import logging
 import multiprocessing
 import os
+import secrets
 import threading
 import time
 from multiprocessing import Queue
@@ -39,8 +40,10 @@ from commons.constants import POD_NAME_PREFIX
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
+from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import support_bundle_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from config import DTM_CFG
 from config import HA_CFG
@@ -87,6 +90,8 @@ class TestSingleProcessRestart:
         cls.ha_obj = HAK8s()
         cls.rest_obj = S3AccountOperations()
         cls.setup_type = CMN_CFG["setup_type"]
+        cls.system_random = secrets.SystemRandom()
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "DTMTestData")
 
     def setup_method(self):
         """Setup Method"""
@@ -101,6 +106,8 @@ class TestSingleProcessRestart:
         self.object_name = f"dps-obj-{self.random_time}"
         self.deploy = False
         self.iam_user = dict()
+        if not os.path.exists(self.test_dir_path):
+            system_utils.make_dirs(self.test_dir_path)
 
     def teardown_method(self):
         """Teardown class method."""
@@ -110,6 +117,8 @@ class TestSingleProcessRestart:
             resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                                    scripts_path=K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
+        if os.path.exists(self.test_dir_path):
+            system_utils.remove_dirs(self.test_dir_path)
         # TODO : Redeploy setup after test completion.
 
     @pytest.mark.lc
@@ -148,7 +157,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for Read Operation to complete.")
         if proc_read_op.is_alive():
@@ -193,7 +202,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 3: Wait for Write Operation to complete.")
         if proc_write_op.is_alive():
@@ -286,7 +295,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=rc_datapod,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 2: Successfully performed single restart of m0d process on pod hosted "
                       "on RC node and checked hctl status is good")
         event.clear()
@@ -346,7 +355,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 2: m0d restarted and recovered successfully")
 
         self.log.info("Step 3: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
@@ -545,3 +554,80 @@ class TestSingleProcessRestart:
 
         self.test_completed = True
         self.log.info("ENDED: Verify continuous DELETE during m0d restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-41244")
+    def test_mpu_m0d_restart(self):
+        """Verify multipart upload and download before/after m0d is restarted."""
+        self.log.info("STARTED: Verify multipart upload and download before/after m0d is restarted")
+
+        file_size = HA_CFG["5gb_mpu_data"]["file_size"]
+        total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
+        part_numbers = list(range(1, total_parts + 1))
+        self.system_random.shuffle(part_numbers)
+        multipart_obj_path = os.path.join(self.test_dir_path, "test_41244_file")
+        download_path = os.path.join(self.test_dir_path, "test_41244_file_download")
+
+        self.log.info("Creating IAM user with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        self.log.info("Successfully created IAM user with name %s", self.s3acc_name)
+        self.iam_user = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+
+        resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.iam_user,
+                                                         bucket_name=self.bucket_name,
+                                                         object_name=self.object_name,
+                                                         file_size=file_size,
+                                                         total_parts=total_parts,
+                                                         multipart_obj_path=multipart_obj_path)
+        assert_utils.assert_true(resp[0], resp)
+        result = s3_test_obj.object_info(self.bucket_name, self.object_name)
+        obj_size = result[1]["ContentLength"]
+        self.log.debug("Uploaded object info for %s is %s", self.bucket_name, result)
+        assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
+        upload_checksum = str(resp[2])
+        self.log.info("Step 1: Successfully performed multipart upload for size 5GB.")
+
+        self.log.info("Step 2: Download the uploaded object and verify checksum")
+        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        self.log.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                             compare=False)[0]
+        assert_utils.assert_equal(upload_checksum, download_checksum,
+                                  f"Failed to match checksum: {upload_checksum},"
+                                  f" {download_checksum}")
+        self.log.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
+        self.log.info("Step 2: Successfully downloaded the object and verified the checksum")
+
+        self.log.info("Step 3: Perform Single m0d Process Restart")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=POD_NAME_PREFIX,
+                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+        self.log.info("Step 3: m0d restarted and recovered successfully")
+
+        self.log.info("Step 4: Download the uploaded object after m0d recovery and verify checksum")
+        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        self.log.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum1 = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                              compare=False)[0]
+        assert_utils.assert_equal(upload_checksum, download_checksum1,
+                                  f"Failed to match checksum: {upload_checksum},"
+                                  f" {download_checksum1}")
+        self.log.info("Matched checksum: %s, %s", upload_checksum, download_checksum1)
+        self.log.info("Step 4: Successfully downloaded the object and verified the checksum after "
+                      "m0d recovery")
+
+        self.log.info("ENDED: Verify multipart upload and download before/after m0d is restarted")
