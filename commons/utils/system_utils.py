@@ -516,7 +516,7 @@ def mkdirs(pth):
         os.makedirs(pth, exist_ok=True)
     except OSError as erroros:
         if erroros.errno != errno.EEXIST:
-            raise OSError("Not able to create directory")
+            raise
 
 
 def remove_dir(dpath: str) -> bool:
