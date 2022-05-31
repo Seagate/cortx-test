@@ -603,7 +603,8 @@ class TestServerPodFailure:
         LOGGER.info("Completed READs on remaining %s .", remain_bkt)
         LOGGER.info("Deleting remaining %s buckets.", remain_bkt)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'skipget': True, 'output': del_output}
+                'skipput': True, 'skipget': True, 'output': del_output, 'bkt_list': remain_bkt,
+                'bkts_to_del': len(remain_bkt)}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
         del_resp = tuple()
         while len(del_resp) != 2:
