@@ -44,7 +44,7 @@ from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import s3_misc
 from config import CMN_CFG
-from commons.helpers.node_helper import Node
+from commons.helpers.pods_helper import LogicalNode
 from commons import constants as cons
 
 class TestIamUser():
@@ -181,7 +181,7 @@ class TestIamUserRGW():
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
-        cls.nd_obj = Node(hostname=cls.host, username=cls.uname, password=cls.passwd)
+        cls.nd_obj = LogicalNode(hostname=cls.host, username=cls.uname, password=cls.passwd)
         cls.cluster_conf_path = cons.CLUSTER_CONF_PATH
         cls.csm_copy_path = cons.CLUSTER_COPY_PATH
         cls.local_csm_path = cons.CSM_COPY_PATH
@@ -4674,22 +4674,22 @@ class TestIamUserRGW():
         random_str = ''.join(secrets.choice(string.ascii_uppercase +
                                             string.ascii_lowercase) for i in range(7))
         special_str = ''.join(secrets.choice(string.punctuation) for i in range(7))
-        invalid_values = ["-1", "0", "0x89", random_str, special_str, "null", " "]
+        invalid_values = [-1, 0, hex(255), random_str, special_str, None, " "]
         for key_value in invalid_values:
             self.log.info("Testing for key value %s", key_value)
             resp = self.csm_obj.list_iam_users_rgw(max_entries=key_value)
             self.log.info("Verify Response : %s", resp)
             assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
-                                     "Patch request status code failed")
+                                     "Status code check failed")
             if CSM_REST_CFG["msg_check"] == "enable":
                 self.log.info("Verifying error response...")
-                if key_value is "-1" or key_value is "0":
-                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                if key_value is invalid_values[0] or key_value is invalid_values[1]:
+                    assert_utils.assert_equals(resp.json()["error_code"], str(resp_error_code))
                     assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
                     assert_utils.assert_equals(resp.json()["message"].lower(),
                                            Template(msg_1).substitute(str_part="Max_entries").lower())
                 else:
-                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["error_code"], str(resp_error_code))
                     assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
                     assert_utils.assert_equals(resp.json()["message"].lower(),
                                            Template(msg_2).substitute(A="Max_entries").lower())
@@ -4711,7 +4711,7 @@ class TestIamUserRGW():
         random_num = self.csm_obj.random_gen.randrange(1, ran_int)
         random_str = ''.join(secrets.choice(string.digits +
                                             string.ascii_lowercase) for i in range(7))
-        invalid_markers = [random_num, random_str, "null", '""']
+        invalid_markers = [random_num, random_str, None, '""']
         for marker in invalid_markers:
             self.log.info("Testing for invalid marker %s:", marker)
             resp = self.csm_obj.list_iam_users_rgw(marker=marker)
@@ -4771,12 +4771,12 @@ class TestIamUserRGW():
 
         self.log.info("Step 2: Send GET request with max_entries as 5")
         resp = self.csm_obj.list_iam_users_rgw(
-                                max_entries=self.csm_conf["common"]["max_entries"])
+                                max_entries=self.csm_conf["test_42284"]["max_entries"])
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
         resp_dict = resp.json()
         get_user_list = resp_dict["users"]
         count = resp_dict["count"]
-        assert_utils.assert_equals(count, self.csm_conf["common"]["max_entries"], 
+        assert_utils.assert_equals(count, self.csm_conf["test_42284"]["max_entries"], 
                                  "Entries not returned as expected")
         user_index = self.csm_obj.random_gen.randrange(1, count)
         marker = get_user_list[user_index]
@@ -4786,7 +4786,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.list_iam_users_rgw(max_entries=15, marker=marker)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
         count = resp_dict["count"]
-        assert_utils.assert_equals(count, 15, "Entries not returned as expected")
+        assert_utils.assert_equals(count, 6, "Entries not returned as expected")
         get_user_list = resp_dict["users"]
         assert_utils.assert_equals(get_user_list[0], marker, "Marker not set"
                                                              "to in between user")
@@ -4804,28 +4804,15 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Fetching internal IAM User")
-        resp_node = self.nd_obj.execute_cmd(cmd=common_cmd.K8S_GET_PODS,
-                                            read_lines=False,
-                                            exc=False)
-        pod_name = self.csm_obj.get_pod_name(resp_node)
-        self.log.info(pod_name)
-        self.nd_obj.execute_cmd(
-            cmd=common_cmd.K8S_CP_TO_LOCAL_CMD.format(
-                pod_name, self.cluster_conf_path, self.csm_copy_path, cons.CORTX_CSM_POD),
-            read_lines=False,
-            exc=False)
-        resp = self.nd_obj.copy_file_to_local(
-            remote_path=self.csm_copy_path, local_path=self.local_csm_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        stream = open(self.local_csm_path, 'r')
-        data = yaml.load(stream, Loader=yaml.Loader)
-        internal_user = data["cortx"]["rgw"]["auth_user"]
+        internal_user = self.csm_obj.fetch_internal_iamuser(self.nd_obj)
+        self.log.info(internal_user)
         self.log.info("Step 1: Send get request for fetching iam users list")
-        resp = self.csm_obj.list_iam_users_rgw()
+        resp = self.csm_obj.list_iam_users_rgw(auth_header=None)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
         self.log.info("Step 2: Check whether internal IAM User is visible in "
                       "get response")
         resp_dict = resp.json()
+        self.log.info(resp_dict)
         get_user_list = resp_dict["users"]
         assert_utils.assert_in(internal_user, get_user_list,
                                            "internal user not found in list")
@@ -4849,22 +4836,7 @@ class TestIamUserRGW():
         resp_msg_index = test_cfg["message_index"]
         msg = resp_data[resp_msg_index]
         self.log.info("Fetching internal IAM User")
-        resp_node = self.nd_obj.execute_cmd(cmd=common_cmd.K8S_GET_PODS,
-                                            read_lines=False,
-                                            exc=False)
-        pod_name = self.csm_obj.get_pod_name(resp_node)
-        self.log.info(pod_name)
-        self.nd_obj.execute_cmd(
-            cmd=common_cmd.K8S_CP_TO_LOCAL_CMD.format(
-                pod_name, self.cluster_conf_path, self.csm_copy_path, cons.CORTX_CSM_POD),
-            read_lines=False,
-            exc=False)
-        resp = self.nd_obj.copy_file_to_local(
-            remote_path=self.csm_copy_path, local_path=self.local_csm_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        stream = open(self.local_csm_path, 'r')
-        data = yaml.load(stream, Loader=yaml.Loader)
-        internal_user = data["cortx"]["rgw"]["auth_user"]
+        internal_user = self.csm_obj.fetch_internal_iamuser(self.nd_obj)
         self.log.info("Step 1: Send delete request for deleting internal iam user")
         resp = self.csm_obj.delete_iam_user(user=internal_user)
         self.log.debug("Verify Response : %s", resp)
@@ -4895,22 +4867,7 @@ class TestIamUserRGW():
         resp_msg_index = test_cfg["message_index"]
         msg = resp_data[resp_msg_index]
         self.log.info("Fetching internal IAM User")
-        resp_node = self.nd_obj.execute_cmd(cmd=common_cmd.K8S_GET_PODS,
-                                            read_lines=False,
-                                            exc=False)
-        pod_name = self.csm_obj.get_pod_name(resp_node)
-        self.log.info(pod_name)
-        self.nd_obj.execute_cmd(
-            cmd=common_cmd.K8S_CP_TO_LOCAL_CMD.format(
-                pod_name, self.cluster_conf_path, self.csm_copy_path, cons.CORTX_CSM_POD),
-            read_lines=False,
-            exc=False)
-        resp = self.nd_obj.copy_file_to_local(
-            remote_path=self.csm_copy_path, local_path=self.local_csm_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        stream = open(self.local_csm_path, 'r')
-        data = yaml.load(stream, Loader=yaml.Loader)
-        internal_user = data["cortx"]["rgw"]["auth_user"]
+        internal_user = self.csm_obj.fetch_internal_iamuser(self.nd_obj)
         payload = {"access_key":"sgiamadmin", "secret_key":"null"}
         resp = self.csm_obj.modify_iam_user_rgw(internal_user, payload)
         assert_utils.assert_true(resp.status_code == HTTPStatus.FORBIDDEN,
@@ -4940,22 +4897,7 @@ class TestIamUserRGW():
         resp_msg_index = test_cfg["message_index"]
         msg = resp_data[resp_msg_index]
         self.log.info("Fetching internal IAM User")
-        resp_node = self.nd_obj.execute_cmd(cmd=common_cmd.K8S_GET_PODS,
-                                            read_lines=False,
-                                            exc=False)
-        pod_name = self.csm_obj.get_pod_name(resp_node)
-        self.log.info(pod_name)
-        self.nd_obj.execute_cmd(
-            cmd=common_cmd.K8S_CP_TO_LOCAL_CMD.format(
-                pod_name, self.cluster_conf_path, self.csm_copy_path, cons.CORTX_CSM_POD),
-            read_lines=False,
-            exc=False)
-        resp = self.nd_obj.copy_file_to_local(
-            remote_path=self.csm_copy_path, local_path=self.local_csm_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        stream = open(self.local_csm_path, 'r')
-        data = yaml.load(stream, Loader=yaml.Loader)
-        internal_user = data["cortx"]["rgw"]["auth_user"]
+        internal_user = self.csm_obj.fetch_internal_iamuser(self.nd_obj)
         self.log.info("Step 1: Create IAM user with same name as internal IAM user")
         payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
         payload["uid"] = internal_user

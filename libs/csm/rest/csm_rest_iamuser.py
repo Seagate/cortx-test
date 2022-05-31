@@ -20,18 +20,18 @@ import time
 from http import HTTPStatus
 from random import SystemRandom
 from string import Template
-import string
-import secrets
+import yaml
 from requests.models import Response
 import commons.errorcodes as err
+from commons import commands as common_cmd
 from commons.constants import Rest as const
+from commons import constants as cons
 from commons.constants import S3_ENGINE_RGW
 from commons.exceptions import CTException
 from commons.utils import config_utils
 from config import CMN_CFG, CSM_REST_CFG
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
-
 
 # pylint: disable-msg=too-many-public-methods
 class RestIamUser(RestTestLib):
@@ -799,9 +799,27 @@ class RestIamUser(RestTestLib):
         if auth_header is not None:
             header = {'Authorization': auth_header}
         else:
-            header = self.header
- 
+            header = self.headers 
         # Fetching api response
         response = self.restapi.rest_call("get", endpoint=endpoint, headers=header,
                                           params={"max_entries": max_entries, "marker": marker})
         return response
+
+    def fetch_internal_iamuser(self, node_obj):
+        """
+        Function to fetch internal IAM user
+        """
+        self.log.info("Fetching internal IAM User")
+        pod_name = node_obj.get_pod_name(pod_prefix=cons.CONTROL_POD_NAME_PREFIX)
+        self.log.info(pod_name[1])
+        node_obj.execute_cmd(
+            cmd=common_cmd.K8S_CP_TO_LOCAL_CMD.format(
+                pod_name[1], cons.CLUSTER_CONF_PATH, cons.CLUSTER_COPY_PATH, cons.CORTX_CSM_POD),
+            read_lines=False,
+            exc=False)
+        node_obj.copy_file_to_local(
+            remote_path=cons.CLUSTER_COPY_PATH, local_path=cons.CSM_COPY_PATH)
+        stream = open(cons.CSM_COPY_PATH, 'r')
+        data = yaml.load(stream, Loader=yaml.Loader)
+        internal_user = data["cortx"]["rgw"]["auth_user"]
+        return internal_user
