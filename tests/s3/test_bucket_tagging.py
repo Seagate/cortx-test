@@ -76,7 +76,6 @@ class TestBucketTagging:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_tags
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5514")
     @CTFailOn(error_handler)
     def test_2432(self):
@@ -133,7 +132,6 @@ class TestBucketTagging:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_tags
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5519")
     @CTFailOn(error_handler)
     def test_2434(self):
