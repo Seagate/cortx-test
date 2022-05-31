@@ -170,7 +170,7 @@ def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr: bool = False) 
             return False, str(error)
 
         return True, str(output)
-    except BaseException as ex:
+    except RuntimeError as ex:
         LOGGER.exception(ex)
         return False, ex
     finally:
