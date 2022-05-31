@@ -799,7 +799,7 @@ class RestIamUser(RestTestLib):
         if auth_header is not None:
             header = {'Authorization': auth_header}
         else:
-            header = self.headers 
+            header = self.headers
         # Fetching api response
         response = self.restapi.rest_call("get", endpoint=endpoint, headers=header,
                                           params={"max_entries": max_entries, "marker": marker})
@@ -820,6 +820,6 @@ class RestIamUser(RestTestLib):
         node_obj.copy_file_to_local(
             remote_path=cons.CLUSTER_COPY_PATH, local_path=cons.CSM_COPY_PATH)
         stream = open(cons.CSM_COPY_PATH, 'r')
-        data = yaml.load(stream, Loader=yaml.Loader)
+        data = yaml.safe_load(stream)
         internal_user = data["cortx"]["rgw"]["auth_user"]
         return internal_user
