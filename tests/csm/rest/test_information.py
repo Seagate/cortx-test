@@ -172,7 +172,8 @@ class TestCortxInformation():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg)
+            assert_utils.assert_equals(response.json()["message"],
+                                        Template(msg).substitute(A=payload))
 
         self.log.info("[END] Testing Version Compatability  with invalid rules")
         self.log.info("##### Test ended -  %s #####", test_case_name)
