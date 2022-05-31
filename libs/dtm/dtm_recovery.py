@@ -22,34 +22,42 @@ Library Methods for DTM recovery testing
 """
 import logging
 import random
+import re
 import time
 
+from commons import constants as const
 from config import S3_CFG
+from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from scripts.s3_bench import s3bench
 
 
 class DTMRecoveryTestLib:
+    """
+        This class contains common utility methods for DTM related operations.
+    """
 
-    def __init__(cls, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+    def __init__(self, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
         """
         Init method
         :param access_key: Access key for S3bench operations.
         :param secret_key: Secret key for S3bench operations.
         """
-        cls.log = logging.getLogger(__name__)
-        cls.access_key = access_key
-        cls.secret_key = secret_key
+        self.log = logging.getLogger(__name__)
+        self.access_key = access_key
+        self.secret_key = secret_key
+        self.ha_obj = HAK8s()
 
+    # pylint: disable=too-many-arguments
     def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples, obj_size,
                          log_file_prefix, queue, loop=1):
         """
         Perform Write operations
         :param bucket_prefix: Bucket name
-        :param object_name: Object name
-        :param clients: No of Client session
-        :param samples: No of samples
-        :param size: Object size
+        :param object_prefix: Object name prefix
+        :param no_of_clients: No of Client session
+        :param no_of_samples: No of samples
+        :param obj_size: Object size
         :param log_file_prefix: Log file prefix
         :param queue: Multiprocessing Queue to be used for returning values (Boolean,dict)
         :param loop: Loop count for writes
@@ -117,10 +125,10 @@ class DTMRecoveryTestLib:
                                        log_file_prefix=f"read_workload_{workload['obj_size']}mb",
                                        end_point=S3_CFG["s3_url"],
                                        validate_certs=S3_CFG["validate_certs"])
-                self.log.info(f"Workload: %s objects of %s with %s parallel clients ",
+                self.log.info("Workload: %s objects of %s with %s parallel clients ",
                               workload['num_sample'], workload['obj_size'],
                               workload['num_clients'])
-                self.log.info(f"Log Path {resp[1]}")
+                self.log.info("Log Path %s", resp[1])
                 log_path = resp[1]
                 if s3bench.check_log_file_error(resp[1]):
                     results.append(False)
@@ -134,28 +142,132 @@ class DTMRecoveryTestLib:
             queue.put([False, f"S3bench workload for failed."
                               f" Please read log file {log_path}"])
 
-    def process_restart(self, master_node, pod_prefix, container_prefix, process,
-                        recover_time: int = 30):
+    # pylint: disable-msg=too-many-locals
+    def process_restart(self, master_node, health_obj, pod_prefix, container_prefix, process,
+                        check_proc_state: bool = False, proc_state: str = const.DTM_RECOVERY_STATE):
         """
         Restart specified Process of specific pod and container
         :param master_node: Master node object
+        :param health_obj: Health object of the master node
         :param pod_prefix: Pod Prefix
         :param container_prefix: Container Prefix
         :param process: Process to be restarted.
-        :param recover_time: Wait time for process to recover
+        :param check_proc_state: Flag to check process state
+        :param proc_state: Expected state of the process
         """
         pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
         pod_selected = pod_list[random.randint(0, len(pod_list) - 1)]
-        self.log.info("Pod selected for m0d process restart : %s", pod_selected)
+        self.log.info("Pod selected for %s process restart : %s", process, pod_selected)
         container_list = master_node.get_container_of_pod(pod_name=pod_selected,
                                                           container_prefix=container_prefix)
         container = container_list[random.randint(0, len(container_list) - 1)]
         self.log.info("Container selected : %s", container)
-        self.log.info("Perform m0d restart")
+        self.log.info("Get process IDs of %s", process)
+        resp = self.get_process_ids(health_obj=health_obj, process=process)
+        if not resp[0]:
+            return resp[0]
+        process_ids = resp[1]
+        self.log.info("Perform %s restart", process)
         resp = master_node.kill_process_in_container(pod_name=pod_selected,
                                                      container_name=container,
                                                      process_name=process)
-        self.log.debug("resp : %s", resp)
-        time.sleep(recover_time)
-        # TODO : Check if process has started
-        self.log.info("Process restarted ")
+        self.log.debug("Resp : %s", resp)
+
+        self.log.info("Polling hctl status to check if all services are online")
+        resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=300)
+        if not resp[0]:
+            return resp[0]
+
+        if check_proc_state:
+            self.log.info("Check process states")
+            resp = self.poll_process_state(master_node=master_node, pod_name=pod_selected,
+                                           container_name=container, process_ids=process_ids,
+                                           status=proc_state)
+            if not resp:
+                self.log.error("Failed during polling status of process")
+                return False
+
+            self.log.info("Process %s restarted successfully", process)
+
+        return True
+
+    def get_process_state(self, master_node, pod_name, container_name, process_ids):
+        """
+        Function to get given process state
+        :param master_node: Object of master node
+        :param pod_name: Name of the pod on which container is residing
+        :param container_name: Name of the container inside which process is running
+        :param process_ids: List of Process IDs
+        :return: bool, dict
+        e.g. (True, {'0x19': 'M0_CONF_HA_PROCESS_STARTED', '0x28': 'M0_CONF_HA_PROCESS_STARTED'})
+        """
+        process_state = dict()
+        self.log.info("Get processes running inside container %s of pod %s", container_name,
+                      pod_name)
+        resp = master_node.get_all_container_processes(pod_name=pod_name,
+                                                       container_name=container_name)
+        self.log.info("Extract list of processes having IDs %s", process_ids)
+        process_list = [(ele, p_id) for ele in resp for p_id in process_ids if p_id in ele]
+        if len(process_ids) != len(process_list):
+            return False, f"All process IDs {process_ids} are not found. " \
+                          f"All processes running in container are: {resp}"
+        compile_exp = re.compile('"state": "(.*?)"')
+        for i_i in process_list:
+            process_state[i_i[1]] = compile_exp.findall(i_i[0])[0]
+
+        return True, process_state
+
+    def poll_process_state(self, master_node, pod_name, container_name, process_ids,
+                           status: str = const.DTM_RECOVERY_STATE, timeout: int = 300):
+        """
+        Helper function to poll the process states
+        :param master_node: Object of master node
+        :param pod_name: Name of the pod on which container is residing
+        :param container_name: Name of the container inside which process is running
+        :param process_ids: List of Process IDs
+        :param status: Expected status of process
+        :param timeout: Poll timeout
+        :return: Bool
+        """
+        resp = False
+        self.log.info("Polling process states")
+        start_time = int(time.time())
+        while timeout > int(time.time()) - start_time:
+            time.sleep(60)
+            resp, process_state = self.get_process_state(master_node=master_node, pod_name=pod_name,
+                                                         container_name=container_name,
+                                                         process_ids=process_ids)
+            if not resp:
+                self.log.info("Failed to get process states for process with IDs %s. "
+                              "proccess_state dict: %s", process_ids, process_state)
+                return resp
+            self.log.debug("Process states: %s", process_state)
+            states = list(process_state.values())
+            resp = all(ele == status for ele in states)
+            if resp:
+                self.log.debug("Time taken by process to recover is %s seconds",
+                               int(time.time()) - start_time)
+                break
+
+        self.log.info("State of process with process ids %s is %s", process_ids,
+                      status)
+        return resp
+
+    @staticmethod
+    def get_process_ids(health_obj, process):
+        """
+        Function to get process IDs of given process
+        :param health_obj: Health object of the master node
+        :param process: Name of the process
+        :return: bool, list
+        """
+        switcher = {
+            'm0d': const.M0D_SVC,
+            'rgw': const.SERVER_SVC
+        }
+        resp, fids = health_obj.hctl_status_get_svc_fids()
+        if not resp:
+            return resp, "Failed to get process IDs"
+        svc = switcher[process]
+        fids = fids[svc]
+        return True, fids

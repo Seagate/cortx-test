@@ -72,7 +72,7 @@ class S3CmdTestLib(S3LibCmd):
             LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.object_upload_cli.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
     def upload_folder_cli(
             self,
@@ -94,8 +94,7 @@ class S3CmdTestLib(S3LibCmd):
             os.mkdir(folder_path)
             for count in range(file_count):
                 file_path = os.path.join(
-                    folder_path, "test_file{}".format(
-                        str(count)))
+                    folder_path, f"test_file{str(count)}")
                 create_file(file_path, 10)
             status, response = super().upload_folder_cli(
                 bucket_name, folder_path, S3_CFG["aws_cred_section"])
@@ -112,7 +111,7 @@ class S3CmdTestLib(S3LibCmd):
             LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.upload_folder_cli.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
     def download_bucket_cli(
             self,
@@ -139,7 +138,7 @@ class S3CmdTestLib(S3LibCmd):
             LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.download_bucket_cli.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
     @staticmethod
     def command_formatter(

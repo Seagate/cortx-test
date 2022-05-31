@@ -43,6 +43,7 @@ from commons import error_messages as errmsg
 
 from config.s3 import MPART_CFG
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_multipart_common_test_lib import start_ios_get_precalc_parts
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3 import S3_CFG
@@ -252,7 +253,7 @@ class TestMultipartUploadGetPut:
         """
         mp_config = MPART_CFG["test_28532"]
         self.log.info("STARTED: Test Multipart upload with invalid json input")
-        uploaded_parts, keys, s3_background_io = self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+        uploaded_parts, keys, s3_background_io = start_ios_get_precalc_parts(
             mp_config, self.mp_obj_path,log_prefix="TEST-28532_s3bench_ios", duration="0h32m",
             s3_test_lib_obj=self.s3_test_obj)
         random.shuffle(keys)
@@ -313,7 +314,7 @@ class TestMultipartUploadGetPut:
         """
         mp_config = MPART_CFG["test_28538"]
         self.log.info("STARTED: Test Multipart upload with 2 part details")
-        parts, _, s3_background_io = self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+        parts, _, s3_background_io = start_ios_get_precalc_parts(
             mp_config, self.mp_obj_path, log_prefix="TEST-28538_s3bench_ios", duration="0h1m",
             s3_test_lib_obj=self.s3_test_obj)
         lis = list(parts.keys())
@@ -499,7 +500,7 @@ class TestMultipartUploadGetPut:
         self.log.info(
             "STARTED: test for an object multipart from 10 different sessions of same client")
         mp_config = MPART_CFG['test_28534']
-        parts, _, s3_background_io = self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+        parts, _, s3_background_io = start_ios_get_precalc_parts(
             mp_config, self.mp_obj_path, log_prefix="TEST-28534_s3bench_ios", duration="0h1m",
             s3_test_lib_obj=self.s3_test_obj)
         mpu_id = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name)
@@ -553,10 +554,10 @@ class TestMultipartUploadGetPut:
         self.log.info(
             "STARTED: test for an object multipart from 10 different sessions of same client")
         uploaded_parts, _, s3_background_io = \
-            self.s3_mpu_test_obj.start_ios_get_precalc_parts(mp_config, self.mp_obj_path,
-                                                             log_prefix="TEST-28535_s3bench_ios",
-                                                             duration="0h2m",
-                                                             s3_test_lib_obj=self.s3_test_obj)
+            start_ios_get_precalc_parts(mp_config, self.mp_obj_path,
+                                        log_prefix="TEST-28535_s3bench_ios",
+                                        duration="0h2m",
+                                        s3_test_lib_obj=self.s3_test_obj)
         mpu_id = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name)
         all_parts = []
         pool = multiprocessing.Pool(processes=8)
@@ -616,7 +617,7 @@ class TestMultipartUploadGetPut:
         self.log.info("STARTED: List parts after completion of multipart upload of an object ")
         mp_config = MPART_CFG["test_28530"]
         parts, keys, s3_background_io = \
-            self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+            start_ios_get_precalc_parts(
                 mp_config, self.mp_obj_path, log_prefix="TEST-28530_s3bench_ios", duration="0h1m",
                 s3_test_lib_obj=self.s3_test_obj)
         random.shuffle(keys)
@@ -637,6 +638,32 @@ class TestMultipartUploadGetPut:
         s3_background_io.stop()
         s3_background_io.cleanup()
         self.log.info("ENDED: Test List multipart followed by completion of multipart upload")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-42770')
+    @CTFailOn(error_handler)
+    def test_multipart_upload_test_42770(self):
+        """
+        This test is for uploading 350GB size object using multipart upload
+        """
+        self.log.info("STARTED: Multipart upload of 350GB object ")
+        mp_config = MPART_CFG["test_42770"]
+        mpu_id = self.initiate_upload_list_complete_mpu(self.bucket_name, self.object_name)
+        status, output = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
+        if status:
+            self.file_path = self.mp_obj_path
+            self.log.info(output)
+        status, mpu_upload = self.s3_mpu_test_obj.upload_precalculated_parts(
+            mpu_id, self.bucket_name, self.object_name, multipart_obj_path=self.file_path,
+            part_sizes=MPART_CFG["test_42770"]["part_sizes"],
+            chunk_size=MPART_CFG["test_42770"]["chunk_size"])
+        assert_utils.assert_true(status, f"Failed to upload parts: {mpu_upload}")
+        sorted_part_list = sorted(mpu_upload["uploaded_parts"], key=lambda x: x['PartNumber'])
+        res = self.list_parts_completempu(mpu_id, self.bucket_name,
+                                          object_name=self.object_name,
+                                          parts_list=sorted_part_list)
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, res[1]["ETag"])
+        self.log.info("ENDED: Test multipart upload of 350GB object")
 
     # @pytest.mark.skip(reason="need to execute on hw as vm has limited space")
     @pytest.mark.s3_ops
@@ -720,7 +747,7 @@ class TestMultipartUploadGetPut:
         mp_config = MPART_CFG["test_28539"]
         self.log.info("STARTED: test overwrite multipart uploaded object by simple object ")
         parts, keys, s3_background_io = \
-            self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+            start_ios_get_precalc_parts(
                 mp_config, self.mp_obj_path, log_prefix="TEST-40255_s3bench_ios", duration="0h2m",
                 s3_test_lib_obj=self.s3_test_obj)
         random.shuffle(keys)
@@ -754,7 +781,7 @@ class TestMultipartUploadGetPut:
         m_val = "mpuval"
         self.log.info("STARTED: test head-object of multipart uploaded object")
         parts, keys, s3_background_io = \
-            self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+            start_ios_get_precalc_parts(
                 mp_config, self.mp_obj_path, log_prefix="TEST-40256_s3bench_ios", duration="0h2m",
                 s3_test_lib_obj=self.s3_test_obj)
         random.shuffle(keys)
@@ -783,12 +810,12 @@ class TestMultipartUploadGetPut:
         mp_config = MPART_CFG["test_40265"]
         self.log.info("STARTED: Test delete 1000 multipart uploaded objects using bulk delete")
         parts, _, s3_background_io = \
-            self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+            start_ios_get_precalc_parts(
                 mp_config, self.mp_obj_path, log_prefix="TEST-40265_s3bench_ios", duration="0h5m",
                 s3_test_lib_obj=self.s3_test_obj)
         value_list = list(parts.values())
-        parts[1] = value_list[0]
-        parts[2] = value_list[1]
+        parts[1] = value_list[1]
+        parts[2] = value_list[0]
         obj_list = []
         for cnt in range(1000):
             obj_list.append(self.object_name+str(cnt))
@@ -813,7 +840,7 @@ class TestMultipartUploadGetPut:
         """
         mp_config = MPART_CFG["test_28539"]
         self.log.info("STARTED: test head-object of multipart uploaded object")
-        uploaded_parts, keys, s3_background_io = self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+        uploaded_parts, keys, s3_background_io = start_ios_get_precalc_parts(
             mp_config, self.mp_obj_path, log_prefix="TEST-40745_s3bench_ios", duration="0h3m",
             s3_test_lib_obj=self.s3_test_obj)
         random.shuffle(keys)
@@ -848,7 +875,7 @@ class TestMultipartUploadGetPut:
         """
         mp_config = MPART_CFG["test_28539"]
         self.log.info("STARTED: test head-object of multipart uploaded object")
-        uploaded_parts, keys, s3_background_io = self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+        uploaded_parts, keys, s3_background_io = start_ios_get_precalc_parts(
             mp_config, self.mp_obj_path, log_prefix="TEST-40993_s3bench_ios", duration="0h1m",
             s3_test_lib_obj=self.s3_test_obj)
         object_put = self.mp_obj_path.join("_putobj")
@@ -885,7 +912,7 @@ class TestMultipartUploadGetPut:
         """
         mp_config = MPART_CFG["test_28539"]
         self.log.info("STARTED: test get object of multipart uploaded object with range read")
-        parts, keys, s3_background_io = self.s3_mpu_test_obj.start_ios_get_precalc_parts(
+        parts, keys, s3_background_io = start_ios_get_precalc_parts(
             mp_config, self.mp_obj_path, log_prefix="TEST-40993_s3bench_ios", duration="0h1m",
             s3_test_lib_obj=self.s3_test_obj)
         random.shuffle(keys)
