@@ -47,7 +47,7 @@ class Health(Host):
         """
         output = self.execute_cmd(
             commands.NETSAT_CMD.format(service), read_lines=True)
-        ports = []
+        ports = list()
         for line in output:
             out_list = line.split()
             ports.append(out_list[3].split(':')[-1])
@@ -64,7 +64,7 @@ class Health(Host):
         try:
             output = self.execute_cmd(
                 commands.FIREWALL_CMD.format(service), read_lines=True)
-            ports = []
+            ports = list()
             for port in output[0].split():
                 ports.append(port.split("/")[0])
             if not ports:
@@ -445,7 +445,7 @@ class Health(Host):
             for node in result["nodes"]:
                 pod_name = node["name"]
                 services = node["svcs"]
-                fids = []
+                fids = list()
                 for service in services:
                     if service_name in service["name"]:
                         fid = service["fid"]
@@ -689,7 +689,7 @@ class Health(Host):
             LOG.debug("setup_type not found %s", error)
         if setup_type == "OVA":
             for clone_elem_resp in crm_mon_res['clone']:
-                resources = []
+                resources = list()
                 if clone_elem_resp["@id"] == 'monitor_group-clone':
                     resources.append(clone_elem_resp['group']['resource'])
                 elif clone_elem_resp["@id"] == 'io_group-clone':
@@ -711,7 +711,7 @@ class Health(Host):
             for clone_elem_resp in crm_mon_res['clone']:
                 if clone_elem_resp["@id"] == 'monitor_group-clone':
                     if no_node != 1:
-                        resource = []
+                        resource = list()
                         for val in clone_elem_resp['group']:
                             resource.append(val['resource'])
                     else:
@@ -779,7 +779,7 @@ class Health(Host):
         """
         clone_set = dict()
         for group in crm_mon_res['group']:
-            resource = []
+            resource = list()
             if isinstance(group['resource'], dict):
                 resource.append(group['resource'])
             elif isinstance(group['resource'], list):
@@ -879,8 +879,8 @@ class Health(Host):
         rtype: bool, str
         """
         ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])|:')
-        node = []
-        h_list = []
+        node = list()
+        h_list = list()
         cmd = commands.CMD_SALT_GET_HOST
         LOG.info("Running command: %s", cmd)
         resp = self.execute_cmd(cmd)
@@ -975,7 +975,7 @@ class Health(Host):
         pod_obj = LogicalNode(hostname=self.hostname, username=self.username,
                               password=self.password)
         try:
-            results = []
+            results = list()
             if fail:
                 search_str = ["failed", "offline", "unknown"]
             else:

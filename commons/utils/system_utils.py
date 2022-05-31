@@ -214,7 +214,7 @@ def command_formatter(cmd_options: dict, utility_path: str = None) -> str:
     :param utility_path: cli utility path for which command is being created
     :return: actual command that is going to execute for utility
     """
-    cmd_elements = []
+    cmd_elements = list()
     # utility path only for cli utilities
     if utility_path:
         cmd_elements.append(utility_path)
@@ -378,7 +378,7 @@ def format_iam_resp(res_msg: bytes) -> list:
     :param res_msg: bytes string of tuple
     :return: list of dict
     """
-    resp = []
+    resp = list()
     res = res_msg.split("b'")[1].replace("\\n',", "").split("\\n")
     for i in res:
         new_result = i.split(',')
@@ -1112,7 +1112,7 @@ def create_dir_hierarchy_and_objects(directory_path=None,
     :keyword count: count
     :return: file path list.
     """
-    file_path_list = []
+    file_path_list = list()
     count = kwargs.get("count", 1)
     b_size = kwargs.get("b_size", 1)
     for objcnt in range(obj_count):
