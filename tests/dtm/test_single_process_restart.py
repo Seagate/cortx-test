@@ -44,6 +44,7 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import support_bundle_utils
 from commons.utils import system_utils
+from commons.utils.system_utils import validate_checksum
 from config import CMN_CFG
 from config import DTM_CFG
 from config import HA_CFG
@@ -84,6 +85,7 @@ class TestSingleProcessRestart:
         cls.test_cfg = configmanager.get_config_wrapper(fpath="config/test_dtm_config.yaml")
         cls.m0d_process = 'm0d'
         cls.dtm_obj = DTMRecoveryTestLib()
+        cls.s3_obj = S3TestLib()
         cls.log.info("Setup S3bench")
         resp = s3bench.setup_s3bench()
         assert_utils.assert_true(resp)
@@ -447,7 +449,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for READ Operation to complete.")
         if proc_read_op.is_alive():
@@ -491,7 +493,7 @@ class TestSingleProcessRestart:
                                             pod_prefix=POD_NAME_PREFIX,
                                             container_prefix=MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure in observed during process restart/recovery")
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 3: Wait for Write Operation to complete.")
         if proc_write_op.is_alive():
@@ -631,3 +633,110 @@ class TestSingleProcessRestart:
                       "m0d recovery")
 
         self.log.info("ENDED: Verify multipart upload and download before/after m0d is restarted")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-41232")
+    def test_copy_object_after_m0d_restart(self):
+        """Verify copy object after m0d restart using pkill."""
+        self.log.info("STARTED: Verify copy object after m0d restart using pkill")
+        object_name = 'object-test-41232'
+        self.log.info("Step 1: Start write Operations :")
+        for i in range(0, 2):
+            resp = self.s3_obj.create_bucket(bucket_name=f"bucket-test-41233-{i}")
+            assert_utils.assert_true(resp[0], resp[1])
+        bucket_list = self.s3_obj.bucket_list()[1]
+        for size in self.test_cfg["size_list"]:
+            file_name = "{}{}".format("dtm-test-41232", size)
+            file_path = os.path.join(self.test_dir_path, file_name)
+            system_utils.create_file(file_path, size)
+            resp = self.s3_obj.put_object(bucket_list[0], f"{object_name}_{size}", file_path)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 2: Perform Single m0d Process Restart")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=POD_NAME_PREFIX,
+                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+        self.log.info("Step 3: Perform Copy Object to bucket-2, download and verify on copied "
+                      "Objects")
+        for size in self.test_cfg["size_list"]:
+            resp = self.s3_obj.copy_object(source_bucket=bucket_list[0],
+                                           source_object=f"{object_name}_{size}",
+                                           dest_bucket=bucket_list[1],
+                                           dest_object=f"{object_name}_{size}")
+            assert_utils.assert_true(resp[0], resp[1])
+            file_name_copy = "{}{}".format("dtm-test-41232-copy", size)
+            file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
+            resp = self.s3_obj.object_download(bucket_name=bucket_list[1],
+                                               obj_name=f"{object_name}_{size}",
+                                               file_path=file_path_copy)
+            assert_utils.assert_true(resp[0], resp[1])
+            file_name = "{}{}".format("dtm-test-41232-", size)
+            file_path = os.path.join(self.test_dir_path, file_name)
+            resp = validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
+            assert_utils.assert_true(resp, "Checksum validation Failed.")
+        self.test_completed = True
+        self.log.info("ENDED: Verify copy object after m0d restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-41233")
+    def test_copy_object_during_m0d_restart(self):
+        """Verify copy object during m0d restart using pkill."""
+        self.log.info("STARTED: Verify copy object during m0d restart using pkill")
+        object_name = 'object-test-41233'
+        workload = dict()
+        obj_list = list()
+        que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Start write Operations :")
+        for i in range(0, 2):
+            resp = self.s3_obj.create_bucket(bucket_name=f"bucket-test-41233-{i}")
+            assert_utils.assert_true(resp[0], resp[1])
+        bucket_list = self.s3_obj.bucket_list()[1]
+        for size in self.test_cfg["size_list"]:
+            file_name = "{}{}".format("dtm-test-41233-", size)
+            file_path = os.path.join(self.test_dir_path, file_name)
+            system_utils.create_file(file_path, size)
+            resp = self.s3_obj.put_object(bucket_list[0], f"{object_name}_{size}",
+                                          file_path)
+            obj_list.append(f"{object_name}_{size}")
+            assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Step 2: Perform Copy object to bucket-2 in background")
+        workload["source_bucket"] = bucket_list[0]
+        workload["dest_bucket"] = bucket_list[1]
+        workload["obj_list"] = obj_list
+        proc_cp_op = multiprocessing.Process(target=self.dtm_obj.perform_copy_objects,
+                                             args=(workload, que))
+        proc_cp_op.start()
+
+        self.log.info("Step 3: Perform Single m0d Process Restart During Copy Object Operations")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=POD_NAME_PREFIX,
+                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+
+        self.log.info("Step 4: Wait for copy object to finish")
+        if proc_cp_op.is_alive():
+            proc_cp_op.join()
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 5: Perform Download and verify on copied Objects")
+        for size in self.test_cfg["size_list"]:
+            file_name_copy = "{}{}".format("dtm-test-41233-copy", size)
+            file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
+            resp = self.s3_obj.object_download(bucket_name=bucket_list[1],
+                                               obj_name=f"{object_name}_{size}",
+                                               file_path=file_path_copy)
+            assert_utils.assert_true(resp[0], resp[1])
+            file_name = "{}{}".format("dtm-test-41233-", size)
+            file_path = os.path.join(self.test_dir_path, file_name)
+            resp = validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
+            assert_utils.assert_true(resp, "Checksum validation Failed.")
+        self.test_completed = True
+        self.log.info("ENDED: Verify copy object during m0d restart using pkill.")
