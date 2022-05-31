@@ -260,7 +260,6 @@ class TestServerPodFailure:
         """
         LOGGER.info("STARTED: Test to verify degraded reads during server pod is going down.")
         event = threading.Event()  # Event to be used to send intimation of server pod deletion
-
         LOGGER.info("Step 1: Perform WRITEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-39904'
@@ -270,6 +269,7 @@ class TestServerPodFailure:
                                                     nsamples=20, nclients=20,
                                                     log_prefix=self.test_prefix,
                                                     skipread=True, skipcleanup=True)
+
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
 
@@ -310,9 +310,8 @@ class TestServerPodFailure:
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
-        LOGGER.debug("Pass logs list: %s", pass_logs)
         fail_logs = list(x[1] for x in responses["fail_res"])
-        LOGGER.debug("Fail logs list: %s", fail_logs)
+        LOGGER.debug("Pass logs list: %s \nFail logs list: %s", pass_logs, fail_logs)
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
@@ -2083,6 +2082,7 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39922")
+    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @CTFailOn(error_handler)
     def test_chunk_upload_during_server_pod_shutdown(self):
         """
