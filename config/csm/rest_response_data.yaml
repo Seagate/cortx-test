@@ -5,7 +5,7 @@
     - "Access denied. Cannot modify another S3 account."
     - "Access denied."
   NotFoundError:
-    - "$A is not valid"
+    - "$resource is not valid"
   InternalError:
     - "Error"
 4104:
@@ -62,10 +62,10 @@
     - "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.']}"
     - "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.'], 'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
     - "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"], 'role': ['Must be one of: admin, manage, monitor.']}"
-    - "$A: Unknown field."
-    - "Invalid compatibility rules %A"
-    - "Incomplete compatibilty rules %A"
-    - "error(22): Invalid Resource Id %A"
+    - "$key: Unknown field."
+    - "error(22): Invalid compatibility rules $rule"
+    - "error(22): Incomplete compatibilty rules $rule"
+    - "error(22): Invalid Resource Id $resource_id"
 4103:
   users_already_exists:
     - "User already exists:"

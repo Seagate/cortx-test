@@ -136,11 +136,10 @@ class TestCortxInformation():
         assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed"
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
-            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(response.json()["error_code"], str(resp_error_code))
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg)
             assert_utils.assert_equals(response.json()["message"],
-                                       Template(msg).substitute(A="cluster"))
+                                       Template(msg).substitute(resource="cluster"))
         self.log.info("[END] Testing Version Compatability with invalid resource")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -170,15 +169,15 @@ class TestCortxInformation():
 
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
-            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(response.json()["error_code"], str(resp_error_code))
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
-                                        Template(msg).substitute(A=payload))
+                                        Template(msg).substitute(rule=payload["requires"]))
 
         self.log.info("[END] Testing Version Compatability  with invalid rules")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.lc
+    @pytest.mark.lc92
     @pytest.mark.parallel
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-42792')
@@ -204,9 +203,9 @@ class TestCortxInformation():
 
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
-            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(response.json()["error_code"], str(resp_error_code))
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
-                                       Template(msg).substitute(A="random_key"))
+                                       Template(msg).substitute(key="Random_key"))
         self.log.info("[END] Testing Version Compatability  with invalid  request body")
         self.log.info("##### Test ended -  %s #####", test_case_name)
