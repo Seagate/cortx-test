@@ -697,7 +697,7 @@ class TestHAClusterHealthGUI:
         self.ha_gui_obj.verify_cluster_state("online")
 
         LOGGER.info("Get the node for multiple safe shutdown.")
-        node_index = self.system_random.choice(range(self.num_nodes))
+        node_index = self.system_random.choice(list(range(self.num_nodes)))
 
         LOGGER.info("Shutdown %s node multiple time and check cluster status.",
                     self.srvnode_list[node_index])

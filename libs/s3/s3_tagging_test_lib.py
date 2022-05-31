@@ -99,7 +99,7 @@ class S3TaggingTestLib(Tagging):
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_bucket_tag.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
