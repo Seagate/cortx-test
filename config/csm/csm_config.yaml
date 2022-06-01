@@ -101,3 +101,4 @@ Restcall_LC:
                        ['stats','timestamp','date']]
   percentage_compare: 10
   cluster_operation_endpoint: "/api/v2/system/management"
+  version_endpoint: "/api/v2/version/compatibility"
