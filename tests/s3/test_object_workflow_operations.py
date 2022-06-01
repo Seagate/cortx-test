@@ -108,7 +108,6 @@ class TestObjectWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_put_file_2208(self):

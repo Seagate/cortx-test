@@ -22,8 +22,11 @@ from string import Template
 import time
 from http import HTTPStatus
 import os
+import secrets
+import string
 from random import SystemRandom
 import pytest
+import yaml
 from botocore.exceptions import ClientError
 from commons import configmanager
 from commons import cortxlogging
@@ -40,6 +43,9 @@ from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import s3_misc
+from config import CMN_CFG
+from commons.helpers.pods_helper import LogicalNode
+from commons import constants as cons
 
 class TestIamUser():
     """
@@ -172,6 +178,13 @@ class TestIamUserRGW():
         cls.test_file = None
         cls.test_file_path = None
         cls.file_size = cls.cryptogen.randrange(10, 100)
+        cls.host = CMN_CFG["nodes"][0]["hostname"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
+        cls.nd_obj = LogicalNode(hostname=cls.host, username=cls.uname, password=cls.passwd)
+        cls.cluster_conf_path = cons.CLUSTER_CONF_PATH
+        cls.csm_copy_path = cons.CLUSTER_COPY_PATH
+        cls.local_csm_path = cons.CSM_COPY_PATH
         cls.log.info("[END] CSM setup class completed.")
 
     def setup_method(self):
@@ -2593,23 +2606,22 @@ class TestIamUserRGW():
         payload.update({"display_name": uid})
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
+        assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
         uid = payload["tenant"] + "$" + uid
         self.created_iam_users.add(uid)
         get_resp = self.csm_obj.get_iam_user(user=uid)
-        assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
+        assert get_resp.status_code == HTTPStatus.OK, "Get IAM user failed"
         valid_key = self.csm_conf["test_36448"]["valid_key"]
         valid_key = valid_key + system_utils.random_string_generator(5)
         self.log.info("Adding key to user")
         add_resp = self.csm_obj.add_key_to_iam_user(uid=uid, access_key=valid_key)
-        assert_utils.assert_true(add_resp.status_code == HTTPStatus.OK, "Add key failed")
+        assert add_resp.status_code == HTTPStatus.OK, "Add key failed"
         resp = self.csm_obj.validate_added_deleted_keys(get_resp.json()["keys"], add_resp.json())
         self.log.info("Validate response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1][0]['access_key']
         secret_key = resp[1][0]['secret_key']
-        assert_utils.assert_true(valid_key == access_key,
-                                 "Added key is not matching to provided key")
+        assert valid_key == access_key, "Added key is not matching to provided key"
         bucket_name = "iam_user_bucket_" + str(int(time.time()))
         self.log.info("Create bucket and perform IO")
         s3_obj = S3TestLib(access_key=access_key,
@@ -4637,4 +4649,293 @@ class TestIamUserRGW():
         get_user_list = resp_dict["users"]
         assert_utils.assert_not_in(user_id, get_user_list, "deleted user still found in list")
         self.log.info("Deleted user %s is not listed in users list: %s", user_id, get_user_list)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-42273')
+    def test_42273(self):
+        """
+        Test GET IAM user with invalid max_entries 
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_42273"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index_1"]
+        msg_1 = resp_data[resp_msg_index]
+        resp_msg_index = test_cfg["message_index_2"]
+        msg_2 = resp_data[resp_msg_index]
+        random_str = ''.join(secrets.choice(string.ascii_uppercase +
+                                            string.ascii_lowercase) for i in range(7))
+        special_str = ''.join(secrets.choice(string.punctuation) for i in range(7))
+        invalid_values = [-1, 0, hex(255), random_str, special_str, None, '""']
+        for key_value in invalid_values:
+            self.log.info("Testing for key value %s", key_value)
+            resp = self.csm_obj.list_iam_users_rgw(max_entries=key_value)
+            self.log.info("Verify Response : %s", resp)
+            assert_utils.assert_true(resp.status_code == HTTPStatus.BAD_REQUEST,
+                                     "Status code check failed")
+            if CSM_REST_CFG["msg_check"] == "enable":
+                self.log.info("Verifying error response...")
+                if key_value is invalid_values[0] or key_value is invalid_values[1]:
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                    assert_utils.assert_equals(resp.json()["message"].lower(),
+                                           Template(msg_1).substitute(str_part="Max_entries").lower())
+                else:
+                    assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+                    assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+                    assert_utils.assert_equals(resp.json()["message"].lower(),
+                                           Template(msg_2).substitute(A="Max_entries").lower())
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-42274')
+    def test_42274(self):
+        """
+        Test GET IAM user returns empty list with invalid  marker
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_42274"]
+        ran_int = test_cfg["ran_int"]
+        random_num = self.csm_obj.random_gen.randrange(1, ran_int)
+        random_str = ''.join(secrets.choice(string.digits +
+                                            string.ascii_lowercase) for i in range(7))
+        invalid_markers = ['""', random_num, random_str, None]
+        for marker in invalid_markers:
+            self.log.info("Testing for invalid marker %s:", marker)
+            resp = self.csm_obj.list_iam_users_rgw(marker=marker)
+            assert_utils.assert_equals(resp.status_code, HTTPStatus.OK,
+                                   "List IAM User failed")
+            assert_utils.assert_equals(len(resp.json()["users"]), 0, "Users list is not empty")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-42283')
+    def test_42283(self):
+        """
+        Test GET IAM user with marker with deleted IAM user return empty list.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Create IAM User")
+        resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True)
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.CREATED,
+                                   "Create IAM User failed")
+        user_id = resp['tenant'] + "$" + resp['user_id']
+        self.log.info("Step 2: Delete IAM User")
+        resp = self.csm_obj.delete_iam_user(user_id, purge_data=True)
+        self.log.debug("Verify Response : %s", resp)
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK,
+                                   "Delete IAM User failed")
+        self.log.info("Step 3: List IAM users with delete user name as marker")
+        resp = self.csm_obj.list_iam_users_rgw(marker=resp['user_id'])
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK,
+                                 "List IAM User failed")
+        assert_utils.assert_equals(len(resp["keys"]), 0, "Users list is not empty")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-42284')
+    def test_42284(self):
+        """
+        Test GET IAM user with marker in between the displayed list.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Creating %s IAM users.", self.csm_conf["common"]["num_users"])
+        users_list = []
+        for count in range(self.csm_conf["common"]["num_users"]):
+            resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True)
+            assert_utils.assert_true(resp[0], resp[1])
+            users_list.append(resp[1]["user_id"])
+            self.log.info("%s IAM user created", count + 1)
+        self.log.info("Created users: %s", users_list)
+        self.created_iam_users = users_list
+
+        self.log.info("Step 2: Send GET request with max_entries as 5")
+        resp = self.csm_obj.list_iam_users_rgw(
+                                max_entries=self.csm_conf["test_42284"]["max_entries"])
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
+        resp_dict = resp.json()
+        get_user_list = resp_dict["users"]
+        count = resp_dict["count"]
+        assert_utils.assert_equals(count, self.csm_conf["test_42284"]["max_entries"], 
+                                 "Entries not returned as expected")
+        user_index = self.csm_obj.random_gen.randrange(1, count)
+        marker = get_user_list[user_index]
+
+        self.log.info("Step 3: Send GET request with max_entries as 15 and "
+                      "marker as in between user")
+        resp = self.csm_obj.list_iam_users_rgw(max_entries=15, marker=marker)
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
+        count = resp_dict["count"]
+        assert_utils.assert_equals(count, 6, "Entries not returned as expected")
+        get_user_list = resp_dict["users"]
+        assert_utils.assert_equals(get_user_list[0], marker, "Marker not set"
+                                                             "to in between user")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-42286')
+    def test_42286(self):
+        """
+        Test that internal user should be visible on the GET IAM user list
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Fetching internal IAM User")
+        internal_user = self.csm_obj.fetch_internal_iamuser(self.nd_obj)
+        self.log.info(internal_user)
+        self.log.info("Step 1: Send get request for fetching iam users list")
+        resp = self.csm_obj.list_iam_users_rgw(auth_header=None)
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
+        self.log.info("Step 2: Check whether internal IAM User is visible in "
+                      "get response")
+        resp_dict = resp.json()
+        self.log.info(resp_dict)
+        get_user_list = resp_dict["users"]
+        assert_utils.assert_in(internal_user, get_user_list,
+                                           "internal user not found in list")
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-42287')
+    def test_42287(self):
+        """
+        Test Delete internal IAM user should fail
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_42287"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
+        self.log.info("Fetching internal IAM User")
+        internal_user = self.csm_obj.fetch_internal_iamuser(self.nd_obj)
+        self.log.info("Step 1: Send delete request for deleting internal iam user")
+        resp = self.csm_obj.delete_iam_user(user=internal_user)
+        self.log.debug("Verify Response : %s", resp)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.FORBIDDEN,
+                                 "Delete Internal IAM User failed")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying error response...")    #TODO
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-42288')
+    def test_42288(self):
+        """
+        Test Patch access key and secret key for internal IAM user should fail
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_42288"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
+        self.log.info("Fetching internal IAM User")
+        internal_user = self.csm_obj.fetch_internal_iamuser(self.nd_obj)
+        payload = {"access_key":"sgiamadmin", "secret_key":"null"}
+        resp = self.csm_obj.modify_iam_user_rgw(internal_user, payload)
+        assert_utils.assert_true(resp.status_code == HTTPStatus.FORBIDDEN,
+                                 "Internal IAM User Modified")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying error response...")  # TODO
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-42289')
+    def test_42289(self):
+        """
+        Test Create IAM user with same name as internal IAM user should fail
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_42289"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
+        self.log.info("Fetching internal IAM User")
+        internal_user = self.csm_obj.fetch_internal_iamuser(self.nd_obj)
+        self.log.info("Step 1: Create IAM user with same name as internal IAM user")
+        payload = self.csm_obj.iam_user_payload_rgw(user_type="valid")
+        payload["uid"] = internal_user
+        self.log.info("payload :  %s", payload)
+        resp = self.csm_obj.create_iam_user_rgw(payload)
+        assert resp.status_code == HTTPStatus.CONFLICT, "Status code check failed"
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying error response...")  # TODO
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-42290')
+    def test_42290(self):
+        """
+        GET IAM user with invalid login
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_42290"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
+        self.log.info("Step 1: Send GET request with max_entries as 1 and invalid header")
+        header= ''.join(secrets.choice(string.digits +
+                                            string.ascii_lowercase) for i in range(15))
+        resp = self.csm_obj.list_iam_users_rgw(max_entries=1, auth_header=header)
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.UNAUTHORIZED,
+                                                "Status code check failed")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(resp.json()["error_code"], str(resp_error_code))
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
         self.log.info("##### Test completed -  %s #####", test_case_name)
