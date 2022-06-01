@@ -23,8 +23,13 @@ class RestInformation(RestTestLib):
     def __init__(self):
         super(RestInformation, self).__init__()
         self.iam_user = None
-    
+
     def get_valid_compatible_payload(self):
+        """
+        Creates valid compatible version payload.
+        :return: payload
+        """
+        self.log.info("Getting valid compatible payload")
         payload = {}
         required = ["CORTX >= 2.0.0-0",
         "cortx-motr >= 2.0.0-0",
@@ -38,6 +43,11 @@ class RestInformation(RestTestLib):
         return payload
 
     def get_valid_incompatible_payload(self):
+        """
+        Creates valid incompatible version payload.
+        :return: payload
+        """
+        self.log.info("Getting valid incompatible payload")
         payload = {}
         required = ["CORTX >= 3.0.0-0",
         "cortx-motr >= 2.0.0-0",
@@ -51,12 +61,22 @@ class RestInformation(RestTestLib):
         return payload
 
     def get_invalid_rules_payload(self):
+        """
+        Creates invalid rules payload.
+        :return: payload
+        """
+        self.log.info("Getting invalid rules payload")
         payload = {}
         required = ["Invalid rule"]
         payload.update({"requires": required})
         return payload
 
     def get_invalid_unknown_field_payload(self):
+        """
+        Creates invalid payload with unknown field.
+        :return: payload
+        """
+        self.log.info("Getting invalid field payload")
         payload = {}
         required = ["CORTX >= 2.0.0-0"]
         payload.update({"requires": required})
@@ -71,10 +91,20 @@ class RestInformation(RestTestLib):
     }
 
     def get_version_compatibility_payload(self, payload_type="compatible"):
-        self.log.info("Getting payload of type : %s", payload_type)
+        """
+        Calls method which creates payload as per the argument.
+        :return: payload
+        """
         return self.payload_types[payload_type](self)
 
     def verify_version_compatibility(self, resource, resource_id, payload):
+        """
+        Checks Version Compatibility for given payload.
+        :param resource: version compatibility for resource
+        :param resource_id: id of resource
+        :param payload: payload for requires rules
+        :return: response
+        """
         # get the endpoint
         base_endpoint = self.config["version_endpoint"]
         endpoint = f"{base_endpoint}/{resource}/{resource_id}"
