@@ -85,7 +85,7 @@ class RestIamUser(RestTestLib):
         return response
 
     @RestTestLib.authenticate_and_login
-    def delete_iam_user(self, user=None, purge_data=False):
+    def delete_iam_user(self, user=None, purge_data=None):
         """
         This function will delete user
         :param user: userid of user
@@ -557,7 +557,7 @@ class RestIamUser(RestTestLib):
         return response
 
     @RestTestLib.authenticate_and_login
-    def delete_iam_user_rgw(self, uid, header, purge_data=False):
+    def delete_iam_user_rgw(self, uid, header, purge_data=None):
         """
         Delete IAM user
         :param uid: userid
@@ -567,9 +567,10 @@ class RestIamUser(RestTestLib):
         """
         self.log.info("Delete IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
-        payload = {"purge_data": False}
-        if purge_data:
-            payload = {"purge_data": True}
+        if purge_data is not None:
+            payload = {"purge_data": purge_data}
+        else:
+            payload = None
         response = self.restapi.rest_call("delete", endpoint=endpoint, json_dict=payload,
                                           headers=header)
         self.log.info("Delete IAM user request successfully sent...")
