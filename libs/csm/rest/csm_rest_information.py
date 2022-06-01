@@ -15,8 +15,6 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """Test library for Information related operations."""
-import json
-
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 class RestInformation(RestTestLib):
