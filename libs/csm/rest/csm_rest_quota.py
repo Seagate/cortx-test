@@ -207,8 +207,9 @@ class GetSetQuota(RestTestLib):
                                           headers=header)
         self.log.info("Get user quota request successfully sent...")
         return response
-
-    def get_iam_user_payload(self):
+   
+    @staticmethod
+    def get_iam_user_payload():
         """
         Creates IAM user basic payload.
         """

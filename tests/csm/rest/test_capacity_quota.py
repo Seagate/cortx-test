@@ -156,6 +156,7 @@ class TestCapacityQuota():
         self.log.info("Uploaded parts into bucket: %s", parts)
         return mpu_id, parts
 
+
     @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1565,6 +1566,7 @@ class TestCapacityQuota():
             self.csm_obj.check_expected_response(response, HTTPStatus.OK)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1604,6 +1606,7 @@ class TestCapacityQuota():
         assert user_quota['max_size'] == max_size, "Max size field not matched"
         assert user_quota['max_objects'] == max_objects, "Objects field not matched"
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1660,6 +1663,7 @@ class TestCapacityQuota():
         assert user_quota['max_objects'] == max_objects, "Objects field not matched"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1698,6 +1702,7 @@ class TestCapacityQuota():
         assert user_quota['user_quota']['max_objects'] == max_objects, "Objects field not matched"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1731,6 +1736,7 @@ class TestCapacityQuota():
         res = self.csm_obj.get_user_quota(user_id)
         assert res.status_code == HTTPStatus.OK, "Status code check failed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -1770,6 +1776,7 @@ class TestCapacityQuota():
         assert user_quota['max_size'] == max_size, "Max size field not matched"
         assert user_quota['max_objects'] == max_objects, "Objects field not matched"
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
