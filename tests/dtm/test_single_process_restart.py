@@ -145,10 +145,7 @@ class TestSingleProcessRestart:
 
         self.log.info("Step 2: Perform Read Operations on the data written in step 1 in background")
         proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
-                                               args=(workload_info, que,
-                                                     True,
-                                                     True,
-                                                     True))
+                                               args=(workload_info, que, False, True, True))
         proc_read_op.start()
 
         self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
@@ -212,7 +209,7 @@ class TestSingleProcessRestart:
         workload_info = resp[1]
 
         self.log.info("Step 4: Perform Read Operations on data written in Step 1:")
-        self.dtm_obj.perform_ops(workload_info, que, True, True, True)
+        self.dtm_obj.perform_ops(workload_info, que, False, True, True)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
@@ -436,7 +433,7 @@ class TestSingleProcessRestart:
         self.log.info("Step 2: Start READ Operations in loop in background:")
         proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
                                                args=(workload_info, que,
-                                                     True,
+                                                     False,
                                                      True,
                                                      True, self.test_cfg['loop_count']))
         proc_read_op.start()
