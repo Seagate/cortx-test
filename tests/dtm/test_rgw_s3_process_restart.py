@@ -19,7 +19,7 @@
 #
 
 """
-Test suite for testing Single Process Restart with DTM enabled.
+Test suite for testing RGW Process Restart with DTM enabled.
 """
 import logging
 import multiprocessing
@@ -54,8 +54,8 @@ from scripts.s3_bench import s3bench
 
 
 # pylint: disable=too-many-instance-attributes
-class TestSingleProcessRestart:
-    """Test Class for Single Process Restart."""
+class TestRGWProcessRestart:
+    """Test Class for RGW Process Restart."""
 
     @classmethod
     def setup_class(cls):

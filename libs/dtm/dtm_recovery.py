@@ -25,8 +25,6 @@ import os
 import random
 import re
 import time
-import re
-import time
 
 from commons import constants as const
 from commons.exceptions import CTException
