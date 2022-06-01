@@ -47,6 +47,7 @@ class TestCortxInformation():
         cls.log.info("Ended test module setups")
         cls.csm_obj = csm_api_factory("rest")
         cls.log.info("Initiating Rest Client ...")
+        cls.config = CSM_REST_CFG
 
     @pytest.mark.lc
     @pytest.mark.parallel
@@ -67,7 +68,7 @@ class TestCortxInformation():
         res_dict = response.json()
         assert response.status_code == HTTPStatus.OK, "Status code check failed"
         assert res_dict["compatible"], "Compatibility Check failed"
-        if CSM_REST_CFG["msg_check"] == "enable":
+        if self.config["msg_check"] == "enable":
             self.log.info("Verifying Reason response...")
             success_reason_msg = "Versions are Compatible"
             assert res_dict["reason"] == success_reason_msg, "response reason is not correct"
@@ -93,7 +94,7 @@ class TestCortxInformation():
         res_dict = response.json()
         assert response.status_code == HTTPStatus.OK, "Status code check failed"
         assert not res_dict["compatible"], "Compatibility Check failed"
-        if CSM_REST_CFG["msg_check"] == "enable":
+        if self.config["msg_check"] == "enable":
             self.log.info("Verifying Reason response...")
             success_reason_msg = "Versions are Compatible"
             assert res_dict["reason"] != success_reason_msg, "response reason is not correct"
@@ -125,7 +126,7 @@ class TestCortxInformation():
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.verify_version_compatibility("cluster", "cortx-cluster", payload)
         assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed"
-        if CSM_REST_CFG["msg_check"] == "enable":
+        if self.config["msg_check"] == "enable":
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
@@ -158,7 +159,7 @@ class TestCortxInformation():
         response = self.csm_obj.verify_version_compatibility("node", "cortx-cluster", payload)
         assert response.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
 
-        if CSM_REST_CFG["msg_check"] == "enable":
+        if self.config["msg_check"] == "enable":
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
@@ -192,7 +193,7 @@ class TestCortxInformation():
         response = self.csm_obj.verify_version_compatibility("node", "cortx-cluster", payload)
         assert response.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
 
-        if CSM_REST_CFG["msg_check"] == "enable":
+        if self.config["msg_check"] == "enable":
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
