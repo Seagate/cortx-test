@@ -208,7 +208,7 @@ class TestRGWProcessRestart:
     def test_delete_during_rgw_svc_restart(self):
         """Verify DELETEs during rgw_s3 service restart using pkill."""
         self.log.info("STARTED: Verify DELETEs during rgw_s3 service restart using pkill")
-        test_prefix = 'test-42245'
+        test_prefix = 'test-42246'
         wr_output = Queue()
 
         event = threading.Event()  # Event to be used to send intimation of rgw_s3 process restart
