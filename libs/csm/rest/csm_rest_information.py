@@ -87,5 +87,3 @@ class RestInformation(RestTestLib):
                                             data=json.dumps(payload), headers=self.headers)
         self.log.debug("response is : %s", response)
         return response
-
-

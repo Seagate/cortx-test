@@ -19,8 +19,8 @@ Tests various operations on Cortx Information using REST API
 """
 import logging
 from http import HTTPStatus
-import pytest
 from string import Template
+import pytest
 from commons import configmanager
 from commons import cortxlogging
 from commons.utils import assert_utils
