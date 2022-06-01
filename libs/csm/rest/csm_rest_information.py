@@ -84,6 +84,5 @@ class RestInformation(RestTestLib):
 
         response = self.restapi.rest_call(request_type="post",
                                             endpoint=endpoint,
-                                            data=json.dumps(payload), headers=self.headers)
-        self.log.debug("response is : %s", response)
+                                            json_dict=payload, headers=None)
         return response

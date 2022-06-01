@@ -45,21 +45,8 @@ class TestCortxInformation():
         cls.rest_resp_conf = configmanager.get_config_wrapper(
             fpath="config/csm/rest_response_data.yaml")
         cls.log.info("Ended test module setups")
-        cls.config = CSMConfigsCheck()
-        setup_ready = cls.config.check_predefined_s3account_present()
-        if not setup_ready:
-            setup_ready = cls.config.setup_csm_s3()
-        assert setup_ready
-        cls.created_iam_users = set()
         cls.csm_obj = csm_api_factory("rest")
         cls.log.info("Initiating Rest Client ...")
-
-    def teardown_method(self):
-        """
-        Teardown method which run after each function.
-        """
-        self.log.info("Teardown started")
-        self.log.info("Teardown ended")
 
     @pytest.mark.lc
     @pytest.mark.parallel
@@ -80,8 +67,10 @@ class TestCortxInformation():
         res_dict = response.json()
         assert response.status_code == HTTPStatus.OK, "Status code check failed"
         assert res_dict["compatible"], "Compatibility Check failed"
-        success_reason_msg = "Versions are Compatible"
-        assert res_dict["reason"] == success_reason_msg, "response reason is not correct"
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying Reason response...")
+            success_reason_msg = "Versions are Compatible"
+            assert res_dict["reason"] == success_reason_msg, "response reason is not correct"
         self.log.info("[END] Testing Version Compatability")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -104,8 +93,10 @@ class TestCortxInformation():
         res_dict = response.json()
         assert response.status_code == HTTPStatus.OK, "Status code check failed"
         assert not res_dict["compatible"], "Compatibility Check failed"
-        success_reason_msg = "Versions are Compatible"
-        assert res_dict["reason"] != success_reason_msg, "response reason is not correct"
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying Reason response...")
+            success_reason_msg = "Versions are Compatible"
+            assert res_dict["reason"] != success_reason_msg, "response reason is not correct"
         self.log.info("[END] Testing Version Compatability with incompatible version rules")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -136,7 +127,7 @@ class TestCortxInformation():
         assert response.status_code == HTTPStatus.NOT_FOUND, "Status code check failed"
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
-            assert_utils.assert_equals(response.json()["error_code"], str(resp_error_code))
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
                                        Template(msg).substitute(resource="cluster"))
@@ -169,7 +160,7 @@ class TestCortxInformation():
 
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
-            assert_utils.assert_equals(response.json()["error_code"], str(resp_error_code))
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
                                         Template(msg).substitute(rule=payload["requires"]))
@@ -177,7 +168,7 @@ class TestCortxInformation():
         self.log.info("[END] Testing Version Compatability  with invalid rules")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.lc92
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-42792')
@@ -203,7 +194,7 @@ class TestCortxInformation():
 
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
-            assert_utils.assert_equals(response.json()["error_code"], str(resp_error_code))
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
                                        Template(msg).substitute(key="Random_key"))
