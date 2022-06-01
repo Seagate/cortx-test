@@ -137,7 +137,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5440")
     def test_create_new_account_1968(self):
         """Create new account."""
@@ -153,7 +152,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5429")
     def test_list_account_1969(self):
         """List account."""
@@ -173,7 +171,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5432")
     def test_delete_account_1970(self):
         """Delete Account."""
@@ -362,7 +359,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5439")
     def test_create_new_user_from_current_account_2076(self):
         """Create new user for current Account."""
@@ -395,7 +391,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5422")
     def test_update_user_2077(self):
         """Update User."""
@@ -436,7 +431,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5428")
     def test_list_user_2078(self):
         """List user."""
@@ -465,7 +459,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5431")
     def test_delete_user_2079(self):
         """Delete User."""
@@ -551,7 +544,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5442")
     def test_create_access_key_to_the_user_2082(self):
         """Create Access key to the user."""
@@ -578,7 +570,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5430")
     def test_list_access_keys_for_the_user_2083(self):
         """List accesskeys for the user."""
@@ -605,7 +596,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5433")
     def test_delete_access_key_of_a_user_2084(self):
         """Delete Accesskey of a user."""
@@ -635,7 +625,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5425")
     def test_update_access_key_of_a_user_2085(self):
         """Update Accesskey of a user."""
@@ -668,7 +657,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5424")
     def test_update_accesskey_of_user_with_inactive_mode_2086(self):
         """Update accesskey of a user with inactive mode."""
@@ -720,7 +708,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5423")
     def test_update_login_profile_2088(self):
         """Update login profile."""
@@ -780,7 +767,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5444")
     def test_change_pwd_for_iam_user_2092(self):
         """Change password for IAM user."""
@@ -817,7 +803,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-8718")
     def test_create_user_account_and_check_arn_4625(self):
         """Test Create user for the account and verify output with proper ARN format."""

@@ -68,6 +68,7 @@ class TestSystemCapacity():
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.io_bucket_name = "iobkt1-copyobject-{}".format(perf_counter_ns())
         cls.s3_obj = s3_test_lib.S3TestLib()
+        cls.ha_obj = HAK8s()
         for node in CMN_CFG["nodes"]:
             if node["node_type"] == "master":
                 cls.log.debug("Master node : %s", node["hostname"])
@@ -1882,7 +1883,6 @@ class TestSystemCapacity():
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.skip
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1893,21 +1893,21 @@ class TestSystemCapacity():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step-1: Change csm config auth variable to False in csm config")
-        # TODO : change variable in csm config file to False
-        self.log.info("Step 2: Delete control pod and wait for restart")
+        self.log.info("Step 1: Delete control pod and wait for restart")
         resp = self.csm_obj.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Get header for admin user")
+        # To get all the services up and running
+        time.sleep(40)
+        self.log.info("Step 2: Get header for admin user")
         header = self.csm_obj.get_headers(self.username, self.user_pass)
-        self.log.info("Step 4: Modify header to delete key and value")
+        self.log.info("Step 3: Modify header to delete key and value")
         del header['Authorization']
-        self.log.info("Step 5: Call degraded capacity api with deleted key and value in header")
+        self.log.info("Step 4: Call degraded capacity api with deleted key and value in header")
         response = self.csm_obj.get_degraded_capacity_custom_login(header)
-        assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
+        assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
         response = self.csm_obj.get_degraded_capacity_custom_login(header, endpoint_param=None)
-        assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
+        assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1932,7 +1932,6 @@ class TestSystemCapacity():
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.skip
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1943,21 +1942,21 @@ class TestSystemCapacity():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step-1: Change csm config auth variable to False in csm config")
-        # TODO : change variable in csm config file to False
-        self.log.info("Step 2: Delete control pod and wait for restart")
+        self.log.info("Step 1: Delete control pod and wait for restart")
         resp = self.csm_obj.restart_control_pod(self.nd_obj)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Get header for admin user")
+        # To get all the services up and running
+        time.sleep(40)
+        self.log.info("Step 2: Get header for admin user")
         header = self.csm_obj.get_headers(self.username, self.user_pass)
-        self.log.info("Step 4: Modify header for invalid value")
+        self.log.info("Step 3: Modify header for invalid value")
         header['Authorization'] = 'abc'
-        self.log.info("Step 5: Call degraded capacity api with invalid header")
+        self.log.info("Step 4: Call degraded capacity api with invalid header")
         response = self.csm_obj.get_degraded_capacity_custom_login(header)
-        assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
+        assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
         response = self.csm_obj.get_degraded_capacity_custom_login(header, endpoint_param=None)
-        assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
+        assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 

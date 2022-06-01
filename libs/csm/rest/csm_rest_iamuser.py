@@ -20,17 +20,18 @@ import time
 from http import HTTPStatus
 from random import SystemRandom
 from string import Template
+import yaml
 from requests.models import Response
-
 import commons.errorcodes as err
+from commons import commands as common_cmd
 from commons.constants import Rest as const
+from commons import constants as cons
 from commons.constants import S3_ENGINE_RGW
 from commons.exceptions import CTException
 from commons.utils import config_utils
 from config import CMN_CFG, CSM_REST_CFG
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
-
 
 # pylint: disable-msg=too-many-public-methods
 class RestIamUser(RestTestLib):
@@ -639,7 +640,12 @@ class RestIamUser(RestTestLib):
         existing_keys_matching = False
         diff_key = []
         for key in keys_list2:
-            if key not in keys_list1:
+            found = False
+            for key1 in keys_list1:
+                if key1["access_key"] == key["access_key"]:
+                    found = True
+                    break
+            if not found:
                 diff_key.append(key)
             else:
                 key_match_cnt = key_match_cnt + 1
@@ -784,7 +790,7 @@ class RestIamUser(RestTestLib):
         return random_cap[:-1]
 
     @RestTestLib.authenticate_and_login
-    def list_iam_users_rgw(self, max_entries=None, marker=None):
+    def list_iam_users_rgw(self, max_entries=None, marker=None, auth_header=None):
         """
         This function will list all IAM users.
         :param max_entries: Number of users to be returned
@@ -796,10 +802,30 @@ class RestIamUser(RestTestLib):
         self.log.debug("Listing of iam users")
         endpoint = self.config["iam_users_endpoint"]
         self.log.debug("Endpoint for iam user is %s", endpoint)
-
-        self.headers.update(self.config["Login_headers"])
-
+        if auth_header is not None:
+            header = {'Authorization': auth_header}
+        else:
+            header = self.headers
         # Fetching api response
-        response = self.restapi.rest_call("get", endpoint=endpoint, headers=self.headers,
+        response = self.restapi.rest_call("get", endpoint=endpoint, headers=header,
                                           params={"max_entries": max_entries, "marker": marker})
         return response
+
+    def fetch_internal_iamuser(self, node_obj):
+        """
+        Function to fetch internal IAM user
+        """
+        self.log.info("Fetching internal IAM User")
+        pod_name = node_obj.get_pod_name(pod_prefix=cons.CONTROL_POD_NAME_PREFIX)
+        self.log.info(pod_name[1])
+        node_obj.execute_cmd(
+            cmd=common_cmd.K8S_CP_TO_LOCAL_CMD.format(
+                pod_name[1], cons.CLUSTER_CONF_PATH, cons.CLUSTER_COPY_PATH, cons.CORTX_CSM_POD),
+            read_lines=False,
+            exc=False)
+        node_obj.copy_file_to_local(
+            remote_path=cons.CLUSTER_COPY_PATH, local_path=cons.CSM_COPY_PATH)
+        stream = open(cons.CSM_COPY_PATH, 'r')
+        data = yaml.safe_load(stream)
+        internal_user = data["cortx"]["rgw"]["auth_user"]
+        return internal_user
