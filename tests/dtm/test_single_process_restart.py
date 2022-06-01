@@ -36,7 +36,6 @@ from commons import configmanager
 from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
-from commons.params import TEST_DATA_FOLDER
 from commons.params import LATEST_LOG_FOLDER
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
@@ -51,8 +50,6 @@ from conftest import LOG_DIR
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from libs.s3.s3_test_lib import S3TestLib
-from scripts.s3_bench import s3bench
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
 
