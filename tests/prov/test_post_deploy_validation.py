@@ -22,7 +22,8 @@ Prov test file for all the post deploy validations for single node and multinode
 """
 
 import logging
-import random
+import secrets
+
 import pytest
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
@@ -59,8 +60,8 @@ class TestPostDeploySingleNode:
         cls.prov_obj = Provisioner()
         cls.set_ntp = None
         cls.restored = True
-        cls.CSM_USER = CortxCliCsmUser()
-        cls.CSM_USER.open_connection()
+        cls.csm_user = CortxCliCsmUser()
+        cls.csm_user.open_connection()
         cls.ntp_keys = PROV_CFG['system_ntp']['ntp_data']
         LOGGER.info("Done: Setup module operations")
 
@@ -172,9 +173,9 @@ class TestPostDeploySingleNode:
         LOGGER.info("Step 1: Node is accessible and PCS is up and running.")
 
         LOGGER.info("Step 2: Validate that admin user is created")
-        resp = self.CSM_USER.login_cortx_cli()
+        resp = self.csm_user.login_cortx_cli()
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.CSM_USER.logout_cortx_cli()
+        resp = self.csm_user.logout_cortx_cli()
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Validated that admin user is created")
 
@@ -194,9 +195,9 @@ class TestPostDeploySingleNode:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Validated time_server in /etc/chrony.conf response = %s", resp[1])
 
-        set_timezone = (random.choice(
+        set_timezone = (secrets.choice(
             [ii for ii in timezone_data if ii != ntp_time_zone_val]))
-        set_timesrv_ip = (random.choice(
+        set_timesrv_ip = (secrets.choice(
             [ii for ii in timeserver_data if ii != ntp_time_server_val]))
         LOGGER.info("Step 4: Set time_server %s and timezone %s", set_timesrv_ip,
                     set_timezone)
@@ -404,11 +405,11 @@ class TestPostDeployMultiNode:
         LOGGER.info("All nodes are accessible and PCS looks clean.")
 
         LOGGER.info("Step 2: Validate that admin user is created")
-        CSM_USER = CortxCliCsmUser()
-        CSM_USER.open_connection()
-        resp = CSM_USER.login_cortx_cli()
+        csm_user = CortxCliCsmUser()
+        csm_user.open_connection()
+        resp = csm_user.login_cortx_cli()
         assert_utils.assert_true(resp[0], resp[1])
-        resp = CSM_USER.logout_cortx_cli()
+        resp = csm_user.logout_cortx_cli()
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Validated that admin user is created")
 
@@ -432,9 +433,9 @@ class TestPostDeployMultiNode:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Validated time_server in /etc/chrony.conf response = %s", resp[1])
 
-        set_timezone = (random.choice(
+        set_timezone = (secrets.choice(
             [ii for ii in timezone_data if ii != ntp_time_zone_val]))
-        set_timesrv_ip = (random.choice(
+        set_timesrv_ip = (secrets.choice(
             [ii for ii in timeserver_data if ii != ntp_time_server_val]))
         LOGGER.info("Step 5: Set time_server %s and timezone %s", set_timesrv_ip, set_timezone)
         for node in range(1, self.no_nodes+1):

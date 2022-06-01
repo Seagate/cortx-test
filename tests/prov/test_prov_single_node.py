@@ -69,12 +69,6 @@ class TestProvSingleNode:
         cls.prov_obj = Provisioner()
         LOGGER.info("Done: Setup module operations")
 
-    def teardown_method(self):
-        """
-        Teardown operations after each test.
-        """
-        LOGGER.info("Successfully performed Teardown operation")
-
     @pytest.mark.cluster_management_ops
     @pytest.mark.singlenode
     @pytest.mark.lr
