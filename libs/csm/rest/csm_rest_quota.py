@@ -212,7 +212,6 @@ class GetSetQuota(RestTestLib):
         """
         Creates IAM user basic payload.
         """
-        time.sleep(1)
         user_id = const.IAM_USER + str(int(time.time()))
         display_name = const.IAM_USER + str(int(time.time()))
         return user_id, display_name
