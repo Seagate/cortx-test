@@ -24,7 +24,6 @@ import pytest
 from commons import configmanager
 from commons import cortxlogging
 from commons.utils import assert_utils
-from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.csm_interface import csm_api_factory
 from config import CSM_REST_CFG
 
