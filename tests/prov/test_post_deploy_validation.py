@@ -79,9 +79,7 @@ class TestPostDeploySingleNode:
                 self.ntp_keys, self.nd_obj, node_id=1,
                 exp_t_srv=self.set_ntp[self.ntp_keys[0]], exp_t_zone=self.set_ntp[self.ntp_keys[1]])
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "TEARDOWN: Restored NTP configuration data: {}.".format(
-                    resp[1]))
+            LOGGER.info("TEARDOWN: Restored NTP configuration data: %s.", resp[1])
         LOGGER.info("Successfully performed Teardown operation")
 
     @pytest.mark.cluster_management_ops
@@ -141,7 +139,7 @@ class TestPostDeploySingleNode:
         node_id = 1
         for key in PROV_CFG["confstore_list"]:
             LOGGER.info(
-                "Verification of {} from pillar as well as confstore template.".format(key))
+                "Verification of %s from pillar as well as confstore template.", key)
             output = self.prov_obj.confstore_verification(
                 key, self.nd_obj, node_id)
             assert_utils.assert_true(output[0], output[1])
@@ -164,7 +162,7 @@ class TestPostDeploySingleNode:
         resp = self.prov_obj.get_ntpsysconfg(self.ntp_keys, self.nd_obj, 1)
         assert_utils.assert_true(resp[0], resp[1])
         self.set_ntp = resp[1]
-        LOGGER.info("Stored NTP configuration data = {}.".format(self.set_ntp))
+        LOGGER.info("Stored NTP configuration data = %s.", self.set_ntp)
 
         timeserver_data = PROV_CFG['system_ntp']['timeserver']
         timezone_data = PROV_CFG['system_ntp']['timezone']
@@ -184,25 +182,24 @@ class TestPostDeploySingleNode:
         get_ntp_resp = self.prov_obj.get_ntpsysconfg(
             self.ntp_keys, self.nd_obj, 1)
         assert_utils.assert_true(get_ntp_resp[0], get_ntp_resp[1])
-        LOGGER.info("NTP configuration data = {}.".format(get_ntp_resp[1]))
+        LOGGER.info("NTP configuration data = %s.", get_ntp_resp[1])
 
         ntp_time_server_val = get_ntp_resp[1][self.ntp_keys[0]]
         ntp_time_zone_val = get_ntp_resp[1][self.ntp_keys[1]]
-        LOGGER.info("Step 3: Validate time_server is set to {} in /etc/chrony.conf".format(
-            ntp_time_server_val))
+        LOGGER.info("Step 3: Validate time_server is set to %s in /etc/chrony.conf",
+                    ntp_time_server_val)
         resp = self.prov_obj.get_chrony(
             node_obj=self.nd_obj,
             time_server=ntp_time_server_val)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 3: Validated time_server in /etc/chrony.conf response = {}".format(
-            resp[1]))
+        LOGGER.info("Step 3: Validated time_server in /etc/chrony.conf response = %s", resp[1])
 
         set_timezone = (random.choice(
             [ii for ii in timezone_data if ii != ntp_time_zone_val]))
         set_timesrv_ip = (random.choice(
             [ii for ii in timeserver_data if ii != ntp_time_server_val]))
-        LOGGER.info("Step 4: Set time_server {} and timezone {}".format(
-            set_timesrv_ip, set_timezone))
+        LOGGER.info("Step 4: Set time_server %s and timezone %s", set_timesrv_ip,
+                    set_timezone)
         resp = self.prov_obj.set_ntpsysconfg(
             self.nd_obj, time_server=set_timesrv_ip, timezone=set_timezone)
         assert_utils.assert_true(resp[0], resp[1])
@@ -212,20 +209,15 @@ class TestPostDeploySingleNode:
             self.ntp_keys, self.nd_obj, node_id=1,
             exp_t_srv=set_timesrv_ip, exp_t_zone=set_timezone)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info(
-            "Step 5: Validated set NTP configuration in pillar data {}.".format(
-                resp[1]))
+        LOGGER.info("Step 5: Validated set NTP configuration in pillar data %s.", resp[1])
 
         LOGGER.info("Step 6: Validate set time_server in /etc/chrony.conf")
         resp = self.prov_obj.get_chrony(
             node_obj=self.nd_obj, time_server=set_timesrv_ip)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Validated set time_server in /etc/chrony.conf response = {}".format(
-            resp[1]))
-
+        LOGGER.info("Step 6: Validated set time_server in /etc/chrony.conf response = %s", resp[1])
         LOGGER.info(
-            "Step 7: Restore and Validate NTP configuration data to {}".format(
-                self.set_ntp))
+            "Step 7: Restore and Validate NTP configuration data to %s", self.set_ntp)
         resp = self.prov_obj.set_ntpsysconfg(
             self.nd_obj, time_server=self.set_ntp[self.ntp_keys[0]],
             timezone=self.set_ntp[self.ntp_keys[1]])
@@ -235,7 +227,7 @@ class TestPostDeploySingleNode:
             self.ntp_keys, self.nd_obj, node_id=1, exp_t_srv=self.set_ntp[self.ntp_keys[0]],
             exp_t_zone=self.set_ntp[self.ntp_keys[1]])
         LOGGER.info(
-            "Step 7: Validated Restored NTP configuration on srvnode-1: {}".format(resp[1]))
+            "Step 7: Validated Restored NTP configuration on srvnode-1: %s", resp[1])
         self.restored = True
         LOGGER.info(
             "-----     Completed NTP configuration Validation     -----")
@@ -289,8 +281,7 @@ class TestPostDeployMultiNode:
                     exp_t_srv=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                     exp_t_zone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
                 assert_utils.assert_true(resp[0], resp[1])
-                LOGGER.info("TEARDOWN: Restored NTP Configuration on srvnode-{}:{}".format(
-                    node, resp[1]))
+                LOGGER.info("TEARDOWN: Restored NTP Configuration on srvnode-%s:%s", node, resp[1])
             LOGGER.info("Successfully performed Teardown operation")
 
     @pytest.mark.cluster_management_ops
@@ -375,14 +366,14 @@ class TestPostDeployMultiNode:
 
         for node_id in range(1, self.no_nodes+1):
             for key in PROV_CFG["confstore_list"]:
-                LOGGER.info(
-                    "Verification of {} from pillar as well as confstore template.".format(key))
+                LOGGER.info("Verification of %s from pillar as well as confstore template.", key)
                 output = self.prov_obj.confstore_verification(
                     key, self.node_obj_list[0], node_id)
                 assert_utils.assert_true(output[0], output[1])
 
         LOGGER.info("Completed: confstore keys validation.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.cluster_management_ops
     @pytest.mark.multinode
     @pytest.mark.lr
@@ -396,14 +387,13 @@ class TestPostDeployMultiNode:
         LOGGER.info("-----     Started NTP configuration Validation     -----")
         self.restored = False
         for node in range(1, self.no_nodes+1):
-            LOGGER.info(f"Store NTP configuration data for srvnode-{node}.")
+            LOGGER.info("Store NTP configuration data for srvnode-{%s}.", node)
             resp = self.prov_obj.get_ntpsysconfg(
                 self.ntp_keys, self.node_obj_list[0], node)
             assert_utils.assert_true(resp[0], resp[1])
             self.ntp_data[f"srvnode-{node}"] = resp[1]
-            LOGGER.info(
-                "Stored NTP configuration data for srvnode-{} = {}.".format(
-                    node, self.ntp_data[f"srvnode-{node}"]))
+            LOGGER.info("Stored NTP configuration data for srvnode-%s = %s.", node,
+                        self.ntp_data[f"srvnode-{node}"])
 
         LOGGER.info("Step 1: Check that the cluster is up and running.")
         timeserver_data = PROV_CFG['system_ntp']['timeserver']
@@ -430,26 +420,23 @@ class TestPostDeployMultiNode:
                 exp_t_srv=self.ntp_data["srvnode-1"][self.ntp_keys[0]],
                 exp_t_zone=self.ntp_data["srvnode-1"][self.ntp_keys[1]])
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 3: Validated NTP Configuration on srvnode-{}:{}".format(
-                node, resp[1]))
+            LOGGER.info("Step 3: Validated NTP Configuration on srvnode-%s:%s", node, resp[1])
 
         ntp_time_server_val = self.ntp_data["srvnode-1"][self.ntp_keys[0]]
         ntp_time_zone_val = self.ntp_data["srvnode-1"][self.ntp_keys[1]]
-        LOGGER.info("Step 4: Validate time_server is set to {} in /etc/chrony.conf".format(
-            ntp_time_server_val))
+        LOGGER.info("Step 4: Validate time_server is set to %s in /etc/chrony.conf",
+                    ntp_time_server_val)
         resp = self.prov_obj.get_chrony(
             node_obj=self.node_obj_list[0],
             time_server=ntp_time_server_val)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Validated time_server in /etc/chrony.conf response = {}".format(
-            resp[1]))
+        LOGGER.info("Step 4: Validated time_server in /etc/chrony.conf response = %s", resp[1])
 
         set_timezone = (random.choice(
             [ii for ii in timezone_data if ii != ntp_time_zone_val]))
         set_timesrv_ip = (random.choice(
             [ii for ii in timeserver_data if ii != ntp_time_server_val]))
-        LOGGER.info("Step 5: Set time_server {} and timezone {}".format(
-            set_timesrv_ip, set_timezone))
+        LOGGER.info("Step 5: Set time_server %s and timezone %s", set_timesrv_ip, set_timezone)
         for node in range(1, self.no_nodes+1):
             resp = self.prov_obj.set_ntpsysconfg(
                 node_obj=self.node_obj_list[0],
@@ -463,30 +450,30 @@ class TestPostDeployMultiNode:
                 self.ntp_keys, node_obj=self.node_obj_list[0], node_id=node,
                 exp_t_srv=set_timesrv_ip, exp_t_zone=set_timezone)
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 6: Validated set NTP Configuration on srvnode-{}:{}".format(
-                node, resp[1]))
+            LOGGER.info("Step 6: Validated set NTP Configuration on srvnode-%s:%s", node, resp[1])
 
         LOGGER.info("Step 7: Validate set time_server in /etc/chrony.conf")
         resp = self.prov_obj.get_chrony(
             node_obj=self.node_obj_list[0],
             time_server=set_timesrv_ip)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Validated set time_server in /etc/chrony.conf response = {}".format(
-            resp[1]))
+        LOGGER.info("Step 7: Validated set time_server in /etc/chrony.conf response = %s", resp[1])
 
         LOGGER.info("Step 8: Restore NTP configuration data.")
         for node in range(1, self.no_nodes+1):
             resp = self.prov_obj.set_ntpsysconfg(node_obj=self.node_obj_list[0],
-                                                 time_server=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
-                                                 timezone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
+                                                 time_server=self.ntp_data[f"srvnode-{node}"]
+                                                 [self.ntp_keys[0]],
+                                                 timezone=self.ntp_data[f"srvnode-{node}"]
+                                                 [self.ntp_keys[1]])
             assert_utils.assert_true(resp[0], resp[1])
             resp = self.prov_obj.sysconfg_verification(
                 self.ntp_keys, node_obj=self.node_obj_list[0], node_id=node,
                 exp_t_srv=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                 exp_t_zone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 8: Validated Restored NTP Configuration on srvnode-{}:{}".format(
-                node, resp[1]))
+            LOGGER.info("Step 8: Validated Restored NTP Configuration on srvnode-%s:%s", node,
+                        resp[1])
         LOGGER.info("Step 8: Restored NTP configuration data")
         self.restored = True
         LOGGER.info(
