@@ -1,7 +1,4 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-#
-# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -21,7 +18,7 @@
 
 import json
 import math
-import time
+import random, time
 from http import HTTPStatus
 from random import SystemRandom
 from string import Template
@@ -216,3 +213,15 @@ class GetSetQuota(RestTestLib):
         user_id = const.IAM_USER + str(int(time.time()))
         display_name = const.IAM_USER + str(int(time.time()))
         return user_id, display_name
+
+    @staticmethod
+    def get_rand_int(max_capacity = int, max_buckets = int, length: int = 6):
+        """
+        Return the random max_capacity and max_buckets integers.
+        """
+        max_capacity = [random.randint(1, max_capacity) for _ in range(max_capacity)]
+        max_buckets = [random.randint(1, max_buckets) for _ in range(max_buckets)]
+        for _ in range(length):
+            max_capacity = random.choice(max_capacity)
+            max_buckets = random.choice(max_buckets)
+            return max_capacity, max_buckets
