@@ -24,7 +24,7 @@ Create DB entry for Continuous deployment Jenkins Job.
 import json
 import os
 import sys
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE   #nosec
 
 import yaml
 from word2number import w2n
@@ -37,7 +37,7 @@ def execute_cmd(cmd) -> tuple:
     param: cmd : Command to be executed.
     return: Boolean, output/error
     """
-    proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+    proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)  #nosec
     output, error = proc.communicate()
     print("Output = ", str(output))
     print("\nError = ", str(error))
