@@ -1,4 +1,4 @@
-#!/usr/bin/python # pylint: disable=C0302
+#!/usr/bin/python # pylint: disable=too-many-lines
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -32,9 +32,7 @@ from time import perf_counter_ns
 import pytest
 
 from commons import configmanager
-from commons.constants import K8S_SCRIPTS_PATH
-from commons.constants import MOTR_CONTAINER_PREFIX
-from commons.constants import POD_NAME_PREFIX
+from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
@@ -112,8 +110,8 @@ class TestRGWProcessRestart:
         if not self.test_completed:
             self.log.info("Test Failure observed, collecting support bundle")
             path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
-            resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
-                                                                   scripts_path=K8S_SCRIPTS_PATH)
+            resp = support_bundle_utils.collect_support_bundle_k8s(
+                local_dir_path=path, scripts_path=const.K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
         if os.path.exists(self.test_dir_path):
             system_utils.remove_dirs(self.test_dir_path)
@@ -143,11 +141,11 @@ class TestRGWProcessRestart:
                                                args=(workload_info, que, False, True, True))
         proc_read_op.start()
 
-        self.log.info("Step 3: Perform Single m0d Process Restart During Copy Object Operations")
+        self.log.info("Step 3: Perform Single m0d Process Restart During Read Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
                                             process=self.rgw_process, check_proc_state=False)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
@@ -178,11 +176,11 @@ class TestRGWProcessRestart:
                                                       log_file_prefix, que))
         proc_write_op.start()
 
-        self.log.info("Step 2: Perform Single m0d Process Restart During Copy Object Operations")
+        self.log.info("Step 2: Perform Single m0d Process Restart During Read Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
                                             process=self.rgw_process, check_proc_state=False)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
@@ -253,8 +251,8 @@ class TestRGWProcessRestart:
         self.log.info("Step 3: Perform Single m0d Process Restart During Delete Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
                                             process=self.rgw_process, check_proc_state=False)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         event.clear()

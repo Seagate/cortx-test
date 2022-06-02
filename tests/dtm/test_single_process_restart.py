@@ -1,4 +1,4 @@
-#!/usr/bin/python # pylint: disable=C0302
+#!/usr/bin/python # pylint: disable=too-many-lines
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
