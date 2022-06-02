@@ -39,7 +39,7 @@ DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.y
 
 class TestContDeployment:
     """Test Multiple config of N+K+S deployment testsuite"""
-
+    # pylint: disable=too-many-statements
     @classmethod
     def setup_class(cls):
         """Setup class"""
@@ -102,7 +102,7 @@ class TestContDeployment:
                         data_size < cls.meta_disk_size.strip('Gi'):
                     cls.log.error("VM disk size is %sG and provided disk size are %s, %s",
                                   data_size, cls.data_disk_size, cls.meta_disk_size)
-                    return False, f"VM disk size is {data_size}G and provided disk size are" \
+                    assert False, f"VM disk size is {data_size}G and provided disk size are" \
                                   f" {cls.data_disk_size},{cls.meta_disk_size}"
 
         cls.report_filepath = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)

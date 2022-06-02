@@ -639,7 +639,12 @@ class RestIamUser(RestTestLib):
         existing_keys_matching = False
         diff_key = []
         for key in keys_list2:
-            if key not in keys_list1:
+            found = False
+            for key1 in keys_list1:
+                if key1["access_key"] == key["access_key"]:
+                    found = True
+                    break
+            if not found:
                 diff_key.append(key)
             else:
                 key_match_cnt = key_match_cnt + 1
