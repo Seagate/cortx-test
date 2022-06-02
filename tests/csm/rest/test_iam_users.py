@@ -254,6 +254,7 @@ class TestIamUserRGW():
         self.log.info("IAM delete success list %s", delete_success)
         self.log.info("IAM delete failed list %s", delete_failed)
         assert len(delete_failed) == 0, "Delete failed for IAM users"
+        self.created_iam_users = dict()
         self.log.info("Teardown ended")
 
 
