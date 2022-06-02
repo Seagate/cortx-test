@@ -131,7 +131,7 @@ class Versioning(S3Lib):
         return resp
 
     def put_obj_tag_ver(self, bucket_name: str = None, object_name: str = None,
-                        version: str = None, tags: dict =None) -> dict:
+                        version: str = None, tags: dict = None) -> dict:
         """
         Set the supplied tag-set to an object with version that already exists in a bucket.
         :param bucket_name: Name of the bucket.
@@ -147,7 +147,7 @@ class Versioning(S3Lib):
         return resp
 
     def delete_obj_tag_ver(self, bucket_name: str = None, object_name: str = None,
-                           version: str =None) -> dict:
+                           version: str = None) -> dict:
         """
         Remove the tag-set from an existing object with version.
         :param bucket_name: Name of the bucket.
