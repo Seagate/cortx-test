@@ -309,12 +309,10 @@ def delete_all_buckets(access_key: str, secret_key: str, **kwargs):
         bucket = s3_resource.Bucket(bucket.name)
         LOGGER.debug("Delete all associated objects.")
         bucket.objects.all().delete()
-        
+
         LOGGER.debug("Delete bucket : %s", bucket)
         bucket.delete()
-    
-    result = list(s3_resource.buckets.all()) == []
-    
-    del s3_resource
 
+    result = not list(s3_resource.buckets.all())
+    del s3_resource
     return result
