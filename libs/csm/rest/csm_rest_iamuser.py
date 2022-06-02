@@ -825,7 +825,7 @@ class RestIamUser(RestTestLib):
             exc=False)
         node_obj.copy_file_to_local(
             remote_path=cons.CLUSTER_COPY_PATH, local_path=cons.CSM_COPY_PATH)
-        stream = open(cons.CSM_COPY_PATH, 'r')
+        stream = open(cons.CSM_COPY_PATH, 'r', encoding="utf-8")
         data = yaml.safe_load(stream)
         internal_user = data["cortx"]["rgw"]["auth_user"]
         return internal_user
