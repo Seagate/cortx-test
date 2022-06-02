@@ -172,7 +172,7 @@ class TestRGWProcessRestart:
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         self.test_completed = True
-        self.log.info("ENDED: Verify READs during m0d restart using pkill")
+        self.log.info("ENDED: Verify READs during rgw_s3 restart using pkill")
 
     @pytest.mark.lc
     @pytest.mark.dtm
@@ -193,7 +193,8 @@ class TestRGWProcessRestart:
                                                       log_file_prefix, que))
         proc_write_op.start()
 
-        self.log.info("Step 2: Perform Single m0d Process Restart During Read Operations")
+        self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "
+                      "Operations", DTM_CFG["rgw_restart_cnt"])
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
@@ -216,7 +217,7 @@ class TestRGWProcessRestart:
 
         self.test_completed = True
 
-        self.log.info("ENDED: Verify WRITEs during m0d restart using pkill")
+        self.log.info("ENDED: Verify WRITEs during rgw_s3 restart using pkill")
 
     @pytest.mark.lc
     @pytest.mark.dtm
@@ -255,7 +256,8 @@ class TestRGWProcessRestart:
         self.log.info("Step 2: Successfully started DELETEs in background")
 
         event.set()
-        self.log.info("Step 3: Perform Single m0d Process Restart During Delete Operations")
+        self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "
+                      "Operations", DTM_CFG["rgw_restart_cnt"])
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
@@ -264,7 +266,7 @@ class TestRGWProcessRestart:
                                             restart_cnt=DTM_CFG["rgw_restart_cnt"])
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         event.clear()
-        self.log.info("Step 3: Successfully Performed Single m0d Process Restart During Delete "
+        self.log.info("Step 3: Successfully Performed Single rgw_s3 Process Restart During Delete "
                       "Operations")
 
         self.log.info("Step 4: Verify status for In-flight DELETEs while service was restarting")
