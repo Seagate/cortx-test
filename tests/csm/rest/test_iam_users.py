@@ -170,7 +170,7 @@ class TestIamUserRGW():
         if not setup_ready:
             setup_ready = cls.config.setup_csm_users()
         assert setup_ready
-        cls.created_iam_users = dict()
+        cls.created_iam_users = {}
         cls.cryptogen = SystemRandom()
         cls.bucket_name = None
         cls.user_id = None
@@ -254,7 +254,7 @@ class TestIamUserRGW():
         self.log.info("IAM delete success list %s", delete_success)
         self.log.info("IAM delete failed list %s", delete_failed)
         assert len(delete_failed) == 0, "Delete failed for IAM users"
-        self.created_iam_users = dict()
+        self.created_iam_users = {}
         self.log.info("Teardown ended")
 
 
@@ -1805,7 +1805,8 @@ class TestIamUserRGW():
         self.log.info("Perform PUT request to add invalid capability")
         payload = {"user_caps": "random=*;buckets=*"}
         response = self.csm_obj.add_user_caps_rgw(user_id, payload)
-        assert response.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed for add capability."
+        assert response.status_code == HTTPStatus.BAD_REQUEST, \
+                                    'Status code check failed for add capability.'
         self.log.info("Perform PUT request to add invalid  caps value")
         payload = {"user_caps": "users=random;buckets=*"}
         response = self.csm_obj.add_user_caps_rgw(user_id, payload)
@@ -3332,8 +3333,9 @@ class TestIamUserRGW():
             if key == "generate_key":
                 assert(len(get_resp["keys"]) < 2, "New key is not generated.")
             elif key == "access_key" or key == "secret_key":
-                assert(len(self.csm_obj.search_list_of_dict(key, payload[key], get_resp["keys"])) >= 1)
-            elif key =="key_type":
+                assert(len(self.csm_obj.search_list_of_dict(
+                    key, payload[key], get_resp["keys"])) >= 1)
+            elif key == "key_type":
                 pass
             else:
                 assert payload[key]==get_resp[key], "key mistmatch"
@@ -3965,7 +3967,6 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
-        uid = resp.json()["tenant"] + "$" + resp.json()["user_id"]
         usr_val = resp.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
 
@@ -4000,7 +4001,6 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
         usr1 = resp.json()
-        uid1 = usr1["tenant"] + "$" + usr1["user_id"]
         usr_val = resp.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
 
@@ -4751,7 +4751,7 @@ class TestIamUserRGW():
                     assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
                     assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
                     assert_utils.assert_equals(resp.json()["message"].lower(),
-                                           Template(msg_1).substitute(str_part="Max_entries").lower())
+                                        Template(msg_1).substitute(str_part="Max_entries").lower())
                 else:
                     assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
                     assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
