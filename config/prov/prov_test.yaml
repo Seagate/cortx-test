@@ -252,28 +252,27 @@ k8s_cortx_deploy:
       limits:
         mem: '256Mi'
         cpu: '500m'
-    ha:
-      fault_tolerance:
-        requests:
-          mem: '128Mi'
-          cpu: '250m'
-        limits:
-          mem: '1Gi'
-          cpu: '500m'
-      health_monitor:
-        requests:
-          mem: '128Mi'
-          cpu: '250m'
-        limits:
-          mem: '1Gi'
-          cpu: '500m'
-      k8s_monitor:
-        requests:
-          mem: '128Mi'
-          cpu: '250m'
-        limits:
-          mem: '1Gi'
-          cpu: '500m'
+    fault_tolerance:
+      requests:
+        mem: '128Mi'
+        cpu: '250m'
+      limits:
+        mem: '1Gi'
+        cpu: '500m'
+    health_monitor:
+      requests:
+        mem: '128Mi'
+        cpu: '250m'
+      limits:
+        mem: '1Gi'
+        cpu: '500m'
+    k8s_monitor:
+      requests:
+        mem: '128Mi'
+        cpu: '250m'
+      limits:
+        mem: '1Gi'
+        cpu: '500m'
 test_basic_io:
   io_upper_limits:
     Kb: 130
