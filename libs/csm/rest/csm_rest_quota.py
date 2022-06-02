@@ -18,7 +18,7 @@
 
 import json
 import math
-import random, time
+import os, random, time
 from http import HTTPStatus
 from random import SystemRandom
 from string import Template
@@ -215,13 +215,18 @@ class GetSetQuota(RestTestLib):
         return user_id, display_name
 
     @staticmethod
-    def get_rand_int(max_capacity = int, max_buckets = int, length: int = 6):
+    def get_rand_int(max_capacity: int = 10, max_buckets: int = 10):
         """
         Return the random max_capacity and max_buckets integers.
         """
-        max_capacity = [random.randint(1, max_capacity) for _ in range(max_capacity)]
-        max_buckets = [random.randint(1, max_buckets) for _ in range(max_buckets)]
-        for _ in range(length):
-            max_capacity = random.choice(max_capacity)
-            max_buckets = random.choice(max_buckets)
-            return max_capacity, max_buckets
+        byte_caps = os.urandom(max_capacity)
+        byte_obj = os.urandom(max_buckets)
+        capacity = str(int.from_bytes(byte_caps, byteorder='little'))
+        buckets = str(int.from_bytes(byte_obj, byteorder='little'))
+        numb_count, numb_size = len(capacity), len(capacity) // 4
+        capacity = [capacity[i:i + numb_size] for i in range(0, numb_count, numb_size)]
+        numb_count, numb_size = len(buckets), len(buckets) // 7
+        buckets = [buckets[i:i + numb_size] for i in range(0, numb_count, numb_size)]
+        max_capacity = random.choice(capacity)
+        max_buckets = random.choice(buckets)
+        return max_capacity, max_buckets

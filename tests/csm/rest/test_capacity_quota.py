@@ -1628,7 +1628,7 @@ class TestCapacityQuota():
         response = self.csm_obj.create_iam_user_rgw(payload)
         assert response.status_code == HTTPStatus.CREATED, "Status code check failed"
         self.log.info("Step 2: Perform PUT API to set user level quota fields.")
-        max_size, max_objects = self.csm_obj.get_rand_int(1000000, 1000)
+        max_size, max_objects = self.csm_obj.get_rand_int(10, 10)
         test_cfg = self.csm_conf["test_40601"]
         enabled = test_cfg["enabled"]
         quota_payload = {"enabled": enabled, "max_size": max_size,
@@ -1641,8 +1641,8 @@ class TestCapacityQuota():
         user_quota = res.json()
         self.log.info("Step 4: Verify the user level quota fields as per request.")
         assert user_quota['enabled'] == eval('True'), "Status check failed"
-        assert user_quota['max_size'] == max_size, "Max size field not matched"
-        assert user_quota['max_objects'] == max_objects, "Objects field not matched"
+        assert user_quota['max_size'] == int(max_size), "Max size field not matched"
+        assert user_quota['max_objects'] == int(max_objects), "Objects field not matched"
         self.log.info("Step 5: Perform PUT API to set user level quota as disabled")
         quota_payload = {"enabled": False, "max_size": max_size,
                          "max_objects": max_objects}
@@ -1654,8 +1654,8 @@ class TestCapacityQuota():
         user_quota = res.json()
         self.log.info("Step 7: Verify the user level quota fields as per above request.")
         assert user_quota['enabled'] == eval('False'), "Status check failed"
-        assert user_quota['max_size'] == max_size, "Max size field not matched"
-        assert user_quota['max_objects'] == max_objects, "Objects field not matched"
+        assert user_quota['max_size'] == int(max_size), "Max size field not matched"
+        assert user_quota['max_objects'] == int(max_objects), "Objects field not matched"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
@@ -1811,3 +1811,4 @@ class TestCapacityQuota():
         res = self.csm_obj.get_user_quota("")
         self.log.info("response :  %s", res)
         assert res.status_code == HTTPStatus.NOT_FOUND, "Status code check failed"
+
