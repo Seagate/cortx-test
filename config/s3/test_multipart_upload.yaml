@@ -342,7 +342,7 @@ test_32702_2:
           count: 1
 
 test_40265:
-  file_size: 6
+  file_size: 10
   chunk_size: 1048576
   part_sizes:
     - part_size: 5

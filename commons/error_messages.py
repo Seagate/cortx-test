@@ -58,12 +58,6 @@ CORTX_INVALD_BYTERANGE = ("An error occurred (InvalidRange) when calling the Get
                            "The requested range is not satisfiable")
 RGW_INVALD_BYTERANGE =("An error occurred (InvalidRange) when calling the GetObject operation: "
                        "Unknown")
-RGW_HEAD_OBJ_ERR = "An error occurred (404) when calling the HeadObject operation: Not Found"
-CORTX_HEAD_OBJ_ERR = "An error occurred (404) when calling the HeadObject operation: Not Found"
-CORTX_INVALD_BYTERANGE = ("An error occurred (InvalidRange) when calling the GetObject operation: "
-                           "The requested range is not satisfiable")
-RGW_INVALD_BYTERANGE =("An error occurred (InvalidRange) when calling the GetObject operation: "
-                       "Unknown")
 RGW_MULTI_DELETE_ERR = ("An error occurred (400) when calling the DeleteObjects operation: "
                         "Bad Request")
 
