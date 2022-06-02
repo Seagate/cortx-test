@@ -1693,7 +1693,7 @@ class TestCapacityQuota():
         assert res.status_code == HTTPStatus.OK, "Status code check failed"
         user_quota = res.json()
         self.log.info("Step 4: Verify the user info level quota fields as per request.")
-        assert user_quota['user_quota']['enabled'] == ast.literal_eval('True'), "Status check failed"
+        assert user_quota['user_quota']['enabled'] == ast.literal_eval('True'), "Status check fail"
         assert user_quota['user_quota']['max_size'] == max_size, "Maxsize field not matched"
         assert user_quota['user_quota']['max_objects'] == max_objects, "Objects field not matched"
         self.log.info("##### Test ended -  %s #####", test_case_name)
