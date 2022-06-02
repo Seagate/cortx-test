@@ -194,3 +194,64 @@ class S3VersioningTestLib(Versioning):
 
         return True, response
 
+    def get_obj_tag_ver(self, bucket_name: str = None, object_name: str = None,
+                        version: str = None) -> tuple:
+        """
+        Return the tag-set of an object with version.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :param version: Version ID of the object.
+        :return : (boolean, response)
+        """
+        LOGGER.info("Getting %s object's tag with version id %s", object_name, version)
+        try:
+            resp = super().get_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
+                                           version=version)
+            LOGGER.info("Successfully sent request for get object tagging for %s object with %s "
+                        "version", object_name, version)
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s", S3VersioningTestLib.get_obj_tag_ver.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+        return True, resp
+
+    def put_obj_tag_ver(self, bucket_name: str = None, object_name: str = None,
+                        version: str = None, tags: dict =None) -> tuple:
+        """
+        Set the supplied tag-set to an object with version that already exists in a bucket.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :param tags: Tag for the object.
+        :param version: Version ID of the object.
+        :return: (boolean, response)
+        """
+        LOGGER.info("Putting %s object with tag with version id %s", object_name, version)
+        try:
+            resp = super().put_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
+                                           version=version, tags=tags)
+            LOGGER.info("Successfully sent request for put object tagging for %s object with %s "
+                        "version", object_name, version)
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s", S3VersioningTestLib.put_obj_tag_ver.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+        return True, resp
+
+    def delete_obj_tag_ver(self, bucket_name: str = None, object_name: str = None,
+                           version: str =None) -> tuple:
+        """
+        Remove the tag-set from an existing object with version.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :param version: Version ID of the object.
+        :return : response
+        """
+        LOGGER.info("Deleting %s object tag with version %s", object_name, version)
+        try:
+            resp = super().delete_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
+                                              version=version)
+            LOGGER.info("Successfully sent request for delete object tag for %s object with %s "
+                        "version", object_name, version)
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s", S3VersioningTestLib.delete_obj_tag_ver.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
+        return True, resp
+

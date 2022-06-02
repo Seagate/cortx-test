@@ -114,3 +114,49 @@ class Versioning(S3Lib):
         LOGGER.debug("DELETE Object with version id response: %s", response)
 
         return response
+
+    def get_obj_tag_ver(self, bucket_name: str = None, object_name: str = None,
+                        version: str = None) -> dict:
+        """
+        Return the tag-set of an object with version.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :param version: Version ID of the object.
+        :return : response
+        """
+        resp = self.s3_client.get_object_tagging(Bucket=bucket_name, Key=object_name,
+                                                 VersionId=version)
+        LOGGER.debug("Response for get object tagging for %s object with %s version : %s",
+                     object_name, version, resp)
+        return resp
+
+    def put_obj_tag_ver(self, bucket_name: str = None, object_name: str = None,
+                        version: str = None, tags: dict =None) -> dict:
+        """
+        Set the supplied tag-set to an object with version that already exists in a bucket.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :param tags: Tag for the object.
+        :param version: Version ID of the object.
+        :return: response
+        """
+        resp = self.s3_client.put_object_tagging(Bucket=bucket_name, Key=object_name,
+                                                 VersionId=version, Tagging=tags)
+        LOGGER.debug("Response for put object tagging for %s object with %s version: %s",
+                     object_name, version, resp)
+        return resp
+
+    def delete_obj_tag_ver(self, bucket_name: str = None, object_name: str = None,
+                           version: str =None) -> dict:
+        """
+        Remove the tag-set from an existing object with version.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :param version: Version ID of the object.
+        :return : response
+        """
+        resp = self.s3_client.delete_object_tagging(Bucket=bucket_name, Key=object_name,
+                                                    VersionId=version)
+        LOGGER.debug("Response for delete object tagging for %s object with %s version : %s",
+                     object_name, version, resp)
+        return resp
