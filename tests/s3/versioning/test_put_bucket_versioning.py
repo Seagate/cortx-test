@@ -85,6 +85,7 @@ class TestPutBucketVersioning:
         #     res = self.s3_test_obj.delete_multiple_buckets(pref_list)
         #     assert_utils.assert_true(res[0], res[1])
 
+    @pytest.mark.sanity
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32631')
     @CTFailOn(error_handler)
@@ -100,7 +101,7 @@ class TestPutBucketVersioning:
         assert_utils.assert_equal(res[1]['Status'], "Enabled")
         self.log.info("ENDED: Test PUT bucket versioning API for Enabling bucket versioning")
 
-
+    @pytest.mark.sanity
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-32713')
     @CTFailOn(error_handler)
