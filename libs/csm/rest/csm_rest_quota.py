@@ -18,7 +18,8 @@
 
 import json
 import math
-import os, random, time
+import os
+import time
 from http import HTTPStatus
 from random import SystemRandom
 from string import Template
@@ -227,6 +228,4 @@ class GetSetQuota(RestTestLib):
         capacity = [capacity[i:i + numb_size] for i in range(0, numb_count, numb_size)]
         numb_count, numb_size = len(buckets), len(buckets) // 7
         buckets = [buckets[i:i + numb_size] for i in range(0, numb_count, numb_size)]
-        max_capacity = random.choice(capacity)
-        max_buckets = random.choice(buckets)
-        return max_capacity, max_buckets
+        return capacity[0], buckets[-1]

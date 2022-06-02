@@ -19,6 +19,7 @@
 #
 """Tests System capacity scenarios using REST API
 """
+import ast
 import logging
 import math
 import os
@@ -1602,7 +1603,7 @@ class TestCapacityQuota():
         self.log.info("Step 4: Verify the user level quota fields as per request.")
         user_quota = res.json()
         self.log.info("response: %s", user_quota)
-        assert user_quota['enabled'] == eval('True'), "Status check failed"
+        assert user_quota['enabled'] == ast.literal_eval('True'), "Status check failed"
         assert user_quota['max_size'] == max_size, "Max size field not matched"
         assert user_quota['max_objects'] == max_objects, "Objects field not matched"
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1640,7 +1641,7 @@ class TestCapacityQuota():
         assert res.status_code == HTTPStatus.OK, "Status code check failed"
         user_quota = res.json()
         self.log.info("Step 4: Verify the user level quota fields as per request.")
-        assert user_quota['enabled'] == eval('True'), "Status check failed"
+        assert user_quota['enabled'] == ast.literal_eval('True'), "Status check failed"
         assert user_quota['max_size'] == int(max_size), "Max size field not matched"
         assert user_quota['max_objects'] == int(max_objects), "Objects field not matched"
         self.log.info("Step 5: Perform PUT API to set user level quota as disabled")
@@ -1653,7 +1654,7 @@ class TestCapacityQuota():
         assert res.status_code == HTTPStatus.OK, "Status code check failed"
         user_quota = res.json()
         self.log.info("Step 7: Verify the user level quota fields as per above request.")
-        assert user_quota['enabled'] == eval('False'), "Status check failed"
+        assert user_quota['enabled'] == ast.literal_eval('False'), "Status check failed"
         assert user_quota['max_size'] == int(max_size), "Max size field not matched"
         assert user_quota['max_objects'] == int(max_objects), "Objects field not matched"
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1692,7 +1693,7 @@ class TestCapacityQuota():
         assert res.status_code == HTTPStatus.OK, "Status code check failed"
         user_quota = res.json()
         self.log.info("Step 4: Verify the user info level quota fields as per request.")
-        assert user_quota['user_quota']['enabled'] == eval('True'), "Status check failed"
+        assert user_quota['user_quota']['enabled'] == ast.literal_eval('True'), "Status check failed"
         assert user_quota['user_quota']['max_size'] == max_size, "Maxsize field not matched"
         assert user_quota['user_quota']['max_objects'] == max_objects, "Objects field not matched"
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1768,7 +1769,7 @@ class TestCapacityQuota():
         assert res.status_code == HTTPStatus.OK, "Status code check failed"
         self.log.info("Step 4: Verify the user level quota fields as per request.")
         user_quota = res.json()
-        assert user_quota['enabled'] == eval('True'), "Status check failed"
+        assert user_quota['enabled'] == ast.literal_eval('True'), "Status check failed"
         assert user_quota['max_size'] == max_size, "Max size field not matched"
         assert user_quota['max_objects'] == max_objects, "Objects field not matched"
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1811,4 +1812,3 @@ class TestCapacityQuota():
         res = self.csm_obj.get_user_quota("")
         self.log.info("response :  %s", res)
         assert res.status_code == HTTPStatus.NOT_FOUND, "Status code check failed"
-
