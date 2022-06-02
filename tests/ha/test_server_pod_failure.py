@@ -1676,7 +1676,6 @@ class TestServerPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Will be tested once F-20C completely supported.")
     @pytest.mark.tags("TEST-39914")
     @CTFailOn(error_handler)
     def test_mpu_safe_server_pod_down(self):
@@ -1783,7 +1782,6 @@ class TestServerPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Will be tested once F-20C completely supported.")
     @pytest.mark.tags("TEST-39915")
     @CTFailOn(error_handler)
     def test_mpu_unsafe_server_pod_down(self):
@@ -1938,7 +1936,6 @@ class TestServerPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Will be tested once F-20C completely supported.")
     @pytest.mark.tags("TEST-39916")
     @CTFailOn(error_handler)
     def test_mpu_during_server_pod_down(self):
@@ -2188,7 +2185,6 @@ class TestServerPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Will be tested once F-20C completely supported.")
     @pytest.mark.tags("TEST-39917")
     @CTFailOn(error_handler)
     def test_partial_mpu_server_pod_shutdown(self):
