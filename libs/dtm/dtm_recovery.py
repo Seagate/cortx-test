@@ -169,7 +169,8 @@ class DTMRecoveryTestLib:
 
     # pylint: disable-msg=too-many-locals
     def process_restart(self, master_node, health_obj, pod_prefix, container_prefix, process,
-                        check_proc_state: bool = False, proc_state: str = const.DTM_RECOVERY_STATE):
+                        check_proc_state: bool = False, proc_state: str =
+                        const.DTM_RECOVERY_STATE, restart_cnt: int = 1):
         """
         Restart specified Process of specific pod and container
         :param master_node: Master node object
@@ -179,40 +180,43 @@ class DTMRecoveryTestLib:
         :param process: Process to be restarted.
         :param check_proc_state: Flag to check process state
         :param proc_state: Expected state of the process
+        :param restart_cnt: Process restart count
         """
-        pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
-        pod_selected = pod_list[random.randint(0, len(pod_list) - 1)]
-        self.log.info("Pod selected for %s process restart : %s", process, pod_selected)
-        container_list = master_node.get_container_of_pod(pod_name=pod_selected,
-                                                          container_prefix=container_prefix)
-        container = container_list[random.randint(0, len(container_list) - 1)]
-        self.log.info("Container selected : %s", container)
-        self.log.info("Get process IDs of %s", process)
-        resp = self.get_process_ids(health_obj=health_obj, process=process)
-        if not resp[0]:
-            return resp[0]
-        process_ids = resp[1]
-        self.log.info("Perform %s restart", process)
-        resp = master_node.kill_process_in_container(pod_name=pod_selected,
-                                                     container_name=container,
-                                                     process_name=process)
-        self.log.debug("Resp : %s", resp)
+        for i_i in range(restart_cnt):
+            self.log.info("Restarting %s process for %s time", process, i_i)
+            pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
+            pod_selected = pod_list[random.randint(0, len(pod_list) - 1)]
+            self.log.info("Pod selected for %s process restart : %s", process, pod_selected)
+            container_list = master_node.get_container_of_pod(pod_name=pod_selected,
+                                                              container_prefix=container_prefix)
+            container = container_list[random.randint(0, len(container_list) - 1)]
+            self.log.info("Container selected : %s", container)
+            self.log.info("Get process IDs of %s", process)
+            resp = self.get_process_ids(health_obj=health_obj, process=process)
+            if not resp[0]:
+                return resp[0]
+            process_ids = resp[1]
+            self.log.info("Perform %s restart", process)
+            resp = master_node.kill_process_in_container(pod_name=pod_selected,
+                                                         container_name=container,
+                                                         process_name=process)
+            self.log.debug("Resp : %s", resp)
 
-        self.log.info("Polling hctl status to check if all services are online")
-        resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=300)
-        if not resp[0]:
-            return resp[0]
+            self.log.info("Polling hctl status to check if all services are online")
+            resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=300)
+            if not resp[0]:
+                return resp[0]
 
-        if check_proc_state:
-            self.log.info("Check process states")
-            resp = self.poll_process_state(master_node=master_node, pod_name=pod_selected,
-                                           container_name=container, process_ids=process_ids,
-                                           status=proc_state)
-            if not resp:
-                self.log.error("Failed during polling status of process")
-                return False
+            if check_proc_state:
+                self.log.info("Check process states")
+                resp = self.poll_process_state(master_node=master_node, pod_name=pod_selected,
+                                               container_name=container, process_ids=process_ids,
+                                               status=proc_state)
+                if not resp:
+                    self.log.error("Failed during polling status of process")
+                    return False
 
-            self.log.info("Process %s restarted successfully", process)
+                self.log.info("Process %s restarted successfully", process)
 
         return True
 
