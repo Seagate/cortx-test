@@ -888,7 +888,7 @@ class HAK8s:
 
     def event_s3_operation(self, event, setup_s3bench=True, log_prefix=None, s3userinfo=None,
                            skipread=False, skipwrite=False, skipcleanup=False, nsamples=10,
-                           nclients=10, output=None):
+                           nclients=10, output=None, event_set_clr=None):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
         :param event: Thread event to be sent in case of parallel IOs
@@ -901,6 +901,8 @@ class HAK8s:
         :param nsamples: Number of samples of object
         :param nclients: Number of clients/workers
         :param output: Queue to fill results
+        :param event_set_clr: Thread event set-clear flag reference when s3bench workload
+        execution miss the event set-clear time window
         :return: None
         """
         pass_res = []
@@ -909,8 +911,6 @@ class HAK8s:
         workloads = HA_CFG["s3_bench_workloads"]
         if self.setup_type == "HW":
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
-        # Flag to store next workload status after/while event gets clear from test function
-        event_clear_flg = False
         if setup_s3bench:
             resp = s3bench.setup_s3bench()
             if not resp:
@@ -925,14 +925,11 @@ class HAK8s:
                 skip_write=skipwrite, skip_read=skipread, obj_size=workload,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
                 end_point=S3_CFG["s3_url"], validate_certs=S3_CFG["validate_certs"])
-            if event.is_set():
+            if event.is_set() or (isinstance(event_set_clr, list) and event_set_clr[0]):
+                LOGGER.debug("The state of event set clear Flag is %s", event_set_clr)
                 fail_res.append(resp)
-                event_clear_flg = True
+                event_set_clr[0] = False
             else:
-                if event_clear_flg:
-                    fail_res.append(resp)
-                    event_clear_flg = False
-                    continue
                 pass_res.append(resp)
         results["pass_res"] = pass_res
         results["fail_res"] = fail_res
@@ -1471,15 +1468,17 @@ class HAK8s:
     def delete_kpod_with_shutdown_methods(self, master_node_obj, health_obj,
                                           pod_prefix=None, kvalue=1,
                                           down_method=common_const.RESTORE_SCALE_REPLICAS,
-                                          event=None):
+                                          event=None, event_set_clr=None):
         """
         Delete K pods by given shutdown method. Check and verify deleted/remaining pod's services
         status, cluster status
         :param master_node_obj: Master node object list
         :param health_obj: Health object
         :param pod_prefix: Pod prefix to be deleted (Expected List type)
-        :param down_method: Pod shutdown/delete method
-        :param kvalue: Number of pod to be shutdown/deleted
+        :param down_method: Pod shutdown/delete method.
+        :param kvalue: Number of pod to be shutdown/deleted.
+        :param event_set_clr: Thread event set-clear flag reference when s3bench workload
+        execution miss the event set-clear time window
         :param event: Thread event to set/clear before/after pods/nodes
         shutdown with parallel IOs
         return : tuple
@@ -1524,8 +1523,10 @@ class HAK8s:
             pod_info[pod]['method'] = down_method
             pod_info[pod]['hostname'] = hostname
             if event is not None:
-                LOGGER.debug("Clearing the Thread event")
+                LOGGER.debug("Clearing the Thread event and setting event set_clear flag")
                 event.clear()
+                if isinstance(event_set_clr, list):
+                    event_set_clr[0] = True
             LOGGER.info("Check services status that were running on pod %s", pod)
             resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
                                                  hostname=pod_info[pod]['hostname'])

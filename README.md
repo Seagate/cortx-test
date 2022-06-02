@@ -2,10 +2,10 @@
 CORTX-TEST is a repository for multiple automation projects developed for testing [CORTX](https://github.com/Seagate/cortx/blob/main/README.md#get-started) and supported solutions/systems. These frameworks are reusable for any opensource object stores with minimal configurations. 
 
 It is logically divided into following components:
-*  Test Automation framework (Autobot)
-*  Test Execution Framework  (drunner)
-*  Robot framework UI Tests and
-*  Tools ( Reporting Dashboards, Data Integrity, Clone Test Plans etc.)
+*   Test Automation framework (Corbot)
+*   Test Execution Framework  (drunner)
+*   Robot framework UI Tests and
+*   Tools ( Reporting Dashboards, Data Integrity, Clone Test Plans etc.)
 
 [Architectural Overview](https://github.com/Seagate/cortx-test/blob/main/docs/Architectural-Overview.md) page describes the architectural considerations and repository layout. [Test Execution Deployment View](https://github.com/Seagate/cortx-test/blob/main/docs/Test-Execution-Deployment-View.md) describes the deployment design view of the test framework in distributed mode. [Test Framework Design Document](https://github.com/Seagate/cortx-test/blob/main/docs/Design-Document-Test-Framework.md)  describes in details the design of the framework in distributed mode.
 

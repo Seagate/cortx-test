@@ -157,7 +157,6 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5717")
     def test_verify_get_bucket_acl_3012(self):
         """verify Get Bucket ACL of existing Bucket."""
@@ -370,7 +369,6 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5728")
     def test_add_canned_acl_bucket_3527(self):
         """Add canned ACL bucket-owner-full-control along with READ ACL grant permission."""
@@ -834,7 +832,6 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5721")
     def test_perform_head_bucket_acl_3580(self):
         """Perform a head bucket on a bucket."""
