@@ -232,6 +232,7 @@ def check_get_head_object_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3Ver
     """
     Verify GET/HEAD Object response for specified version/object
 
+    :param s3_test_obj: S3TestLib object to perform S3 calls
     :param s3_ver_test_obj: S3VersioningTestLib object to perform S3 versioning calls
     :param bucket_name: Target bucket name
     :param object_name: Target object name
