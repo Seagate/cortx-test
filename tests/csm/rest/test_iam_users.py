@@ -1127,7 +1127,7 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
-        uid = response.json()["tenant"] + "$" + response.json()["user_id"]
+        uid = res.json()["tenant"] + "$" + res.json()["user_id"]
         self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Verify keys returned when generate_key is True")
         payload = {"uid": user_id, "key_type": "s3", "generate_key": True}
@@ -2304,6 +2304,7 @@ class TestIamUserRGW():
             assert error.response['Error']['Code'] == "TooManyBuckets", "Error check failed."
         self.log.info("[END]Creating IAM user with max bucket %s", max_buckets)
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
