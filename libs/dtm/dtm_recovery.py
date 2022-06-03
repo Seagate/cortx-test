@@ -20,16 +20,20 @@
 """
 Library Methods for DTM recovery testing
 """
+import copy
 import logging
 import os
 import random
 import re
+import secrets
 import time
 
 from commons import constants as const
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
+from config import CMN_CFG
+from config import HA_CFG
 from config import S3_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
@@ -53,6 +57,8 @@ class DTMRecoveryTestLib:
         self.secret_key = secret_key
         self.ha_obj = HAK8s()
         self.s3t_obj = S3TestLib(access_key=self.access_key, secret_key=self.secret_key)
+        self.setup_type = CMN_CFG["setup_type"]
+        self.system_random = secrets.SystemRandom()
 
     # pylint: disable=too-many-arguments
     def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples, obj_size,
@@ -72,12 +78,17 @@ class DTMRecoveryTestLib:
         results = list()
         workload = list()
         log_path = None
+        obj_size_list = copy.deepcopy(HA_CFG["s3_bench_workloads"])
+        if self.setup_type == "HW":
+            obj_size_list.extend(HA_CFG["s3_bench_large_workloads"])
         for iter_cnt in range(loop):
             self.log.info("Iteration count: %s", iter_cnt)
             self.log.info("Perform Write Operations : ")
             bucket_name = bucket_prefix + str(int(time.time()))
             if created_bucket:
                 bucket_name = created_bucket[iter_cnt]
+            if obj_size is None:
+                obj_size = self.system_random.choice(obj_size_list)
             resp = s3bench.s3bench(self.access_key,
                                    self.secret_key, bucket=bucket_name,
                                    num_clients=no_of_clients, num_sample=no_of_samples,

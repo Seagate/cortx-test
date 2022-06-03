@@ -188,9 +188,8 @@ class TestRGWProcessRestart:
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
                                                 args=(self.bucket_name, self.object_name,
                                                       self.test_cfg['clients'],
-                                                      self.test_cfg['samples'],
-                                                      self.test_cfg['size'],
-                                                      log_file_prefix, que))
+                                                      self.test_cfg['samples'], log_file_prefix,
+                                                      que, self.test_cfg['size']))
         proc_write_op.start()
 
         self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "

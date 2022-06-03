@@ -81,6 +81,7 @@ class TestSingleProcessRestart:
                                 cls.master_node_list[0].password)
         cls.test_cfg = configmanager.get_config_wrapper(fpath="config/test_dtm_config.yaml")
         cls.m0d_process = 'm0d'
+        cls.rgw_process = 'rgw'
         cls.log.info("Setup S3bench")
         resp = s3bench.setup_s3bench()
         assert_utils.assert_true(resp)
@@ -197,10 +198,8 @@ class TestSingleProcessRestart:
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
                                                 args=(bucket_name, object_prefix,
                                                       self.test_cfg['clients'],
-                                                      self.test_cfg['samples'],
-                                                      self.test_cfg['size'],
-                                                      log_file_prefix,
-                                                      que))
+                                                      self.test_cfg['samples'], log_file_prefix,
+                                                      que, self.test_cfg['size'],))
         proc_write_op.start()
 
         self.log.info("Step 2 : Perform Single m0d Process Restart During Write Operations")
@@ -496,8 +495,9 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
 
-        self.log.info("Step 5: Perform Validate and Delete Operations on data written in Step 2")
-        self.dtm_obj.perform_ops(workload_info, que, True, True, False)
+        self.log.info("Step 4: Perform Read-Validate and Delete Operations on data written in Step "
+                      "1:")
+        self.dtm_obj.perform_ops(workload_info, que, False, True, False)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
 
@@ -535,7 +535,7 @@ class TestSingleProcessRestart:
                                                      False))
         proc_read_op.start()
 
-        self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
+        self.log.info("Step 3 : Perform Single m0d Process Restart During Delete Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.POD_NAME_PREFIX,
@@ -828,7 +828,7 @@ class TestSingleProcessRestart:
         self.log.info("Step 1: Start write Operations :")
         for i in range(0, 2):
             bucket_name = f"bucket-test-41232-{i}"
-            resp = self.s3_obj.create_bucket(bucket_name=bucket_name)
+            resp = self.s3_test_obj.create_bucket(bucket_name=bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             bucket_list.append(bucket_name)
         for size in self.test_cfg["size_list"]:
@@ -880,7 +880,7 @@ class TestSingleProcessRestart:
         self.log.info("Step 1: Start write Operations :")
         for i in range(0, 2):
             bucket_name = f"bucket-test-41233-{i}"
-            resp = self.s3_obj.create_bucket(bucket_name=bucket_name)
+            resp = self.s3_test_obj.create_bucket(bucket_name=bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             bucket_list.append(bucket_name)
         for size in self.test_cfg["size_list"]:
@@ -939,35 +939,35 @@ class TestSingleProcessRestart:
         self.log.info("Step 1: Start write Operations :")
         for i in range(0, 2):
             bucket_name = f"bucket-test-42253-{i}"
-            resp = self.s3_obj.create_bucket(bucket_name=bucket_name)
+            resp = self.s3_test_obj.create_bucket(bucket_name=bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             bucket_list.append(bucket_name)
         for size in self.test_cfg["size_list"]:
             file_name = "{}{}".format("dtm-test-42253", size)
             file_path = os.path.join(self.test_dir_path, file_name)
             system_utils.create_file(file_path, size)
-            resp = self.s3_obj.put_object(bucket_list[0], f"{object_name}_{size}", file_path)
+            resp = self.s3_test_obj.put_object(bucket_list[0], f"{object_name}_{size}", file_path)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Perform Single rgw Process Restart")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rwg_process, check_proc_state=False)
+                                            process=self.rgw_process, check_proc_state=False)
         assert_utils.assert_true(resp, "Failure observed during process restart")
         self.log.info("Step 3: Perform Copy Object to bucket-2, download and verify on copied "
                       "Objects")
         for size in self.test_cfg["size_list"]:
-            resp = self.s3_obj.copy_object(source_bucket=bucket_list[0],
-                                           source_object=f"{object_name}_{size}",
-                                           dest_bucket=bucket_list[1],
-                                           dest_object=f"{object_name}_{size}")
+            resp = self.s3_test_obj.copy_object(source_bucket=bucket_list[0],
+                                                source_object=f"{object_name}_{size}",
+                                                dest_bucket=bucket_list[1],
+                                                dest_object=f"{object_name}_{size}")
             assert_utils.assert_true(resp[0], resp[1])
             file_name_copy = "{}{}".format("dtm-test-42253-copy", size)
             file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
-            resp = self.s3_obj.object_download(bucket_name=bucket_list[1],
-                                               obj_name=f"{object_name}_{size}",
-                                               file_path=file_path_copy)
+            resp = self.s3_test_obj.object_download(bucket_name=bucket_list[1],
+                                                    obj_name=f"{object_name}_{size}",
+                                                    file_path=file_path_copy)
             assert_utils.assert_true(resp[0], resp[1])
             file_name = "{}{}".format("dtm-test-42253-", size)
             file_path = os.path.join(self.test_dir_path, file_name)
@@ -991,15 +991,15 @@ class TestSingleProcessRestart:
         self.log.info("Step 1: Start write Operations :")
         for i in range(0, 2):
             bucket_name = f"bucket-test-42254-{i}"
-            resp = self.s3_obj.create_bucket(bucket_name=bucket_name)
+            resp = self.s3_test_obj.create_bucket(bucket_name=bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             bucket_list.append(bucket_name)
         for size in self.test_cfg["size_list"]:
             file_name = "{}{}".format("dtm-test-42254-", size)
             file_path = os.path.join(self.test_dir_path, file_name)
             system_utils.create_file(file_path, size)
-            resp = self.s3_obj.put_object(bucket_list[0], f"{object_name}_{size}",
-                                          file_path)
+            resp = self.s3_test_obj.put_object(bucket_list[0], f"{object_name}_{size}",
+                                               file_path)
             obj_list.append(f"{object_name}_{size}")
             assert_utils.assert_true(resp[0], resp[1])
 
@@ -1016,7 +1016,7 @@ class TestSingleProcessRestart:
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rwg_process, check_proc_state=False)
+                                            process=self.rgw_process, check_proc_state=False)
         assert_utils.assert_true(resp, "Failure observed during process restart")
 
         self.log.info("Step 4: Wait for copy object to finish")
@@ -1028,9 +1028,9 @@ class TestSingleProcessRestart:
         for size in self.test_cfg["size_list"]:
             file_name_copy = "{}{}".format("dtm-test-42254-copy", size)
             file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
-            resp = self.s3_obj.object_download(bucket_name=bucket_list[1],
-                                               obj_name=f"{object_name}_{size}",
-                                               file_path=file_path_copy)
+            resp = self.s3_test_obj.object_download(bucket_name=bucket_list[1],
+                                                    obj_name=f"{object_name}_{size}",
+                                                    file_path=file_path_copy)
             assert_utils.assert_true(resp[0], resp[1])
             file_name = "{}{}".format("dtm-test-42254-", size)
             file_path = os.path.join(self.test_dir_path, file_name)
