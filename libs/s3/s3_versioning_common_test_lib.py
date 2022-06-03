@@ -29,6 +29,7 @@ assertions as well, with the main aim being to have leaner and cleaner code in t
 """
 import logging
 import random
+import string
 
 from commons import errorcodes as err
 from commons import error_messages as errmsg
@@ -486,3 +487,63 @@ def empty_versioned_bucket(s3_ver_test_obj: S3VersioningTestLib,
     for version in to_delete:
         s3_ver_test_obj.delete_object_version(bucket=bucket_name, key=version["Key"],
                                               version_id=version["VersionId"])
+
+
+def get_tag_key_val_pair(key_ran=(1, 128), val_ran=(0, 256), uni_char="+-=._:/@"):
+    """
+    Get random string for TAG's key-value pair withing given length range
+
+    :param key_ran: Length Limit for Key: Minimum 1, Maximum 128.
+    :param val_ran: Length Limit for Value: Minimum 0, Maximum 256.
+    :param uni_char: Allowed unique characters
+    :return: dict {key,val}
+    """
+    tag_char = string.ascii_letters + string.digits + uni_char
+    key_len = random.randrange(key_ran[0], key_ran[1])
+    key = ''.join([random.choice(tag_char) for _ in range(key_len)])
+    val_len = random.randrange(val_ran[0], val_ran[1])
+    val = ''.join([random.choice(tag_char) for _ in range(val_len)])
+    return {key: val}
+
+
+def pet_object_tagging(s3_ver_test_obj, bucket_name: str, object_name: str,
+                       version_tag: dict, **kwargs):
+    """
+    Set the supplied/generated tag_set to an object that already exists in a bucket.
+
+    :param s3_ver_test_obj: S3VersioningTestLib instance
+    :param bucket_name: Name of the bucket.
+    :param object_name: Name of the object.
+    :keyword version_id: Version ID associated with given object
+    :keyword tag_count: Count of TAGs to be generated and put to given object
+    :keyword tag_key_ran: Length Limit for Key: Minimum 1, Maximum 128.
+    :keyword tag_val_ran: Length Limit for Value: Minimum 0, Maximum 256.
+    :keyword tag_overrides: Specific TAG
+    :param version_tag: Dictionary to be updated with uploaded TagSet data
+    :return: (boolean, response)
+    """
+    version_id = kwargs.get("version_id", 'null')
+    tag_count = kwargs.get("tag_count", 1)
+    tag_key_ran = kwargs.get("tag_key_ran", (1, 128))
+    tag_val_ran = kwargs.get("tag_val_ran", (0, 256))
+    tag_overrides = kwargs.get("tag_overrides", None)  # Use this List of {Key: val} if not random
+
+    tag_set = []
+    if tag_overrides is None:
+        for tag_no in range(tag_count):
+            tag_set.append(get_tag_key_val_pair(key_ran=tag_key_ran, val_ran=tag_val_ran))
+    else:
+        tag_set = tag_overrides
+
+    if version_id:
+        resp = s3_ver_test_obj.put_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
+                                               version=version_id, tags={'TagSet': tag_set})
+        assert_utils.assert_true(resp[0], resp)
+        assert_utils.assert_equal(resp[1]['VersionId'], version_id, resp)
+    else:
+        resp = s3_ver_test_obj.put_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
+                                               tags={'TagSet': tag_set})
+        assert_utils.assert_true(resp[0], resp)
+        assert_utils.assert_equal(resp[1]['VersionId'], version_id, resp)
+
+    version_tag[object_name][version_id].extend(tag_set)
