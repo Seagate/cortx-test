@@ -73,6 +73,7 @@ class TestBucketTagging:
             assert_utils.assert_true(resp[0], resp)
         self.log.info("ENDED: Test teardown operations.")
 
+    @pytest.mark.sanity
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_tags
@@ -101,6 +102,7 @@ class TestBucketTagging:
         self.log.info("Step 3: Retrieved tag of a bucket")
         self.log.info("ENDED: Verify PUT Bucket tagging")
 
+    @pytest.mark.sanity
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_tags
