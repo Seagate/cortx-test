@@ -234,12 +234,13 @@ class TestIamUserRGW():
         delete_failed = []
         delete_success = []
         for user_val in self.created_iam_users.values():
+            user = user_val["user"]
             akey = user_val["access_key"]
             skey = user_val["secret_key"]
-            user = user_val["user"]
             self.log.info("deleting iam user %s", user)
-            result = s3_misc.delete_all_buckets(akey, skey)
-            assert result, "Failed to delete buckets"
+            if akey != '' or skey != '' :
+                result = s3_misc.delete_all_buckets(akey, skey)
+                assert result, "Failed to delete buckets"
             resp = self.csm_obj.delete_iam_user(user=user)
             self.log.debug("Verify Response : %s", resp)
             if resp.status_code != HTTPStatus.OK:
@@ -254,7 +255,6 @@ class TestIamUserRGW():
         self.log.info("IAM delete success list %s", delete_success)
         self.log.info("IAM delete failed list %s", delete_failed)
         assert len(delete_failed) == 0, "Delete failed for IAM users"
-        self.created_iam_users = {}
         self.log.info("Teardown ended")
 
 
@@ -578,7 +578,8 @@ class TestIamUserRGW():
         assert usr_val["secret_key"] != "", "Secret key check failed for user creation"
         self.log.info("creating payload with access keys generated in above step")
         user_id, display_name = self.get_IAM_user_payload()
-        payload = {"uid": user_id, "display_name": display_name, "access_key": resp["keys"][0]["access_key"]}
+        payload = {"uid": user_id, "display_name": display_name,
+                   "access_key": usr_val["access_key"]}
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CONFLICT, "Status code check failed for user creation"
@@ -590,9 +591,8 @@ class TestIamUserRGW():
         res_dict = res.json()
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
         assert len(res_dict["keys"]) == 0, "User keys check failed for user creation"
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val['user']]
+        uid = res_dict["tenant"] + "$" + res_dict["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("[END] Testing with existing access keys")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -617,8 +617,8 @@ class TestIamUserRGW():
         self.log.info("Verify no keys returned when generate_key=false.")
         assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
         assert len(resp["keys"]) == 0, "User key check failed for user creation"
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
+        uid = resp["tenant"] + "$" + resp["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Verify keys returned when generate key is false")
         user_id, display_name, access_keys, secret_keys = self.get_IAM_user_payload("keys")
         payload = {"uid": user_id, "display_name": display_name,
@@ -628,8 +628,8 @@ class TestIamUserRGW():
         res_dict = res.json()
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
         assert len(res_dict["keys"]) != 0, "User key check failed for user creation"
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
+        uid = res_dict["tenant"] + "$" + res_dict["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("[END] Testing with generate key")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -655,10 +655,9 @@ class TestIamUserRGW():
         assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
         usr_val = res_dict["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
+        self.created_iam_users[usr_val['user']]['access_key'] = ''
+        self.created_iam_users[usr_val['user']]['secret_key'] = ''
         assert res_dict["suspended"] == 1, "User key check failed for user creation"
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val['user']]
         self.log.info("[END] Testing IAM user with suspended user state")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -720,14 +719,13 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
         usr_val = resp.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
+        self.created_iam_users[usr_val['user']]['access_key'] = ''
+        self.created_iam_users[usr_val['user']]['secret_key'] = ''
         self.log.info("Get user info with Suspended state.")
         response = self.csm_obj.get_iam_user(payload['uid'])
         resp_dict = response.json()
         assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
         assert resp_dict["suspended"] == 1, "Suspended user key value not matched in response."
-        resp = self.csm_obj.delete_iam_user(usr_val['user'])
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val['user']]
         self.log.info("[END] Testing Get IAM user info with uid for suspended user")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -752,6 +750,8 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
         usr_val = resp.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
+        self.created_iam_users[usr_val['user']]['access_key'] = ''
+        self.created_iam_users[usr_val['user']]['secret_key'] = ''
         self.log.info("Get user info with empty uid.")
         payload["uid"] = ""
         resp = self.csm_obj.get_iam_user(payload['uid'])
@@ -762,9 +762,6 @@ class TestIamUserRGW():
         resp_code = self.csm_obj.get_iam_user_rgw(payload['uid'], None)
         self.log.info("Verify invalid auth token request failure.")
         assert resp_code.status_code == HTTPStatus.UNAUTHORIZED, "Status code check failed for user info"
-        resp = self.csm_obj.delete_iam_user(usr_val['user'])
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val['user']]
         self.log.info("[END] Testing Get IAM user info with invalid parameters.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -963,7 +960,7 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.create_iam_user_rgw(payload)
         assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
-        usr_val = resp.json()["keys"][0]
+        usr_val = response.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
         self.log.info("Verify delete user by uid.")
         resp = self.csm_obj.delete_iam_user(user_id)
@@ -995,7 +992,7 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.create_iam_user_rgw(payload)
         assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
-        usr_val = resp.json()["keys"][0]
+        usr_val = response.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
         self.log.info("Delete IAM user info by csm monitor user")
         resp = self.csm_obj.delete_iam_user(user_id, login_as="csm_user_monitor")
@@ -1045,11 +1042,13 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Testing that user can create Key pair for the I AM user using UID")
         self.log.info("Creating IAM user.")
-        user_id, display_name, access_key, secret_key = self.get_IAM_user_payload("keys")
+        user_id, display_name = self.get_IAM_user_payload()
         payload = {"uid": user_id, "display_name": display_name, "generate_key": False}
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.create_iam_user_rgw(payload)
         assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = response.json()["tenant"] + "$" + response.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         payload = {"uid": user_id}
         self.log.info("Perform PUT API to create keys using uid.")
         response = self.csm_obj.add_key_to_iam_user(**payload)
@@ -1059,14 +1058,14 @@ class TestIamUserRGW():
         assert len(resp) != 0, "Keys not created for IAM user."
         assert resp[0]["access_key"] != 0, "Access key not created"
         assert resp[0]["secret_key"] != 0, "Secret key not created"
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("Perform PUT API to create keys using uid and Access Key.")
         user_id, display_name, access_key, secret_key = self.get_IAM_user_payload("keys")
         payload = {"uid": user_id, "display_name": display_name, "generate_key": False}
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.create_iam_user_rgw(payload)
         assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = response.json()["tenant"] + "$" + response.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Verify new keys created using uid and access key.")
         payload = {"uid": user_id, "access_key": access_key}
         response = self.csm_obj.add_key_to_iam_user(**payload)
@@ -1074,14 +1073,12 @@ class TestIamUserRGW():
         resp = response.json()
         assert resp[0]["access_key"] == access_key, "Access key not created"
         assert resp[0]["secret_key"] != 0, "Secret key not created"
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        self.log.info("Perform PUT API to create keys using uid and Secret Key.")
-        user_id, display_name, access_key, secret_key = self.get_IAM_user_payload("keys")
         payload = {"uid": user_id, "display_name": display_name, "generate_key": False}
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.create_iam_user_rgw(payload)
         assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = response.json()["tenant"] + "$" + response.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Verify new keys created using uid and secret key.")
         payload = {"uid": user_id, "secret_key": secret_key}
         response = self.csm_obj.add_key_to_iam_user(**payload)
@@ -1090,8 +1087,6 @@ class TestIamUserRGW():
         assert len(resp) != 0, "Keys not created for IAM user."
         assert resp[0]["access_key"] != 0, "Access key not created"
         assert resp[0]["secret_key"] == secret_key, "Secret key not created"
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("[END] Testing create IAM user keys with UID")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -1109,11 +1104,13 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Testing user can create s3 Key pair for the I AM user using UID.")
         self.log.info("Creating IAM user.")
-        user_id, display_name, access_key, secret_key = self.get_IAM_user_payload("keys")
+        user_id, display_name = self.get_IAM_user_payload()
         payload = {"uid": user_id, "display_name": display_name, "generate_key": False}
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.create_iam_user_rgw(payload)
         assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = response.json()["tenant"] + "$" + response.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("PUT API to create keys using uid with Key_type=s3")
         payload = {"uid": user_id, "key_type": "s3"}
         response = self.csm_obj.add_key_to_iam_user(**payload)
@@ -1123,15 +1120,15 @@ class TestIamUserRGW():
         assert len(resp) != 0, "Keys not created for IAM user."
         assert resp[0]["access_key"] != 0, "Access key not created"
         assert resp[0]["secret_key"] != 0, "Secret key not created"
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("PUT API to create keys using uid with Key_type=s3 & generate_key=True")
         self.log.info("Creating new IAM user.")
-        user_id, display_name, access_key, secret_key = self.get_IAM_user_payload("keys")
+        user_id, display_name = self.get_IAM_user_payload()
         payload = {"uid": user_id, "display_name": display_name, "generate_key": False}
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = response.json()["tenant"] + "$" + response.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Verify keys returned when generate_key is True")
         payload = {"uid": user_id, "key_type": "s3", "generate_key": True}
         response = self.csm_obj.add_key_to_iam_user(**payload)
@@ -1140,8 +1137,6 @@ class TestIamUserRGW():
         assert len(resp) != 0, "Keys not created for IAM user."
         assert resp[0]["access_key"] != 0, "Access key not created"
         assert resp[0]["secret_key"] != 0, "Secret key not created"
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("PUT API to create keys using uid with Key_type & generate_key")
         self.log.info("Creating IAM user payload.")
         user_id, display_name = self.get_IAM_user_payload()
@@ -1149,6 +1144,8 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload_new)
         response = self.csm_obj.create_iam_user_rgw(payload_new)
         assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = response.json()["tenant"] + "$" + response.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Verify keys returned when generate_key is False")
         response = self.csm_obj.add_key_to_iam_user(**payload)
         assert response.status_code == HTTPStatus.OK, "Status code check failed for creating user keys."
@@ -1187,6 +1184,8 @@ class TestIamUserRGW():
         payload = {"uid": user_id, "access_key": access_key1, "secret_key": secret_key1}
         response = self.csm_obj.add_key_to_iam_user(**payload)
         assert response.status_code == HTTPStatus.OK, "Status code check failed for creating user keys."
+        self.created_iam_users[usr_val['user']]['access_key'] = access_key1
+        self.created_iam_users[usr_val['user']]['secret_key'] = secret_key1
         resp = response.json()
         assert len(resp) <= 1, "Keys created with existing Access/Secret keys."
         self.log.info("Perform PUT API to create keys with empty Access key.")
@@ -1197,9 +1196,6 @@ class TestIamUserRGW():
         payload = {"uid": user_id, "secret_key": ""}
         resp = self.csm_obj.add_key_to_iam_user(**payload)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed for creating user keys."
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val['user']]
         self.log.info("[END] Testing create IAM user keys with invalid keys")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -1250,8 +1246,10 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
-        usr_val = resp.json()["keys"][0]
+        usr_val = res.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
+        self.created_iam_users[usr_val['user']]['access_key'] = ''
+        self.created_iam_users[usr_val['user']]['secret_key'] = ''
         self.log.info("Perform PUT API to create keys.")
         payload = {"uid": user_id}
         response = self.csm_obj.add_key_to_iam_user(**payload)
@@ -1279,9 +1277,6 @@ class TestIamUserRGW():
         payload = {"access_key": resp[0]["access_key"], "key_type": "s3"}
         resp = self.csm_obj.remove_key_from_iam_user(**payload)
         assert resp.status_code == HTTPStatus.OK, "Status code check failed for creating user keys."
-        resp = self.csm_obj.delete_iam_user(usr_val['user'])
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val['user']]
         self.log.info("[END] Testing delete IAM user keys with access keys")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -1304,6 +1299,8 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         resp = self.csm_obj.create_iam_user_rgw(payload)
         assert resp.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = resp.json()["tenant"] + "$" + resp.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Perform PUT API to create keys.")
         payload = {"uid": user_id}
         response = self.csm_obj.add_key_to_iam_user(**payload)
@@ -1316,8 +1313,6 @@ class TestIamUserRGW():
         payload = {"uid": user_id, "access_key": ""}
         resp = self.csm_obj.remove_key_from_iam_user(**payload)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed for creating user keys."
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("[END] Testing user can’t delete Keys using invalid Access Key")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -1342,6 +1337,8 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
         usr_val = resp.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
+        self.created_iam_users[usr_val['user']]['access_key'] = ''
+        self.created_iam_users[usr_val['user']]['secret_key'] = ''
         self.log.info("Perform PUT API to create keys.")
         payload = {"uid": user_id}
         response = self.csm_obj.add_key_to_iam_user(**payload)
@@ -1353,9 +1350,6 @@ class TestIamUserRGW():
         resp = self.csm_obj.remove_key_from_iam_user(**payload, login_as="csm_user_monitor")
         assert resp.status_code == HTTPStatus.FORBIDDEN, \
             "Delete user kes with Monitor user check failed."
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val['user']]
         self.log.info("[END] Testing csm monitor user can’t delete Keys.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -1378,8 +1372,8 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
-        usr_val = res.json()["keys"][0]
-        self.created_iam_users.update({usr_val['user']:usr_val})
+        uid = res.json()["tenant"] + "$" + res.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Perform PATCH request to modify the Display Name field.")
         payload = {"display_name": "modified"}
         response = self.csm_obj.modify_iam_user_rgw(user_id, payload)
@@ -1395,7 +1389,6 @@ class TestIamUserRGW():
         response = self.csm_obj.modify_iam_user_rgw(user_id, payload)
         assert response.status_code == HTTPStatus.OK, "Status code check failed for creating user keys."
         resp = response.json()
-        uid = usr_val['user']
         self.created_iam_users[uid]['access_key'] = access_key
         self.created_iam_users[uid]['secret_key'] = secret_key
         assert len(resp["keys"]) == 1, "Check failed for user keys."
@@ -1413,6 +1406,8 @@ class TestIamUserRGW():
         payload = {"suspended": True}
         response = self.csm_obj.modify_iam_user_rgw(user_id, payload)
         assert response.status_code == HTTPStatus.OK, "Status code check failed for creating user keys."
+        self.created_iam_users[uid]['access_key'] = ''
+        self.created_iam_users[uid]['secret_key'] = ''
         self.log.info("Perform PATCH request to modify the Op mask field.")
         payload = {"op_mask": "read"}
         response = self.csm_obj.modify_iam_user_rgw(user_id, payload)
@@ -1427,9 +1422,6 @@ class TestIamUserRGW():
         assert resp["max_buckets"] == 500, "Check failed for modified max buckets field."
         assert resp["suspended"] == 1, "Check failed for modified suspended field."
         assert resp["op_mask"] == "read", "Check failed for modified suspended field."
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val['user']]
         self.log.info("[END] Testing that user can modify the fields with valid inputs.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -1452,8 +1444,8 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.create_iam_user_rgw(payload)
         assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
-        usr_val = response.json()["keys"][0]
-        self.created_iam_users.update({usr_val['user']:usr_val})
+        uid = response.json()["tenant"] + "$" + response.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Perform PATCH request to modify the Display Name with empty string.")
         payload = {"uid": user_id, "display_name": ""}
         response = self.csm_obj.modify_iam_user_rgw(user_id, payload)
@@ -1483,9 +1475,6 @@ class TestIamUserRGW():
         resp = self.csm_obj.modify_iam_user_rgw(user_id, payload)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed for creating user keys."
         self.log.info("[END] Testing user can’t modify the fields with empty parameters.")
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val['user']]
         self.log.info("##### Test ended - %s #####", test_case_name)
 
 
@@ -1516,7 +1505,7 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.create_iam_user_rgw(payload)
         assert response.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
-        usr_val = resp["keys"][0]
+        usr_val = response.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
         self.log.info("Perform PATCH request to modify the user2 email field with user1 email address.")
         payload = {"email": email}
@@ -1678,6 +1667,8 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = res.json()["tenant"] + "$" + res.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Perform PUT request to add capability for above user1 with admin rights.")
         payload = {"user_caps": "usage=read,write;user=write"}
         response = self.csm_obj.add_user_caps_rgw(user_id, payload)
@@ -1694,14 +1685,14 @@ class TestIamUserRGW():
         assert resp_dict["caps"][0]['perm'] == '*', "caps perm not matched in response."
         assert resp_dict["caps"][1]['type'] == 'user', "caps type not matched in response."
         assert resp_dict["caps"][1]['perm'] == 'write', "caps perm not matched in response."
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("Create IAM user2.")
         user_id, display_name = self.get_IAM_user_payload()
         payload = {"uid": user_id, "display_name": display_name, "generate_key": False}
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = res.json()["tenant"] + "$" + res.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Perform PUT request to add capability for above user2 with read only.")
         payload = {"user_caps": "usage=read;user=read"}
         response = self.csm_obj.add_user_caps_rgw(user_id, payload)
@@ -1718,8 +1709,6 @@ class TestIamUserRGW():
         assert resp_dict["caps"][0]['perm'] == 'read', "caps perm not matched in response."
         assert resp_dict["caps"][1]['type'] == 'user', "caps type not matched in response."
         assert resp_dict["caps"][1]['perm'] == 'read', "caps perm not matched in response."
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("[END] Testing that IAM user can add read/write admin capabilities.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -1742,6 +1731,8 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = res.json()["tenant"] + "$" + res.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Perform PUT request to add capability for above user1 with admin bucket rights")
         payload = {"user_caps": "users=read,write;buckets=read,write"}
         response = self.csm_obj.add_user_caps_rgw(user_id, payload)
@@ -1758,14 +1749,14 @@ class TestIamUserRGW():
         assert resp_dict["caps"][0]['perm'] == '*', "caps perm not matched in response."
         assert resp_dict["caps"][1]['type'] == 'users', "caps type not matched in response."
         assert resp_dict["caps"][1]['perm'] == '*', "caps perm not matched in response."
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("Create IAM user2.")
         user_id, display_name = self.get_IAM_user_payload()
         payload = {"uid": user_id, "display_name": display_name, "generate_key": False}
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = res.json()["tenant"] + "$" + res.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Perform PUT request to add capability for above user2 with read only.")
         payload = {"user_caps": "users=read,write;buckets=read"}
         response = self.csm_obj.add_user_caps_rgw(user_id, payload)
@@ -1782,8 +1773,6 @@ class TestIamUserRGW():
         assert resp_dict["caps"][0]['perm'] == 'read', "caps perm not matched in response."
         assert resp_dict["caps"][1]['type'] == 'users', "caps type not matched in response."
         assert resp_dict["caps"][1]['perm'] == '*', "caps perm not matched in response."
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("[END] Testing that IAM user can add bucket read/write capabilities.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -1806,6 +1795,8 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = res.json()["tenant"] + "$" + res.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Perform PUT request to add capability for above user1 with admin rights")
         payload = {"user_caps": "usage=read,write;user=write"}
         response = self.csm_obj.add_user_caps_rgw(user_id, payload)
@@ -1838,8 +1829,6 @@ class TestIamUserRGW():
         self.log.info("Verify user info parameters in response.")
         assert response.status_code == HTTPStatus.OK, "Status code check failed for user info"
         assert len(resp_dict["caps"]) == 0, "capability not removed for user."
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("[END] Testing that IAM user can remove read/write admin capabilities.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -1862,6 +1851,8 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = res.json()["tenant"] + "$" + res.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Perform PUT request to add capability for above user1 with admin bucket rights")
         payload = {"user_caps": "users=*;buckets=*"}
         response = self.csm_obj.add_user_caps_rgw(user_id, payload)
@@ -1897,8 +1888,6 @@ class TestIamUserRGW():
         assert len(resp_dict["caps"]) == 1, "capability not removed for user."
         assert resp_dict["caps"][0]['type'] == 'users', "caps type not matched in response."
         assert resp_dict["caps"][0]['perm'] == '*', "caps perm not matched in response."
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("[END] Testing that IAM user can remove bucket read/write capabilities.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -1921,6 +1910,8 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = res.json()["tenant"] + "$" + res.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Perform PUT request to add invalid capability")
         payload = {"user_caps": "random=*;buckets=*"}
         response = self.csm_obj.add_user_caps_rgw(user_id, payload)
@@ -1934,8 +1925,6 @@ class TestIamUserRGW():
         payload = {"user_caps": "users=read,buckets=*"}
         response = self.csm_obj.add_user_caps_rgw(user_id, payload)
         assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("[END] Testing that IAM user can not add invalid capabilities.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -1958,6 +1947,8 @@ class TestIamUserRGW():
         self.log.info("payload :  %s", payload)
         res = self.csm_obj.create_iam_user_rgw(payload)
         assert res.status_code == HTTPStatus.CREATED, "Status code check failed for user creation"
+        uid = res.json()["tenant"] + "$" + res.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Perform PUT request to add capability for above user1 with admin rights")
         payload = {"user_caps": "usage=read,write;user=write"}
         response = self.csm_obj.add_user_caps_rgw(user_id, payload)
@@ -1974,8 +1965,6 @@ class TestIamUserRGW():
         payload = {"user_caps": "users=read,buckets=*"}
         response = self.csm_obj.remove_user_caps_rgw(user_id, payload)
         assert response.status_code == HTTPStatus.OK, "Status code check failed for add capability."
-        resp = self.csm_obj.delete_iam_user(user_id)
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         self.log.info("[END] Testing that IAM user can not remove invalid capabilities.")
         self.log.info("##### Test ended - %s #####", test_case_name)
 
@@ -2249,6 +2238,8 @@ class TestIamUserRGW():
                                  "IAM user creation failed")
         usr_val = resp1.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
+        self.created_iam_users[usr_val['user']]['access_key'] = ''
+        self.created_iam_users[usr_val['user']]['secret_key'] = ''
         resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Verify create bucket")
@@ -2383,14 +2374,12 @@ class TestIamUserRGW():
         self.log.info("printing resp %s:",resp.json())
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED.value, \
                                  "IAM user creation failed")
+        uid = resp.json()["tenant"] + "$" + resp.json()["user_id"]
+        self.created_iam_users.update({uid:{'user':uid,'access_key':'','secret_key':''}})
         self.log.info("Printing keys %s", resp.json()["keys"])
         for key in resp.json()["keys"]:
             if "access_key" in key or "secret_key" in key:
                 assert_utils.assert_true(False, "access and secret keys available in response")
-        uid = payload["tenant"] + "$" + payload["uid"]
-        resp = self.csm_obj.delete_iam_user(uid)
-        self.log.info("Verify Response : %s", resp)
-        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user deletion failed")
         self.log.info("[END]Creating IAM user with generate-keys=false")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -3098,14 +3087,15 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
-        uid = payload["tenant"] + "$" + uid
         usr_val1 = resp.json()["keys"][0]
         self.created_iam_users.update({usr_val1['user']:usr_val1})
         access_key = usr_val1['access_key']
         self.log.info("Removing key from user")
-        rem_resp = self.csm_obj.remove_key_from_iam_user(uid=uid, access_key=access_key)
+        rem_resp = self.csm_obj.remove_key_from_iam_user(uid=usr_val1['user'], access_key=access_key)
         assert_utils.assert_true(rem_resp.status_code == HTTPStatus.OK, "Remove key failed")
-        get_resp = self.csm_obj.get_iam_user(user=uid)
+        self.created_iam_users[usr_val1['user']]['access_key'] = ''
+        self.created_iam_users[usr_val1['user']]['secret_key'] = ''
+        get_resp = self.csm_obj.get_iam_user(user=usr_val1['user'])
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         for key in get_resp.json()["keys"]:
             if "access_key" in key or "secret_key" in key:
@@ -3119,17 +3109,9 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
-        uid2 = payload["tenant"] + "$" + uid2
         usr_val2 = resp.json()["keys"][0]
         self.created_iam_users.update({usr_val2['user']:usr_val2})
-        assert_utils.assert_true(access_key == usr_val2['access_key'],
-                                 "Access key is not matching")
-        resp = self.csm_obj.delete_iam_user(usr_val1['user'])
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val1['user']]
-        resp = self.csm_obj.delete_iam_user(usr_val2['user'])
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val2['user']]
+        assert_utils.assert_true(access_key == usr_val2['access_key'], "Access key is not matching")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
@@ -3153,21 +3135,17 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
-        uid = payload["tenant"] + "$" + uid
         usr_val = resp.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
         access_key = usr_val['access_key']
         self.log.info("Removing key from user")
-        rem_resp = self.csm_obj.remove_key_from_iam_user(uid=uid, access_key=access_key + "123")
+        rem_resp = self.csm_obj.remove_key_from_iam_user(uid=usr_val['user'], access_key=access_key + "123")
         assert_utils.assert_true(rem_resp.status_code == HTTPStatus.FORBIDDEN,
                                  "Remove key status check failed")
-        get_resp = self.csm_obj.get_iam_user(user=uid)
+        get_resp = self.csm_obj.get_iam_user(user=usr_val['user'])
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         assert_utils.assert_true(access_key == usr_val['access_key'],
                                  "Access key is not matching")
-        resp = self.csm_obj.delete_iam_user(usr_val['user'])
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val['user']]
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
@@ -3197,12 +3175,11 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED, "IAM user creation failed")
-        uid = payload["tenant"] + "$" + uid
         usr_val = resp.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
         access_key = usr_val['access_key']
         self.log.info("Removing key from user with csm monitor role")
-        rem_resp = self.csm_obj.remove_key_from_iam_user(uid=uid, access_key=access_key,
+        rem_resp = self.csm_obj.remove_key_from_iam_user(uid=usr_val['user'], access_key=access_key,
                                                          login_as="csm_user_monitor")
         assert_utils.assert_true(rem_resp.status_code == HTTPStatus.FORBIDDEN,
                                  "Remove key status failed")
@@ -3212,13 +3189,10 @@ class TestIamUserRGW():
             assert_utils.assert_equals(rem_resp.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(rem_resp.json()["message"], msg)
 
-        get_resp = self.csm_obj.get_iam_user(user=uid)
+        get_resp = self.csm_obj.get_iam_user(user=usr_val['user'])
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")
         assert_utils.assert_true(access_key == get_resp.json()["keys"][0]['access_key'],
                                  "Access key is not matching")
-        resp = self.csm_obj.delete_iam_user(usr_val['user'])
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
-        del self.created_iam_users[usr_val['user']]
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
@@ -4142,8 +4116,8 @@ class TestIamUserRGW():
         self.log.info("Verify Response : %s", resp)
         assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
         usr1 = resp.json()
-        usr_val = resp.json()["keys"][0]
-        self.created_iam_users.update({usr_val['user']:usr_val})
+        usr_val1 = usr1["keys"][0]
+        self.created_iam_users.update({usr_val1['user']:usr_val1})
 
         self.log.info("Step-2: Creating IAM user 2")
         payload = self.csm_obj.iam_user_payload_rgw("valid")
@@ -4152,12 +4126,12 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.CREATED, "IAM user creation failed"
         usr2 = resp.json()
         uid2 = usr2["tenant"] + "$" + usr2["user_id"]
-        usr_val = resp.json()["keys"][0]
-        self.created_iam_users.update({usr_val['user']:usr_val})
+        usr_val2 = usr2["keys"][0]
+        self.created_iam_users.update({usr_val2['user']:usr_val2})
 
         self.log.info("Step-3: Edit IAM user with access key of user 1")
-        payload = {"access_key": usr1["keys"][0]["access_key"],
-                    "secret_key":usr1["keys"][0]["secret_key"]}
+        payload = {"access_key": usr_val1["access_key"],
+                    "secret_key": usr_val1["secret_key"]}
         resp = self.csm_obj.modify_iam_user_rgw(uid2, payload)
         assert resp.status_code == HTTPStatus.CONFLICT, "PATCH status code check failed"
         if CSM_REST_CFG["msg_check"] == "enable":
@@ -4204,7 +4178,7 @@ class TestIamUserRGW():
         resp = s3_obj.put_object(bucket_name=bucket, object_name=test_file,
                     file_path=file_path_upload)
         new_skey = config_utils.gen_rand_string(length=const.S3_ACCESS_LL)
-        payload = {"access_key": usr["keys"][0]["access_key"],
+        payload = {"access_key": usr_val["access_key"],
                     "secret_key":new_skey}
         resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
         assert resp.status_code == HTTPStatus.OK, "PATCH request failed."
@@ -4290,7 +4264,7 @@ class TestIamUserRGW():
 
         self.log.info("Step-2: Modify IAM user with invalid access key")
         payload = {"access_key": "",
-                    "secret_key":usr["keys"][0]["secret_key"]}
+                    "secret_key":usr_val["secret_key"]}
         resp = self.csm_obj.modify_iam_user_rgw(usr["user_id"], payload)
         assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed"
         if CSM_REST_CFG["msg_check"] == "enable":
