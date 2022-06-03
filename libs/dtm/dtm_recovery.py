@@ -60,6 +60,7 @@ class DTMRecoveryTestLib:
         self.setup_type = CMN_CFG["setup_type"]
         self.system_random = secrets.SystemRandom()
 
+    # pylint: disable-msg=too-many-locals
     # pylint: disable=too-many-arguments
     def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples, obj_size,
                          log_file_prefix, queue, loop=1, created_bucket: list = None):
@@ -191,7 +192,8 @@ class DTMRecoveryTestLib:
         :param process: Process to be restarted.
         :param check_proc_state: Flag to check process state
         :param proc_state: Expected state of the process
-        :param restart_cnt: Process restart count
+        :param restart_cnt: Count to restart process from randomly selected pod (Restart once
+        previously restarted process recovers)
         """
         for i_i in range(restart_cnt):
             self.log.info("Restarting %s process for %s time", process, i_i)

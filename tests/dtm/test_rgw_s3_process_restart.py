@@ -156,8 +156,7 @@ class TestRGWProcessRestart:
                                                args=(workload_info, que, False, True, True))
         proc_read_op.start()
 
-        self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "
-                      "Operations", DTM_CFG["rgw_restart_cnt"])
+        self.log.info("Step 3: Perform rgw_s3 Process Restart During Read Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
@@ -192,8 +191,7 @@ class TestRGWProcessRestart:
                                                       que, self.test_cfg['size']))
         proc_write_op.start()
 
-        self.log.info("Step 2: Perform rgw_s3 Process Restart for %s times During Read "
-                      "Operations", DTM_CFG["rgw_restart_cnt"])
+        self.log.info("Step 2: Perform rgw_s3 Process Restart During WRITE Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
@@ -256,8 +254,7 @@ class TestRGWProcessRestart:
         self.log.info("Step 2: Successfully started DELETEs in background")
 
         event.set()
-        self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "
-                      "Operations", DTM_CFG["rgw_restart_cnt"])
+        self.log.info("Step 3: Perform rgw_s3 Process Restart During DELETE Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
