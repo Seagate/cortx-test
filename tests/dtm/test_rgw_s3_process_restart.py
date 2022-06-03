@@ -21,6 +21,7 @@
 """
 Test suite for testing RGW Process Restart with DTM enabled.
 """
+import copy
 import logging
 import multiprocessing
 import os
@@ -87,6 +88,9 @@ class TestRGWProcessRestart:
         cls.setup_type = CMN_CFG["setup_type"]
         cls.system_random = secrets.SystemRandom()
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "DTMTestData")
+        cls.large_workload = copy.deepcopy(HA_CFG["s3_bench_workloads"])
+        if cls.setup_type == "HW":
+            cls.large_workload.extend(HA_CFG["s3_bench_large_workloads"])
 
     def setup_method(self):
         """Setup Method"""
