@@ -2411,7 +2411,7 @@ class TestIamUserRGW():
         s3_obj = S3TestLib(access_key=usr_val["access_key"],
                            secret_key=usr_val["secret_key"])
         status, resp = s3_obj.create_bucket(bucket_name)
-        assert_utils.assert_false(status, resp)
+        assert_utils.assert_true(status, resp)
         self.log.info("Create bucket failed for user")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
