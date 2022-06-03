@@ -24,3 +24,7 @@ test_41230:
 
 test_42246:
   num_loop: 300
+
+test_42247:
+  nclients: 10
+  nsamples: 50
