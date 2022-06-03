@@ -1073,6 +1073,8 @@ class TestIamUserRGW():
         resp = response.json()
         assert resp[0]["access_key"] == access_key, "Access key not created"
         assert resp[0]["secret_key"] != 0, "Secret key not created"
+        self.log.info("Perform PUT API to create keys using uid and Secret Key.")
+        user_id, display_name, access_key, secret_key = self.get_IAM_user_payload("keys")
         payload = {"uid": user_id, "display_name": display_name, "generate_key": False}
         self.log.info("payload :  %s", payload)
         response = self.csm_obj.create_iam_user_rgw(payload)
