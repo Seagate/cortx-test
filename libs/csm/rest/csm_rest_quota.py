@@ -1,7 +1,4 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-#
-# Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+#Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -21,6 +18,7 @@
 
 import json
 import math
+import os
 import time
 from http import HTTPStatus
 from random import SystemRandom
@@ -96,7 +94,7 @@ class GetSetQuota(RestTestLib):
         endpoint = self.config["get_set_quota"]
         endpoint = endpoint.format(uid)
         response = self.restapi.rest_call("put", endpoint=endpoint,
-                                          json_dict=json.dumps(payload),
+                                          json_dict=payload,
                                           headers=header)
         self.log.info("Set user quota request successfully sent...")
         return response
@@ -207,3 +205,27 @@ class GetSetQuota(RestTestLib):
                                           headers=header)
         self.log.info("Get user quota request successfully sent...")
         return response
+
+    @staticmethod
+    def get_iam_user_payload():
+        """
+        Creates IAM user basic payload.
+        """
+        user_id = const.IAM_USER + str(int(time.time()))
+        display_name = const.IAM_USER + str(int(time.time()))
+        return user_id, display_name
+
+    @staticmethod
+    def get_rand_int(max_capacity: int = 10, max_buckets: int = 10):
+        """
+        Return the random max_capacity and max_buckets integers.
+        """
+        byte_caps = os.urandom(max_capacity)
+        byte_obj = os.urandom(max_buckets)
+        capacity = str(int.from_bytes(byte_caps, byteorder='little'))
+        buckets = str(int.from_bytes(byte_obj, byteorder='little'))
+        numb_count, numb_size = len(capacity), len(capacity) // 4
+        capacity = [capacity[i:i + numb_size] for i in range(0, numb_count, numb_size)]
+        numb_count, numb_size = len(buckets), len(buckets) // 7
+        buckets = [buckets[i:i + numb_size] for i in range(0, numb_count, numb_size)]
+        return capacity[0], buckets[-1]
