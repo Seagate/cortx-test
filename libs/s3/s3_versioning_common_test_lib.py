@@ -28,8 +28,8 @@ Functions added here can accept cortx-test test libraries as parameters and can 
 assertions as well, with the main aim being to have leaner and cleaner code in the test modules.
 """
 import logging
-from secrets import SystemRandom
 import string
+from secrets import SystemRandom
 
 from commons import errorcodes as err
 from commons import error_messages as errmsg
@@ -40,6 +40,7 @@ from commons.utils import s3_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3.s3_common_test_lib import create_s3_acc
+from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 
@@ -506,11 +507,12 @@ def get_tag_key_val_pair(key_ran=(1, 128), val_ran=(0, 256), uni_char="+-=._:/@"
     return {key: val}
 
 
-def pet_object_tagging(s3_ver_test_obj, bucket_name: str, object_name: str,
-                       version_tag: dict, **kwargs):
+def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3VersioningTestLib,
+                       bucket_name: str, object_name: str, version_tag: dict, **kwargs):
     """
     Set the supplied/generated tag_set to an object that already exists in a bucket.
 
+    :param s3_tag_test_obj: S3TaggingTestLib instance
     :param s3_ver_test_obj: S3VersioningTestLib instance
     :param bucket_name: Name of the bucket.
     :param object_name: Name of the object.
@@ -520,7 +522,6 @@ def pet_object_tagging(s3_ver_test_obj, bucket_name: str, object_name: str,
     :keyword tag_val_ran: Length Limit for Value: Minimum 0, Maximum 256.
     :keyword tag_overrides: Specific TAG
     :param version_tag: Dictionary to be updated with uploaded TagSet data
-    :return: (boolean, response)
     """
     version_id = kwargs.get("version_id", 'null')
     tag_count = kwargs.get("tag_count", 1)
@@ -542,9 +543,8 @@ def pet_object_tagging(s3_ver_test_obj, bucket_name: str, object_name: str,
         assert_utils.assert_true(resp[0], resp)
         assert_utils.assert_equal(resp[1]['VersionId'], version_id, resp)
     else:
-        resp = s3_ver_test_obj.put_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
-                                               tags={'TagSet': tag_set})
+        resp = s3_tag_test_obj.set_object_tag(bucket_name=bucket_name, object_name=object_name,
+                                              tags={'TagSet': tag_set})
         assert_utils.assert_true(resp[0], resp)
-        assert_utils.assert_equal(resp[1]['VersionId'], version_id, resp)
 
-    version_tag[object_name][version_id].extend(tag_set)
+    version_tag[object_name][version_id] = tag_set

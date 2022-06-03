@@ -161,16 +161,18 @@ class S3TaggingTestLib(Tagging):
         :return: (Boolean, response)
         """
         tag_count = kwargs.get("tag_count", 1)
+        tags = kwargs.get("tags", None)
         try:
-            LOGGER.info("Set object tagging")
-            tag_set = list()
-            for num in range(tag_count):
-                tag = dict()
-                tag.update([("Key", "{}{}".format(key, str(num))),
-                            ("Value", "{}{}".format(value, str(num)))])
-                tag_set.append(tag)
-            LOGGER.debug(tag_set)
-            tags = {"TagSet": tag_set}
+            if tags is None:
+                LOGGER.info("Set object tagging")
+                tag_set = list()
+                for num in range(tag_count):
+                    tag = dict()
+                    tag.update([("Key", "{}{}".format(key, str(num))),
+                                ("Value", "{}{}".format(value, str(num)))])
+                    tag_set.append(tag)
+                LOGGER.debug(tag_set)
+                tags = {"TagSet": tag_set}
             response = self.put_object_tagging(bucket_name, obj_name, tags)
             LOGGER.info(response)
         except (ClientError, Exception) as error:

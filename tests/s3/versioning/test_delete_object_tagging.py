@@ -23,19 +23,21 @@
 import logging
 import os
 import time
+
 import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
 from commons.utils.system_utils import create_file, path_exists, remove_file
 from commons.utils.system_utils import make_dirs, remove_dirs
-from commons.utils import assert_utils
 from config.s3 import S3_CFG
+from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
-from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
-from libs.s3.s3_versioning_common_test_lib import pet_object_tagging
+from libs.s3.s3_versioning_common_test_lib import put_object_tagging
 from libs.s3.s3_versioning_common_test_lib import upload_version
+from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -50,7 +52,8 @@ class TestTaggingDeleteObject:
         """
         LOGGER.info("STARTED: Setup operations")
         self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        self.s3_tag_obj = S3VersioningTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3_ver_obj = S3VersioningTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3_tag_obj = S3TaggingTestLib(endpoint_url=S3_CFG["s3_url"])
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestTaggingDeleteObject")
         if not path_exists(self.test_dir_path):
             make_dirs(self.test_dir_path)
@@ -82,7 +85,7 @@ class TestTaggingDeleteObject:
         # pref_list = []
         # for bucket_name in res[1]:
         #     if bucket_name.startswith("tag-bkt"):
-        #         empty_versioned_bucket(self.s3_tag_obj, bucket_name)
+        #         empty_versioned_bucket(self.s3_ver_obj, bucket_name)
         #         pref_list.append(bucket_name)
         # if pref_list:
         #     res = self.s3_test_obj.delete_multiple_buckets(pref_list)
@@ -102,27 +105,27 @@ class TestTaggingDeleteObject:
         LOGGER.info("Step 1: Upload object %s before enabling versioning on bucket %s",
                     self.object_name, self.bucket_name)
         upload_version(self.s3_test_obj, bucket_name=self.bucket_name, file_path=self.file_path,
-                       object_name=self.object_name, versions_dict=versions,
-                       chk_null_version=True)
+                       object_name=self.object_name, versions_dict=versions, is_unversioned=True)
         last_v = versions[self.object_name]["version_history"][-1]
         LOGGER.info("Step 1: Successfully uploaded object %s before enabling versioning on  "
                     "bucket %s with version ID %s", self.object_name, self.bucket_name, last_v)
         LOGGER.info("Step 2: Perform PUT Bucket versioning with status as Enabled on %s",
                     self.bucket_name)
-        resp = self.s3_tag_obj.put_bucket_versioning(bucket_name=self.bucket_name)
+        resp = self.s3_ver_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 2: Performed PUT Bucket versioning with status as Enabled on %s",
                     self.bucket_name)
         LOGGER.info("Step 3: Perform PUT Object Tagging for %s with a tag key-value pair",
                     self.object_name)
-        pet_object_tagging(self.s3_tag_obj, bucket_name=self.bucket_name,
-                           object_name=self.object_name, version_tag=ver_tag)
+        put_object_tagging(s3_tag_test_obj=self.s3_tag_obj, s3_ver_test_obj=self.s3_ver_obj,
+                           bucket_name=self.bucket_name, object_name=self.object_name,
+                           version_tag=ver_tag)
         put_tag = ver_tag[self.object_name][last_v][-1]
         LOGGER.info("Step 3: Performed PUT Object Tagging for %s with a tag %s pair",
                     self.object_name, put_tag)
         LOGGER.info("Step 4: Perform GET Object Tagging for %s with versionId=%s",
                     self.object_name, last_v)
-        resp = self.s3_tag_obj.get_obj_tag_ver(bucket_name=self.bucket_name,
+        resp = self.s3_ver_obj.get_obj_tag_ver(bucket_name=self.bucket_name,
                                                object_name=self.object_name, version=last_v)
         assert_utils.assert_true(resp[0], resp)
         get_tag = resp[1]['TagSet'][0]
@@ -132,14 +135,14 @@ class TestTaggingDeleteObject:
                     self.object_name, last_v, get_tag)
         LOGGER.info("Step 5: Perform DELETE Object Tagging for %s with  versionId=%s",
                     self.object_name, last_v)
-        resp = self.s3_tag_obj.delete_obj_tag_ver(bucket_name=self.bucket_name,
+        resp = self.s3_ver_obj.delete_obj_tag_ver(bucket_name=self.bucket_name,
                                                   object_name=self.object_name, version=last_v)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Performed DELETE Object Tagging for %s with  versionId=%s",
                     self.object_name, last_v)
         LOGGER.info("Step 6: Perform GET Object Tagging for %s with versionId=%s",
                     self.object_name, last_v)
-        resp = self.s3_tag_obj.get_obj_tag_ver(bucket_name=self.bucket_name,
+        resp = self.s3_ver_obj.get_obj_tag_ver(bucket_name=self.bucket_name,
                                                object_name=self.object_name, version=last_v)
         assert_utils.assert_true(resp[0], resp)
         assert_utils.assert_false(resp[1], resp)
@@ -147,7 +150,7 @@ class TestTaggingDeleteObject:
                     self.object_name, last_v)
         LOGGER.info("Step 7: Perform GET Object Tagging for %s without versionId specified",
                     self.object_name)
-        resp = self.s3_tag_obj.get_obj_tag_ver(bucket_name=self.bucket_name,
+        resp = self.s3_ver_obj.get_obj_tag_ver(bucket_name=self.bucket_name,
                                                object_name=self.object_name,)
         assert_utils.assert_true(resp[0], resp)
         assert_utils.assert_false(resp[1], resp)
