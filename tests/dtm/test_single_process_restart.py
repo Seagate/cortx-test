@@ -34,9 +34,6 @@ import pytest
 
 from commons import configmanager
 from commons import constants as const
-from commons.constants import K8S_SCRIPTS_PATH
-from commons.constants import MOTR_CONTAINER_PREFIX
-from commons.constants import POD_NAME_PREFIX
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
@@ -84,6 +81,7 @@ class TestSingleProcessRestart:
                                 cls.master_node_list[0].password)
         cls.test_cfg = configmanager.get_config_wrapper(fpath="config/test_dtm_config.yaml")
         cls.m0d_process = 'm0d'
+        cls.rwg_process = 'rgw'
         cls.dtm_obj = DTMRecoveryTestLib()
         cls.s3_obj = S3TestLib()
         cls.log.info("Setup S3bench")
@@ -117,7 +115,8 @@ class TestSingleProcessRestart:
             self.log.info("Test Failure observed, collecting support bundle")
             path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
             resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
-                                                                   scripts_path=K8S_SCRIPTS_PATH)
+                                                                   scripts_path=
+                                                                   const.K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
         if os.path.exists(self.test_dir_path):
             system_utils.remove_dirs(self.test_dir_path)
@@ -156,8 +155,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
@@ -201,8 +200,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 2 : Perform Single m0d Process Restart During Write Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
@@ -295,7 +294,7 @@ class TestSingleProcessRestart:
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=rc_datapod,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 2: Successfully performed single restart of m0d process on pod hosted "
@@ -354,8 +353,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 2: Perform Single m0d Process Restart")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 2: m0d restarted and recovered successfully")
@@ -400,8 +399,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 3: Perform Single m0d Process Restart During Delete Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
@@ -446,8 +445,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
@@ -490,8 +489,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 2 : Perform Single m0d Process Restart During Write Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
@@ -543,8 +542,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
@@ -613,8 +612,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 3: Perform Single m0d Process Restart")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 3: m0d restarted and recovered successfully")
@@ -641,11 +640,13 @@ class TestSingleProcessRestart:
         """Verify copy object after m0d restart using pkill."""
         self.log.info("STARTED: Verify copy object after m0d restart using pkill")
         object_name = 'object-test-41232'
+        bucket_list = list()
         self.log.info("Step 1: Start write Operations :")
         for i in range(0, 2):
-            resp = self.s3_obj.create_bucket(bucket_name=f"bucket-test-41233-{i}")
+            bucket_name = f"bucket-test-41232-{i}"
+            resp = self.s3_obj.create_bucket(bucket_name=bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
-        bucket_list = self.s3_obj.bucket_list()[1]
+            bucket_list.append(bucket_name)
         for size in self.test_cfg["size_list"]:
             file_name = "{}{}".format("dtm-test-41232", size)
             file_path = os.path.join(self.test_dir_path, file_name)
@@ -655,8 +656,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 2: Perform Single m0d Process Restart")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 3: Perform Copy Object to bucket-2, download and verify on copied "
@@ -689,13 +690,15 @@ class TestSingleProcessRestart:
         object_name = 'object-test-41233'
         workload = dict()
         obj_list = list()
+        bucket_list = list()
         que = multiprocessing.Queue()
 
         self.log.info("Step 1: Start write Operations :")
         for i in range(0, 2):
-            resp = self.s3_obj.create_bucket(bucket_name=f"bucket-test-41233-{i}")
+            bucket_name = f"bucket-test-41233-{i}"
+            resp = self.s3_obj.create_bucket(bucket_name=bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
-        bucket_list = self.s3_obj.bucket_list()[1]
+            bucket_list.append(bucket_name)
         for size in self.test_cfg["size_list"]:
             file_name = "{}{}".format("dtm-test-41233-", size)
             file_path = os.path.join(self.test_dir_path, file_name)
@@ -716,8 +719,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 3: Perform Single m0d Process Restart During Copy Object Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
@@ -740,3 +743,114 @@ class TestSingleProcessRestart:
             assert_utils.assert_true(resp, "Checksum validation Failed.")
         self.test_completed = True
         self.log.info("ENDED: Verify copy object during m0d restart using pkill.")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-42253")
+    def test_copy_object_after_rgw_restart(self):
+        """Verify copy object after rgw restart using pkill."""
+        self.log.info("STARTED: Verify copy object after rgw restart using pkill")
+        object_name = 'object-test-42253'
+        bucket_list = list()
+        self.log.info("Step 1: Start write Operations :")
+        for i in range(0, 2):
+            bucket_name = f"bucket-test-42253-{i}"
+            resp = self.s3_obj.create_bucket(bucket_name=bucket_name)
+            assert_utils.assert_true(resp[0], resp[1])
+            bucket_list.append(bucket_name)
+        for size in self.test_cfg["size_list"]:
+            file_name = "{}{}".format("dtm-test-42253", size)
+            file_path = os.path.join(self.test_dir_path, file_name)
+            system_utils.create_file(file_path, size)
+            resp = self.s3_obj.put_object(bucket_list[0], f"{object_name}_{size}", file_path)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 2: Perform Single rgw Process Restart")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
+                                            process=self.rwg_process, check_proc_state=False)
+        assert_utils.assert_true(resp, "Failure observed during process restart")
+        self.log.info("Step 3: Perform Copy Object to bucket-2, download and verify on copied "
+                      "Objects")
+        for size in self.test_cfg["size_list"]:
+            resp = self.s3_obj.copy_object(source_bucket=bucket_list[0],
+                                           source_object=f"{object_name}_{size}",
+                                           dest_bucket=bucket_list[1],
+                                           dest_object=f"{object_name}_{size}")
+            assert_utils.assert_true(resp[0], resp[1])
+            file_name_copy = "{}{}".format("dtm-test-42253-copy", size)
+            file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
+            resp = self.s3_obj.object_download(bucket_name=bucket_list[1],
+                                               obj_name=f"{object_name}_{size}",
+                                               file_path=file_path_copy)
+            assert_utils.assert_true(resp[0], resp[1])
+            file_name = "{}{}".format("dtm-test-42253-", size)
+            file_path = os.path.join(self.test_dir_path, file_name)
+            resp = validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
+            assert_utils.assert_true(resp, "Checksum validation Failed.")
+        self.test_completed = True
+        self.log.info("ENDED: Verify copy object after rgw restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-42254")
+    def test_copy_object_during_rgw_restart(self):
+        """Verify copy object during rgw restart using pkill."""
+        self.log.info("STARTED: Verify copy object during rgw restart using pkill")
+        object_name = 'object-test-42254'
+        workload = dict()
+        obj_list = list()
+        bucket_list = list()
+        que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Start write Operations :")
+        for i in range(0, 2):
+            bucket_name = f"bucket-test-42254-{i}"
+            resp = self.s3_obj.create_bucket(bucket_name=bucket_name)
+            assert_utils.assert_true(resp[0], resp[1])
+            bucket_list.append(bucket_name)
+        for size in self.test_cfg["size_list"]:
+            file_name = "{}{}".format("dtm-test-42254-", size)
+            file_path = os.path.join(self.test_dir_path, file_name)
+            system_utils.create_file(file_path, size)
+            resp = self.s3_obj.put_object(bucket_list[0], f"{object_name}_{size}",
+                                          file_path)
+            obj_list.append(f"{object_name}_{size}")
+            assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Step 2: Perform Copy object to bucket-2 in background")
+        workload["source_bucket"] = bucket_list[0]
+        workload["dest_bucket"] = bucket_list[1]
+        workload["obj_list"] = obj_list
+        proc_cp_op = multiprocessing.Process(target=self.dtm_obj.perform_copy_objects,
+                                             args=(workload, que))
+        proc_cp_op.start()
+
+        self.log.info("Step 3: Perform Single m0d Process Restart")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
+                                            process=self.rwg_process, check_proc_state=False)
+        assert_utils.assert_true(resp, "Failure observed during process restart")
+
+        self.log.info("Step 4: Wait for copy object to finish")
+        if proc_cp_op.is_alive():
+            proc_cp_op.join()
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 5: Perform Download and verify on copied Objects")
+        for size in self.test_cfg["size_list"]:
+            file_name_copy = "{}{}".format("dtm-test-42254-copy", size)
+            file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
+            resp = self.s3_obj.object_download(bucket_name=bucket_list[1],
+                                               obj_name=f"{object_name}_{size}",
+                                               file_path=file_path_copy)
+            assert_utils.assert_true(resp[0], resp[1])
+            file_name = "{}{}".format("dtm-test-42254-", size)
+            file_path = os.path.join(self.test_dir_path, file_name)
+            resp = validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
+            assert_utils.assert_true(resp, "Checksum validation Failed.")
+        self.test_completed = True
+        self.log.info("ENDED: Verify copy object during rgw restart using pkill.")

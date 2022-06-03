@@ -88,7 +88,7 @@ class ProvDeployK8sCortxLib:
         self.data_only_list = ["data-only", "standard"]
         self.server_only_list = ["server-only", "standard"]
         self.exclusive_pod_list = ["data-only", "server-pod"]
-        self.patterns = ['RFC 1123', '63 characters']
+        self.patterns = "invalid release"
         self.local_sol_path = common_const.LOCAL_SOLUTION_PATH
 
     @staticmethod
@@ -1218,7 +1218,8 @@ class ProvDeployK8sCortxLib:
                 bool(re.findall(r'\w*[A-Z]\w*', namespace)):
             LOGGER.debug("Negative Test Scenario")
             assert_utils.assert_false(deploy_resp[0], deploy_resp[1])
-
+            if self.patterns in deploy_resp[1]:
+                return True, 0
         # Run status-cortx-cloud.sh script to fetch the status of all resources.
         if deploy_resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
