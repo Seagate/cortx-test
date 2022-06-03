@@ -192,7 +192,7 @@ class TestRGWProcessRestart:
                                                       que, self.test_cfg['size']))
         proc_write_op.start()
 
-        self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "
+        self.log.info("Step 2: Perform rgw_s3 Process Restart for %s times During Read "
                       "Operations", DTM_CFG["rgw_restart_cnt"])
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -202,14 +202,14 @@ class TestRGWProcessRestart:
                                             restart_cnt=DTM_CFG["rgw_restart_cnt"])
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
-        self.log.info("Step 3: Wait for WRITE Operation to complete.")
+        self.log.info("Step 2: Wait for WRITE Operation to complete.")
         if proc_write_op.is_alive():
             proc_write_op.join()
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
 
-        self.log.info("Step 4: Perform READ Operation on data written in Step 1")
+        self.log.info("Step 3: Perform READ Operation on data written in Step 1")
         self.dtm_obj.perform_ops(workload_info, que, False, True, True)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
@@ -226,6 +226,7 @@ class TestRGWProcessRestart:
         self.log.info("STARTED: Verify DELETEs during rgw_s3 service restart using pkill")
         test_prefix = 'test-42246'
         wr_output = Queue()
+        test_cfg = DTM_CFG["test_42246"]
 
         event = threading.Event()  # Event to be used to send intimation of rgw_s3 process restart
 
@@ -234,8 +235,8 @@ class TestRGWProcessRestart:
                                       object_prefix=f"object-{test_prefix}",
                                       no_of_clients=self.test_cfg['clients'],
                                       no_of_samples=self.test_cfg['samples'],
-                                      obj_size=self.test_cfg['size'],
-                                      log_file_prefix=test_prefix, queue=wr_output)
+                                      log_file_prefix=test_prefix, queue=wr_output,
+                                      loop=test_cfg['num_loop'])
         resp = wr_output.get()
         assert_utils.assert_true(resp[0], resp[1])
 

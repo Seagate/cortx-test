@@ -20,4 +20,4 @@ test_41230:
   overwrite_cnt: 200
 
 test_42246:
-  num_wr_bkts: 150
+  num_loop: 300
