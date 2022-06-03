@@ -172,7 +172,7 @@ class TestVersioningGetHeadObject:
         assert_utils.assert_true(res[0], res[1])
         versions.append({"VersionId": res[1]["VersionId"], "ETag": res[1]["ETag"]})
         self.log.info("Step 13: Check GET/HEAD Object with VersionId=null")
-        check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj, 
+        check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                       bucket_name=self.bucket_name, object_name=self.object_name,
                                       etag=versions[0]["ETag"], version_id="null")
         self.log.info("Step 14: Check GET/HEAD Object with VersionId=version1id")
@@ -291,7 +291,7 @@ class TestVersioningGetHeadObject:
                                       etag=versions[1]["ETag"],
                                       version_id=versions[1]["VersionId"])
         self.log.info("Step 16: Check GET/HEAD Object without VersionId, check object content")
-        check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj, 
+        check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                       bucket_name=self.bucket_name, object_name=self.object_name,
                                       etag=versions[2]["ETag"])
         download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
@@ -348,7 +348,7 @@ class TestVersioningGetHeadObject:
                                       bucket_name=self.bucket_name, object_name=self.object_name,
                                       etag=versions[0]["ETag"])
         self.log.info("Step 7: Check GET/HEAD Object without VersionId, check object content")
-        check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj, 
+        check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                       bucket_name=self.bucket_name, object_name=self.object_name,
                                       etag=versions[0]["ETag"])
         download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
@@ -413,7 +413,7 @@ class TestVersioningGetHeadObject:
                                       get_error_msg=errmsg.NO_SUCH_KEY_ERR,
                                       head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("Step 3: Check GET/HEAD Object with non existent version id returns error")
-        check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj, 
+        check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                       bucket_name=self.bucket_name,
                                       object_name=self.object_name,
                                       version_id=non_existent_version_id,
