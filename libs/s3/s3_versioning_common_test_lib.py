@@ -345,7 +345,7 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
         bucket_exists, _ = s3_test_obj.head_bucket(bucket_name)
         if bucket_exists:
             LOG.info("Bucket exists: %s, skipping bucket creation", bucket_name)
-    except CTException as error:
+    except CTException:
         LOG.info("Creating bucket: %s", bucket_name)
         resp = s3_test_obj.create_bucket(bucket_name)
         assert_utils.assert_true(resp[0], resp[1])

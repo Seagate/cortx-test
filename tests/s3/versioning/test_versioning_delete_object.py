@@ -324,8 +324,8 @@ class TestVersioningDeleteObject:
         for v_id in versions[self.object_name3]["version_history"][:2]:
             etag = versions[self.object_name3]["versions"][v_id]
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
-                                          bucket_name=self.bucket_name, object_name=self.object_name3,
-                                          version_id=v_id, etag=etag)
+                                          bucket_name=self.bucket_name, etag=etag,
+                                          object_name=self.object_name3, version_id=v_id)
         self.log.info("ENDED: Test DELETE Object in a versioning suspended bucket")
 
     @pytest.mark.s3_ops

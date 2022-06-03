@@ -138,7 +138,7 @@ class TestVersioningGetHeadObject:
                                       etag=versions[1]["ETag"],
                                       version_id=versions[1]["VersionId"])
         self.log.info("Step 6: Check GET/HEAD Object without VersionId, check object content")
-        check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj, 
+        check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                       bucket_name=self.bucket_name, object_name=self.object_name,
                                       etag=versions[1]["ETag"])
         download_and_check(self.s3_test_obj, self.bucket_name, self.object_name,
