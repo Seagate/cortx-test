@@ -517,6 +517,8 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
     :param bucket_name: Name of the bucket.
     :param object_name: Name of the object.
     :keyword version_id: Version ID associated with given object
+    :keyword versions_dict: Dictionary to to fetch the latest version ID in case of un-versioned
+    bucket when NO version ID specified for Put object Tag
     :keyword tag_count: Count of TAGs to be generated and put to given object
     :keyword tag_key_ran: Length Limit for Key: Minimum 1, Maximum 128.
     :keyword tag_val_ran: Length Limit for Value: Minimum 0, Maximum 256.
@@ -524,6 +526,7 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
     :param version_tag: Dictionary to be updated with uploaded TagSet data
     """
     version_id = kwargs.get("version_id", None)
+    versions_dict = kwargs.get("versions_dict", None)
     tag_count = kwargs.get("tag_count", 1)
     tag_key_ran = kwargs.get("tag_key_ran", [(1, 128)])
     tag_val_ran = kwargs.get("tag_val_ran", [(0, 256)])
@@ -537,14 +540,21 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
     else:
         tag_set = tag_overrides
 
-    if version_id is not None:
-        resp = s3_ver_test_obj.put_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
-                                               version=version_id, tags={'TagSet': tag_set})
-        assert_utils.assert_true(resp[0], resp)
-        assert_utils.assert_equal(resp[1]['VersionId'], version_id, resp)
-    else:
-        resp = s3_tag_test_obj.set_object_tag(bucket_name=bucket_name, object_name=object_name,
-                                              tags={'TagSet': tag_set})
-        assert_utils.assert_true(resp[0], resp)
-
-    version_tag[object_name][version_id] = tag_set
+    try:
+        if version_id is not None:
+            resp = s3_ver_test_obj.put_obj_tag_ver(bucket_name=bucket_name,
+                                                   object_name=object_name,
+                                                   version=version_id, tags={'TagSet': tag_set})
+            version_tag[object_name][version_id] = tag_set
+        else:
+            resp = s3_tag_test_obj.set_object_tag(bucket_name=bucket_name, object_name=object_name,
+                                                  tags={'TagSet': tag_set})
+            # Get the latest version ID to which put object tag is updated when no version ID
+            # specified
+            if versions_dict is not None:
+                version_id = versions_dict[object_name]["version_history"][-1]
+                version_tag[object_name][version_id] = tag_set
+    except CTException as error:
+        LOG.exception(error)
+        return False, error
+    return resp
