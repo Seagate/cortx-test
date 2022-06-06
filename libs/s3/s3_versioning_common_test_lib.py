@@ -30,6 +30,8 @@ assertions as well, with the main aim being to have leaner and cleaner code in t
 import logging
 import random
 
+from commons import errorcodes as err
+from commons import error_messages as errmsg
 from commons.constants import S3_ENGINE_RGW
 from commons.exceptions import CTException
 from commons.utils import assert_utils
@@ -346,10 +348,14 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
         bucket_exists, _ = s3_test_obj.head_bucket(bucket_name)
         if bucket_exists:
             LOG.info("Bucket exists: %s, skipping bucket creation", bucket_name)
-    except CTException:
-        LOG.info("Creating bucket: %s", bucket_name)
-        resp = s3_test_obj.create_bucket(bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
+    except CTException as error:
+        if errmsg.NOT_FOUND_ERR in error.message:
+            LOG.info("Creating bucket: %s", bucket_name)
+            resp = s3_test_obj.create_bucket(bucket_name)
+            assert_utils.assert_true(resp[0], resp[1])
+        else:
+            LOG.error("Encountered exception in HEAD bucket: %s", error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
     versions = {}
     if pre_obj_list:
         LOG.info("Uploading objects before setting bucket versioning state")
