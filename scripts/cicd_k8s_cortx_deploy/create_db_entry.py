@@ -23,7 +23,6 @@ Create DB entry for Continuous deployment Jenkins Job.
 """
 import json
 import os
-import string
 import sys
 from subprocess import Popen, PIPE   #nosec
 
