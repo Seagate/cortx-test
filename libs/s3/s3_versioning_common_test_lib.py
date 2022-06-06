@@ -490,7 +490,8 @@ def empty_versioned_bucket(s3_ver_test_obj: S3VersioningTestLib,
                                               version_id=version["VersionId"])
 
 
-def get_tag_key_val_pair(key_ran=(1, 128), val_ran=(0, 256), uni_char="+-=._:/@"):
+def get_tag_key_val_pair(key_ran: tuple = (1, 128), val_ran: tuple = (0, 256),
+                         uni_char: str = "+-=._:/@") -> dict:
     """
     Get random string for TAG's key-value pair within given length range
 
@@ -508,7 +509,7 @@ def get_tag_key_val_pair(key_ran=(1, 128), val_ran=(0, 256), uni_char="+-=._:/@"
 
 
 def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3VersioningTestLib,
-                       bucket_name: str, object_name: str, version_tag: dict, **kwargs):
+                       bucket_name: str, object_name: str, version_tag: dict, **kwargs) -> tuple:
     """
     Set the supplied/generated tag_set to an object that already exists in a bucket.
 
@@ -516,6 +517,7 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
     :param s3_ver_test_obj: S3VersioningTestLib instance
     :param bucket_name: Name of the bucket.
     :param object_name: Name of the object.
+    :param version_tag: Dictionary to be updated with uploaded TagSet data
     :keyword version_id: Version ID associated with given object
     :keyword versions_dict: Dictionary to to fetch the latest version ID in case of un-versioned
     bucket when NO version ID specified for Put object Tag
@@ -523,7 +525,7 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
     :keyword tag_key_ran: Length Limit for Key: Minimum 1, Maximum 128.
     :keyword tag_val_ran: Length Limit for Value: Minimum 0, Maximum 256.
     :keyword tag_overrides: Specific TAG
-    :param version_tag: Dictionary to be updated with uploaded TagSet data
+    :return: tuple for lib call response
     """
     version_id = kwargs.get("version_id", None)
     versions_dict = kwargs.get("versions_dict", None)
@@ -561,7 +563,7 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
 
 
 def get_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3VersioningTestLib,
-                       bucket_name: str = None, object_name: str = None, **kwargs):
+                       bucket_name: str = None, object_name: str = None, **kwargs) -> tuple:
     """
     Get the tag set value for object with or without version ID.
 
@@ -586,7 +588,7 @@ def get_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
 
 
 def delete_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3VersioningTestLib,
-                          bucket_name: str = None, object_name: str = None, **kwargs):
+                          bucket_name: str = None, object_name: str = None, **kwargs) -> tuple:
     """
     DELETE the tag set value for object with or without version ID.
 
