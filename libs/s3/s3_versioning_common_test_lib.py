@@ -28,7 +28,7 @@ Functions added here can accept cortx-test test libraries as parameters and can 
 assertions as well, with the main aim being to have leaner and cleaner code in the test modules.
 """
 import logging
-import random
+from secrets import SystemRandom
 import string
 
 from commons import errorcodes as err
@@ -361,7 +361,7 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
     if pre_obj_list:
         LOG.info("Uploading objects before setting bucket versioning state")
         for object_name in pre_obj_list:
-            file_path = random.choice(file_paths) #nosec
+            file_path = SystemRandom().choice(file_paths)   # nosec
             upload_version(s3_test_obj, bucket_name=bucket_name, file_path=file_path,
                            object_name=object_name, versions_dict=versions,
                            is_unversioned=True)
@@ -371,7 +371,7 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
                                                      status=versioning_config)
         assert_utils.assert_true(resp[0], resp[1])
         for _ in range(count):
-            file_path = random.choice(file_paths)  # nosec
+            file_path = SystemRandom().choice(file_paths)  # nosec
             chk_null_version = False if versioning_config == "Enabled" else True
             upload_version(s3_test_obj, bucket_name=bucket_name, file_path=file_path,
                            object_name=object_name, versions_dict=versions,
@@ -499,10 +499,10 @@ def get_tag_key_val_pair(key_ran=(1, 128), val_ran=(0, 256), uni_char="+-=._:/@"
     :return: dict {key,val}
     """
     tag_char = string.ascii_letters + string.digits + uni_char
-    key_len = random.randrange(key_ran[0], key_ran[1])
-    key = ''.join([random.choice(tag_char) for _ in range(key_len)])
-    val_len = random.randrange(val_ran[0], val_ran[1])
-    val = ''.join([random.choice(tag_char) for _ in range(val_len)])
+    key_len = SystemRandom().randrange(key_ran[0], key_ran[1])
+    key = ''.join([SystemRandom().choice(tag_char) for _ in range(key_len)])
+    val_len = SystemRandom().randrange(val_ran[0], val_ran[1])
+    val = ''.join([SystemRandom().choice(tag_char) for _ in range(val_len)])
     return {key: val}
 
 
@@ -524,14 +524,15 @@ def pet_object_tagging(s3_ver_test_obj, bucket_name: str, object_name: str,
     """
     version_id = kwargs.get("version_id", 'null')
     tag_count = kwargs.get("tag_count", 1)
-    tag_key_ran = kwargs.get("tag_key_ran", (1, 128))
-    tag_val_ran = kwargs.get("tag_val_ran", (0, 256))
+    tag_key_ran = kwargs.get("tag_key_ran", [(1, 128)])
+    tag_val_ran = kwargs.get("tag_val_ran", [(0, 256)])
     tag_overrides = kwargs.get("tag_overrides", None)  # Use this List of {Key: val} if not random
 
     tag_set = []
     if tag_overrides is None:
         for tag_no in range(tag_count):
-            tag_set.append(get_tag_key_val_pair(key_ran=tag_key_ran, val_ran=tag_val_ran))
+            tag_set.append(get_tag_key_val_pair(key_ran=tag_key_ran[tag_no],
+                                                val_ran=tag_val_ran[tag_no]))
     else:
         tag_set = tag_overrides
 
