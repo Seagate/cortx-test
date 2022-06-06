@@ -37,7 +37,6 @@ from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_common_test_lib import put_object_tagging
 from libs.s3.s3_versioning_common_test_lib import upload_version
-from libs.s3.s3_versioning_common_test_lib import upload_versions
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 
 # Global Constants
