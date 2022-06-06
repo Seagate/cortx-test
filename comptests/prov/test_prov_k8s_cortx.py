@@ -66,7 +66,7 @@ class TestProvK8Cortx:
             if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
                 cls.master_node_obj = node_obj
                 cls.master_node_list.append(node_obj)
-                cls.master_node_obj.execute_cmd(cmd=commands.SET_NAMESPACE.format("cortx"),
+                cls.master_node_obj.execute_cmd(cmd=commands.SET_NAMESPACE.format(common_const.NAMESPACE),
                 read_lines=True)
             else:
                 cls.worker_node_list.append(node_obj)
