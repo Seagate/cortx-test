@@ -558,3 +558,54 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
         LOG.exception(error)
         return False, error
     return resp
+
+
+def get_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3VersioningTestLib,
+                       bucket_name: str = None, object_name: str = None, **kwargs):
+    """
+    Get the tag set value for object with or without version ID.
+
+    :param s3_tag_test_obj: S3TaggingTestLib instance
+    :param s3_ver_test_obj: S3VersioningTestLib instance
+    :param bucket_name: Name of the bucket.
+    :param object_name: Name of the object.
+    :keyword version_id: Version ID associated with given object
+    :return: tuple for lib call response
+    """
+    version_id = kwargs.get("version_id", None)
+    try:
+        if version_id is not None:
+            resp = s3_ver_test_obj.get_obj_tag_ver(bucket_name=bucket_name,
+                                                   object_name=object_name, version=version_id)
+        else:
+            resp = s3_tag_test_obj.get_object_tags(bucket_name=bucket_name, obj_name=object_name)
+    except CTException as error:
+        LOG.exception(error)
+        return False, error
+    return resp
+
+
+def delete_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3VersioningTestLib,
+                          bucket_name: str = None, object_name: str = None, **kwargs):
+    """
+    DELETE the tag set value for object with or without version ID.
+
+    :param s3_tag_test_obj: S3TaggingTestLib instance
+    :param s3_ver_test_obj: S3VersioningTestLib instance
+    :param bucket_name: Name of the bucket.
+    :param object_name: Name of the object.
+    :keyword version_id: Version ID associated with given object
+    :return: tuple for lib call response
+    """
+    version_id = kwargs.get("version_id", None)
+    try:
+        if version_id is not None:
+            resp = s3_ver_test_obj.delete_obj_tag_ver(bucket_name=bucket_name,
+                                                      object_name=object_name, version=version_id)
+        else:
+            resp = s3_tag_test_obj.delete_object_tagging(bucket_name=bucket_name,
+                                                         obj_name=object_name)
+    except CTException as error:
+        LOG.exception(error)
+        return False, error
+    return resp

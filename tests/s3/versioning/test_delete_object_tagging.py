@@ -36,6 +36,7 @@ from config.s3 import S3_CFG
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_common_test_lib import put_object_tagging
+from libs.s3.s3_versioning_common_test_lib import get_object_tagging
 from libs.s3.s3_versioning_common_test_lib import upload_version
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 
@@ -153,8 +154,8 @@ class TestTaggingDeleteObject:
                     self.object_name, latest_v)
         LOGGER.info("Step 7: Perform GET Object Tagging for %s without versionId specified",
                     self.object_name)
-        resp = self.s3_ver_obj.get_obj_tag_ver(bucket_name=self.bucket_name,
-                                               object_name=self.object_name)
+        resp = get_object_tagging(s3_tag_test_obj=self.s3_tag_obj, s3_ver_test_obj=self.s3_ver_obj,
+                                  bucket_name=self.bucket_name, object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
         # For null version ID, expecting "TagSet": []
         assert_utils.assert_false(resp[1], resp)
