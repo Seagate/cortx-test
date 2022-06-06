@@ -91,7 +91,7 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, po
     cmd = string.Template(cm_cmd.CMD_GET_IP_IFACE).substitute(iface)
     resp = node_obj.execute_cmd(cmd, read_lines=True)
     ext_ip = resp[0].strip("\n")
-    print("Data IP from master node: %s", ext_ip)
+    print("Data IP from master node: ", ext_ip)
     setup_name = host_list[0]["hostname"]
     setup_name = f"cicd_deploy_{setup_name.split('.')[0]}_{len(host_list) - 1}"
 
