@@ -111,7 +111,8 @@ class TestListObjectVersions:
         self.log.info("Step 1: Test List Object Versions on a non-existent bucket")
         non_existent_bucket = "ver-bkt-{}".format(time.perf_counter_ns())
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=non_existent_bucket,
-                                   expected_error=errmsg.NO_BUCKET_OBJ_ERR_KEY)
+                                   expected_error=errmsg.NO_BUCKET_OBJ_ERR_KEY,
+                                   expected_versions={})
         self.log.info("Step 2: Test List Object Versions on empty bucket")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions={})
@@ -162,7 +163,7 @@ class TestListObjectVersions:
                                        list_params={"Delimiter": ""}, expected_versions=versions)
             self.log.info("Step 3: Test List Object Versions with valid delimiter")
             expected_flags = {"CommonPrefixes": [{"Prefix": self.object_name2}]}
-            expected_versions = {versions[self.object_name1]}
+            expected_versions = {self.object_name1: versions[self.object_name1]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"Delimiter": self.object_name2},
                                        expected_versions=versions, expected_flags=expected_flags)
@@ -192,7 +193,7 @@ class TestListObjectVersions:
             expected_flags = {"Delimiter": "obj2", "Prefix": "key", "MaxKeys": 3,
                               "IsTruncated": "true", "NextKeyMarker": self.object_name1,
                               "NextVersionIdMarker": versions[self.object_name1]["is_latest"]}
-            expected_versions = {versions[self.object_name1]}
+            expected_versions = {self.object_name1: versions[self.object_name1]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params=flags, expected_flags=flags,
                                        expected_versions=expected_versions)
@@ -200,7 +201,7 @@ class TestListObjectVersions:
             flags = {"NextKeyMarker": self.object_name1,
                      "NextVersionIdMarker": versions[self.object_name1]["is_latest"]}
             expected_flags = {"IsTruncated": "false"}
-            expected_versions = {versions[self.object_name2]}
+            expected_versions = {self.object_name1: versions[self.object_name2]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params=flags, expected_flags=expected_flags,
                                        expected_versions=expected_versions)
