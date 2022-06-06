@@ -30,6 +30,8 @@ assertions as well, with the main aim being to have leaner and cleaner code in t
 import logging
 import random
 
+from commons import errorcodes as err
+from commons import error_messages as errmsg
 from commons.constants import S3_ENGINE_RGW
 from commons.exceptions import CTException
 from commons.utils import assert_utils
@@ -227,11 +229,12 @@ def check_list_objects(s3_test_obj: S3TestLib, bucket_name: str,
                               "List Objects response does not contain expected object names")
 
 
-def check_get_head_object_version(s3_ver_test_obj: S3VersioningTestLib,
+def check_get_head_object_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
                                   bucket_name: str, object_name: str, **kwargs) -> None:
     """
     Verify GET/HEAD Object response for specified version/object
 
+    :param s3_test_obj: S3TestLib object to perform S3 calls
     :param s3_ver_test_obj: S3VersioningTestLib object to perform S3 versioning calls
     :param bucket_name: Target bucket name
     :param object_name: Target object name
@@ -252,13 +255,12 @@ def check_get_head_object_version(s3_ver_test_obj: S3VersioningTestLib,
             get_response = s3_ver_test_obj.get_object_version(bucket_name, object_name,
                                                               version_id=version_id)
         else:
-            get_response = s3_ver_test_obj.get_object(bucket=bucket_name, key=object_name)
+            get_response = s3_test_obj.get_object(bucket=bucket_name, key=object_name)
         assert_utils.assert_true(get_response[0], get_response[1])
         if version_id:
-            assert_utils.assert_equal(get_response[1]["ResponseMetadata"]["VersionId"],
-                                      version_id)
+            assert_utils.assert_equal(get_response[1]["VersionId"], version_id)
         if etag:
-            assert_utils.assert_equal(get_response[1]["ResponseMetadata"]["ETag"], etag)
+            assert_utils.assert_equal(get_response[1]["ETag"], etag)
         LOG.info("Successfully performed GET Object: %s", get_response)
     except CTException as error:
         LOG.error(error)
@@ -272,14 +274,12 @@ def check_get_head_object_version(s3_ver_test_obj: S3VersioningTestLib,
                                                                 key=object_name,
                                                                 version_id=version_id)
         else:
-            head_response = s3_ver_test_obj.object_info(bucket_name=bucket_name,
-                                                        key=object_name)
+            head_response = s3_test_obj.object_info(bucket_name=bucket_name, key=object_name)
         assert_utils.assert_true(head_response[0], head_response[1])
         if version_id:
-            assert_utils.assert_equal(
-                head_response[1]["ResponseMetadata"]["VersionId"], version_id)
+            assert_utils.assert_equal(head_response[1]["VersionId"], version_id)
         if etag:
-            assert_utils.assert_equal(head_response[1]["ResponseMetadata"]["ETag"], etag)
+            assert_utils.assert_equal(head_response[1]["ETag"], etag)
         LOG.info("Successfully performed HEAD Object: %s", head_response)
     except CTException as error:
         LOG.error(error)
@@ -344,9 +344,18 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
             ...
             }
     """
-    LOG.info("Creating bucket")
-    resp = s3_test_obj.create_bucket(bucket_name)
-    assert_utils.assert_true(resp[0], resp[1])
+    try:
+        bucket_exists, _ = s3_test_obj.head_bucket(bucket_name)
+        if bucket_exists:
+            LOG.info("Bucket exists: %s, skipping bucket creation", bucket_name)
+    except CTException as error:
+        if errmsg.NOT_FOUND_ERR in error.message:
+            LOG.info("Creating bucket: %s", bucket_name)
+            resp = s3_test_obj.create_bucket(bucket_name)
+            assert_utils.assert_true(resp[0], resp[1])
+        else:
+            LOG.error("Encountered exception in HEAD bucket: %s", error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
     versions = {}
     if pre_obj_list:
         LOG.info("Uploading objects before setting bucket versioning state")
@@ -362,7 +371,7 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
         assert_utils.assert_true(resp[0], resp[1])
         for _ in range(count):
             file_path = random.choice(file_paths)  # nosec
-            chk_null_version = True if versioning_config == "Enabled" else False
+            chk_null_version = False if versioning_config == "Enabled" else True
             upload_version(s3_test_obj, bucket_name=bucket_name, file_path=file_path,
                            object_name=object_name, versions_dict=versions,
                            chk_null_version=chk_null_version)

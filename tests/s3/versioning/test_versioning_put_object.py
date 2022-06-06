@@ -139,6 +139,7 @@ class TestVersioningPutObject:
                            expected_objects=[self.object_name])
         self.log.info("ENDED: Test PUT Object for preexisting objects with versioning")
 
+    @pytest.mark.sanity
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-32728")
     @CTFailOn(error_handler)
