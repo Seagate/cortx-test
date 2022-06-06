@@ -23,12 +23,17 @@ Create DB entry for Continuous deployment Jenkins Job.
 """
 import json
 import os
+import string
 import sys
 from subprocess import Popen, PIPE   #nosec
 
 import yaml
 from word2number import w2n
+
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import jira_utils
+from commons import commands as cm_cmd
+from config import PROV_CFG
 
 
 def execute_cmd(cmd) -> tuple:
@@ -80,7 +85,13 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, po
             break
     if len(host_list) != int(nodes_cnt) + 1:
         raise Exception("Mismatch in Hosts and no of worker nodes given")
-
+    node_obj = LogicalNode(hostname=host_list[0]["hostname"], username=host_list[0]["username"],
+                           password=host_list[0]["password"])
+    iface = PROV_CFG["k8s_cortx_deploy"]["iface"]
+    cmd = string.Template(cm_cmd.CMD_GET_IP_IFACE).substitute(iface)
+    resp = node_obj.execute_cmd(cmd, read_lines=True)
+    ext_ip = resp[0].strip("\n")
+    print("Data IP from master node: %s", ext_ip)
     setup_name = host_list[0]["hostname"]
     setup_name = f"cicd_deploy_{setup_name.split('.')[0]}_{len(host_list) - 1}"
 
@@ -89,6 +100,7 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, po
     json_data["s3_engine"] = int(s3_engine)
     json_data["product_type"] = "k8s"
     json_data["setup_in_useby"] = "CICD_Deployment"
+    json_data["lb"] = ext_ip
     json_data["nodes"] = host_list
 
     json_data["csm"]["mgmt_vip"] = host_list[1]["hostname"]
