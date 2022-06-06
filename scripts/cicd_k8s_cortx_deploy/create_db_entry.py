@@ -88,8 +88,7 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, po
     node_obj = LogicalNode(hostname=host_list[0]["hostname"], username=host_list[0]["username"],
                            password=host_list[0]["password"])
     iface = PROV_CFG["k8s_cortx_deploy"]["iface"]
-    cmd = string.Template(cm_cmd.CMD_GET_IP_IFACE).substitute(iface)
-    resp = node_obj.execute_cmd(cmd, read_lines=True)
+    resp = node_obj.execute_cmd(cm_cmd.CMD_GET_IP_IFACE.format(iface), read_lines=True)
     ext_ip = resp[0].strip("\n")
     print("Data IP from master node: ", ext_ip)
     setup_name = host_list[0]["hostname"]
