@@ -37,6 +37,7 @@ from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_common_test_lib import put_object_tagging
 from libs.s3.s3_versioning_common_test_lib import upload_version
+from libs.s3.s3_versioning_common_test_lib import upload_versions
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 
 # Global Constants
@@ -101,6 +102,7 @@ class TestTaggingDeleteObject:
         LOGGER.info("STARTED: Test DELETE object tagging for pre-existing object in a versioning "
                     "enabled bucket")
         ver_tag = dict()
+        ver_tag.update({self.object_name: dict()})
         versions = dict()
         LOGGER.info("Step 1: Upload object %s before enabling versioning on bucket %s",
                     self.object_name, self.bucket_name)
@@ -120,11 +122,11 @@ class TestTaggingDeleteObject:
         put_object_tagging(s3_tag_test_obj=self.s3_tag_obj, s3_ver_test_obj=self.s3_ver_obj,
                            bucket_name=self.bucket_name, object_name=self.object_name,
                            version_tag=ver_tag)
-        put_tag = ver_tag[self.object_name][last_v][-1]
-        LOGGER.info("Step 3: Performed PUT Object Tagging for %s with a tag %s pair",
-                    self.object_name, put_tag)
+        LOGGER.info("Step 3: Performed PUT Object Tagging for %s with a tag key-value pair",
+                    self.object_name)
         LOGGER.info("Step 4: Perform GET Object Tagging for %s with versionId=%s",
                     self.object_name, last_v)
+        put_tag = ver_tag[self.object_name][last_v][-1]
         resp = self.s3_ver_obj.get_obj_tag_ver(bucket_name=self.bucket_name,
                                                object_name=self.object_name, version=last_v)
         assert_utils.assert_true(resp[0], resp)
@@ -133,26 +135,28 @@ class TestTaggingDeleteObject:
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
         LOGGER.info("Step 4: Performed GET Object Tagging for %s with versionId=%s is %s",
                     self.object_name, last_v, get_tag)
-        LOGGER.info("Step 5: Perform DELETE Object Tagging for %s with  versionId=%s",
+        LOGGER.info("Step 5: Perform DELETE Object Tagging for %s with versionId=%s",
                     self.object_name, last_v)
         resp = self.s3_ver_obj.delete_obj_tag_ver(bucket_name=self.bucket_name,
                                                   object_name=self.object_name, version=last_v)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 5: Performed DELETE Object Tagging for %s with  versionId=%s",
+        LOGGER.info("Step 5: Performed DELETE Object Tagging for %s with versionId=%s",
                     self.object_name, last_v)
         LOGGER.info("Step 6: Perform GET Object Tagging for %s with versionId=%s",
                     self.object_name, last_v)
         resp = self.s3_ver_obj.get_obj_tag_ver(bucket_name=self.bucket_name,
                                                object_name=self.object_name, version=last_v)
         assert_utils.assert_true(resp[0], resp)
+        # For null version ID, expecting "TagSet": []
         assert_utils.assert_false(resp[1], resp)
         LOGGER.info("Step 6: Performed GET Object Tagging for %s with versionId=%s",
                     self.object_name, last_v)
         LOGGER.info("Step 7: Perform GET Object Tagging for %s without versionId specified",
                     self.object_name)
         resp = self.s3_ver_obj.get_obj_tag_ver(bucket_name=self.bucket_name,
-                                               object_name=self.object_name,)
+                                               object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
+        # For null version ID, expecting "TagSet": []
         assert_utils.assert_false(resp[1], resp)
         LOGGER.info("Step 7: Performed GET Object Tagging for %s without versionId specified",
                     self.object_name)

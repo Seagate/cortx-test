@@ -492,7 +492,7 @@ def empty_versioned_bucket(s3_ver_test_obj: S3VersioningTestLib,
 
 def get_tag_key_val_pair(key_ran=(1, 128), val_ran=(0, 256), uni_char="+-=._:/@"):
     """
-    Get random string for TAG's key-value pair withing given length range
+    Get random string for TAG's key-value pair within given length range
 
     :param key_ran: Length Limit for Key: Minimum 1, Maximum 128.
     :param val_ran: Length Limit for Value: Minimum 0, Maximum 256.
@@ -523,7 +523,7 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
     :keyword tag_overrides: Specific TAG
     :param version_tag: Dictionary to be updated with uploaded TagSet data
     """
-    version_id = kwargs.get("version_id", 'null')
+    version_id = kwargs.get("version_id", None)
     tag_count = kwargs.get("tag_count", 1)
     tag_key_ran = kwargs.get("tag_key_ran", [(1, 128)])
     tag_val_ran = kwargs.get("tag_val_ran", [(0, 256)])
@@ -537,7 +537,7 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
     else:
         tag_set = tag_overrides
 
-    if version_id:
+    if version_id is not None:
         resp = s3_ver_test_obj.put_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
                                                version=version_id, tags={'TagSet': tag_set})
         assert_utils.assert_true(resp[0], resp)
