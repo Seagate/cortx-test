@@ -4857,7 +4857,7 @@ class TestIamUserRGW():
         random_str = ''.join(secrets.choice(string.ascii_uppercase +
                                             string.ascii_lowercase) for i in range(7))
         special_str = ''.join(secrets.choice(string.punctuation) for i in range(7))
-        invalid_values = [-1, 0, hex(255), random_str, special_str, None, '""']
+        invalid_values = [-1, 0, hex(255), random_str, special_str, '""']
         for key_value in invalid_values:
             self.log.info("Testing for key value %s", key_value)
             resp = self.csm_obj.list_iam_users_rgw(max_entries=key_value)
@@ -4894,7 +4894,7 @@ class TestIamUserRGW():
         random_num = self.csm_obj.random_gen.randrange(1, ran_int)
         random_str = ''.join(secrets.choice(string.digits +
                                             string.ascii_lowercase) for i in range(7))
-        invalid_markers = ['""', random_num, random_str, None]
+        invalid_markers = ['""', random_num, random_str]
         for marker in invalid_markers:
             self.log.info("Testing for invalid marker %s:", marker)
             resp = self.csm_obj.list_iam_users_rgw(marker=marker)
@@ -4916,9 +4916,8 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Create IAM User")
         resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True)
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.CREATED,
-                                   "Create IAM User failed")
-        user_id = resp['tenant'] + "$" + resp['user_id']
+        assert resp[0], resp[1]
+        user_id = resp[1]['tenant'] + "$" + resp[1]['user_id']
         self.log.info("Step 2: Delete IAM User")
         resp = self.csm_obj.delete_iam_user(user_id, purge_data=True)
         self.log.debug("Verify Response : %s", resp)
@@ -4969,9 +4968,11 @@ class TestIamUserRGW():
                       "marker as in between user")
         resp = self.csm_obj.list_iam_users_rgw(max_entries=15, marker=marker)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
-        count = resp_dict["count"]
-        assert_utils.assert_equals(count, 6, "Entries not returned as expected")
-        get_user_list = resp_dict["users"]
+        count_new = resp.json()["count"]
+        get_user_list = resp.json()["users"]
+        actual_entries = self.csm_conf["common"]["num_users"] - user_index + 1
+        assert_utils.assert_equals(count_new, actual_entries, "Entries not returned as expected")
+        self.log.info("Printing first user of list %s", get_user_list[0]) 
         assert_utils.assert_equals(get_user_list[0], marker, "Marker not set"
                                                              "to in between user")
         self.log.info("##### Test completed -  %s #####", test_case_name)
