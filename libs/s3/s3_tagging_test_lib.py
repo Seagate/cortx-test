@@ -158,6 +158,7 @@ class S3TaggingTestLib(Tagging):
         :param obj_name: Name of the object.
         :param key: Key for object tagging.
         :param value: Value for object tagging.
+        :keyword tags: Value for {"TagSet": [{"Key": key_val, "Value": value_val},.. ]}
         :return: (Boolean, response)
         """
         tag_count = kwargs.get("tag_count", 1)
