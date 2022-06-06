@@ -5028,7 +5028,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp.status_code == HTTPStatus.FORBIDDEN,
                                  "Delete Internal IAM User failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")    #TODO
+            self.log.info("Verifying error response...")
             assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(resp.json()["message"], msg)
@@ -5058,7 +5058,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp.status_code == HTTPStatus.FORBIDDEN,
                                  "Internal IAM User Modified")
         if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")  # TODO
+            self.log.info("Verifying error response...")
             assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(resp.json()["message"], msg)
