@@ -564,7 +564,7 @@ CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
 PRE_REQ_CMD = "cd $dir; ./prereq-deploy-cortx-cloud.sh -d $disk"
 DEPLOY_CLUSTER_CMD = "cd $path; ./deploy-cortx-cloud.sh > $log"
 DESTROY_CLUSTER_CMD = "cd $dir; ./destroy-cortx-cloud.sh --force"
-UPGRADE_CLUSTER_CMD = "cd $dir ./upgrade-cortx-cloud.sh start -p $pod"
+UPGRADE_CLUSTER_CMD = "cd $dir; ./upgrade-cortx-cloud.sh start -p $pod"
 
 # Incomplete commands
 UPGRADE_NEG_CMD = "cd $dir; ./upgrade-cortx-cloud.sh"
