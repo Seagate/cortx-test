@@ -28,7 +28,8 @@ Functions added here can accept cortx-test test libraries as parameters and can 
 assertions as well, with the main aim being to have leaner and cleaner code in the test modules.
 """
 import logging
-import random
+import string
+from secrets import SystemRandom
 
 from commons import errorcodes as err
 from commons import error_messages as errmsg
@@ -39,6 +40,7 @@ from commons.utils import s3_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3.s3_common_test_lib import create_s3_acc
+from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 
@@ -360,7 +362,7 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
     if pre_obj_list:
         LOG.info("Uploading objects before setting bucket versioning state")
         for object_name in pre_obj_list:
-            file_path = random.choice(file_paths) #nosec
+            file_path = SystemRandom().choice(file_paths)   # nosec
             upload_version(s3_test_obj, bucket_name=bucket_name, file_path=file_path,
                            object_name=object_name, versions_dict=versions,
                            is_unversioned=True)
@@ -370,7 +372,7 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
                                                      status=versioning_config)
         assert_utils.assert_true(resp[0], resp[1])
         for _ in range(count):
-            file_path = random.choice(file_paths)  # nosec
+            file_path = SystemRandom().choice(file_paths)  # nosec
             chk_null_version = False if versioning_config == "Enabled" else True
             upload_version(s3_test_obj, bucket_name=bucket_name, file_path=file_path,
                            object_name=object_name, versions_dict=versions,
@@ -486,3 +488,126 @@ def empty_versioned_bucket(s3_ver_test_obj: S3VersioningTestLib,
     for version in to_delete:
         s3_ver_test_obj.delete_object_version(bucket=bucket_name, key=version["Key"],
                                               version_id=version["VersionId"])
+
+
+def get_tag_key_val_pair(key_ran: tuple = (1, 128), val_ran: tuple = (0, 256),
+                         uni_char: str = "+-=._:/@") -> dict:
+    """
+    Get random string for TAG's key-value pair within given length range
+
+    :param key_ran: Length Limit for Key: Minimum 1, Maximum 128.
+    :param val_ran: Length Limit for Value: Minimum 0, Maximum 256.
+    :param uni_char: Allowed unique characters
+    :return: dict {key,val}
+    """
+    tag_char = string.ascii_letters + string.digits + uni_char
+    key_len = SystemRandom().randrange(key_ran[0], key_ran[1])
+    key = ''.join([SystemRandom().choice(tag_char) for _ in range(key_len)])
+    val_len = SystemRandom().randrange(val_ran[0], val_ran[1])
+    val = ''.join([SystemRandom().choice(tag_char) for _ in range(val_len)])
+    return {key: val}
+
+
+def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3VersioningTestLib,
+                       bucket_name: str, object_name: str, version_tag: dict, **kwargs) -> tuple:
+    """
+    Set the supplied/generated tag_set to an object that already exists in a bucket.
+
+    :param s3_tag_test_obj: S3TaggingTestLib instance
+    :param s3_ver_test_obj: S3VersioningTestLib instance
+    :param bucket_name: Name of the bucket.
+    :param object_name: Name of the object.
+    :param version_tag: Dictionary to be updated with uploaded TagSet data
+    :keyword version_id: Version ID associated with given object
+    :keyword versions_dict: Dictionary to to fetch the latest version ID in case of un-versioned
+    bucket when NO version ID specified for Put object Tag
+    :keyword tag_count: Count of TAGs to be generated and put to given object
+    :keyword tag_key_ran: Length Limit for Key: Minimum 1, Maximum 128.
+    :keyword tag_val_ran: Length Limit for Value: Minimum 0, Maximum 256.
+    :keyword tag_overrides: Specific TAG
+    :return: tuple for lib call response
+    """
+    version_id = kwargs.get("version_id", None)
+    versions_dict = kwargs.get("versions_dict", None)
+    tag_count = kwargs.get("tag_count", 1)
+    tag_key_ran = kwargs.get("tag_key_ran", [(1, 128)])
+    tag_val_ran = kwargs.get("tag_val_ran", [(0, 256)])
+    tag_overrides = kwargs.get("tag_overrides", None)  # Use this List of {Key: val} if not random
+
+    tag_set = []
+    if tag_overrides is None:
+        for tag_no in range(tag_count):
+            tag_set.append(get_tag_key_val_pair(key_ran=tag_key_ran[tag_no],
+                                                val_ran=tag_val_ran[tag_no]))
+    else:
+        tag_set = tag_overrides
+
+    try:
+        if version_id is not None:
+            resp = s3_ver_test_obj.put_obj_tag_ver(bucket_name=bucket_name,
+                                                   object_name=object_name,
+                                                   version=version_id, tags={'TagSet': tag_set})
+            version_tag[object_name][version_id] = tag_set
+        else:
+            resp = s3_tag_test_obj.set_object_tag(bucket_name=bucket_name, object_name=object_name,
+                                                  tags={'TagSet': tag_set})
+            # Get the latest version ID to which put object tag is updated when no version ID
+            # specified
+            if versions_dict is not None:
+                version_id = versions_dict[object_name]["version_history"][-1]
+                version_tag[object_name][version_id] = tag_set
+    except CTException as error:
+        LOG.exception(error)
+        return False, error
+    return resp
+
+
+def get_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3VersioningTestLib,
+                       bucket_name: str = None, object_name: str = None, **kwargs) -> tuple:
+    """
+    Get the tag set value for object with or without version ID.
+
+    :param s3_tag_test_obj: S3TaggingTestLib instance
+    :param s3_ver_test_obj: S3VersioningTestLib instance
+    :param bucket_name: Name of the bucket.
+    :param object_name: Name of the object.
+    :keyword version_id: Version ID associated with given object
+    :return: tuple for lib call response
+    """
+    version_id = kwargs.get("version_id", None)
+    try:
+        if version_id is not None:
+            resp = s3_ver_test_obj.get_obj_tag_ver(bucket_name=bucket_name,
+                                                   object_name=object_name, version=version_id)
+        else:
+            resp = s3_tag_test_obj.get_object_tags(bucket_name=bucket_name, obj_name=object_name)
+    except CTException as error:
+        LOG.exception(error)
+        return False, error
+    return resp
+
+
+def delete_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3VersioningTestLib,
+                          bucket_name: str = None, object_name: str = None, **kwargs) -> tuple:
+    """
+    DELETE the tag set value for object with or without version ID.
+
+    :param s3_tag_test_obj: S3TaggingTestLib instance
+    :param s3_ver_test_obj: S3VersioningTestLib instance
+    :param bucket_name: Name of the bucket.
+    :param object_name: Name of the object.
+    :keyword version_id: Version ID associated with given object
+    :return: tuple for lib call response
+    """
+    version_id = kwargs.get("version_id", None)
+    try:
+        if version_id is not None:
+            resp = s3_ver_test_obj.delete_obj_tag_ver(bucket_name=bucket_name,
+                                                      object_name=object_name, version=version_id)
+        else:
+            resp = s3_tag_test_obj.delete_object_tagging(bucket_name=bucket_name,
+                                                         obj_name=object_name)
+    except CTException as error:
+        LOG.exception(error)
+        return False, error
+    return resp
