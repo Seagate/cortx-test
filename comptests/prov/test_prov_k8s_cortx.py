@@ -474,7 +474,8 @@ class TestProvK8Cortx:
         secret_key = "".join(resp).replace("\\n", "\n")
         LOGGER.info(secret_key)
         LOGGER.info("Step 2: Fetch Interface IP, HTTP and HTTPS Ports.")
-        resp = system_utils.execute_cmd(cmd=commands.CMD_GET_IP_IFACE.format(self.deploy_cfg['iface']))
+        resp = system_utils.execute_cmd(cmd=commands.CMD_GET_IP_IFACE.format
+                                        (self.deploy_cfg['iface']))
         LOGGER.info(resp)
         eth1_ip = resp[1].strip("'\\n'b'")
         LOGGER.info(eth1_ip)
@@ -517,32 +518,32 @@ class TestProvK8Cortx:
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_SECRET_CONFIG.format(secret_key),
                                                     read_lines=True)
         LOGGER.info("Step 4:Creating bucket")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.create_bucket.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CREATE_BUCKET.format(http_port),
                                                     read_lines=True)
         LOGGER.info("Make Bucket %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.create_endpoint.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CREATE_ENDPOINT.format(http_port),
                                                     read_lines=True)
         LOGGER.info("Bucket Name %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.bucket_s3api.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.BUCKET_S3API.format(http_port),
                                                     read_lines=True)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.file_conf,
+        resp = self.master_node_obj.execute_cmd(cmd=commands.FILE_CONF,
                                                     read_lines=True)
         LOGGER.info("File size %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.copy_bucketfile.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.COPY_BUCKETFILE.format(http_port),
                                                     read_lines=True)
         LOGGER.info("Upload File %s", resp)
         LOGGER.info("Step 5:Creating get object")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.get_object.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.GET_OBJECT.format(http_port),
                                                     read_lines=True)
         LOGGER.info("Get Object %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.aws_url.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_URL.format(http_port),
                                                     read_lines=True)
         LOGGER.info("Bucket Name %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.bucket_size.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.BUCKET_SIZE.format(http_port),
                                                     read_lines=True)
         LOGGER.info("Bucket Size %s", resp)
         LOGGER.info("Step 6:Removing bucket")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.remove_bucket.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.REMOVE_BUCKET.format(http_port),
                                                     read_lines=True)
         LOGGER.info("Remove Bucket %s", resp)
         LOGGER.info("Test Completed.")
