@@ -643,7 +643,6 @@ class TestSingleProcessRestart:
 
         self.log.info("ENDED: Verify multipart upload and download before/after m0d is restarted")
 
-
     @pytest.mark.lc
     @pytest.mark.dtm
     @pytest.mark.tags("TEST-41229")
@@ -714,8 +713,8 @@ class TestSingleProcessRestart:
             "Step 4: Perform Single m0d Process Restart During Write/Read/Delete Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process,
                                             check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
@@ -766,8 +765,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 3 : Perform Single m0d Process Restart during overwrite ")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process,
                                             check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
@@ -814,8 +813,8 @@ class TestSingleProcessRestart:
         self.log.info("Step 3 : Perform Single m0d Process Restart ")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
-                                            pod_prefix=POD_NAME_PREFIX,
-                                            container_prefix=MOTR_CONTAINER_PREFIX,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process,
                                             check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
