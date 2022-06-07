@@ -22,9 +22,8 @@
 
 import logging
 import os
-import pytest
-import os
 from random import SystemRandom
+import pytest
 
 from commons import configmanager
 from commons import constants as common_const
