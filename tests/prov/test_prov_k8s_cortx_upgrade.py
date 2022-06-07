@@ -32,7 +32,7 @@ from commons.params import LOG_DIR
 from commons.params import LATEST_LOG_FOLDER
 from config import CMN_CFG, PROV_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
+from libs.prov.prov_k8s_cortx_upgrade import ProvUpgradeK8sCortxLib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class TestK8CortxUpgrade:
         cls.upgrade_image = os.getenv("UPGRADE_IMAGE", None)
         cls.current_image = os.getenv("CURRENT_IMAGE", None)
         cls.deploy_conf = PROV_CFG["k8s_cortx_deploy"]
-        cls.deploy_lc_obj = ProvDeployK8sCortxLib()
+        cls.deploy_lc_obj = ProvUpgradeK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
         cls.master_node_list = []
@@ -67,8 +67,8 @@ class TestK8CortxUpgrade:
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
-        resp = cls.deploy_lc_obj.check_s3_status(cls.master_node_obj,
-                                                 pod_prefix=cons.POD_NAME_PREFIX)
+        resp = cls.deploy_lc_obj.prov_obj.check_s3_status(cls.master_node_obj,
+                                                          pod_prefix=cons.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Setup operations finished.")
 
@@ -104,8 +104,8 @@ class TestK8CortxUpgrade:
         else:
             LOGGER.info("Installed version is lower than installing version.")
         LOGGER.info("Step 4: Check cluster health.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj,
-                                                  pod_prefix=cons.POD_NAME_PREFIX)
+        resp = self.deploy_lc_obj.prov_obj.check_s3_status(self.master_node_obj, pod_prefix=
+                                                           cons.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Start upgrade.")
         resp = self.deploy_lc_obj.service_upgrade_software(self.master_node_obj, self.upgrade_image)
@@ -118,17 +118,17 @@ class TestK8CortxUpgrade:
         assert_utils.assert_equals(new_installed_version, upgrade_version,
                                    "new_installed version is equal to upgrade_version.")
         LOGGER.info("Step 7 : Check PODs are up and running.")
-        resp = self.deploy_lc_obj.check_pods_status(self.master_node_obj)
+        resp = self.deploy_lc_obj.prov_obj.check_pods_status(self.master_node_obj)
         assert_utils.assert_true(resp)
         LOGGER.info("All PODs are up and running.")
         LOGGER.info("Step 8 : Check Cluster health and services.")
         time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj,
-                                                  pod_prefix=cons.POD_NAME_PREFIX)
+        resp = self.deploy_lc_obj.prov_obj.check_s3_status(self.master_node_obj, pod_prefix=
+                                                           cons.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0], resp[1])
         pod_name = self.master_node_obj.get_pod_name(pod_prefix=cons.POD_NAME_PREFIX)
         assert_utils.assert_true(pod_name[0], pod_name[1])
-        resp = self.deploy_lc_obj.get_hctl_status(self.master_node_obj, pod_name[1])
+        resp = self.deploy_lc_obj.prov_obj.get_hctl_status(self.master_node_obj, pod_name[1])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and all services are started.")
         LOGGER.info("Test Completed.")

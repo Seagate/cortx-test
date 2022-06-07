@@ -564,12 +564,10 @@ CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
 PRE_REQ_CMD = "cd $dir; ./prereq-deploy-cortx-cloud.sh -d $disk"
 DEPLOY_CLUSTER_CMD = "cd $path; ./deploy-cortx-cloud.sh > $log"
 DESTROY_CLUSTER_CMD = "cd $dir; ./destroy-cortx-cloud.sh --force"
-UPGRADE_CLUSTER_DESTRUPTIVE_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
-UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
-UPGRADE_COLD_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -cold"
+UPGRADE_CLUSTER_CMD = "cd $dir; ./upgrade-cortx-cloud.sh start -p $pod"
 
 # Incomplete commands
-UPGRADE_NEG_CMD = "cd {}; ./upgrade-cortx-cloud.sh"
+UPGRADE_NEG_CMD = "cd $dir; ./upgrade-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
