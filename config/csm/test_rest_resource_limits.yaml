@@ -1,9 +1,9 @@
-test_xxxxx:
+test_43149:
   active_users_quota: 50
   tmp_users_password: "Seagate@123"
-test_yyyyy:
+test_43150:
   sessions_quota: 10
   tmp_user_password: "Seagate@123"
-test_zzzzz:
+test_43151:
   requests_quota: 200
   api_endpoint: "/api/v2/csm/users"
