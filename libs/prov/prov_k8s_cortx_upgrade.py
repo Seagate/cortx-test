@@ -54,11 +54,11 @@ class ProvUpgradeK8sCortxLib:
         :return: True/False resp
         """
         menu_list = ["suspend", "resume", "status"]
-        upgrade_type = kwargs.get("upgrade_type", self.prov_obj.deploy_cfg["upg_type_rolling"])
+        upgrade_type = kwargs.get("upgrade_type", self.prov_obj.deploy_cfg["upgrade_type_rolling"])
         granular_type = kwargs.get("granular_type", self.prov_obj.deploy_cfg["granular_type"])
         flag = kwargs.get("flag", None)
         LOGGER.info("Upgrading CORTX..... %s, %s, %s", upgrade_type, granular_type, flag)
-        if upgrade_type == self.prov_obj.deploy_cfg["upg_type_roll"]:
+        if upgrade_type == self.prov_obj.deploy_cfg["upgrade_type_rolling"]:
             upg_cmd = Template(common_cmd.UPGRADE_CLUSTER_CMD).substitute(dir=git_remote_path, pod=
                                                                           granular_type)
             if flag in menu_list:
@@ -66,7 +66,7 @@ class ProvUpgradeK8sCortxLib:
                           flag
         else:
             upg_cmd = Template(common_cmd.UPGRADE_NEG_CMD).substitute(dir=git_remote_path) + "-" + \
-                      self.prov_obj.deploy_cfg["upg_type_cold"]
+                      self.prov_obj.deploy_cfg["upgrade_type_cold"]
         resp = node_obj.execute_cmd(cmd=upg_cmd, read_lines=True, exc=exc, timeout=
                                     self.prov_obj.deploy_cfg["timeout"]["upgrade"])
         if isinstance(resp, bytes):
