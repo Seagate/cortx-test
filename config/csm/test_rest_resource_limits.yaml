@@ -5,5 +5,5 @@ test_43150:
   sessions_quota: 10
   tmp_user_password: "Seagate@123"
 test_43151:
-  requests_quota: 200
+  requests_rate: 200
   api_endpoint: "/api/v2/csm/users"
