@@ -318,7 +318,8 @@ class TestBucketTagging:
             assert_s3_err_msg(errmsg.S3_RGW_BKT_INVALID_TAG_ERR,
                               errmsg.S3_CORTX_BKT_INVALID_TAG_ERR,
                               CMN_CFG["s3_engine"], error)
-        self.log.info("Step 2: Setting tag for a bucket failed with %s", error.message)
+            self.log.info(
+                "Step 2: Setting tag for a bucket failed with %s", error.message)
         self.log.info(
             "ENDED: Create a tag having values more than 512 Unicode characters in length")
 
@@ -380,7 +381,8 @@ class TestBucketTagging:
             assert_s3_err_msg(errmsg.S3_RGW_BKT_INVALID_TAG_ERR,
                               errmsg.S3_CORTX_BKT_INVALID_TAG_ERR,
                               CMN_CFG["s3_engine"], error)
-        self.log.info("Setting %d tags for a bucket failed with %s", 51, error.message)
+            self.log.info(
+                "Setting %d tags for a bucket failed with %s", 51, error.message)
         self.log.info("ENDED: Create Bucket tags, more than 50")
 
     @pytest.mark.parallel
