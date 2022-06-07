@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-Provisioner utility methods for Upgrade of k8s based Cortx Deployment
+Provisioner utility methods for Upgrade of k8s based Cortx Upgrade
 """
 import logging
 import os
@@ -54,8 +54,8 @@ class ProvUpgradeK8sCortxLib:
         :return: True/False resp
         """
         menu_list = ["suspend", "resume", "status"]
-        upgrade_type = kwargs.get("upgrade_type", self.prov_obj.deploy_cfg["upg_type_roll"])
-        granular_type = kwargs.get("granular_type", self.prov_obj.deploy_cfg["gran_type"])
+        upgrade_type = kwargs.get("upgrade_type", self.prov_obj.deploy_cfg["upg_type_rolling"])
+        granular_type = kwargs.get("granular_type", self.prov_obj.deploy_cfg["granular_type"])
         flag = kwargs.get("flag", None)
         LOGGER.info("Upgrading CORTX..... %s, %s, %s", upgrade_type, granular_type, flag)
         if upgrade_type == self.prov_obj.deploy_cfg["upg_type_roll"]:
