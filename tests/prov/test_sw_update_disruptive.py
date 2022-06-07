@@ -273,22 +273,27 @@ class TestSWUpdateDisruptive:
                       PROV_CFG["key_repo"]]
 
         resp = self.prov_obj.set_validate_repo(repo_list, self.node_list[0])
-        assert_utils.assert_false(resp[0], "set upgrade repo worked fine, which is not expected as upgrade build and current build are same")
+        assert_utils.assert_false(resp[0], "set upgrade repo worked fine, which is not expected "
+                                           "as upgrade build and current build are same")
         #TODO: Need to add condition to check error msg for failure of set upgrade repo
-        #assert_utils.assert_in("incompatible build version", resp[1], f"Set upgrade repo failed with error: {resp[1]}")
+        #assert_utils.assert_in("incompatible build version", resp[1],
+        #                       f"Set upgrade repo failed with error: {resp[1]}")
 
         LOGGER.info("Start the SW upgrade operation in offline mode.")
         resp = self.prov_obj.check_sw_upgrade(self.node_list[0])
-        assert_utils.assert_false(resp[0], "offline SW upgrade worked fine, which is not expected as upgrade build and current build are same")
+        assert_utils.assert_false(resp[0], "offline SW upgrade worked fine, which is not expected "
+                                           "as upgrade build and current build are same")
         expected_err = "no upgrade release is available"
-        assert_utils.assert_in(expected_err, resp[1], f"offline SW upgrade failed with error: {resp[1]} expected error: {expected_err}")
+        assert_utils.assert_in(expected_err, resp[1], f"offline SW upgrade failed with error: "
+                                                      f"{resp[1]} expected error: {expected_err}")
 
         LOGGER.info("Checking DI for IOs run before upgrade.")
         run_data_chk_obj.stop_io(users=data, di_check=True)
         # TODO: Need to add validation of IOs run from DI framework.
         LOGGER.info("IOs working fine after upgrade failed")
 
-        LOGGER.info("Completed: SW upgrade disruptive with incompatible ISO for CORTX sw components.")
+        LOGGER.info("Completed: SW upgrade disruptive with incompatible ISO "
+                    "for CORTX sw components.")
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.lr
@@ -300,7 +305,8 @@ class TestSWUpdateDisruptive:
         if SW upgrade fails. Also once process is complete, it will check if old version is
         shown on provisioner and check system health and Run IOs.
         """
-        LOGGER.info("Started: SW upgrade disruptive with cluster in bad state for CORTX sw components.")
+        LOGGER.info("Started: SW upgrade disruptive with cluster in bad state "
+                    "for CORTX sw components.")
 
         build = self.prov_obj.get_build_version(self.node_list[0])
         LOGGER.info("Current cortx build: {} and version on system: {}".format(build[0], build[1]))
@@ -329,19 +335,24 @@ class TestSWUpdateDisruptive:
         LOGGER.info("Set the upgrade repo.")
         resp = self.prov_obj.set_validate_repo(self.repo1_list, self.node_list[0])
 
-        assert_utils.assert_false(resp[0], "set upgrade repo worked fine, which is not expected as upgrade build and current build are same")
+        assert_utils.assert_false(resp[0], "set upgrade repo worked fine, which is not expected "
+                                           "as upgrade build and current build are same")
         #TODO: Need to add condition to check error msg for failure of set upgrade repo
-        #assert_utils.assert_in("cluster is in bad state", resp[1], f"Set upgrade repo failed with error: {resp[1]}")
+        #assert_utils.assert_in("cluster is in bad state", resp[1],
+        #                       f"Set upgrade repo failed with error: {resp[1]}")
 
         LOGGER.info("Start the SW upgrade operation in offline mode.")
         resp = self.prov_obj.check_sw_upgrade(self.node_list[0])
-        assert_utils.assert_false(resp[0], "offline SW upgrade worked fine, which is not expected as upgrade build and current build are same")
+        assert_utils.assert_false(resp[0], "offline SW upgrade worked fine, which is not expected "
+                                           "as upgrade build and current build are same")
         expected_err = "cluster is in bad state"
-        assert_utils.assert_in(expected_err, resp[1], f"offline SW upgrade failed with error: {resp[1]} expected error: {expected_err}")
+        assert_utils.assert_in(expected_err, resp[1], f"offline SW upgrade failed with error: "
+                                                      f"{resp[1]} expected error: {expected_err}")
 
         LOGGER.info("Checking DI for IOs run before upgrade.")
         run_data_chk_obj.stop_io(users=data, di_check=True)
         # TODO: Need to add validation of IOs run from DI framework.
         LOGGER.info("IOs working fine after upgrade failed")
 
-        LOGGER.info("Completed: SW upgrade disruptive with cluster in bad state for CORTX sw components.")
+        LOGGER.info("Completed: SW upgrade disruptive with cluster in bad state "
+                    "for CORTX sw components.")

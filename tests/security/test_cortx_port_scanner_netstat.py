@@ -25,6 +25,7 @@ from commons import constants as const
 
 LOGGER = logging.getLogger(__name__)
 
+@pytest.mark.skip(reason="Need to fix with new services framework")
 @pytest.mark.security
 @pytest.mark.tags("TEST-34218")
 def test_cortx_port_scanner_netstat():
@@ -65,7 +66,7 @@ def test_cortx_port_scanner_netstat():
     ret = client.CoreV1Api().list_pod_for_all_namespaces(watch=False)
     for item in ret.items:
         LOGGER.info("%s\t%s\t%s", item.status.pod_ip,item.metadata.namespace,item.metadata.name)
-        if "cortx" in item.metadata.name:
+        if item.metadata.name in ("cortx-data", "cortx-ha", "cortx-server", "cortx-control"):
             LOGGER.info(" --------------------------------------")
             for list_each_con in item.spec.containers:
                 LOGGER.info(" Open Ports for Container: %s",list_each_con.name)

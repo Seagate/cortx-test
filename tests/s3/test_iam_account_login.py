@@ -36,7 +36,7 @@ from config.s3 import S3_USER_ACC_MGMT_CONFIG
 
 LOGGER = logging.getLogger(__name__)
 
-
+# pylint: disable-msg=too-many-public-methods
 class TestAccountLoginProfile:
     """Account Login Profile Test Suite."""
 

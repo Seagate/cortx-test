@@ -24,11 +24,15 @@ Create DB entry for Continuous deployment Jenkins Job.
 import json
 import os
 import sys
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE   #nosec
 
 import yaml
 from word2number import w2n
+
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import jira_utils
+from commons import commands as cm_cmd
+from config import PROV_CFG
 
 
 def execute_cmd(cmd) -> tuple:
@@ -37,7 +41,7 @@ def execute_cmd(cmd) -> tuple:
     param: cmd : Command to be executed.
     return: Boolean, output/error
     """
-    proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+    proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)  #nosec
     output, error = proc.communicate()
     print("Output = ", str(output))
     print("\nError = ", str(error))
@@ -47,7 +51,7 @@ def execute_cmd(cmd) -> tuple:
 
 
 # pylint: disable=too-many-arguments,too-many-locals
-def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, port) -> str:
+def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, **kwargs) -> str:
     """
     Create setup entry in Database
     hosts: Multiple Hosts string received input from jenkins
@@ -59,6 +63,9 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, po
     port: port no to establish connection for https/http
     return: setup_name :
     """
+    s3_engine = kwargs.get("s3_engine")
+    port = kwargs.get("port")
+    https_port = kwargs.get("https_port")
     print("********Creating DB entry for setup**************")
     with open(cfg["ori_json_file"], 'r') as file:
         json_data = json.load(file)
@@ -80,7 +87,12 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, po
             break
     if len(host_list) != int(nodes_cnt) + 1:
         raise Exception("Mismatch in Hosts and no of worker nodes given")
-
+    node_obj = LogicalNode(hostname=host_list[0]["hostname"], username=host_list[0]["username"],
+                           password=host_list[0]["password"])
+    iface = PROV_CFG["k8s_cortx_deploy"]["iface"]
+    resp = node_obj.execute_cmd(cm_cmd.CMD_GET_IP_IFACE.format(iface), read_lines=True)
+    ext_ip = resp[0].strip("\n")
+    print("Data IP from master node: ", ext_ip)
     setup_name = host_list[0]["hostname"]
     setup_name = f"cicd_deploy_{setup_name.split('.')[0]}_{len(host_list) - 1}"
 
@@ -89,6 +101,7 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, po
     json_data["s3_engine"] = int(s3_engine)
     json_data["product_type"] = "k8s"
     json_data["setup_in_useby"] = "CICD_Deployment"
+    json_data["lb"] = ext_ip + ":" + https_port
     json_data["nodes"] = host_list
 
     json_data["csm"]["mgmt_vip"] = host_list[1]["hostname"]
@@ -113,6 +126,7 @@ def main():
         admin_pswd = os.getenv("ADMIN_PASSWORD")
         test_exe_no = os.getenv("TEST_EXECUTION_NUMBER", None)
         port = int(os.getenv("CONTROL_HTTPS_PORT", "31169"))
+        https_port = os.getenv("HTTPS_PORT", "30443")
         if test_exe_no is not None:
             jira_id = os.environ['JIRA_ID']
             jira_pswd = os.environ['JIRA_PASSWORD']
@@ -127,8 +141,8 @@ def main():
         cfg = ""
         with open("scripts/cicd_k8s_cortx_deploy/config.yaml") as file:
             cfg = yaml.safe_load(file)
-        setupname = create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine,
-                                    port)
+        setupname = create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine=
+                                    s3_engine, port=port, https_port=https_port)
 
         print(f"target_name: {setupname}")
         with open("secrets.json", 'r') as file:

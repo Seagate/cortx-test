@@ -443,7 +443,9 @@ class S3Helper:
                 return status, fids
             if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 health = Health(hostname=host, username=user, password=pwd)
-                return health.hctl_status_get_service_fids(service_name="s3server")
+                status, fids = health.hctl_status_get_svc_fids()
+                if status:
+                    return True, fids['rgw_s3']
 
             return False, "Failed to get s3server fids"
         except (SSHException, OSError) as error:

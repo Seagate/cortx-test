@@ -223,11 +223,11 @@ def configure_nodeport_lb(node_obj: LogicalNode, iface: str):
     for item_data in resp["items"]:
         if item_data['metadata']["name"] == "cortx-io-svc-0":
             for item in item_data['spec']['ports']:
-                if item['name'] == 'cortx-rgw-https':
+                if item['port'] == 443:
                     port_https = item["nodePort"]
                     flag = True
                     LOGGER.info("HTTPS Port for IO is: %s", port_https)
-                if item['name'] == 'cortx-rgw-http':
+                if item['port'] == 80:
                     port_http = item["nodePort"]
                     flag = True
                     LOGGER.info("HTTP Port for IO is: %s", port_http)

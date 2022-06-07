@@ -184,7 +184,7 @@ class TestHAClusterHealth:
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node],
                                                           node_obj=self.node_list[node],
                                                           is_safe=True)
-            assert_utils.assert_true(resp, "Host has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node]}")
 
             LOGGER.info("Check in cortxcli and REST that the status is changed for %s to Failed",
                         node_name)
@@ -233,7 +233,7 @@ class TestHAClusterHealth:
                 host=self.host_list[node],
                 bmc_obj=self.bmc_list[node])
             assert_utils.assert_true(
-                resp, "Host has not powered on yet.")
+                resp, f"Failed to power on {self.host_list[node]}.")
             LOGGER.info("%s has powered on", node_name)
             self.restored = True
             # To get all the services up and running
@@ -292,8 +292,7 @@ class TestHAClusterHealth:
                 host=self.host_list[node],
                 bmc_obj=self.bmc_list[node],
                 node_obj=self.node_list[node])
-            assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not shutdown yet.")
+            assert_utils.assert_true(resp, f"Failed to shutdown {self.host_list[node]}")
             LOGGER.info("%s is powered off.", self.host_list[node])
 
             LOGGER.info("Check in cortxcli and REST that the status is changed for %s to Failed",
@@ -343,7 +342,7 @@ class TestHAClusterHealth:
                 host=self.host_list[node],
                 bmc_obj=self.bmc_list[node])
             assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not powered on yet.")
+                resp, f"Failed to power on {self.host_list[node]}.")
             LOGGER.info("%s is powered on.", self.host_list[node])
             self.restored = True
             # To get all the services up and running
@@ -417,7 +416,7 @@ class TestHAClusterHealth:
                 is_safe=True
             )
             assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not shutdown yet.")
+                resp, f"Failed to shutdown {self.host_list[node]}")
             LOGGER.info("%s is powered off.", self.host_list[node])
 
             if count == 0:
@@ -434,7 +433,7 @@ class TestHAClusterHealth:
                 host=self.host_list[node],
                 bmc_obj=self.bmc_list[node])
             assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not powered on yet.")
+                resp, f"Failed to power on {self.host_list[node]}.")
             LOGGER.info("%s is powered on.", self.host_list[node])
 
             # Get the system object on which csm is running
@@ -525,7 +524,7 @@ class TestHAClusterHealth:
                 node_obj=self.node_list[node],
             )
             assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not shutdown yet.")
+                resp, f"Failed to shutdown {self.host_list[node]}")
             LOGGER.info("%s is powered off.", self.host_list[node])
 
             if count == 0:
@@ -542,7 +541,7 @@ class TestHAClusterHealth:
                 host=self.host_list[node],
                 bmc_obj=self.bmc_list[node])
             assert_utils.assert_true(
-                resp, f"{self.host_list[node]} has not powered on yet.")
+                resp, f"Failed to power on {self.host_list[node]}.")
             LOGGER.info("%s is powered on.", self.host_list[node])
 
             check_rem_node[node] = "online"
@@ -606,7 +605,7 @@ class TestHAClusterHealth:
             "Started: Test to check cluster/site/rack and node status with os "
             "shutdown of single node multiple times.")
         LOGGER.info("Get the node for multiple os shutdown.")
-        node_index = self.system_random.choice(range(self.num_nodes))
+        node_index = self.system_random.choice(list(range(self.num_nodes)))
 
         LOGGER.info(
             "Shutdown %s node multiple time and check cluster status.",
@@ -627,7 +626,7 @@ class TestHAClusterHealth:
                 node_obj=self.node_list[node_index],
                 is_safe=True)
             assert_utils.assert_true(
-                resp, f"{self.host_list[node_index]} has not shutdown yet.")
+                resp, f"Failed to shutdown {self.host_list[node_index]}")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
 
             LOGGER.info("Get the new node on which CSM service failover.")
@@ -679,7 +678,7 @@ class TestHAClusterHealth:
                 host=self.host_list[node_index],
                 bmc_obj=self.bmc_list[node_index])
             assert_utils.assert_true(
-                resp, f"{self.host_list[node_index]} has not powered on yet.")
+                resp, f"Failed to power on {self.host_list[node_index]}.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
             self.restored = True
 
@@ -733,7 +732,7 @@ class TestHAClusterHealth:
             "Started: Test to check cluster/site/rack and node status with unsafe "
             "shutdown of single node multiple times.")
         LOGGER.info("Get the node for multiple safe shutdown.")
-        node_index = self.system_random.choice(range(self.num_nodes))
+        node_index = self.system_random.choice(list(range(self.num_nodes)))
 
         LOGGER.info(
             "Shutdown %s node multiple time and check cluster status.",
@@ -754,7 +753,7 @@ class TestHAClusterHealth:
                 bmc_obj=self.bmc_list[node_index],
                 node_obj=self.node_list[node_index])
             assert_utils.assert_true(
-                resp, f"{self.host_list[node_index]} has not shutdown yet.")
+                resp, f"Failed to shutdown {self.host_list[node_index]}")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
 
             LOGGER.info("Get the new node on which CSM service failover.")
@@ -806,8 +805,7 @@ class TestHAClusterHealth:
                 host=self.host_list[node_index],
                 bmc_obj=self.bmc_list[node_index])
             assert_utils.assert_true(
-                resp, f"{self.host_list[node_index]} has not powered on yet.")
-            LOGGER.info("%s is powered on", self.host_list[node_index])
+                resp, f"Failed to power on {self.host_list[node_index]}.")
             self.restored = True
 
             # To get all the services up and running
@@ -859,16 +857,11 @@ class TestHAClusterHealth:
         LOGGER.info("Started: Test to check cluster/site/rack and node status, when one by one all"
                     " node's nw interface goes down and comes back up")
 
-        LOGGER.info("Get the list of private data interfaces for all nodes.")
         response = self.ha_obj.get_iface_ip_list(
             node_list=self.node_list, num_nodes=self.num_nodes)
         iface_list = response[0]
         private_ip_list = response[1]
         self.nw_data = [iface_list, private_ip_list]
-        LOGGER.debug(
-            "List of private data IP : %s and interfaces on all nodes: %s",
-            private_ip_list,
-            iface_list)
 
         for node in range(self.num_nodes):
             self.restored = False

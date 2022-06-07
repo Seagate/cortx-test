@@ -25,29 +25,31 @@ This file has to be placed to the following directory of target machine
 '/root/.s3cfg'
 """
 
+import logging
 import os
 import time
-import logging
+
 import pytest
 
-from commons.params import TEST_DATA_FOLDER
+from commons import error_messages as errmsg
 from commons.ct_fail_on import CTFailOn
-from commons.exceptions import CTException
 from commons.errorcodes import error_handler
-from commons.utils.assert_utils import assert_true
+from commons.exceptions import CTException
+from commons.params import TEST_DATA_FOLDER
+from commons.utils import system_utils
 from commons.utils.assert_utils import assert_in
 from commons.utils.assert_utils import assert_not_in
+from commons.utils.assert_utils import assert_true
 from commons.utils.s3_utils import assert_s3_err_msg
-from commons.utils import system_utils
-from commons import error_messages as errmsg
-from config.s3 import S3_BLKBOX_CFG as S3CMD_CNF
 from config import CMN_CFG
+from config.s3 import S3_BLKBOX_CFG as S3CMD_CNF
+from libs.s3 import SECRET_KEY, ACCESS_KEY
+from libs.s3.s3_blackbox_test_lib import S3CMD
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_test_lib import S3TestLib
-from libs.s3.s3_blackbox_test_lib import S3CMD
-from libs.s3 import SECRET_KEY, ACCESS_KEY
 
 
+# pylint: disable=too-many-instance-attributes
 class TestS3cmdClient:
     """Blackbox s3cmd testsuite"""
 
@@ -60,7 +62,7 @@ class TestS3cmdClient:
         s3cmd_obj = S3CMD(ACCESS_KEY, SECRET_KEY)
         cls.log.info("Setting access and secret key & other options in s3cfg.")
         resp = s3cmd_obj.configure_s3cfg(ACCESS_KEY, SECRET_KEY)
-        assert_true(resp, f"Failed to update s3cfg.")
+        assert_true(resp, "Failed to update s3cfg.")
         cls.log.info("ENDED: Setup suite level operation.")
 
     def setup_method(self):
@@ -80,7 +82,7 @@ class TestS3cmdClient:
         self.file_path1 = os.path.join(self.root_path, "s3cmdtestfile{}.txt")
         self.file_path2 = os.path.join(self.root_path, "s3cmdtestfile{}.txt")
         self.bucket_name = self.s3cmd_cfg["bucket_name"].format(time.perf_counter_ns())
-        self.s3cmd_bucket_list = list()
+        self.s3cmd_bucket_list = []
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -675,8 +677,7 @@ class TestS3cmdClient:
         resp = system_utils.run_local_cmd(command, chk_stderr=True)
         assert_true(resp[0], resp[1])
         expected_substring = "/".join([bucket_url, os.path.basename(filename)])
-        assert_in("download: '{}'".format(
-            expected_substring), str(resp[1]), resp)
+        assert_in(f"download: '{expected_substring}'", str(resp[1]), resp)
         assert_in("done", str(resp[1]), resp)
         self.log.info("STEP: 4 Got file from bucket")
         self.log.info("ENDED: Get file from bucket using S3cmd client")
@@ -725,7 +726,7 @@ class TestS3cmdClient:
         assert_true("WARNING" in str(resp[1]), resp[1])
         assert_in(self.s3cmd_cfg["success_msg_del"].format(bucket_url), str(resp[1]), resp[1])
         self.log.info("STEP: 3 Deleted bucket forcefully")
-        self.s3cmd_bucket_list = list()
+        self.s3cmd_bucket_list = []
         self.log.info("STEP: 4 Listing object in bucket")
         cmd_arguments = [bucket_url]
         command = self.s3cmd_test_obj.command_formatter(
@@ -741,7 +742,7 @@ class TestS3cmdClient:
     def test_2318(self):
         """List all objects in all buckets using s3cmd."""
         self.log.info("STARTED: list all objects in all buckets using s3cmd")
-        obj_list = list()
+        obj_list = []
         for _ in range(2):
             bucket_name = self.s3cmd_cfg["bucket_name"].format(time.perf_counter_ns())
             bucket_url = self.s3cmd_cfg["bkt_path_format"].format(bucket_name)

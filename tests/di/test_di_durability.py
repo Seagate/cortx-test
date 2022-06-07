@@ -1219,6 +1219,7 @@ class TestDIDurability:
         self.log.info("Step 4: verify download object passes without 5xx error code")
         self.log.info("ENDED TEST-22912")
 
+    # pylint: disable=broad-except
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-29817')

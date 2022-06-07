@@ -24,9 +24,8 @@ import logging
 
 from commons import commands as common_cmd
 from commons import constants as common_const
-from config import CMN_CFG
 from commons.helpers.pods_helper import LogicalNode
-
+from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,7 +36,10 @@ class HAK8SCompLib:
     """
 
     @staticmethod
-    def check_string_in_log_file(ha_node_obj, sub_str: str, log_file: str, lines: int=10) -> tuple:
+    def check_string_in_log_file(ha_node_obj,
+                                 sub_str: str,
+                                 log_file: str,
+                                 lines: int = 10) -> tuple:
         """
         Helper function to check sub string in log file.
         :param ha_node_obj: HA node(Logical Node object)
@@ -133,14 +135,13 @@ class HAK8SCompLib:
                 return False
         return True
 
-    # pylint: disable=R0912
-    # pylint: disable=R0913
-    # pylint: disable=R0914
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-branches
     @staticmethod
     def get_ha_log_prop(node_obj, log_name: str, kvalue: int, fault_tolerance: bool = False,
                         health_monitor: bool = False, kubectl_delete: bool = False,
                         status: str = 'online') -> dict:
-        '''
+        """
         Helper function to get ha log properties.
         :param node_obj: Master node(Logical Node object)
         :param log_name: Name of the ha log
@@ -150,7 +151,7 @@ class HAK8SCompLib:
         :param kubectl_delete: Bool/If made true, checks log for 'kubectl delete'
         :param status: failed/online(Checks for particular alert)
         :return: ha prop data dictionary
-        '''
+        """
         pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
         ha_pvc = None
         log_list = []
@@ -165,10 +166,10 @@ class HAK8SCompLib:
         if health_monitor:
             if kubectl_delete:
                 # For kubectl delete both offline and online logs will be together
-                kvalue*=8
+                kvalue *= 8
             else:
                 # For one pod operation there will be 4 lines of log in health monitor
-                kvalue*=4
+                kvalue *= 4
         cmd_halog = f"tail -{kvalue} {common_const.HA_LOG}{ha_pvc}/log/ha/*/{log_name}"
         output = node_obj.execute_cmd(cmd_halog)
         if isinstance(output, bytes):
@@ -191,19 +192,30 @@ class HAK8SCompLib:
             output = log_list
         resp_dict = {'source': [], 'resource_status': [], 'resource_type': [], 'generation_id': [],
                      'node_id': [], 'resource_id': []}
+        return HAK8SCompLib.get_properties_data(output, resp_dict)
+
+    @staticmethod
+    def get_properties_data(output, resp_dict):
+        """
+        Function to get HA properties data (Static Helper function to reduce complexity
+        of get_ha_log_prop)
+        :param output: List of properties data
+        :param resp_dict: Dict of properties to be fetched form output
+        :return: ha prop data dictionary
+        """
         for line in output:
-            source = line.split("{")[3].split(",")[0].split(":")[1].strip().replace("'", '')\
-                .replace('"', '')
-            resource_type = line.split("{")[3].split(",")[6].split(":")[1].strip().replace("'", '')\
-                .replace('"', '')
+            source = line.split("{")[3].split(",")[0].split(":")[1].strip()\
+                .replace("'", '').replace('"', '')
+            resource_type = line.split("{")[3].split(",")[6].split(":")[1].strip()\
+                .replace("'", '').replace('"', '')
             resource_status = line.split("{")[3].split(",")[8].split(":")[1].strip()\
                 .replace("'", '').replace('"', '')
-            generation_id = line.split("{")[4].split(",")[0].split(":")[1].strip().replace("'", '')\
-                .replace('}', '').replace('"', '')
-            node_id = line.split("{")[3].split(",")[5].split(":")[1].strip().replace("'", '')\
-                .replace('"', '')
-            resource_id = line.split("{")[3].split(",")[7].split(":")[1].strip().replace("'", '')\
-                .replace('"', '')
+            generation_id = line.split("{")[4].split(",")[0].split(":")[1].strip()\
+                .replace("'", '').replace('}', '').replace('"', '')
+            node_id = line.split("{")[3].split(",")[5].split(":")[1].strip()\
+                .replace("'", '').replace('"', '')
+            resource_id = line.split("{")[3].split(",")[7].split(":")[1].strip()\
+                .replace("'", '').replace('"', '')
             resp_dict['source'].append(source)
             resp_dict['resource_status'].append(resource_status)
             resp_dict['resource_type'].append(resource_type)
@@ -214,22 +226,22 @@ class HAK8SCompLib:
 
     @staticmethod
     def get_ha_log_wc(node_obj, log_index: int):
-        '''
+        """
         Helper function to get word count of a file
         :param node_obj: Master node(Logical Node object)
         :param log_index: name of the log
         0 - k8s | 1 - fault_tolerance | 2 - health_monitor
         :return: wc_count(Word count of a ha log file)
-        '''
+        """
         pvc_list = node_obj.execute_cmd(common_cmd.HA_LOG_PVC, read_lines=True)
-        hapvc = None
+        hapvc = wc_count = None
         for hapvc in pvc_list:
             if common_const.HA_POD_NAME_PREFIX in hapvc:
                 hapvc = hapvc.replace("\n", "")
                 LOGGER.info("hapvc list %s", hapvc)
                 break
-        wc_count_cmd = common_const.HA_LOG + hapvc + "/log/ha/*/" + \
-                          common_const.HA_SHUTDOWN_LOGS[log_index]
+        wc_count_cmd = common_const.HA_LOG + hapvc + "/log/ha/*/" + common_const.HA_SHUTDOWN_LOGS[
+            log_index]
         wc_count_cmd = common_cmd.LINE_COUNT_CMD.format(wc_count_cmd)
         ha_wc_count = node_obj.execute_cmd(wc_count_cmd)
         if isinstance(ha_wc_count, bytes):

@@ -21,38 +21,53 @@
 Library Methods for DTM recovery testing
 """
 import logging
+import os
 import random
+import re
 import time
 
+from commons import constants as const
+from commons.exceptions import CTException
+from commons.params import TEST_DATA_FOLDER
+from commons.utils import system_utils
 from config import S3_CFG
+from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
 
 
 class DTMRecoveryTestLib:
+    """
+        This class contains common utility methods for DTM related operations.
+    """
 
-    def __init__(cls, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+    def __init__(self, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
         """
         Init method
         :param access_key: Access key for S3bench operations.
         :param secret_key: Secret key for S3bench operations.
         """
-        cls.log = logging.getLogger(__name__)
-        cls.access_key = access_key
-        cls.secret_key = secret_key
+        self.log = logging.getLogger(__name__)
+        self.access_key = access_key
+        self.secret_key = secret_key
+        self.ha_obj = HAK8s()
+        self.s3t_obj = S3TestLib(access_key=self.access_key, secret_key=self.secret_key)
 
+    # pylint: disable=too-many-arguments
     def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples, obj_size,
-                         log_file_prefix, queue, loop=1):
+                         log_file_prefix, queue, loop=1, created_bucket: list = None):
         """
         Perform Write operations
         :param bucket_prefix: Bucket name
-        :param object_name: Object name
-        :param clients: No of Client session
-        :param samples: No of samples
-        :param size: Object size
+        :param object_prefix: Object name prefix
+        :param no_of_clients: No of Client session
+        :param no_of_samples: No of samples
+        :param obj_size: Object size
         :param log_file_prefix: Log file prefix
         :param queue: Multiprocessing Queue to be used for returning values (Boolean,dict)
         :param loop: Loop count for writes
+        :param created_bucket: List of pre created buckets(Should be greater or equal to loop count)
         """
         results = list()
         workload = list()
@@ -61,6 +76,8 @@ class DTMRecoveryTestLib:
             self.log.info("Iteration count: %s", iter_cnt)
             self.log.info("Perform Write Operations : ")
             bucket_name = bucket_prefix + str(int(time.time()))
+            if created_bucket:
+                bucket_name = created_bucket[iter_cnt]
             resp = s3bench.s3bench(self.access_key,
                                    self.secret_key, bucket=bucket_name,
                                    num_clients=no_of_clients, num_sample=no_of_samples,
@@ -87,7 +104,7 @@ class DTMRecoveryTestLib:
             queue.put([False, f"S3bench workload for failed."
                               f" Please read log file {log_path}"])
 
-    def perform_ops(self, workload_info: list, queue, skipread: bool = True,
+    def perform_ops(self, workload_info: list, queue, skipread: bool = False,
                     validate: bool = True, skipcleanup: bool = False, loop=1):
         """
         Perform read operations
@@ -99,63 +116,257 @@ class DTMRecoveryTestLib:
         :param loop: Loop count for performing reads in iteration.
         """
         results = list()
-        log_path = None
         for iter_cnt in range(loop):
             self.log.info("Iteration count: %s", iter_cnt)
             for workload in workload_info:
-                resp = s3bench.s3bench(self.access_key,
-                                       self.secret_key,
-                                       bucket=workload['bucket'],
-                                       num_clients=workload['num_clients'],
-                                       num_sample=workload['num_sample'],
-                                       obj_name_pref=workload['obj_name_pref'],
-                                       obj_size=workload['obj_size'],
-                                       skip_cleanup=skipcleanup,
-                                       skip_write=True,
-                                       skip_read=skipread,
-                                       validate=validate,
-                                       log_file_prefix=f"read_workload_{workload['obj_size']}mb",
-                                       end_point=S3_CFG["s3_url"],
-                                       validate_certs=S3_CFG["validate_certs"])
-                self.log.info(f"Workload: %s objects of %s with %s parallel clients ",
-                              workload['num_sample'], workload['obj_size'],
-                              workload['num_clients'])
-                self.log.info(f"Log Path {resp[1]}")
-                log_path = resp[1]
-                if s3bench.check_log_file_error(resp[1]):
-                    results.append(False)
-                    break
-                else:
-                    results.append(True)
+                if not skipread or validate:
+                    resp = s3bench.s3bench(self.access_key,
+                                           self.secret_key,
+                                           bucket=workload['bucket'],
+                                           num_clients=workload['num_clients'],
+                                           num_sample=workload['num_sample'],
+                                           obj_name_pref=workload['obj_name_pref'],
+                                           obj_size=workload['obj_size'],
+                                           skip_cleanup=True,
+                                           skip_write=True,
+                                           skip_read=skipread,
+                                           validate=validate,
+                                           log_file_prefix=f"read_workload_{workload['obj_size']}b",
+                                           end_point=S3_CFG["s3_url"],
+                                           validate_certs=S3_CFG["validate_certs"])
+                    self.log.info("Workload: %s objects of %s with %s parallel clients ",
+                                  workload['num_sample'], workload['obj_size'],
+                                  workload['num_clients'])
+                    self.log.info("Log Path %s", resp[1])
+                    if s3bench.check_log_file_error(resp[1]):
+                        self.log.error("Error found in log path: %s", resp[1])
+                        results.append(False)
+                        break
+                    else:
+                        results.append(True)
+                if not skipcleanup:
+                    # Delete all objects from the bucket
+                    resp = self.s3t_obj.object_list(bucket_name=workload['bucket'])
+                    obj_list = resp[1]
+                    del_res = True
+                    for obj in obj_list:
+                        try:
+                            self.s3t_obj.delete_object(bucket_name=workload['bucket'], obj_name=obj)
+                        except CTException as error:
+                            self.log.error("Error while deleting object %s from bucket %s : %s",
+                                           obj, workload['bucket'], error)
+                            del_res = False
+                    results.append(del_res)
+                    if not del_res:
+                        self.log.error("Observed deletion error for bucket %s.", workload['bucket'])
+                        break
+                    self.log.info("Objects deletion completed for bucket %s", workload['bucket'])
 
         if all(results):
-            queue.put([True, f"S3bench workload is successful. Last read log file {log_path}"])
+            queue.put([True, "Workload successful."])
         else:
-            queue.put([False, f"S3bench workload for failed."
-                              f" Please read log file {log_path}"])
+            queue.put([False, "Workload failed."])
 
-    def process_restart(self, master_node, pod_prefix, container_prefix, process,
-                        recover_time: int = 30):
+    # pylint: disable-msg=too-many-locals
+    def process_restart(self, master_node, health_obj, pod_prefix, container_prefix, process,
+                        check_proc_state: bool = False, proc_state: str = const.DTM_RECOVERY_STATE):
         """
         Restart specified Process of specific pod and container
         :param master_node: Master node object
+        :param health_obj: Health object of the master node
         :param pod_prefix: Pod Prefix
         :param container_prefix: Container Prefix
         :param process: Process to be restarted.
-        :param recover_time: Wait time for process to recover
+        :param check_proc_state: Flag to check process state
+        :param proc_state: Expected state of the process
         """
         pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
         pod_selected = pod_list[random.randint(0, len(pod_list) - 1)]
-        self.log.info("Pod selected for m0d process restart : %s", pod_selected)
+        self.log.info("Pod selected for %s process restart : %s", process, pod_selected)
         container_list = master_node.get_container_of_pod(pod_name=pod_selected,
                                                           container_prefix=container_prefix)
         container = container_list[random.randint(0, len(container_list) - 1)]
         self.log.info("Container selected : %s", container)
-        self.log.info("Perform m0d restart")
+        self.log.info("Get process IDs of %s", process)
+        resp = self.get_process_ids(health_obj=health_obj, process=process)
+        if not resp[0]:
+            return resp[0]
+        process_ids = resp[1]
+        self.log.info("Perform %s restart", process)
         resp = master_node.kill_process_in_container(pod_name=pod_selected,
                                                      container_name=container,
                                                      process_name=process)
-        self.log.debug("resp : %s", resp)
-        time.sleep(recover_time)
-        # TODO : Check if process has started
-        self.log.info("Process restarted ")
+        self.log.debug("Resp : %s", resp)
+
+        self.log.info("Polling hctl status to check if all services are online")
+        resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=300)
+        if not resp[0]:
+            return resp[0]
+
+        if check_proc_state:
+            self.log.info("Check process states")
+            resp = self.poll_process_state(master_node=master_node, pod_name=pod_selected,
+                                           container_name=container, process_ids=process_ids,
+                                           status=proc_state)
+            if not resp:
+                self.log.error("Failed during polling status of process")
+                return False
+
+            self.log.info("Process %s restarted successfully", process)
+
+        return True
+
+    def get_process_state(self, master_node, pod_name, container_name, process_ids):
+        """
+        Function to get given process state
+        :param master_node: Object of master node
+        :param pod_name: Name of the pod on which container is residing
+        :param container_name: Name of the container inside which process is running
+        :param process_ids: List of Process IDs
+        :return: bool, dict
+        e.g. (True, {'0x19': 'M0_CONF_HA_PROCESS_STARTED', '0x28': 'M0_CONF_HA_PROCESS_STARTED'})
+        """
+        process_state = dict()
+        self.log.info("Get processes running inside container %s of pod %s", container_name,
+                      pod_name)
+        resp = master_node.get_all_container_processes(pod_name=pod_name,
+                                                       container_name=container_name)
+        self.log.info("Extract list of processes having IDs %s", process_ids)
+        process_list = [(ele, p_id) for ele in resp for p_id in process_ids if p_id in ele]
+        if len(process_ids) != len(process_list):
+            return False, f"All process IDs {process_ids} are not found. " \
+                          f"All processes running in container are: {resp}"
+        compile_exp = re.compile('"state": "(.*?)"')
+        for i_i in process_list:
+            process_state[i_i[1]] = compile_exp.findall(i_i[0])[0]
+
+        return True, process_state
+
+    def poll_process_state(self, master_node, pod_name, container_name, process_ids,
+                           status: str = const.DTM_RECOVERY_STATE, timeout: int = 300):
+        """
+        Helper function to poll the process states
+        :param master_node: Object of master node
+        :param pod_name: Name of the pod on which container is residing
+        :param container_name: Name of the container inside which process is running
+        :param process_ids: List of Process IDs
+        :param status: Expected status of process
+        :param timeout: Poll timeout
+        :return: Bool
+        """
+        resp = False
+        self.log.info("Polling process states")
+        start_time = int(time.time())
+        while timeout > int(time.time()) - start_time:
+            time.sleep(60)
+            resp, process_state = self.get_process_state(master_node=master_node, pod_name=pod_name,
+                                                         container_name=container_name,
+                                                         process_ids=process_ids)
+            if not resp:
+                self.log.info("Failed to get process states for process with IDs %s. "
+                              "proccess_state dict: %s", process_ids, process_state)
+                return resp
+            self.log.debug("Process states: %s", process_state)
+            states = list(process_state.values())
+            resp = all(ele == status for ele in states)
+            if resp:
+                self.log.debug("Time taken by process to recover is %s seconds",
+                               int(time.time()) - start_time)
+                break
+
+        self.log.info("State of process with process ids %s is %s", process_ids,
+                      status)
+        return resp
+
+    @staticmethod
+    def get_process_ids(health_obj, process):
+        """
+        Function to get process IDs of given process
+        :param health_obj: Health object of the master node
+        :param process: Name of the process
+        :return: bool, list
+        """
+        switcher = {
+            'm0d': const.M0D_SVC,
+            'rgw': const.SERVER_SVC
+        }
+        resp, fids = health_obj.hctl_status_get_svc_fids()
+        if not resp:
+            return resp, "Failed to get process IDs"
+        svc = switcher[process]
+        fids = fids[svc]
+        return True, fids
+
+    def perform_object_overwrite(self, bucket_name, object_name, iteration, object_size, queue):
+        """
+        Function to overwrite same object with random object generated for each iteration
+        :param bucket_name : Pre created Bucket name for creating object
+        :param object_name : object name to create and overwrite
+        :param iteration: Number of time to overwrite same object
+        :param object_size : Maximum object size that can be created (size in MB)
+        :param queue: Multiprocessing Queue to be used for returning values (Boolean,str)
+        """
+        if not os.path.isdir(TEST_DATA_FOLDER):
+            self.log.debug("File path not exists")
+            system_utils.make_dirs(TEST_DATA_FOLDER)
+
+        ret_resp = True, "Overwrites successful."
+        for _ in iteration:
+            file_size = random.SystemRandom().randint(0, object_size)  # in mb
+            file_path = os.path.join(TEST_DATA_FOLDER, object_name)
+
+            self.log.info("Creating a file with name %s", object_name)
+            system_utils.create_file(file_path, file_size, "/dev/urandom", '1M')
+
+            self.log.info("Retrieving checksum of file %s", object_name)
+            resp = system_utils.get_file_checksum(file_path)
+            if not resp[0]:
+                ret_resp = resp
+                break
+            chksm_before_put_obj = resp[1]
+
+            self.log.info("Uploading a object %s to a bucket %s", object_name, bucket_name)
+            resp = self.s3t_obj.put_object(bucket_name, object_name, file_path)
+
+            self.log.info("Removing local file from client and downloading object")
+            system_utils.remove_file(file_path)
+            resp = self.s3t_obj.get_object(bucket=bucket_name, key=object_name)
+            with open(file_path, "wb") as data:
+                data.write(resp[1]['Body'].read())
+
+            self.log.info("Verifying checksum of downloaded file")
+            resp = system_utils.get_file_checksum(file_path)
+            if not resp[0]:
+                ret_resp = resp
+                break
+
+            chksm_after_dwnld_obj = resp[1]
+            if chksm_after_dwnld_obj != chksm_before_put_obj:
+                ret_resp = False, f"Checksum does not match, Expected {chksm_before_put_obj} " \
+                                  f"Received {chksm_after_dwnld_obj}"
+                break
+
+            self.log.info("Delete downloaded file")
+            system_utils.remove_file(file_path)
+        queue.put(ret_resp)
+
+    def perform_copy_objects(self, workload, que):
+        """
+        function to perform copy object for dtm test case in background
+        :param workload: Python dict containing source and destination bucket and object
+        :param que: Multiprocessing Queue to be used for returning values (Boolean,dict)
+        """
+        failed_obj_name = list()
+        for obj_name in workload["obj_list"]:
+            try:
+                self.s3t_obj.copy_object(source_bucket=workload["source_bucket"],
+                                        source_object=obj_name, dest_bucket=workload["dest_bucket"],
+                                        dest_object=obj_name)
+
+            except CTException as error:
+                self.log.exception("Error: %s", error)
+                failed_obj_name.append(obj_name)
+        if len(failed_obj_name) > 0:
+            que.put([False, f"Copy Object operation failed for {failed_obj_name}"])
+        else:
+            que.put([True, "Copy Object operation successful"])

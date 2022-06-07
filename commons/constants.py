@@ -47,6 +47,7 @@ S3_ENGINE_RGW = 2
 
 # K8s for cortx
 POD_NAME_PREFIX = "cortx-data"
+CORTX_DATA_NODE_PREFIX = "cortx-data-headless-svc-"
 SERVER_POD_NAME_PREFIX = "cortx-server"
 HA_POD_NAME_PREFIX = "cortx-ha"
 HA_K8S_CONTAINER_NAME = "cortx-ha-k8s-monitor"
@@ -149,6 +150,7 @@ LOCAL_SOLUTION_PATH = tempfile.gettempdir() + "/solution.yaml"
 CLUSTER_CONF_PATH = "/etc/cortx/cluster.conf"
 CSM_CONF_PATH = "/etc/cortx/csm/csm.conf"
 CSM_COPY_PATH = tempfile.gettempdir() + "/csm.conf"
+CLUSTER_COPY_PATH = tempfile.gettempdir() + "/cluster.conf"
 CORTX_CSM_POD = "cortx-csm-agent"
 LOCAL_PEM_PATH = "/etc/ssl/stx/stx.pem"
 SUPPORT_BUNDLE_DIR_PATH = tempfile.gettempdir() + "/csm_support_bundle/"
@@ -480,3 +482,7 @@ MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}
 # Procpath Collection
 PID_WATCH_LIST = ['m0d', 'radosgw', 'hax']
 REQUIRED_MODULES = ["Procpath", "apsw-wheels"]
+
+DTM_RECOVERY_STATE = "RECOVERED"
+M0D_SVC = "ioservice"
+SERVER_SVC = "rgw_s3"

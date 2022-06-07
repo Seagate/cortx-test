@@ -1,3 +1,6 @@
+common:
+  num_users: 10
+  iterations: 5
 test_1133:
   status_code: 401
 
@@ -90,3 +93,28 @@ test_39401:
   error_code: 12288
   message_id: "UserAlreadyExists"
   message_index: 0
+test_42273:
+  error_code: 4099
+  message_id: "MalformedRequest"
+  message_index_1: 14
+  message_index_2: 2
+test_42284:
+  max_entries: 5  
+test_42274:
+  ran_int: 10
+test_42287:
+  error_code: 4104
+  message_id:
+  message_index:
+test_42288:
+  error_code: 4104
+  message_id:
+  message_index:
+test_42289:
+  error_code: 12288
+  message_id: "UserAlreadyExists"
+  message_index: 0
+test_42290:
+  error_code: 4111
+  message_id: "UnauthorizedError"
+  message_index: 0 

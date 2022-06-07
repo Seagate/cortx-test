@@ -12,7 +12,7 @@ pipeline {
 		stage('CODE_CHECKOUT') {
 			steps{
 			    cleanWs()
-			    checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
+			    checkout([$class: 'GitSCM', branches: [[name: '*/main']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
 			}
 		}
 		stage('ENV_SETUP') {
@@ -25,6 +25,7 @@ export ADMIN_USR="${ADMIN_USR}"
 export ADMIN_PWD="${ADMIN_PWD}"
 export HOST_PASS="${HOST_PASS}"
 export Target_Node="${Target_Node}"
+export EXTERNAL_EXPOSURE_SERVICE="${EXTERNAL_EXPOSURE_SERVICE}"
 deactivate
 '''
 			}
@@ -35,7 +36,7 @@ deactivate
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
 echo $PYTHONPATH
 sh scripts/cicd_k8s/lb_haproxy.sh
-python3.7 scripts/cicd_k8s/client_multinode_conf.py --master_node "${M_NODE}" --password "${HOST_PASS}"
+python3.7 scripts/cicd_k8s/client_multinode_rgw.py --master_node "${M_NODE}" --password "${HOST_PASS}"
 deactivate
 '''
 			}
@@ -53,9 +54,9 @@ deactivate
 	post {
 		always {
 			catchError(stageResult: 'FAILURE') {
-			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/latest/results.xml, log/latest/results.html, *.png', followSymlinks: false
+			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/latest/results.xml, log/latest/results.html', followSymlinks: false
 			    junit allowEmptyResults: true, testResults: 'log/latest/results.xml'
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL.template"}', recipientProviders: [requestor()], subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: "${EMAIL_RECEPIENTS}"
+                emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL.template"}', recipientProviders: [requestor()], subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: "${EMAIL_RECEPIENTS}"
 			}
 		}
 	}
