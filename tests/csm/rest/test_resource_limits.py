@@ -150,11 +150,11 @@ class TestResourceLimits():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started - %s #####", test_case_name)
 
-        requests_quota = self.csm_conf["test_43151"]["requests_quota"]
+        requests_rate = self.csm_conf["test_43151"]["requests_rate"]
         api_endpoint = self.csm_conf["test_43151"]["api_endpoint"]
 
-        msg = f"Step 1: overflow {api_endpoint} with {requests_quota} requests"
+        msg = f"Step 1: overflow {api_endpoint} with {requests_rate} requests"
         self.log.info(msg)
-        is_overflow = self.csm_obj.flood(api_endpoint, requests_quota)
+        is_overflow = self.csm_obj.flood(api_endpoint, requests_rate)
         assert is_overflow
         self.log.info("################Test Passed##################")
