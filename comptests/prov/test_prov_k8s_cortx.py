@@ -456,6 +456,9 @@ class TestProvK8Cortx:
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-41569")
     def test_41569(self):
+        """
+        S3-IO Operations.
+        """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get Access and Secret Key.")
         resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_ACCESS_KEY, read_lines=True)
@@ -505,7 +508,7 @@ class TestProvK8Cortx:
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_REGION)
         LOGGER.info(resp)
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_ACCESS_CONFIG.format(access_key),
-                                                    read_lines=True)                                           
+                                                read_lines=True).                                          
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_SECRET_CONFIG.format(secret_key),
                                                     read_lines=True)
         LOGGER.info("Step 4:Creating bucket")
