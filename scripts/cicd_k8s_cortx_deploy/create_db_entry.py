@@ -30,8 +30,8 @@ import yaml
 from word2number import w2n
 
 from commons.helpers.pods_helper import LogicalNode
+from commons.utils import ext_lbconfig_utils
 from commons.utils import jira_utils
-from commons import commands as cm_cmd
 from config import PROV_CFG
 
 
@@ -87,9 +87,10 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, po
     node_obj = LogicalNode(hostname=host_list[0]["hostname"], username=host_list[0]["username"],
                            password=host_list[0]["password"])
     iface = PROV_CFG["k8s_cortx_deploy"]["iface"]
-    resp = node_obj.execute_cmd(cm_cmd.CMD_GET_IP_IFACE.format(iface), read_lines=True)
-    ext_ip = resp[0].strip("\n")
-    print("Data IP from master node: ", ext_ip)
+    resp = ext_lbconfig_utils.configure_nodeport_lb(node_obj, iface)
+    ext_ip = resp[1]
+    https_port = resp[2]
+    print("Data IP from master node and https port: ", ext_ip, https_port)
     setup_name = host_list[0]["hostname"]
     setup_name = f"cicd_deploy_{setup_name.split('.')[0]}_{len(host_list) - 1}"
 
@@ -98,7 +99,7 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, po
     json_data["s3_engine"] = int(s3_engine)
     json_data["product_type"] = "k8s"
     json_data["setup_in_useby"] = "CICD_Deployment"
-    json_data["lb"] = ext_ip
+    json_data["lb"] = ext_ip + ":" + https_port
     json_data["nodes"] = host_list
 
     json_data["csm"]["mgmt_vip"] = host_list[1]["hostname"]
