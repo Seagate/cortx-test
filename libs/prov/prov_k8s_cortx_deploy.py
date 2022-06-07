@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
+Provisioner utility methods for Deployment of k8s based Cortx Deployment
 """
 import csv
 import json
@@ -1581,36 +1581,6 @@ class ProvDeployK8sCortxLib:
         return config_list
 
     @staticmethod
-    def upgrade_software(node_obj: LogicalNode, git_remote_path: str,
-                         upgrade_type: str = "rolling", granular_type: str = "all",
-                         exc: bool = True) -> tuple:
-        """
-        Helper function to Upgrade CORTX stack.
-        :param node_obj: Master node(Logical Node object)
-        :param git_remote_path: Remote path of repo.
-        :param upgrade_type: Type of upgrade (rolling or cold).
-        :param granular_type: Type to upgrade all or particular pod.
-        :param exc: Flag to disable/enable exception raising
-        :return: True/False
-        """
-        LOGGER.info("Upgrading CORTX image version.")
-        prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
-        if upgrade_type == "rolling":
-            cmd = "cd {}; {}".format(git_remote_path,
-                                     prov_deploy_cfg["upgrade_cluster"].format(granular_type))
-        else:
-            cmd = "cd {}; {}".format(git_remote_path, prov_deploy_cfg["cold_upgrade"])
-        resp = node_obj.execute_cmd(cmd=cmd, read_lines=True, exc=exc)
-        if isinstance(resp, bytes):
-            resp = str(resp, 'UTF-8')
-        LOGGER.debug("".join(resp).replace("\\n", "\n"))
-        resp = "".join(resp).replace("\\n", "\n")
-        if "Error" in resp or "Failed" in resp:
-            return False, resp
-        # val = self.check_s3_status(node_obj) # Uncomment when CORTX-28823 is closed
-        return True, resp
-
-    @staticmethod
     def verify_k8s_cluster_exists(master_node_list, worker_node_list):
         """
         This method is to verify the K8S setup exists for given set of nodes.
@@ -1712,19 +1682,6 @@ class ProvDeployK8sCortxLib:
                       sort_keys=False, Dumper=noalias_dumper)
             pointer.close()
         return True, file_path
-
-    @staticmethod
-    def service_upgrade_software(node_obj: LogicalNode, upgrade_image_version: str) -> tuple:
-        """
-        Helper function to upgrade.
-        :param node_obj: Master node(Logical Node object)
-        :param upgrade_image_version: Version Image to Upgrade.
-        :return: True/False
-        """
-        LOGGER.info("Upgrading CORTX image to version: %s.", upgrade_image_version)
-        resp = node_obj.execute_cmd(common_cmd.UPGRADE_CLUSTER_DESTRUPTIVE_CMD.format(
-            PROV_CFG['k8s_cortx_deploy']["k8s_dir"]), read_lines=True)
-        return resp
 
     def pre_check(self, master_node_list):
         """
