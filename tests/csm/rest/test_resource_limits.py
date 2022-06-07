@@ -73,14 +73,14 @@ class TestResourceLimits():
         self.log.info("[COMPLETED] ######### Teardown #########")
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-xxxxx")
-    def test_xxxxx(self):
+    @pytest.mark.tags("TEST-43149")
+    def test_43149(self):
         """Test active users quota."""
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started - %s #####", test_case_name)
 
-        active_users_quota = self.csm_conf["test_xxxxx"]["active_users_quota"]
-        tmp_users_password = self.csm_conf["test_xxxxx"]["tmp_users_password"]
+        active_users_quota = self.csm_conf["test_43149"]["active_users_quota"]
+        tmp_users_password = self.csm_conf["test_43149"]["tmp_users_password"]
 
         msg = f"Step 1: Create and login {active_users_quota - 1} CSM users"
         self.log.info(msg)
@@ -112,14 +112,14 @@ class TestResourceLimits():
         self.log.info("################Test Passed##################")
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-yyyyy")
-    def test_yyyyy(self):
+    @pytest.mark.tags("TEST-43150")
+    def test_43150(self):
         """Test sessions qouta."""
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started - %s #####", test_case_name)
 
-        sessions_quota = self.csm_conf["test_yyyyy"]["sessions_quota"]
-        tmp_user_password = self.csm_conf["test_yyyyy"]["tmp_user_password"]
+        sessions_quota = self.csm_conf["test_43150"]["sessions_quota"]
+        tmp_user_password = self.csm_conf["test_43150"]["tmp_user_password"]
 
         msg = "Step 1: Create CSM user."
         self.log.info(msg)
@@ -144,14 +144,14 @@ class TestResourceLimits():
         self.log.info("################Test Passed##################")
 
     @pytest.mark.csmrest
-    @pytest.mark.tags("TEST-zzzzz")
-    def test_zzzzz(self):
+    @pytest.mark.tags("TEST-43151")
+    def test_43151(self):
         """Test requests qouta."""
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started - %s #####", test_case_name)
 
-        requests_quota = self.csm_conf["test_zzzzz"]["requests_quota"]
-        api_endpoint = self.csm_conf["test_zzzzz"]["api_endpoint"]
+        requests_quota = self.csm_conf["test_43151"]["requests_quota"]
+        api_endpoint = self.csm_conf["test_43151"]["api_endpoint"]
 
         msg = f"Step 1: overflow {api_endpoint} with {requests_quota} requests"
         self.log.info(msg)
