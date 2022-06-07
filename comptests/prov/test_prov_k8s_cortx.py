@@ -21,11 +21,9 @@
 """Provisioner Component level test cases for CORTX deployment in k8s environment."""
 
 import logging
-import pytest
-from http import HTTPStatus
 import os
-import time
-from requests.models import Response
+import pytest
+import os
 from random import SystemRandom
 
 from commons import configmanager
@@ -35,19 +33,13 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import ext_lbconfig_utils
 from commons.utils import system_utils
-from commons.constants import Rest as const
 from config import CMN_CFG, PROV_CFG
-from config.s3 import S3_CFG
-from libs.s3 import S3H_OBJ
-from libs.s3 import s3_misc
 from config import CMN_CFG
 from config import PROV_CFG
 from config import PROV_TEST_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.s3.s3_test_lib import S3TestLib
 from libs.csm.csm_interface import csm_api_factory
-from botocore.exceptions import ClientError
 
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
 
@@ -464,7 +456,7 @@ class TestProvK8Cortx:
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-41569")
-    def test_41569(self, **kwargs):
+    def test_41569(self):
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get Access and Secret Key.")
         resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_ACCESS_KEY, read_lines=True)

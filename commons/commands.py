@@ -168,7 +168,8 @@ CREATE_ENDPOINT = "aws s3 ls --endpoint-url http://s3.seagate.com:{}"
 BUCKET_S3API = "aws s3api head-bucket --bucket test-bucket --endpoint-url http://s3.seagate.com:{}"
 FILE_CONF = "dd if=/dev/zero of=file bs=1M count=10"
 COPY_BUCKETFILE = "aws s3 cp file s3://test-bucket --endpoint-url http://s3.seagate.com:{}"
-GET_OBJECT = "aws s3api get-object --bucket test-bucket --key file --endpoint http://s3.seagate.com:{} outfile"
+GET_OBJECT = "aws s3api get-object --bucket test-bucket --key file " \
+             "--endpoint http://s3.seagate.com:{} outfile"
 AWS_URL = "aws s3 ls --endpoint-url http://s3.seagate.com:{}"
 BUCKET_SIZE = "aws s3 ls s3://test-bucket --endpoint-url http://s3.seagate.com:{}"
 REMOVE_BUCKET = "aws s3 rb s3://test-bucket --force --endpoint-url http://s3.seagate.com:{}"
@@ -286,8 +287,12 @@ CMD_ISO_VER = "provisioner get_iso_version"
 CMD_SW_UP = "provisioner sw_upgrade --offline"
 CMD_SPACE_CHK = "df -h"
 CMD_FIND_FILE = "find /etc/cortx/ -name *.gz"
-CMD_GET_ACCESS_KEY= " kubectl get pods | grep cortx-server- | cut -d ' ' -f1 | head -1 | xargs -I{} kubectl exec -t {} -c cortx-rgw -- cat /etc/cortx/cluster.conf | grep auth_admin | head -2 | tail -1 | cut -d ':' -f2 | sed -e 's/^[[:space:]]*//'"
-CMD_GET_SECRET_KEY="cat /root/cortx-k8s/k8_cortx_cloud/solution.yaml | grep s3_auth_admin_secret: | cut -d ':' -f2"
+CMD_GET_ACCESS_KEY= " kubectl get pods | grep cortx-server- | cut -d ' ' -f1 | head -1 |" \
+                    " xargs -I{} kubectl exec -t {} -c cortx-rgw -- " \
+                    "cat /etc/cortx/cluster.conf | grep auth_admin | head -2 | " \
+                    "tail -1 | cut -d ':' -f2 | sed -e 's/^[[:space:]]*//'"
+CMD_GET_SECRET_KEY="cat /root/cortx-k8s/k8_cortx_cloud/solution.yaml |" \
+                   "grep s3_auth_admin_secret: | cut -d ':' -f2"
 
 SET_NAMESPACE = "kubectl config set-context --current --namespace={}"
 # Deployment commands
