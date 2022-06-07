@@ -88,8 +88,8 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt, s3_engine, po
                            password=host_list[0]["password"])
     iface = PROV_CFG["k8s_cortx_deploy"]["iface"]
     resp = ext_lbconfig_utils.configure_nodeport_lb(node_obj, iface)
-    ext_ip = resp[1]
-    https_port = resp[2]
+    # ext_ip = resp[1]
+    # https_port = resp[2]
     print("Data IP from master node and https port: ", resp)
     setup_name = host_list[0]["hostname"]
     setup_name = f"cicd_deploy_{setup_name.split('.')[0]}_{len(host_list) - 1}"
