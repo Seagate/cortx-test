@@ -4741,18 +4741,13 @@ class TestIamUserRGW():
             assert_utils.assert_equals(resp_new.status_code, HTTPStatus.OK, "Status check failed")
             resp_new_dict = resp_new.json()
             count_new = resp_new_dict["count"]
-            if count_new == 0:
+            get_user_list += resp_new_dict["users"]
+            if "marker" not in resp_new_dict.keys():
                 flag = False
             else:
-                get_user_list.append(resp_new_dict["users"])
                 last_uid = resp_new_dict["marker"]
                 assert_utils.assert_equals(count_new, 2, "Entries not returned as expected")
-        counter = 0
-        for user in users_list:
-            if user in get_user_list:
-                self.log.info("%s user is listed in response", user)
-                counter += 1
-                users_list.pop(user)
+        counter = len(set(users_list) & set(get_user_list))
         self.log.info("User list from GET response: %s", get_user_list)
         assert_utils.assert_equals(counter, self.csm_conf["common"]["num_users"],
                                    "Did not get all users")
