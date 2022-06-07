@@ -33,7 +33,7 @@ LOGGER = logging.getLogger(__name__)
 class ProvUpgradeK8sCortxLib:
     """
     This class contains utility methods for all the operations related
-    to k8s based Cortx Deployment .
+    to k8s based Cortx Upgrade .
     """
 
     def __init__(self):
