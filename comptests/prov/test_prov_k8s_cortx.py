@@ -505,7 +505,7 @@ class TestProvK8Cortx:
         LOGGER.info(resp)
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_ENDPOINT)
         LOGGER.info(resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_REGION).
+        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_REGION)
         LOGGER.info(resp)
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_ACCESS_CONFIG.format(access_key),
                                                 read_lines=True).                                          
