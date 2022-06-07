@@ -4780,7 +4780,7 @@ class TestIamUserRGW():
             assert_utils.assert_in(user_id, get_user_list, "created user not found in list")
             self.log.info("IAM user %s is listed in users list: %s", user_id, get_user_list)
             self.log.info("Step 3: Delete created user: %s", user_id)
-            resp = self.csm_obj.delete_iam_user(user=user_id, purge_data=True)
+            resp = self.csm_obj.delete_iam_user(user=user_id)
             self.log.debug("Verify Response : %s", resp)
             assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "User not deleted")
             self.log.info("User %s deleted successfully", user_id)
