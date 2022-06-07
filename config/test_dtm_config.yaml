@@ -12,3 +12,8 @@ test_41234:
 test_41235:
   nclients: 10
   nsamples: 10
+
+#overwrite object test
+test_41230:
+  max_object_size: 512 #Mb
+  overwrite_cnt: 200

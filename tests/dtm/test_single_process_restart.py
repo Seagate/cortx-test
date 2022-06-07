@@ -167,7 +167,7 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
 
-        self.log.info("Step 6: Perform Delete Operations on data written in Step 1:")
+        self.log.info("Step 6: Perform Delete Operations on data written in Step 1")
         self.dtm_obj.perform_ops(workload_info, que, True, True, False)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
@@ -363,7 +363,7 @@ class TestSingleProcessRestart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix,
                                                     nclients=test_cfg['nclients'],
-                                                    nsamples=test_cfg['nsamples'],)
+                                                    nsamples=test_cfg['nsamples'])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
@@ -475,18 +475,28 @@ class TestSingleProcessRestart:
         object_prefix = 'object-test-41226'
         log_file_prefix = 'test-41226'
         que = multiprocessing.Queue()
+        s3_test_obj = S3TestLib()
+        bucket_list = []
 
-        self.log.info("Step 1: Start write Operations in loop in background:")
+        self.log.info("Step 1: Create %s buckets for write operation during m0d restart",
+                      self.test_cfg['loop_count'])
+        for each in self.test_cfg['loop_count']:
+            bucket = f'{bucket_name}-{each}'
+            s3_test_obj.create_bucket(bucket)
+            bucket_list.append(bucket)
+
+        self.log.info("Step 2: Start write Operations in loop in background:")
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
                                                 args=(bucket_name, object_prefix,
                                                       self.test_cfg['clients'],
                                                       self.test_cfg['samples'],
                                                       self.test_cfg['size'],
                                                       log_file_prefix,
-                                                      que, self.test_cfg['loop_count']))
+                                                      que, self.test_cfg['loop_count'],
+                                                      bucket_list))
         proc_write_op.start()
 
-        self.log.info("Step 2 : Perform Single m0d Process Restart During Write Operations")
+        self.log.info("Step 3 : Perform Single m0d Process Restart During Write Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.POD_NAME_PREFIX,
@@ -494,14 +504,14 @@ class TestSingleProcessRestart:
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
-        self.log.info("Step 3: Wait for Write Operation to complete.")
+        self.log.info("Step 4: Wait for Write Operation to complete.")
         if proc_write_op.is_alive():
             proc_write_op.join()
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
 
-        self.log.info("Step 4: Perform Validate and Delete Operations on data written in Step 1:")
+        self.log.info("Step 5: Perform Validate and Delete Operations on data written in Step 2")
         self.dtm_obj.perform_ops(workload_info, que, True, True, False)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
@@ -632,6 +642,207 @@ class TestSingleProcessRestart:
                       "m0d recovery")
 
         self.log.info("ENDED: Verify multipart upload and download before/after m0d is restarted")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-41229")
+    def test_write_read_delete_during_m0d_restart(self):
+        """Verify WRITE, READ, DELETE during m0d restart using pkill."""
+        self.log.info("STARTED: Verify WRITE, READ, DELETE during m0d restart using pkill")
+        bucket_name = 'bucket-test-41219'
+        object_prefix = 'object-test-41219'
+        log_file_prefix = 'test-41219'
+
+        que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Start Write Operations for parallel reads "
+                      "and parallel deletes during m0d restart:")
+        write_proc = []
+        for _ in range(0, 2):
+            proc = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
+                                           args=(bucket_name, object_prefix,
+                                                 self.test_cfg['clients'],
+                                                 self.test_cfg['samples'],
+                                                 self.test_cfg['size'],
+                                                 log_file_prefix,
+                                                 que))
+            proc.start()
+            write_proc.append(proc)
+
+        self.log.info("Step 2: Wait for Write Operation to complete.")
+        workload_info_list = []
+        for each in write_proc:
+            if each.is_alive():
+                each.join()
+            resp = que.get()
+            assert_utils.assert_true(resp[0], resp[1])
+            workload_info_list.append(resp[1])
+
+        self.log.info("Step 3: Perform Write,Read,Delete Parallely during m0d restart")
+        parallel_proc = []
+        self.log.info("Step 3a: Start Write in new process")
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
+                                                args=(bucket_name, object_prefix,
+                                                      self.test_cfg['clients'],
+                                                      self.test_cfg['samples'],
+                                                      self.test_cfg['size'],
+                                                      log_file_prefix,
+                                                      que))
+        proc_write_op.start()
+        parallel_proc.append(proc_write_op)
+        self.log.info("Step 3b: Start Read in new process")
+        # Reads, validate and delete
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
+                                               args=(workload_info_list[0], que,
+                                                     False,
+                                                     True,
+                                                     True))
+        proc_read_op.start()
+        parallel_proc.append(proc_read_op)
+        self.log.info("Step 3c: Start Deletes in new process")
+        # delete
+        proc_delete_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
+                                                 args=(workload_info_list[1], que,
+                                                       True,
+                                                       False,
+                                                       False))
+        proc_delete_op.start()
+        parallel_proc.append(proc_delete_op)
+
+        self.log.info(
+            "Step 4: Perform Single m0d Process Restart During Write/Read/Delete Operations")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process,
+                                            check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+
+        self.log.info("Step 5: Check if all the operations were successful")
+        write_during_restart = None
+        for each in parallel_proc:
+            if each.is_alive():
+                each.join()
+            resp = que.get()
+            assert_utils.assert_true(resp[0], resp[1])
+            if isinstance(resp[1], dict):
+                write_during_restart = resp[1]
+
+        if not write_during_restart:
+            assert_utils.assert_true(False, 'No workload returned for writes performed during m0d '
+                                            'restart')
+
+        self.log.info("Step 6: Perform read, delete operation on object written during m0d restart "
+                      "during step 3")
+        self.dtm_obj.perform_ops(write_during_restart, que, False, True, False)
+
+        self.test_completed = True
+        self.log.info("ENDED: Verify WRITE, READ, DELETE during m0d restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-41230")
+    def test_overwrite_same_object_during_m0d_restart(self):
+        """Overwrite same object during m0d restart."""
+        self.log.info("STARTED: Overwrite same object during m0d restart.")
+        bucket_name = 'bucket-test-41230'
+        object_prefix = 'object-test-41230'
+        overwrite_cnt = self.test_cfg['test_41230']['overwrite_cnt']
+        max_object_size = self.test_cfg['test_41230']['max_object_size']
+        que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Create bucket : %s", bucket_name)
+        s3_test_obj = S3TestLib()
+        s3_test_obj.create_bucket(bucket_name)
+
+        self.log.info("Step 2 : Start continuous overwrite on same object")
+        proc_overwrite_op = multiprocessing.Process(target=self.dtm_obj.perform_object_overwrite,
+                                                    args=(bucket_name, object_prefix, overwrite_cnt,
+                                                          max_object_size, que))
+        proc_overwrite_op.start()
+
+        self.log.info("Step 3 : Perform Single m0d Process Restart during overwrite ")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process,
+                                            check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+
+        self.log.info("Step 4: Wait for Overwrite Operation to complete.")
+        if proc_overwrite_op.is_alive():
+            proc_overwrite_op.join()
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.test_completed = True
+        self.log.info("ENDED: Overwrite same object during m0d restart.")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-41231")
+    def test_io_operations_before_after_m0d_restart(self):
+        """Verify IO operations work after m0d restart using pkill."""
+        self.log.info("STARTED: Verify IO operations work after m0d restart using pkill.")
+        bucket_name = 'bucket-test-41231'
+        object_prefix = 'object-test-41231'
+        log_file_prefix = 'test-41231'
+        que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Perform Write/Read Operations :")
+        self.dtm_obj.perform_write_op(bucket_prefix=bucket_name,
+                                      object_prefix=object_prefix,
+                                      no_of_clients=self.test_cfg['clients'],
+                                      no_of_samples=self.test_cfg['samples'],
+                                      obj_size=self.test_cfg['size'],
+                                      log_file_prefix=log_file_prefix, queue=que)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+
+        self.dtm_obj.perform_ops(workload_info, que, False, True, True)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Step 2: Create bucket for IO operation post m0d restart")
+        bucket_post_m0d = f"{bucket_name}-post-m0d-restart"
+        s3_test_obj = S3TestLib()
+        s3_test_obj.create_bucket(bucket_post_m0d)
+
+        self.log.info("Step 3 : Perform Single m0d Process Restart ")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process,
+                                            check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+
+        self.log.info("Step 4: Read, validate, Delete data written in Step 1")
+        self.dtm_obj.perform_ops(workload_info, que, False, True, False)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Step 5: Perform Write/Read/Delete Operations on new bucket %s",
+                      bucket_post_m0d)
+        self.dtm_obj.perform_write_op(bucket_prefix=bucket_name,
+                                      object_prefix=object_prefix,
+                                      no_of_clients=self.test_cfg['clients'],
+                                      no_of_samples=self.test_cfg['samples'],
+                                      obj_size=self.test_cfg['size'],
+                                      log_file_prefix=log_file_prefix, queue=que, loop=1,
+                                      created_bucket=[bucket_post_m0d])
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+
+        self.dtm_obj.perform_ops(workload_info, que, False, True, False)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.test_completed = True
+        self.log.info("ENDED: Verify IO operations work after m0d restart using pkill.")
 
     @pytest.mark.lc
     @pytest.mark.dtm
