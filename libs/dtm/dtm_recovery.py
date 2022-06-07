@@ -26,8 +26,6 @@ import random
 import re
 import time
 
-from botocore.exceptions import ClientError
-
 from commons import constants as const
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
@@ -361,14 +359,14 @@ class DTMRecoveryTestLib:
         failed_obj_name = list()
         for obj_name in workload["obj_list"]:
             try:
-                self.s3_obj.copy_object(source_bucket=workload["source_bucket"],
-                                        source_object=obj_name,dest_bucket=workload["dest_bucket"],
+                self.s3t_obj.copy_object(source_bucket=workload["source_bucket"],
+                                        source_object=obj_name, dest_bucket=workload["dest_bucket"],
                                         dest_object=obj_name)
 
             except CTException as error:
                 self.log.exception("Error: %s", error)
                 failed_obj_name.append(obj_name)
-        if failed_obj_name.count() > 0:
+        if len(failed_obj_name) > 0:
             que.put([False, f"Copy Object operation failed for {failed_obj_name}"])
         else:
             que.put([True, "Copy Object operation successful"])
