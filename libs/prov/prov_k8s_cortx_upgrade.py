@@ -84,7 +84,7 @@ class ProvUpgradeK8sCortxLib:
         Helper function to upgrade.
         :param node_obj: Master node(Logical Node object)
         :param upgrade_image_version: Version Image to Upgrade.
-        :return: True/False
+        :return: resp
         """
         LOGGER.info("Upgrading CORTX image to version: %s.", upgrade_image_version)
         upg_disrupt = Template(common_cmd.UPGRADE_NEG_CMD).substitute(
