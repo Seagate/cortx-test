@@ -2585,7 +2585,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.compare_iam_payload_response(get_resp, payload)
         self.log.debug(resp)
         assert_utils.assert_true(resp[0], "Value mismatch found")
-        resp = self.csm_obj.delete_iam_user(user=uid)
+        resp = self.csm_obj.delete_iam_user(user=uid, purge_data=True)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user deletion failed")
         del self.created_iam_users[usr_val['user']]
