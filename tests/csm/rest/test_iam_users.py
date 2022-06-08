@@ -871,7 +871,7 @@ class TestIamUserRGW():
         usr_val = resp.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
         self.log.info("Verify delete user by uid and purge-data.")
-        resp = self.csm_obj.delete_iam_user(user_id, purge_data=True)
+        resp = self.csm_obj.delete_iam_user(user_id)
         assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         del self.created_iam_users[usr_val['user']]
         self.log.info("Get deleted user info.")
@@ -4741,18 +4741,13 @@ class TestIamUserRGW():
             assert_utils.assert_equals(resp_new.status_code, HTTPStatus.OK, "Status check failed")
             resp_new_dict = resp_new.json()
             count_new = resp_new_dict["count"]
-            if count_new == 0:
+            get_user_list += resp_new_dict["users"]
+            if "marker" not in resp_new_dict.keys():
                 flag = False
             else:
-                get_user_list.append(resp_new_dict["users"])
                 last_uid = resp_new_dict["marker"]
                 assert_utils.assert_equals(count_new, 2, "Entries not returned as expected")
-        counter = 0
-        for user in users_list:
-            if user in get_user_list:
-                self.log.info("%s user is listed in response", user)
-                counter += 1
-                users_list.pop(user)
+        counter = len(set(users_list) & set(get_user_list))
         self.log.info("User list from GET response: %s", get_user_list)
         assert_utils.assert_equals(counter, self.csm_conf["common"]["num_users"],
                                    "Did not get all users")
@@ -4785,7 +4780,7 @@ class TestIamUserRGW():
             assert_utils.assert_in(user_id, get_user_list, "created user not found in list")
             self.log.info("IAM user %s is listed in users list: %s", user_id, get_user_list)
             self.log.info("Step 3: Delete created user: %s", user_id)
-            resp = self.csm_obj.delete_iam_user(user=user_id, purge_data=True)
+            resp = self.csm_obj.delete_iam_user(user=user_id)
             self.log.debug("Verify Response : %s", resp)
             assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "User not deleted")
             self.log.info("User %s deleted successfully", user_id)
@@ -4822,7 +4817,7 @@ class TestIamUserRGW():
         assert_utils.assert_in(user_id, get_user_list, "created user not found in list")
         self.log.info("IAM user %s is listed in users list: %s", user_id, get_user_list)
         self.log.info("Step 3: Delete created user: %s", user_id)
-        resp = self.csm_obj.delete_iam_user(user=user_id, purge_data=True)
+        resp = self.csm_obj.delete_iam_user(user=user_id)
         self.log.debug("Verify Response : %s", resp)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "User not deleted")
         self.log.info("User %s deleted successfully", user_id)
@@ -4857,7 +4852,7 @@ class TestIamUserRGW():
         random_str = ''.join(secrets.choice(string.ascii_uppercase +
                                             string.ascii_lowercase) for i in range(7))
         special_str = ''.join(secrets.choice(string.punctuation) for i in range(7))
-        invalid_values = [-1, 0, hex(255), random_str, special_str, None, '""']
+        invalid_values = [-1, 0, hex(255), random_str, special_str, '""']
         for key_value in invalid_values:
             self.log.info("Testing for key value %s", key_value)
             resp = self.csm_obj.list_iam_users_rgw(max_entries=key_value)
@@ -4894,7 +4889,7 @@ class TestIamUserRGW():
         random_num = self.csm_obj.random_gen.randrange(1, ran_int)
         random_str = ''.join(secrets.choice(string.digits +
                                             string.ascii_lowercase) for i in range(7))
-        invalid_markers = ['""', random_num, random_str, None]
+        invalid_markers = ['""', random_num, random_str]
         for marker in invalid_markers:
             self.log.info("Testing for invalid marker %s:", marker)
             resp = self.csm_obj.list_iam_users_rgw(marker=marker)
@@ -4916,11 +4911,10 @@ class TestIamUserRGW():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Create IAM User")
         resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True)
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.CREATED,
-                                   "Create IAM User failed")
-        user_id = resp['tenant'] + "$" + resp['user_id']
+        assert resp[0], resp[1]
+        user_id = resp[1]['tenant'] + "$" + resp[1]['user_id']
         self.log.info("Step 2: Delete IAM User")
-        resp = self.csm_obj.delete_iam_user(user_id, purge_data=True)
+        resp = self.csm_obj.delete_iam_user(user_id)
         self.log.debug("Verify Response : %s", resp)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK,
                                    "Delete IAM User failed")
@@ -4969,9 +4963,11 @@ class TestIamUserRGW():
                       "marker as in between user")
         resp = self.csm_obj.list_iam_users_rgw(max_entries=15, marker=marker)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
-        count = resp_dict["count"]
-        assert_utils.assert_equals(count, 6, "Entries not returned as expected")
-        get_user_list = resp_dict["users"]
+        count_new = resp.json()["count"]
+        get_user_list = resp.json()["users"]
+        actual_entries = self.csm_conf["common"]["num_users"] - user_index + 1
+        assert_utils.assert_equals(count_new, actual_entries, "Entries not returned as expected")
+        self.log.info("Printing first user of list %s", get_user_list[0]) 
         assert_utils.assert_equals(get_user_list[0], marker, "Marker not set"
                                                              "to in between user")
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -5027,7 +5023,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp.status_code == HTTPStatus.FORBIDDEN,
                                  "Delete Internal IAM User failed")
         if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")    #TODO
+            self.log.info("Verifying error response...")
             assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(resp.json()["message"], msg)
@@ -5057,7 +5053,7 @@ class TestIamUserRGW():
         assert_utils.assert_true(resp.status_code == HTTPStatus.FORBIDDEN,
                                  "Internal IAM User Modified")
         if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")  # TODO
+            self.log.info("Verifying error response...")
             assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(resp.json()["message"], msg)
