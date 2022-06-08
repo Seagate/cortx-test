@@ -201,6 +201,11 @@ class DTMRecoveryTestLib:
         :param restart_cnt: Count to restart process from randomly selected pod (Restart once
         previously restarted process recovers)
         """
+        self.log.info("Get process IDs of %s", process)
+        resp = self.get_process_ids(health_obj=health_obj, process=process)
+        if not resp[0]:
+            return resp[0]
+        process_ids = resp[1]
         for i_i in range(restart_cnt):
             self.log.info("Restarting %s process for %s time", process, i_i)
             pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
@@ -210,11 +215,6 @@ class DTMRecoveryTestLib:
                                                               container_prefix=container_prefix)
             container = container_list[random.randint(0, len(container_list) - 1)]
             self.log.info("Container selected : %s", container)
-            self.log.info("Get process IDs of %s", process)
-            resp = self.get_process_ids(health_obj=health_obj, process=process)
-            if not resp[0]:
-                return resp[0]
-            process_ids = resp[1]
             self.log.info("Perform %s restart", process)
             resp = master_node.kill_process_in_container(pod_name=pod_selected,
                                                          container_name=container,
@@ -239,7 +239,7 @@ class DTMRecoveryTestLib:
 
         return True
 
-    def get_process_state(self, master_node, pod_name, container_name, process_ids):
+    def get_process_state(self, master_node, pod_name, container_name, process_ids: list):
         """
         Function to get given process state
         :param master_node: Object of master node

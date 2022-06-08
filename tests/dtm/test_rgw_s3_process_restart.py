@@ -165,8 +165,7 @@ class TestRGWProcessRestart:
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False,
-                                            restart_cnt=DTM_CFG["rgw_restart_cnt"])
+                                            process=self.rgw_process, check_proc_state=False)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for READ operation to complete.")
@@ -210,8 +209,7 @@ class TestRGWProcessRestart:
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False,
-                                            restart_cnt=DTM_CFG["rgw_restart_cnt"])
+                                            process=self.rgw_process, check_proc_state=False)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 2: Wait for WRITE Operation to complete.")
@@ -273,8 +271,7 @@ class TestRGWProcessRestart:
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False,
-                                            restart_cnt=DTM_CFG["rgw_restart_cnt"])
+                                            process=self.rgw_process, check_proc_state=False)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         event.clear()
         self.log.info("Step 3: Successfully Performed Single rgw_s3 Process Restart During Delete "
@@ -316,9 +313,10 @@ class TestRGWProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
         self.log.info("Step 2: Start READ Operations in loop in background:")
-        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
-                                               args=(workload_info, que, False, True, True,
-                                                     self.test_cfg['loop_count']))
+        args = {'workload_info': workload_info, 'queue': que, 'skipread': False, 'validate': True,
+                'skipcleanup': True, 'retry': DTM_CFG["io_retry_count"],
+                'loop': self.test_cfg['loop_count']}
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops, kwargs=args)
         proc_read_op.start()
 
         self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "
@@ -334,6 +332,13 @@ class TestRGWProcessRestart:
         self.log.info("Step 4: Wait for READ Operation to complete.")
         if proc_read_op.is_alive():
             proc_read_op.join()
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Step 5: Perform READ operations after rgw_s3 process restarts")
+        args = {'workload_info': workload_info, 'queue': que, 'skipread': False, 'validate': True,
+                'skipcleanup': True}
+        self.dtm_obj.perform_ops(**args)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
 
@@ -462,11 +467,12 @@ class TestRGWProcessRestart:
         que = multiprocessing.Queue()
 
         self.log.info("Step 1: Start WRITE operation in background")
-        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
-                                                args=(self.bucket_name, self.object_name,
-                                                      self.test_cfg['clients'],
-                                                      self.test_cfg['samples'],
-                                                      log_file_prefix, que))
+        args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
+                'no_of_clients': self.test_cfg['clients'],
+                'no_of_samples': self.test_cfg['samples'], 'log_file_prefix': log_file_prefix,
+                'queue': que, 'retry': DTM_CFG["io_retry_count"],
+                'loop': self.test_cfg['loop_count']}
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
         proc_write_op.start()
 
         self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "
