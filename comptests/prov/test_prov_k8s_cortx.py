@@ -21,6 +21,7 @@
 """Provisioner Component level test cases for CORTX deployment in k8s environment."""
 
 import logging
+import time
 import pytest
 
 from commons import configmanager
@@ -382,6 +383,7 @@ class TestProvK8Cortx:
                                                dir_path=self.prov_deploy_cfg["git_remote_path"])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and running.")
+        time.sleep(100)
         LOGGER.info("Step 4: Checking whether all CORTX Data pods have been restarted.")
         resp = self.ha_obj.check_pod_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
