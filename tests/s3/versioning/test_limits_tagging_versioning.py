@@ -28,8 +28,7 @@ import pytest
 
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
-from commons.utils.system_utils import create_file, path_exists, remove_file
-from commons.utils.system_utils import make_dirs, remove_dirs
+from commons.utils import system_utils as sysutils
 from config.s3 import S3_CFG
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
@@ -51,15 +50,15 @@ class TestObjectTaggingVerLimits:
         self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.s3_ver_obj = S3VersioningTestLib(endpoint_url=S3_CFG["s3_url"])
         self.s3_tag_obj = S3TaggingTestLib(endpoint_url=S3_CFG["s3_url"])
-        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestTaggingDeleteObject")
-        if not path_exists(self.test_dir_path):
-            make_dirs(self.test_dir_path)
+        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestTaggingVerLimitsObject")
+        if not sysutils.path_exists(self.test_dir_path):
+            sysutils.make_dirs(self.test_dir_path)
             LOGGER.info("Created path: %s", self.test_dir_path)
-        self.file_path = os.path.join(self.test_dir_path, f"del_obj_tag_{time.perf_counter_ns()}")
-        create_file(fpath=self.file_path, count=1)
+        self.file_path = os.path.join(self.test_dir_path, f"limit_obj_tag_{time.perf_counter_ns()}")
+        sysutils.create_file(fpath=self.file_path, count=1)
         LOGGER.info("Created file: %s", self.file_path)
-        self.bucket_name = f"tag-bkt-{time.perf_counter_ns()}"
-        self.object_name = f"tag-obj-{time.perf_counter_ns()}"
+        self.bucket_name = f"tag-ver-bkt-{time.perf_counter_ns()}"
+        self.object_name = f"tag-ver-obj-{time.perf_counter_ns()}"
         self.versions = dict()
         self.ver_tag = dict()
         self.ver_tag.update({self.object_name: dict()})
@@ -74,17 +73,17 @@ class TestObjectTaggingVerLimits:
         """
         LOGGER.info("STARTED: Teardown operations")
         LOGGER.info("Clean : %s", self.test_dir_path)
-        if path_exists(self.file_path):
-            res = remove_file(self.file_path)
+        if sysutils.path_exists(self.file_path):
+            res = sysutils.remove_file(self.file_path)
             LOGGER.info("cleaned path: %s, res: %s", self.file_path, res)
-        if path_exists(self.test_dir_path):
-            remove_dirs(self.test_dir_path)
+        if sysutils.path_exists(self.test_dir_path):
+            sysutils.remove_dirs(self.test_dir_path)
         LOGGER.info("Cleanup test directory: %s", self.test_dir_path)
         # DELETE Object with VersionId is WIP, uncomment once feature is available
         # res = self.s3_test_obj.bucket_list()
         # pref_list = []
         # for bucket_name in res[1]:
-        #     if bucket_name.startswith("tag-bkt"):
+        #     if bucket_name.startswith("tag-ver-bkt"):
         #         empty_versioned_bucket(self.s3_ver_obj, bucket_name)
         #         pref_list.append(bucket_name)
         # if pref_list:
@@ -107,8 +106,8 @@ class TestObjectTaggingVerLimits:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 1: Performed PUT Bucket versioning with status as %s on %s",
                     versioning_status, self.bucket_name)
-        LOGGER.info("Step 2: Upload object %s with version enabled bucket %s",
-                    self.object_name, self.bucket_name)
+        LOGGER.info("Step 2: Upload object %s with version %s bucket %s", self.object_name,
+                    versioning_status, self.bucket_name)
         if versioning_status == "Suspended":
             s3_cmn_lib.upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
                                       object_name=self.object_name, file_path=self.file_path,
@@ -184,8 +183,8 @@ class TestObjectTaggingVerLimits:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 1: Performed PUT Bucket versioning with status as %s on %s",
                     versioning_status, self.bucket_name)
-        LOGGER.info("Step 2: Upload object %s with version enabled bucket %s",
-                    self.object_name, self.bucket_name)
+        LOGGER.info("Step 2: Upload object %s with version %s bucket %s", self.object_name,
+                    versioning_status, self.bucket_name)
         if versioning_status == "Suspended":
             s3_cmn_lib.upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
                                       object_name=self.object_name, file_path=self.file_path,
