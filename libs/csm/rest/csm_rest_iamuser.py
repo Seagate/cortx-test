@@ -829,3 +829,36 @@ class RestIamUser(RestTestLib):
         data = yaml.safe_load(stream)
         internal_user = data["cortx"]["rgw"]["auth_user"]
         return internal_user
+    
+    @staticmethod
+    def get_iam_user_payload(self, param=None):
+        """
+        Creates selected parameters IAM user payload.
+        """
+        time.sleep(1)
+        res, temp = [], []
+        user_id = const.IAM_USER + str(int(time.time()))
+        display_name = const.IAM_USER + str(int(time.time()))
+        temp.append(user_id)
+        temp.append(display_name)
+        if param == "email":
+            email = user_id + "@seagate.com"
+            temp.append(email)
+            res = temp
+        elif param == "a_key":
+            access_key = user_id.ljust(const.S3_ACCESS_LL, "d")
+            temp.append(access_key)
+            res = temp
+        elif param == "s_key":
+            secret_key = config_utils.gen_rand_string(length=const.S3_SECRET_LL)
+            temp.append(secret_key)
+            res = temp
+        elif param == "keys":
+            acc_key = user_id.ljust(const.S3_ACCESS_LL, "d")
+            sec_key = config_utils.gen_rand_string(length=const.S3_SECRET_LL)
+            temp.append(acc_key)
+            temp.append(sec_key)
+            res = temp
+        else:
+            res = temp
+        return res
