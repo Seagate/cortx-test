@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-"""Test module for DELETE Object Tagging"""
+"""Test module for Limits for Object Tagging with versioning support"""
 
 import logging
 import os
@@ -42,8 +42,8 @@ from libs.s3 import s3_versioning_common_test_lib as s3_cmn_lib
 LOGGER = logging.getLogger(__name__)
 
 
-class TestTaggingDeleteObject:
-    """Test Delete Object Tagging"""
+class TestObjectTaggingVerLimits:
+    """Test Limits tests for Object Tagging with versioning support"""
 
     def setup_method(self):
         """
@@ -62,6 +62,9 @@ class TestTaggingDeleteObject:
         LOGGER.info("Created file: %s", self.file_path)
         self.bucket_name = f"tag-bkt-{time.perf_counter_ns()}"
         self.object_name = f"tag-obj-{time.perf_counter_ns()}"
+        self.versions = dict()
+        self.ver_tag = dict()
+        self.ver_tag.update({self.object_name: dict()})
         res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
@@ -107,26 +110,28 @@ class TestTaggingDeleteObject:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 1: Performed PUT Bucket versioning with status as %s on %s",
                     versioning_status, self.bucket_name)
-        versions = dict()
         LOGGER.info("Step 2: Upload object %s with version enabled bucket %s",
                     self.object_name, self.bucket_name)
-        s3_cmn_lib.upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
-                                  object_name=self.object_name, file_path=self.file_path,
-                                  versions_dict=versions)
-        latest_ver = versions[self.object_name]["version_history"][-1]
+        if versioning_status == "Suspended":
+            s3_cmn_lib.upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
+                                      object_name=self.object_name, file_path=self.file_path,
+                                      versions_dict=self.versions, chk_null_version=True)
+        else:
+            s3_cmn_lib.upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
+                                      object_name=self.object_name, file_path=self.file_path,
+                                      versions_dict=self.versions)
+        latest_ver = self.versions[self.object_name]["version_history"][-1]
         LOGGER.info("Step 2: Successfully uploaded object %s to versioned bucket %s with "
                     "version ID %s", self.object_name, self.bucket_name, latest_ver)
-        ver_tag = dict()
-        ver_tag.update({self.object_name: dict()})
         LOGGER.info("Step 3: Perform PUT Object Tagging for %s with 128 char tag key",
                     self.object_name)
         resp = s3_cmn_lib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
-                                             object_name=self.object_name, version_tag=ver_tag,
-                                             versions_dict=versions, tag_key_ran=128)
+                                             object_name=self.object_name, version_tag=self.ver_tag,
+                                             versions_dict=self.versions, tag_key_ran=128)
         assert_utils.assert_true(resp[0], resp)
-        put_tag = ver_tag[self.object_name][latest_ver][-1]
+        put_tag = self.ver_tag[self.object_name][latest_ver][-1]
         LOGGER.info("Step 3: Performed PUT Object Tagging for %s with 128 char tag key",
                     self.object_name)
         LOGGER.info("Step 4: Perform GET Object Tagging for %s with versionId=%s",
@@ -146,8 +151,8 @@ class TestTaggingDeleteObject:
         resp = s3_cmn_lib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
-                                             object_name=self.object_name, version_tag=ver_tag,
-                                             versions_dict=versions, tag_key_ran=129)
+                                             object_name=self.object_name, version_tag=self.ver_tag,
+                                             versions_dict=self.versions, tag_key_ran=129)
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 5: PUT Object Tagging for %s with 129 char tag key failed as expected",
                     self.object_name)
@@ -183,26 +188,28 @@ class TestTaggingDeleteObject:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 1: Performed PUT Bucket versioning with status as %s on %s",
                     versioning_status, self.bucket_name)
-        versions = dict()
         LOGGER.info("Step 2: Upload object %s with version enabled bucket %s",
                     self.object_name, self.bucket_name)
-        s3_cmn_lib.upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
-                                  object_name=self.object_name, file_path=self.file_path,
-                                  versions_dict=versions)
-        latest_ver = versions[self.object_name]["version_history"][-1]
+        if versioning_status == "Suspended":
+            s3_cmn_lib.upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
+                                      object_name=self.object_name, file_path=self.file_path,
+                                      versions_dict=self.versions, chk_null_version=True)
+        else:
+            s3_cmn_lib.upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
+                                      object_name=self.object_name, file_path=self.file_path,
+                                      versions_dict=self.versions)
+        latest_ver = self.versions[self.object_name]["version_history"][-1]
         LOGGER.info("Step 2: Successfully uploaded object %s to versioned bucket %s with "
                     "version ID %s", self.object_name, self.bucket_name, latest_ver)
-        ver_tag = dict()
-        ver_tag.update({self.object_name: dict()})
         LOGGER.info("Step 3: Perform PUT Object Tagging for %s with 1 char tag key",
                     self.object_name)
         resp = s3_cmn_lib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
-                                             object_name=self.object_name, version_tag=ver_tag,
-                                             versions_dict=versions, tag_key_ran=1)
+                                             object_name=self.object_name, version_tag=self.ver_tag,
+                                             versions_dict=self.versions, tag_key_ran=1)
         assert_utils.assert_true(resp[0], resp)
-        put_tag = ver_tag[self.object_name][latest_ver][-1]
+        put_tag = self.ver_tag[self.object_name][latest_ver][-1]
         LOGGER.info("Step 3: Performed PUT Object Tagging for %s with 128 char tag key",
                     self.object_name)
         LOGGER.info("Step 4: Perform GET Object Tagging for %s with versionId=%s",
