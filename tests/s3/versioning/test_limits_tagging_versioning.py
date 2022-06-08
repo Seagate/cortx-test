@@ -26,8 +26,6 @@ import time
 
 import pytest
 
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils.system_utils import create_file, path_exists, remove_file
