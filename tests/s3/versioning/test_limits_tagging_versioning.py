@@ -41,7 +41,7 @@ from libs.s3 import s3_versioning_common_test_lib as s3_cmn_lib
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 
-
+# pylint: disable=too-many-instance-attributes
 class TestObjectTaggingVerLimits:
     """Test Limits tests for Object Tagging with versioning support"""
 
@@ -95,7 +95,6 @@ class TestObjectTaggingVerLimits:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-41277")
-    @CTFailOn(error_handler)
     @pytest.mark.parametrize("versioning_status", ["Enabled", "Suspended"])
     def test_tag_key_limit_41277(self, versioning_status):
         """
@@ -173,7 +172,6 @@ class TestObjectTaggingVerLimits:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-41278")
-    @CTFailOn(error_handler)
     @pytest.mark.parametrize("versioning_status", ["Enabled", "Suspended"])
     def test_tag_key_min_41278(self, versioning_status):
         """
