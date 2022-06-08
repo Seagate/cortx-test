@@ -22,6 +22,7 @@
 
 import logging
 import os
+import string
 import time
 import queue
 from threading import Thread
@@ -33,6 +34,7 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG, PROV_TEST_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
+from libs.prov.prov_k8s_cortx_upgrade import ProvUpgradeK8sCortxLib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -56,6 +58,7 @@ class TestProvK8CortxRollingUpgrade:
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
+        cls.upgrade_lc_obj = ProvUpgradeK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
         cls.master_node_list = []
@@ -88,9 +91,9 @@ class TestProvK8CortxRollingUpgrade:
     def perform_upgrade(self, exc: bool = True, output=None):
         """Function calls upgrade and put return value in queue object."""
         LOGGER.info("Calling upgrade.")
-        resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
-                                                   self.prov_deploy_cfg["git_remote_path"],
-                                                   exc=exc)
+        resp = self.upgrade_lc_obj.upgrade_software(self.master_node_obj,
+                                                    self.prov_deploy_cfg["git_remote_path"],
+                                                    exc=exc)
         output.put(resp)
 
     @pytest.mark.run(order=1)
@@ -147,8 +150,8 @@ class TestProvK8CortxRollingUpgrade:
 
         LOGGER.info("Step 6: Start upgrade.")
         LOGGER.info("Upgrading CORTX image to version: %s.", self.cortx_all_image)
-        resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
-                                                   self.prov_deploy_cfg["git_remote_path"])
+        resp = self.upgrade_lc_obj.upgrade_software(self.master_node_obj,
+                                                    self.prov_deploy_cfg["git_remote_path"])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Done.")
 
@@ -302,7 +305,8 @@ class TestProvK8CortxRollingUpgrade:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Check proper error message when invalid argument passed to upgrade script.")
-        cmd = commands.UPGRADE_NEG_CMD.format(self.prov_deploy_cfg["git_remote_path"]) + " -abc"
+        cmd = string.Template(commands.UPGRADE_NEG_CMD).substitute(
+            dir=self.prov_deploy_cfg["git_remote_path"]) + " -abc"
         resp = self.master_node_obj.execute_cmd(cmd=cmd, exc=False)
         if isinstance(resp, bytes):
             resp = str(resp, 'UTF-8')
@@ -320,7 +324,8 @@ class TestProvK8CortxRollingUpgrade:
         LOGGER.info("Test Started.")
         LOGGER.info("Check proper error message when no argument passed to upgrade script.")
         error_msg = "ERROR: Required option POD_TYPE is missing."
-        cmd = commands.UPGRADE_NEG_CMD.format(self.prov_deploy_cfg["git_remote_path"])
+        cmd = string.Template(commands.UPGRADE_NEG_CMD).substitute(
+            dir=self.prov_deploy_cfg["git_remote_path"])
         resp = self.master_node_obj.execute_cmd(cmd=cmd, exc=False)
         if isinstance(resp, bytes):
             resp = str(resp, 'UTF-8')
