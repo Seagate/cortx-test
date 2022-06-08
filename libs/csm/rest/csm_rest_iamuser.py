@@ -829,7 +829,7 @@ class RestIamUser(RestTestLib):
         data = yaml.safe_load(stream)
         internal_user = data["cortx"]["rgw"]["auth_user"]
         return internal_user
- 
+
     @staticmethod
     def get_iam_user_payload(param=None):
         """
