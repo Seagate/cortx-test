@@ -21,7 +21,6 @@
 """
 Test suite for testing RGW Process Restart with DTM enabled.
 """
-import copy
 import logging
 import multiprocessing
 import os
@@ -88,9 +87,6 @@ class TestRGWProcessRestart:
         cls.setup_type = CMN_CFG["setup_type"]
         cls.system_random = secrets.SystemRandom()
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "DTMTestData")
-        cls.large_workload = copy.deepcopy(HA_CFG["s3_bench_workloads"])
-        if cls.setup_type == "HW":
-            cls.large_workload.extend(HA_CFG["s3_bench_large_workloads"])
 
     def setup_method(self):
         """Setup Method"""
@@ -295,58 +291,6 @@ class TestRGWProcessRestart:
 
     @pytest.mark.lc
     @pytest.mark.dtm
-    @pytest.mark.tags("TEST-42247")
-    def test_continuous_read_during_rgw_s3_restart(self):
-        """Verify continuous READ during rgw_s3 restart using pkill."""
-        self.log.info("STARTED: Verify continuous READ during rgw_s3 restart using pkill")
-        log_file_prefix = 'test-42247'
-        que = multiprocessing.Queue()
-        test_cfg = DTM_CFG["test_42247"]
-
-        self.log.info("Step 1: Start write Operations :")
-        self.dtm_obj.perform_write_op(bucket_prefix=self.bucket_name,
-                                      object_prefix=self.object_name,
-                                      no_of_clients=test_cfg['nclients'],
-                                      no_of_samples=test_cfg['nsamples'],
-                                      log_file_prefix=log_file_prefix, queue=que)
-        resp = que.get()
-        assert_utils.assert_true(resp[0], resp[1])
-        workload_info = resp[1]
-        self.log.info("Step 2: Start READ Operations in loop in background:")
-        args = {'workload_info': workload_info, 'queue': que, 'skipread': False, 'validate': True,
-                'skipcleanup': True, 'retry': DTM_CFG["io_retry_count"],
-                'loop': self.test_cfg['loop_count']}
-        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops, kwargs=args)
-        proc_read_op.start()
-
-        self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "
-                      "Operations", DTM_CFG["rgw_restart_cnt"])
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False,
-                                            restart_cnt=DTM_CFG["rgw_restart_cnt"])
-        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
-
-        self.log.info("Step 4: Wait for READ Operation to complete.")
-        if proc_read_op.is_alive():
-            proc_read_op.join()
-        resp = que.get()
-        assert_utils.assert_true(resp[0], resp[1])
-
-        self.log.info("Step 5: Perform READ operations after rgw_s3 process restarts")
-        args = {'workload_info': workload_info, 'queue': que, 'skipread': False, 'validate': True,
-                'skipcleanup': True}
-        self.dtm_obj.perform_ops(**args)
-        resp = que.get()
-        assert_utils.assert_true(resp[0], resp[1])
-
-        self.test_completed = True
-        self.log.info("ENDED: Verify continuous READ during rgw_s3 restart using pkill")
-
-    @pytest.mark.lc
-    @pytest.mark.dtm
     @pytest.mark.tags("TEST-42253")
     def test_copy_object_after_rgw_restart(self):
         """Verify copy object after rgw restart using pkill."""
@@ -459,19 +403,71 @@ class TestRGWProcessRestart:
 
     @pytest.mark.lc
     @pytest.mark.dtm
+    @pytest.mark.tags("TEST-42247")
+    def test_continuous_read_during_rgw_s3_restart(self):
+        """Verify continuous READ during rgw_s3 restart using pkill."""
+        self.log.info("STARTED: Verify continuous READ during rgw_s3 restart using pkill")
+        log_file_prefix = 'test-42247'
+        que = multiprocessing.Queue()
+        test_cfg = DTM_CFG["test_42247"]
+
+        self.log.info("Step 1: Start write Operations :")
+        self.dtm_obj.perform_write_op(bucket_prefix=self.bucket_name,
+                                      object_prefix=self.object_name,
+                                      no_of_clients=test_cfg['nclients'],
+                                      no_of_samples=test_cfg['nsamples'],
+                                      log_file_prefix=log_file_prefix, queue=que)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+        self.log.info("Step 2: Start READ Operations in loop in background:")
+        args = {'workload_info': workload_info, 'queue': que, 'skipread': False, 'validate': True,
+                'skipcleanup': True, 'retry': DTM_CFG["io_retry_count"],
+                'loop': self.test_cfg['loop_count']}
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops, kwargs=args)
+        proc_read_op.start()
+
+        self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "
+                      "Operations", DTM_CFG["rgw_restart_cnt"])
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
+                                            process=self.rgw_process, check_proc_state=False,
+                                            restart_cnt=DTM_CFG["rgw_restart_cnt"])
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+
+        self.log.info("Step 4: Wait for READ Operation to complete.")
+        if proc_read_op.is_alive():
+            proc_read_op.join()
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Step 5: Perform READ operations after rgw_s3 process restarts")
+        args = {'workload_info': workload_info, 'queue': que, 'skipread': False, 'validate': True,
+                'skipcleanup': True}
+        self.dtm_obj.perform_ops(**args)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.test_completed = True
+        self.log.info("ENDED: Verify continuous READ during rgw_s3 restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
     @pytest.mark.tags("TEST-42248")
     def test_continuous_write_during_rgw_s3_restart(self):
         """Verify continuous WRITEs during rgw_s3 service restart using pkill."""
         self.log.info("STARTED: Verify continuous WRITEs during rgw_s3 service restart using pkill")
         log_file_prefix = 'test-42248'
         que = multiprocessing.Queue()
+        test_cfg = DTM_CFG["test_42247"]
 
         self.log.info("Step 1: Start WRITE operation in background")
         args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
-                'no_of_clients': self.test_cfg['clients'],
-                'no_of_samples': self.test_cfg['samples'], 'log_file_prefix': log_file_prefix,
-                'queue': que, 'retry': DTM_CFG["io_retry_count"],
-                'loop': self.test_cfg['loop_count']}
+                'no_of_clients': test_cfg['clients'], 'no_of_samples': test_cfg['samples'],
+                'log_file_prefix': log_file_prefix, 'queue': que,
+                'retry': DTM_CFG["io_retry_count"], 'loop': self.test_cfg['loop_count']}
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
         proc_write_op.start()
 
