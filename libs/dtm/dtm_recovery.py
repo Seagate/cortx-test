@@ -62,9 +62,9 @@ class DTMRecoveryTestLib:
 
     # pylint: disable-msg=too-many-locals
     # pylint: disable=too-many-arguments
-    def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples, obj_size,
-                         log_file_prefix, queue, loop: int = 1, created_bucket: list = None,
-                         retry: int = None):
+    def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples,
+                         log_file_prefix, queue, obj_size: str = None, loop: int = 1,
+                         created_bucket: list = None, retry: int = None):
         """
         Perform Write operations
         :param bucket_prefix: Bucket name

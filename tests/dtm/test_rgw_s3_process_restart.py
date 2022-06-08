@@ -146,14 +146,13 @@ class TestRGWProcessRestart:
                                       object_prefix=self.object_name,
                                       no_of_clients=self.test_cfg['clients'],
                                       no_of_samples=self.test_cfg['samples'],
-                                      obj_size=self.test_cfg['size'],
                                       log_file_prefix=log_file_prefix, queue=que)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
         self.log.info("Step 2: Perform Read Operations on the data written in step 1 in background")
         args = {'workload_info': workload_info, 'queue': que, 'skipread': False, 'validate': True,
-                'skipcleanup': True, 'retry': 5}
+                'skipcleanup': True, 'retry': DTM_CFG["io_retry_count"]}
         proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops, kwargs=args)
         proc_read_op.start()
 
@@ -197,7 +196,7 @@ class TestRGWProcessRestart:
         args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
                 'no_of_clients': self.test_cfg['clients'],
                 'no_of_samples': self.test_cfg['samples'], 'log_file_prefix': log_file_prefix,
-                'queue': que, 'obj_size': self.test_cfg['size'], 'retry': 5}
+                'queue': que, 'retry': DTM_CFG["io_retry_count"]}
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
                                                 kwargs=args)
         proc_write_op.start()

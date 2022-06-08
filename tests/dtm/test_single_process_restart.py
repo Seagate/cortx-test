@@ -474,7 +474,6 @@ class TestSingleProcessRestart:
                                                 args=(bucket_name, object_prefix,
                                                       self.test_cfg['clients'],
                                                       self.test_cfg['samples'],
-                                                      self.test_cfg['size'],
                                                       log_file_prefix,
                                                       que, self.test_cfg['loop_count'],
                                                       bucket_list))
@@ -521,7 +520,6 @@ class TestSingleProcessRestart:
                                       object_prefix=object_prefix,
                                       no_of_clients=self.test_cfg['clients'],
                                       no_of_samples=self.test_cfg['samples'],
-                                      obj_size=self.test_cfg['size'],
                                       log_file_prefix=log_file_prefix, queue=que,
                                       loop=self.test_cfg['loop_count'])
         resp = que.get()
