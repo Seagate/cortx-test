@@ -43,6 +43,8 @@ from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 
+# pylint: disable=too-many-statements
+
 
 class TestTaggingDeleteObject:
     """Test Delete Object Tagging"""
