@@ -104,12 +104,12 @@ test_42274:
   ran_int: 10
 test_42287:
   error_code: 4104
-  message_id:
-  message_index:
+  message_id: "PermissionDenied"
+  message_index: 0
 test_42288:
   error_code: 4104
-  message_id:
-  message_index:
+  message_id: "PermissionDenied"
+  message_index: 0
 test_42289:
   error_code: 12288
   message_id: "UserAlreadyExists"
