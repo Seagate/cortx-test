@@ -4,6 +4,10 @@ size: '128Mb'
 loop_count: 10
 #sizes in size_list are in Mb
 size_list: [1, 2, 3, 4, 5, 6, 7]
+# count to restart the rgw process
+rgw_restart_cnt: 5
+# count to retry IOs from client side
+io_retry_count: 5
 
 test_41234:
   nclients: 10
@@ -17,3 +21,6 @@ test_41235:
 test_41230:
   max_object_size: 512 #Mb
   overwrite_cnt: 200
+
+test_42246:
+  num_loop: 300
