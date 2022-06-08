@@ -871,7 +871,7 @@ class TestIamUserRGW():
         usr_val = resp.json()["keys"][0]
         self.created_iam_users.update({usr_val['user']:usr_val})
         self.log.info("Verify delete user by uid and purge-data.")
-        resp = self.csm_obj.delete_iam_user(user_id, purge_data=True)
+        resp = self.csm_obj.delete_iam_user(user_id)
         assert resp.status_code == HTTPStatus.OK, "Status code check failed for user deletion"
         del self.created_iam_users[usr_val['user']]
         self.log.info("Get deleted user info.")
@@ -2585,7 +2585,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.compare_iam_payload_response(get_resp, payload)
         self.log.debug(resp)
         assert_utils.assert_true(resp[0], "Value mismatch found")
-        resp = self.csm_obj.delete_iam_user(user=uid, purge_data=True)
+        resp = self.csm_obj.delete_iam_user(user=uid)
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "IAM user deletion failed")
         del self.created_iam_users[usr_val['user']]
@@ -4817,7 +4817,7 @@ class TestIamUserRGW():
         assert_utils.assert_in(user_id, get_user_list, "created user not found in list")
         self.log.info("IAM user %s is listed in users list: %s", user_id, get_user_list)
         self.log.info("Step 3: Delete created user: %s", user_id)
-        resp = self.csm_obj.delete_iam_user(user=user_id, purge_data=True)
+        resp = self.csm_obj.delete_iam_user(user=user_id)
         self.log.debug("Verify Response : %s", resp)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "User not deleted")
         self.log.info("User %s deleted successfully", user_id)
@@ -4914,7 +4914,7 @@ class TestIamUserRGW():
         assert resp[0], resp[1]
         user_id = resp[1]['tenant'] + "$" + resp[1]['user_id']
         self.log.info("Step 2: Delete IAM User")
-        resp = self.csm_obj.delete_iam_user(user_id, purge_data=True)
+        resp = self.csm_obj.delete_iam_user(user_id)
         self.log.debug("Verify Response : %s", resp)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK,
                                    "Delete IAM User failed")
