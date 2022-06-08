@@ -63,7 +63,8 @@ class DTMRecoveryTestLib:
     # pylint: disable-msg=too-many-locals
     # pylint: disable=too-many-arguments
     def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples, obj_size,
-                         log_file_prefix, queue, loop=1, created_bucket: list = None):
+                         log_file_prefix, queue, loop: int = 1, created_bucket: list = None,
+                         retry: int = None):
         """
         Perform Write operations
         :param bucket_prefix: Bucket name
@@ -75,6 +76,7 @@ class DTMRecoveryTestLib:
         :param queue: Multiprocessing Queue to be used for returning values (Boolean,dict)
         :param loop: Loop count for writes
         :param created_bucket: List of pre created buckets(Should be greater or equal to loop count)
+        :param retry: Retry count for IOs
         """
         results = list()
         workload = list()
@@ -97,7 +99,8 @@ class DTMRecoveryTestLib:
                                    skip_cleanup=True, duration=None,
                                    log_file_prefix=str(log_file_prefix).upper(),
                                    end_point=S3_CFG["s3_url"],
-                                   validate_certs=S3_CFG["validate_certs"])
+                                   validate_certs=S3_CFG["validate_certs"],
+                                   max_retries=retry)
             self.log.info("Workload: %s objects of %s with %s parallel clients.",
                           no_of_samples, obj_size, no_of_clients)
             self.log.info("Log Path %s", resp[1])
@@ -116,8 +119,9 @@ class DTMRecoveryTestLib:
             queue.put([False, f"S3bench workload for failed."
                               f" Please read log file {log_path}"])
 
-    def perform_ops(self, workload_info: list, queue, skipread: bool = False,
-                    validate: bool = True, skipcleanup: bool = False, loop=1):
+    def perform_ops(self, workload_info: list, queue, skipread: bool = True,
+                    validate: bool = True, skipcleanup: bool = False, loop: int = 1,
+                    retry: int = None):
         """
         Perform read operations
         :param workload_info: List Workload to read/validate/delete
@@ -126,6 +130,7 @@ class DTMRecoveryTestLib:
         :param validate: Validate checksum
         :param skipcleanup: Skip Cleanup
         :param loop: Loop count for performing reads in iteration.
+        :param retry: Retry count for IOs
         """
         results = list()
         for iter_cnt in range(loop):
@@ -145,7 +150,8 @@ class DTMRecoveryTestLib:
                                            validate=validate,
                                            log_file_prefix=f"read_workload_{workload['obj_size']}b",
                                            end_point=S3_CFG["s3_url"],
-                                           validate_certs=S3_CFG["validate_certs"])
+                                           validate_certs=S3_CFG["validate_certs"],
+                                           max_retries=retry)
                     self.log.info("Workload: %s objects of %s with %s parallel clients ",
                                   workload['num_sample'], workload['obj_size'],
                                   workload['num_clients'])
@@ -343,7 +349,7 @@ class DTMRecoveryTestLib:
             chksm_before_put_obj = resp[1]
 
             self.log.info("Uploading a object %s to a bucket %s", object_name, bucket_name)
-            resp = self.s3t_obj.put_object(bucket_name, object_name, file_path)
+            _ = self.s3t_obj.put_object(bucket_name, object_name, file_path)
 
             self.log.info("Removing local file from client and downloading object")
             system_utils.remove_file(file_path)

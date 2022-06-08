@@ -152,8 +152,9 @@ class TestRGWProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
         self.log.info("Step 2: Perform Read Operations on the data written in step 1 in background")
-        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
-                                               args=(workload_info, que, False, True, True))
+        args = {'workload_info': workload_info, 'queue': que, 'skipread': False, 'validate': True,
+                'skipcleanup': True, 'retry': 5}
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops, kwargs=args)
         proc_read_op.start()
 
         self.log.info("Step 3: Perform rgw_s3 Process Restart During Read Operations")
@@ -170,6 +171,14 @@ class TestRGWProcessRestart:
             proc_read_op.join()
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Step 5: Perform Read operations after rgw_s3 process restart")
+        args = {'workload_info': workload_info, 'queue': que, 'skipread': False, 'validate': True,
+                'skipcleanup': True}
+        self.dtm_obj.perform_ops(**args)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
         self.test_completed = True
         self.log.info("ENDED: Verify READs during rgw_s3 restart using pkill")
 
@@ -184,11 +193,13 @@ class TestRGWProcessRestart:
         que = multiprocessing.Queue()
 
         self.log.info("Step 1: Start WRITE operation in background")
+
+        args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
+                'no_of_clients': self.test_cfg['clients'],
+                'no_of_samples': self.test_cfg['samples'], 'log_file_prefix': log_file_prefix,
+                'queue': que, 'obj_size': self.test_cfg['size'], 'retry': 5}
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
-                                                args=(self.bucket_name, self.object_name,
-                                                      self.test_cfg['clients'],
-                                                      self.test_cfg['samples'], log_file_prefix,
-                                                      que, self.test_cfg['size']))
+                                                kwargs=args)
         proc_write_op.start()
 
         self.log.info("Step 2: Perform rgw_s3 Process Restart During WRITE Operations")
@@ -228,7 +239,7 @@ class TestRGWProcessRestart:
 
         event = threading.Event()  # Event to be used to send intimation of rgw_s3 process restart
 
-        self.log.info("Step 1: Perform write Operations :")
+        self.log.info("Step 1: Perform WRITEs-READs-Validate Operations")
         self.dtm_obj.perform_write_op(bucket_prefix=f"bucket-{test_prefix}",
                                       object_prefix=f"object-{test_prefix}",
                                       no_of_clients=self.test_cfg['clients'],
@@ -239,8 +250,8 @@ class TestRGWProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
 
         buckets = self.s3_test_obj.bucket_list()[1]
-        self.log.info("Step 1: Successfully created %s buckets & performed WRITEs with variable "
-                      "size objects.", len(buckets))
+        self.log.info("Step 1: Successfully created %s buckets & performed WRITEs-READs-Validate"
+                      " with variable size objects.", len(buckets))
 
         output = Queue()
         self.log.info("Step 2: Start Continuous DELETEs of buckets %s in background", buckets)
