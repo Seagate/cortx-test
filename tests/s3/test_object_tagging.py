@@ -532,7 +532,7 @@ class TestObjectTagging:
             self.object_name,
             self.file_path,
             mb_count=S3_OBJ_TST["s3_object"]["mb_count"],
-            key=S3_OBJ_TST["s3_object"]["key"],
+            key=S3_OBJ_TST["test_9423"]["key"],
             value=S3_OBJ_TST["test_9423"]["value"])
         self.log.info(
             "Created a bucket, uploaded an object and tag is set for object")
@@ -760,7 +760,7 @@ class TestObjectTagging:
             self.object_name,
             self.file_path,
             mb_count=S3_OBJ_TST["s3_object"]["mb_count"],
-            key=S3_OBJ_TST["s3_object"]["key"],
+            key=S3_OBJ_TST["test_9429"]["key"],
             value=S3_OBJ_TST["test_9429"]["value"])
         self.log.info(
             "Created a bucket, uploaded an object and tag is set for object")
@@ -985,13 +985,12 @@ class TestObjectTagging:
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5562")
     @CTFailOn(error_handler)
-    def test_max_object_max_tags_2478(self):
-        """Verification of max. no. of Objects user can upload with max no. of tags per Object."""
-        self.log.info(
-            "Verification of max. no. of Objects user can upload with max no. of tags per Object")
-        self.log.info(
-            "Creating a bucket with name %s",
-            self.bucket_name)
+    def test_multiple_object_max_tags_2478(self):
+        """Verification of multiple no. of Objects user
+        can upload with max no. of tags per Object."""
+        self.log.info("Verification of multiple no. of Objects user can "
+                      "upload with max no. of tags per Object")
+        self.log.info("Creating a bucket with name %s", self.bucket_name)
         resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
