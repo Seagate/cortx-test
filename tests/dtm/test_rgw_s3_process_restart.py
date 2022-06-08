@@ -21,7 +21,6 @@
 """
 Test suite for testing RGW Process Restart with DTM enabled.
 """
-import copy
 import logging
 import multiprocessing
 import os
@@ -88,9 +87,6 @@ class TestRGWProcessRestart:
         cls.setup_type = CMN_CFG["setup_type"]
         cls.system_random = secrets.SystemRandom()
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "DTMTestData")
-        cls.large_workload = copy.deepcopy(HA_CFG["s3_bench_workloads"])
-        if cls.setup_type == "HW":
-            cls.large_workload.extend(HA_CFG["s3_bench_large_workloads"])
 
     def setup_method(self):
         """Setup Method"""
@@ -295,8 +291,6 @@ class TestRGWProcessRestart:
 
     @pytest.mark.lc
     @pytest.mark.dtm
-<<<<<<< HEAD
-=======
     @pytest.mark.tags("TEST-42247")
     def test_continuous_read_during_rgw_s3_restart(self):
         """Verify continuous READ during rgw_s3 restart using pkill."""
@@ -349,7 +343,6 @@ class TestRGWProcessRestart:
 
     @pytest.mark.lc
     @pytest.mark.dtm
->>>>>>> bb6f032 (cont_rd_wr_during_restart)
     @pytest.mark.tags("TEST-42253")
     def test_copy_object_after_rgw_restart(self):
         """Verify copy object after rgw restart using pkill."""
@@ -524,16 +517,9 @@ class TestRGWProcessRestart:
 
         self.log.info("Step 1: Start WRITE operation in background")
         args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
-<<<<<<< HEAD
                 'no_of_clients': test_cfg['clients'], 'no_of_samples': test_cfg['samples'],
                 'log_file_prefix': log_file_prefix, 'queue': que,
                 'retry': DTM_CFG["io_retry_count"], 'loop': self.test_cfg['loop_count']}
-=======
-                'no_of_clients': self.test_cfg['clients'],
-                'no_of_samples': self.test_cfg['samples'], 'log_file_prefix': log_file_prefix,
-                'queue': que, 'retry': DTM_CFG["io_retry_count"],
-                'loop': self.test_cfg['loop_count']}
->>>>>>> bb6f032 (cont_rd_wr_during_restart)
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
         proc_write_op.start()
 
