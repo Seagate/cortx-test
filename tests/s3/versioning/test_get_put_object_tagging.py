@@ -134,7 +134,7 @@ class TestGetPutObjectTagging:
                                   s3_ver_test_obj=self.s3_ver_obj,
                                   bucket_name=self.bucket_name,
                                   object_name=self.object_name, version_tag=self.ver_tag,
-                                  versions_dict=self.versions)
+                                  versions_dict=self.versions, version_id=latest_v)
         assert_utils.assert_true(resp[0], resp)
 
         LOGGER.info("Step 5: Perform GET Object Tagging for %s with versionId=%s",
@@ -168,7 +168,6 @@ class TestGetPutObjectTagging:
 
         LOGGER.info("Step 8: Perform GET Object Tagging for %s without versionId specified",
                     self.object_name)
-        put_tag = self.ver_tag[self.object_name][latest_v][-1]
         resp = get_object_tagging(s3_tag_test_obj=self.s3_tag_obj, s3_ver_test_obj=self.s3_ver_obj,
                                   bucket_name=self.bucket_name, object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
@@ -196,7 +195,8 @@ class TestGetPutObjectTagging:
                     " with versionId=%s", self.object_name, latest_ver_id)
         resp = put_object_tagging(s3_tag_test_obj=self.s3_tag_obj, s3_ver_test_obj=self.s3_ver_obj,
                                   bucket_name=self.bucket_name, object_name=self.object_name,
-                                  version_tag=self.ver_tag, versions_dict=self.versions)
+                                  version_tag=self.ver_tag, versions_dict=self.versions,
+                                  version_id=latest_ver_id)
         assert_utils.assert_true(resp[0], resp)
 
         LOGGER.info("Step 12: Perform GET Object Tagging for %s with versionId=%s",
@@ -262,7 +262,6 @@ class TestGetPutObjectTagging:
 
         LOGGER.info("Step 18: Perform GET Object Tagging for %s without versionId specified",
                     self.object_name)
-        put_tag = self.ver_tag[self.object_name][latest_ver_id][-1]
         resp = get_object_tagging(s3_tag_test_obj=self.s3_tag_obj, s3_ver_test_obj=self.s3_ver_obj,
                                   bucket_name=self.bucket_name, object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
