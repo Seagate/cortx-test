@@ -206,6 +206,7 @@ class DTMRecoveryTestLib:
         if not resp[0]:
             return resp[0]
         process_ids = resp[1]
+        delay = resp[2]
         for i_i in range(restart_cnt):
             self.log.info("Restarting %s process for %s time", process, i_i)
             pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
@@ -236,6 +237,7 @@ class DTMRecoveryTestLib:
                     return False
 
                 self.log.info("Process %s restarted successfully", process)
+            time.sleep(delay)
 
         return True
 
@@ -310,15 +312,16 @@ class DTMRecoveryTestLib:
         :return: bool, list
         """
         switcher = {
-            'm0d': const.M0D_SVC,
-            'rgw': const.SERVER_SVC
+            'm0d': {'svc': const.M0D_SVC, 'delay': 0},
+            'rgw': {'svc': const.SERVER_SVC, 'delay': 30}
         }
         resp, fids = health_obj.hctl_status_get_svc_fids()
         if not resp:
             return resp, "Failed to get process IDs"
-        svc = switcher[process]
+        svc = switcher[process]['svc']
+        delay = switcher[process]['delay']
         fids = fids[svc]
-        return True, fids
+        return True, fids, delay
 
     def perform_object_overwrite(self, bucket_name, object_name, iteration, object_size, queue):
         """
