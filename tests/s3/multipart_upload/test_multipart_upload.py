@@ -548,7 +548,7 @@ class TestMultipartUpload:
                 self.log.error(error.message)
                 assert_utils.assert_in(errmsg.S3_MULTIPART_INVALID_PART_ERR, error.message,
                                        error.message)
-            self.log.info("Cannot upload more than 10000 parts upload")
+            self.log.info("Verified that cannot upload more than 10000 parts")
         self.log.info("Create multipart upload having more than 10,000 parts")
 
     @pytest.mark.s3_ops
