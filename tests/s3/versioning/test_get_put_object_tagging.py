@@ -38,6 +38,7 @@ from libs.s3 import s3_versioning_common_test_lib as s3_cmn_lib
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 # pylint: disable=too-many-statements
+# pylint: disable=too-many-instance-attributes
 
 
 class TestGetPutObjectTagging:
