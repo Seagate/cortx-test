@@ -85,7 +85,8 @@ class TestProvK8CortxGranular:
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
+        self.deploy_lc_obj.generate_and_compare_both_version(self.cortx_all_image,
+                                                             installed_version)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
@@ -154,7 +155,8 @@ class TestProvK8CortxGranular:
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
+        self.deploy_lc_obj.generate_and_compare_both_version(self.cortx_all_image,
+                                                             installed_version)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
@@ -226,7 +228,8 @@ class TestProvK8CortxGranular:
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
+        self.deploy_lc_obj.generate_and_compare_both_version(self.cortx_all_image,
+                                                             installed_version)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
@@ -297,7 +300,8 @@ class TestProvK8CortxGranular:
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
+        self.deploy_lc_obj.generate_and_compare_both_version(self.cortx_all_image,
+                                                             installed_version)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
