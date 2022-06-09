@@ -238,6 +238,7 @@ class DTMRecoveryTestLib:
                     return False
 
                 self.log.info("Process %s restarted successfully", process)
+            time.sleep(delay)
 
             if restart_cnt > 1:
                 time.sleep(delay)
