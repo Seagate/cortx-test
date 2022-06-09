@@ -472,7 +472,7 @@ class TestProvK8Cortx:
                                         (self.deploy_cfg['iface']))
         LOGGER.info(resp)
         eth1_ip = resp[1].strip("'\\n'b'")
-        LOGGER.info(f"IP of ethernet 1: {eth1_ip}")
+        LOGGER.info("IP of ethernet 1: %s ",eth1_ip)
         if self.service_type == "NodePort":
             resp = ext_lbconfig_utils.configure_nodeport_lb(self.master_node_list[0],
                                                             self.deploy_cfg['iface'])
@@ -481,7 +481,7 @@ class TestProvK8Cortx:
                 LOGGER.debug("Did not get expected response: %s", resp)
                 assert_utils.assert_true(resp[0], "False")
             ext_ip = resp[1]
-            LOGGER.info(f" External IP: {ext_ip}")
+            LOGGER.info("External IP: %s", ext_ip)
             port = resp[2]
             http_port = resp[3]
             ext_port_ip = self.deploy_cfg['https_protocol'].format(ext_ip)+\
@@ -509,7 +509,7 @@ class TestProvK8Cortx:
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_REGION)
         LOGGER.info(resp)
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_ACCESS_CONFIG.format(access_key),
-                                                    read_lines=True)                               
+                                                    read_lines=True)                             
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_SECRET_CONFIG.format(secret_key),
                                                     read_lines=True)
         LOGGER.info("Step 4:Creating bucket")
