@@ -509,7 +509,7 @@ class TestProvK8Cortx:
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_REGION)
         LOGGER.info(resp)
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_ACCESS_CONFIG.format(access_key),
-                                                    read_lines=True)                             
+                                                    read_lines=True)                          
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_SECRET_CONFIG.format(secret_key),
                                                     read_lines=True)
         LOGGER.info("Step 4:Creating bucket")
