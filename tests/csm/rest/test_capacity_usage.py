@@ -115,7 +115,9 @@ class TestSystemCapacity():
         """
         Setup method for creating s3 user
         """
-        self.deploy = False
+        self.deploy = True
+        resp = self.csm_obj.get_degraded_all(self.hlth_master)
+        total_written = resp["healthy"]
         self.log.info("Creating S3 account")
         resp = self.csm_obj.create_s3_account()
         assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
@@ -141,6 +143,14 @@ class TestSystemCapacity():
         self.log.info("[Start] Sleep %s", self.update_seconds)
         time.sleep(self.update_seconds)
         self.log.info("[Start] Sleep %s", self.update_seconds)
+
+        resp = self.csm_obj.get_degraded_all(self.hlth_master)
+        new_write = self.aligned_size * 1024 * 1024
+        total_written += new_write
+
+        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
+            critical=0, damaged=0, err_margin=0, total=total_written)
+        assert result[0], result[1]
 
     def teardown_method(self):
         """
