@@ -42,7 +42,8 @@ LOGGER = logging.getLogger(__name__)
 SECRETS_FILES_LIST = ["s3_auth_admin_secret", "openldap_admin_secret", "kafka_admin_secret",
                       "csm_mgmt_admin_secret", "csm_auth_admin_secret", "consul_admin_secret",
                       "common_admin_secret"]
-PVC_LIST = ["cluster.conf", "consul_conf", "hare", "log", "motr", "rgw_s3", "solution"]
+PVC_LIST = ["cluster.conf", "config", "consul_conf", "hare", "log", "motr", "rgw_s3", "solution"]
+
 class TestProvK8Cortx:
 
     @classmethod
@@ -223,9 +224,11 @@ class TestProvK8Cortx:
             resp = self.master_node_obj.execute_cmd(
                 cmd=commands.K8S_POD_INTERACTIVE_CMD.format(pod_name, 'ls /etc/cortx'),
                 read_lines=True)
+            LOGGER.info(resp)
             assert_utils.assert_is_not_none(resp)
             for out in resp:
                 out = out.split("\n")
+                LOGGER.info(out[0])
                 assert_utils.assert_in(out[0], PVC_LIST)
         LOGGER.info("Test Completed.")
 
@@ -351,6 +354,7 @@ class TestProvK8Cortx:
             LOGGER.info("Cluster not in good state, trying to restart it.")
             resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0],
                                                    dir_path=self.prov_deploy_cfg["git_remote_path"])
+            time.sleep(100)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and running.")
         LOGGER.info("Step 5: Cluster is back online.")
