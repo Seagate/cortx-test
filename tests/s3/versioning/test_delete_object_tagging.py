@@ -273,7 +273,6 @@ class TestTaggingDeleteObject:
                                               bucket_name=self.bucket_name,
                                               object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]
         # expecting "TagSet": []
         assert_utils.assert_false(resp[1], resp)
         LOGGER.info("Step 10: DELETE Object Tagging for %s with versionId=%s", self.object_name,
