@@ -125,7 +125,8 @@ class TestObjectTaggingVerLimits:
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_tag=self.ver_tag,
-                                             versions_dict=self.versions, tag_key_ran=128)
+                                             versions_dict=self.versions, tag_key_ran=128,
+                                             version_id=latest_ver)
         assert_utils.assert_true(resp[0], resp)
         put_tag = self.ver_tag[self.object_name][latest_ver][-1]
         LOGGER.info("Step 3: Performed PUT Object Tagging for %s with 128 char tag key",
@@ -148,7 +149,8 @@ class TestObjectTaggingVerLimits:
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_tag=self.ver_tag,
-                                             versions_dict=self.versions, tag_key_ran=129)
+                                             versions_dict=self.versions, tag_key_ran=129,
+                                             version_id=latest_ver)
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 5: PUT Object Tagging for %s with 129 char tag key failed as expected",
                     self.object_name)
@@ -202,7 +204,8 @@ class TestObjectTaggingVerLimits:
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_tag=self.ver_tag,
-                                             versions_dict=self.versions, tag_key_ran=1)
+                                             versions_dict=self.versions, tag_key_ran=1,
+                                             version_id=latest_ver)
         assert_utils.assert_true(resp[0], resp)
         put_tag = self.ver_tag[self.object_name][latest_ver][-1]
         LOGGER.info("Step 3: Performed PUT Object Tagging for %s with 128 char tag key",
@@ -257,7 +260,8 @@ class TestObjectTaggingVerLimits:
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_tag=self.ver_tag,
-                                             versions_dict=self.versions, tag_val_ran=256)
+                                             versions_dict=self.versions, tag_val_ran=256,
+                                             version_id=latest_ver)
         assert_utils.assert_true(resp[0], resp)
         put_tag = self.ver_tag[self.object_name][latest_ver][-1]
         LOGGER.info("Step 3: Performed PUT Object Tagging for %s with 256 char tag value",
@@ -280,7 +284,8 @@ class TestObjectTaggingVerLimits:
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_tag=self.ver_tag,
-                                             versions_dict=self.versions, tag_val_ran=257)
+                                             versions_dict=self.versions, tag_val_ran=257,
+                                             version_id=latest_ver)
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 5: PUT Object Tagging for %s with 257 char tag value failed as expected",
                     self.object_name)
@@ -333,7 +338,8 @@ class TestObjectTaggingVerLimits:
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_tag=self.ver_tag,
-                                             versions_dict=self.versions, tag_count=10)
+                                             versions_dict=self.versions, tag_count=10,
+                                             version_id=latest_ver)
         assert_utils.assert_true(resp[0], resp)
         put_tag = self.ver_tag[self.object_name][latest_ver][-1]
         LOGGER.info("Step 3: Performed PUT Object Tagging for %s with 10 tag key-value pairs",
@@ -350,16 +356,17 @@ class TestObjectTaggingVerLimits:
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
         LOGGER.info("Step 4: Performed GET Object Tagging for %s with versionId=%s is %s",
                     self.object_name, latest_ver, get_tag)
-        LOGGER.info("Step 5: Perform PUT Object Tagging for %s with 11 tag key-value pairs",
-                    self.object_name)
+        LOGGER.info("Step 5: Perform PUT Object Tagging for %s with more than 10 tag key-value "
+                    "pairs", self.object_name)
         resp = s3_cmn_lib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_tag=self.ver_tag,
-                                             versions_dict=self.versions, tag_count=11)
+                                             versions_dict=self.versions, tag_count=11,
+                                             version_id=latest_ver)
         assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 5: PUT Object Tagging for %s with 10 tag key-value pairs failed as "
-                    "expected", self.object_name)
+        LOGGER.info("Step 5: PUT Object Tagging for %s with more than 10 tag key-value pairs "
+                    "failed as expected", self.object_name)
         LOGGER.info("Step 6: Perform GET Object Tagging for %s with versionId=%s",
                     self.object_name, latest_ver)
         resp = s3_cmn_lib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
