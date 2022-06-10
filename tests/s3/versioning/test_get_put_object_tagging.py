@@ -293,7 +293,7 @@ class TestGetPutObjectTagging:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-40431")
-    def test_get_put_obj_tags_bkt_40431(self):
+    def test_get_put_obj_tags_ver_bkt_40431(self):
         """Test GET and PUT object tagging in a versioning enabled bucket"""
 
         LOGGER.info("STARTED: Test GET and PUT object tagging in a versioning enabled bucket")
@@ -629,9 +629,9 @@ class TestGetPutObjectTagging:
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
         LOGGER.info("Step 13: Perform PUT Object for %s", self.object_name)
-        resp = self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                           object_name=self.object_name)
-        assert_utils.assert_true(resp[0], resp[1])
+        s3_cmn_lib.upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
+                                  object_name=self.object_name, file_path=self.file_path,
+                                  versions_dict=self.versions, chk_null_version=True)
 
         LOGGER.info("Step 14: Perform PUT Object Tagging for %s with a tag key-value "
                     "pair", self.object_name)
