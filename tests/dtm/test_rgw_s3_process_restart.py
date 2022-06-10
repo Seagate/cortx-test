@@ -330,7 +330,7 @@ class TestRGWProcessRestart:
                                                     obj_name=f"{object_name}_{size}",
                                                     file_path=file_path_copy)
             assert_utils.assert_true(resp[0], resp[1])
-            file_name = "{}{}".format("dtm-test-42253-", size)
+            file_name = "{}{}".format("dtm-test-42253", size)
             file_path = os.path.join(self.test_dir_path, file_name)
             resp = system_utils.validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
             assert_utils.assert_true(resp, "Checksum validation Failed.")
@@ -372,7 +372,7 @@ class TestRGWProcessRestart:
                                              args=(workload, que))
         proc_cp_op.start()
 
-        self.log.info("Step 3: Perform Single m0d Process Restart")
+        self.log.info("Step 3: Perform Single rgw_s3 Process Restart")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
@@ -471,7 +471,7 @@ class TestRGWProcessRestart:
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
         proc_write_op.start()
 
-        self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "
+        self.log.info("Step 2: Perform rgw_s3 Process Restart for %s times During Write "
                       "Operations", DTM_CFG["rgw_restart_cnt"])
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
