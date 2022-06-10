@@ -150,10 +150,9 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
                            "is_latest": "version_id1",
             ...
             }
-    :param **kwargs: Optional keyword arguments
-        "expected_flags": Dictionary of List Object Versions flags to verify
-        "expected_error": Error message string to verify in case, error is expected
-        "list_params": Dictionary of query parameters to pass List Object Versions call
+    :keyword "expected_flags": Dictionary of List Object Versions flags to verify
+    :keyword "expected_error": Error message string to verify in case, error is expected
+    :keyword "list_params": Dictionary of query parameters to pass List Object Versions call
     """
     LOG.info("Fetching bucket object versions list")
     expected_flags = kwargs.get("expected_flags", None)
@@ -240,12 +239,11 @@ def check_get_head_object_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3Ver
     :param s3_ver_test_obj: S3VersioningTestLib object to perform S3 versioning calls
     :param bucket_name: Target bucket name
     :param object_name: Target object name
-    :param **kwargs: Optional keyword arguments
-        "etag": Expected ETag of the version/object
-        "get_error_msg": Error message to verify for GET Object
-        "head_error_msg": Error message to verify for HEAD Object
-        "version_id": version ID for GET/HEAD Object call. In case it is not specified,
-            object is retrieved instead of a specific version.
+    :keyword "etag": Expected ETag of the version/object
+    :keyword "get_error_msg": Error message to verify for GET Object
+    :keyword "head_error_msg": Error message to verify for HEAD Object
+    :keyword "version_id": version ID for GET/HEAD Object call. In case it is not specified,
+    object is retrieved instead of a specific version.
     """
     etag = kwargs.get("etag", None)
     get_error_msg = kwargs.get("get_error_msg", None)
@@ -300,8 +298,7 @@ def download_and_check(s3_test_obj: S3TestLib, bucket_name: str, object_name: st
     :param object_name: Target object name
     :param file_path: File path of the uploaded file
     :param download_path: Path for the downloaded object contents to be saved to.
-    :param **kwargs: Optional keyword arguments
-        "version_id": Target version ID for GET/HEAD Object call.
+    :keyword "version_id": Target version ID for GET/HEAD Object call.
             In case it is not specified/None, object is retrieved instead of a specific version.
     """
     version_id = kwargs.get("version_id", None)
@@ -501,11 +498,11 @@ def get_tag_key_val_pair(key_ran: tuple = (1, 128), val_ran: tuple = (0, 256),
     :return: dict {key,val}
     """
     tag_char = string.ascii_letters + string.digits + uni_char
-    key_len = SystemRandom().randrange(key_ran[0], key_ran[1])
+    key_len = SystemRandom().randrange(key_ran[0], key_ran[1]+1)
     key = ''.join([SystemRandom().choice(tag_char) for _ in range(key_len)])
-    val_len = SystemRandom().randrange(val_ran[0], val_ran[1])
+    val_len = SystemRandom().randrange(val_ran[0], val_ran[1]+1)
     val = ''.join([SystemRandom().choice(tag_char) for _ in range(val_len)])
-    return {key: val}
+    return {'Key': key, 'Value': val}
 
 
 def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3VersioningTestLib,
@@ -549,7 +546,7 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
                                                    version=version_id, tags={'TagSet': tag_set})
             version_tag[object_name][version_id] = tag_set
         else:
-            resp = s3_tag_test_obj.set_object_tag(bucket_name=bucket_name, object_name=object_name,
+            resp = s3_tag_test_obj.set_object_tag(bucket_name=bucket_name, obj_name=object_name,
                                                   tags={'TagSet': tag_set})
             # Get the latest version ID to which put object tag is updated when no version ID
             # specified
