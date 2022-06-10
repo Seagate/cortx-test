@@ -20,11 +20,11 @@
 import os
 import time
 import logging
+from hashlib import md5
 import boto3
 from config.s3 import S3_CFG
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
-from hashlib import md5
 
 LOGGER = logging.getLogger(__name__)
 
@@ -286,6 +286,8 @@ def get_objects_list(bucket_name, access_key: str, secret_key: str, **kwargs):
     return obj_lst
 
 def get_object_checksum(obj_name, bucket_name, access_key: str, secret_key: str, **kwargs):
+    """Get the checksum of the contents of the obj_name in the bucket_name
+    """
     LOGGER.debug("Access Key : %s", access_key)
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])

@@ -20,6 +20,7 @@
 """Test library for capacity related operations.
    Author: Divya Kachhwaha
 """
+from http import HTTPStatus
 from random import SystemRandom
 import json
 from config import CMN_CFG
@@ -31,7 +32,7 @@ from commons import commands
 from commons import constants
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from libs.s3 import s3_misc
-from http import HTTPStatus
+
 
 class SystemCapacity(RestTestLib):
     """RestCsmUser contains all the Rest API calls for system health related
@@ -237,8 +238,8 @@ class SystemCapacity(RestTestLib):
 
     def get_degraded_all(self, master_obj):
         """
+        Fetech degraded byte count from HCTL, Consul, CSM and verify data is consistent across
         """
-
         self.log.info("[Start] Fetch degraded capacity on Consul")
         consul_op = self.get_capacity_consul()
         self.log.info("[End] Fetch degraded capacity on Consul")
@@ -263,8 +264,10 @@ class SystemCapacity(RestTestLib):
         assert resp["damaged"] == consul_op["damaged"], "CSM & Consul healthy byte mismatch"
         return hctl_op
 
-    def verify_bytecount_all(self, resp, failure_cnt, kvalue, err_margin, total_written,new_write=0):
+    def verify_bytecount_all(self, resp, failure_cnt, kvalue, err_margin,
+                             total_written,new_write=0):
         """
+        Verify degraded, critical, damaged bytecount in the resp.
         """
         if failure_cnt == 0:
             self.log.info("Checking for %s greater than to K value", failure_cnt)
@@ -288,14 +291,20 @@ class SystemCapacity(RestTestLib):
             total=total_written)
         return result
 
-    def append_df(self, cap_df, failed_pod, data_written, obj = "NA", bucket = "NA", akey ="NA", skey="NA"):
+    def append_df(self, cap_df, failed_pod, data_written, obj = "NA", bucket = "NA", akey ="NA",
+                  skey="NA"):
         """Append the value to the data frame created in the test
         """
         if obj == "NA":
             csum = 0
         else:
             csum = s3_misc.get_object_checksum(obj, bucket, akey, skey)
-        new_row={"data_written":data_written, "csum": csum, "obj": obj, "bucket": bucket, "akey": akey, "skey": skey}
+        new_row = {"data_written":data_written,
+                    "csum": csum,
+                    "obj": obj,
+                    "bucket": bucket,
+                    "akey": akey,
+                    "skey": skey}
         deploy_list = list(cap_df.columns)
         if "data_written" in deploy_list:
             deploy_list.remove("data_written")
@@ -360,6 +369,8 @@ class SystemCapacity(RestTestLib):
         return result
 
     def verify_checksum(self, cap_df):
+        """Verify checksum of all the data with dataframe
+        """
         checksum_match = True
         for row in cap_df.index:
             obj = cap_df["obj"][row]

@@ -32,13 +32,13 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.constants import RESTORE_SCALE_REPLICAS, K8S_SCRIPTS_PATH, K8S_PRE_DISK
 from config import CMN_CFG
+from config.s3 import S3_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import s3_misc
 from libs.csm.csm_interface import csm_api_factory
 from libs.s3 import s3_test_lib
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from scripts.s3_bench.s3bench import s3bench
-from config.s3 import S3_CFG
 
 class TestSystemCapacity():
     """System Capacity Testsuite"""
@@ -317,7 +317,8 @@ class TestSystemCapacity():
 
                 new_write *= 1024 * 1024
                 total_written += new_write
-                cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, new_write, obj, self.bucket, self.akey, self.skey)
+                cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, new_write, obj,
+                                                self.bucket, self.akey, self.skey)
                 self.log.debug("Collected data frame : %s", cap_df.to_string())
             except BaseException as error:
                 if failure_cnt > self.kvalue:
@@ -433,7 +434,8 @@ class TestSystemCapacity():
                 self.log.info("[End] IOs")
                 new_write *= 1024 * 1024
                 total_written += new_write
-                cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, new_write, obj, bucket, akey, skey)
+                cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, new_write, obj, bucket,
+                                                akey, skey)
                 self.log.debug("Collected data frame : %s", cap_df.to_string())
             except BaseException as error:
                 if failure_cnt > self.kvalue:
@@ -488,10 +490,12 @@ class TestSystemCapacity():
         self.log.info("[Start] IOs")
         obj = f"object{self.s3_user}{time.time_ns()}.txt"
         msg = f"bucket:{self.bucket} with access key: {self.akey} and secret key: {self.skey}"
-        
-        obj_size = self.csm_obj.random_gen.randrange(test_cfg["start_range"], test_cfg["stop_range"])
+
+        obj_size = self.csm_obj.random_gen.randrange(test_cfg["start_range"],
+                                                     test_cfg["stop_range"])
         self.log.info("Put Object: %s of %s MB write in %s", obj, obj_size, msg)
-        resp = s3_misc.create_put_objects(obj, self.bucket, self.akey, self.skey, object_size=obj_size)
+        resp = s3_misc.create_put_objects(obj, self.bucket, self.akey, self.skey,
+                                          object_size=obj_size)
         assert resp, "Put object Failed"
         csum = s3_misc.get_object_checksum(obj, self.bucket, self.akey, self.skey)
         self.log.info("[End] IOs")
@@ -590,7 +594,8 @@ class TestSystemCapacity():
                     obj, self.bucket, self.akey, self.skey, object_size=new_write)
                 new_write *= 1024 * 1024
                 total_written += new_write
-                cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, new_write, obj, self.bucket, self.akey, self.skey)
+                cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, new_write, obj,
+                                                self.bucket, self.akey, self.skey)
                 self.log.debug("Collected data frame : %s", cap_df.to_string())
             except BaseException as error:
                 if failure_cnt > self.kvalue:
@@ -671,7 +676,8 @@ class TestSystemCapacity():
             assert_utils.assert_false(resp[0], resp)
             self.log.info("[End] Cluster is in degraded state")
 
-            new_write = self.csm_obj.random_gen.randrange(test_cfg["start_range"], test_cfg["stop_range"])
+            new_write = self.csm_obj.random_gen.randrange(test_cfg["start_range"],
+                                                          test_cfg["stop_range"])
             self.log.info("[Start] Start some IOs")
             obj = f"object{self.s3_user}{time.time_ns()}.txt"
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, new_write,
@@ -682,7 +688,8 @@ class TestSystemCapacity():
 
                 new_write *= 1024 * 1024
                 total_written += new_write
-                cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, new_write, obj, self.bucket, self.akey, self.skey)
+                cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, new_write, obj,
+                                                self.bucket, self.akey, self.skey)
                 self.log.debug("Collected data frame : %s", cap_df.to_string())
             except BaseException as error:
                 if failure_cnt > self.kvalue:
@@ -962,10 +969,10 @@ class TestSystemCapacity():
             _, new_write = s3_misc.get_objects_size_bucket(bucket,self.akey,self.skey)
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
             result = self.csm_obj.verify_degraded_capacity(resp, healthy=new_write,
-                            degraded=total_written, critical=0, damaged=0, err_margin=self.err_margin,
-                            total=total_written+new_write)
+                degraded=total_written, critical=0, damaged=0, err_margin=self.err_margin,
+                total=total_written+new_write)
             assert result, "Degraded byte check failed"
-            
+
             total_written += new_write
             self.log.info("[START] Recovery loop")
 
