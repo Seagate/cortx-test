@@ -687,10 +687,10 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["user"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["user"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
 
         assert_utils.assert_equals(self.user_id, uid, "id is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
@@ -735,10 +735,10 @@ class TestCapacityQuota():
                          login_as="csm_user_manage")
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["user"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["user"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
 
         assert_utils.assert_equals(self.user_id, uid, "id is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
@@ -783,10 +783,10 @@ class TestCapacityQuota():
                                  login_as="csm_user_monitor")
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["user"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["user"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
 
         assert_utils.assert_equals(self.user_id, uid, "id is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
@@ -916,10 +916,10 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["user"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["user"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
 
         assert_utils.assert_equals(self.user_id, uid, "id is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
@@ -1025,10 +1025,10 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["user"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["user"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
 
         assert_utils.assert_equals(self.user_id, uid, "id is not equal")
         assert_utils.assert_equals(t_obj, "0", "Number of objects not equal")
@@ -1100,10 +1100,10 @@ class TestCapacityQuota():
             resp = self.csm_obj.get_user_capacity_usage("user", user_id)
             assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
-            uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
-            t_obj = resp.json()["capacity"]["s3"]["user"][0]["objects"]
-            t_size = resp.json()["capacity"]["s3"]["user"][0]["used"]
-            m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
+            uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+            t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+            t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+            m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
 
             assert_utils.assert_equals(user_id, uid, "id is not equal")
             assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
@@ -1179,10 +1179,10 @@ class TestCapacityQuota():
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
             "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["user"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["user"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
 
         assert_utils.assert_equals(self.user_id, uid, "uid is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
@@ -1261,10 +1261,10 @@ class TestCapacityQuota():
             resp = self.csm_obj.get_user_capacity_usage("user", user_id)
             assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
-            uid = resp.json()["capacity"]["s3"]["user"][0]["id"]
-            t_obj = resp.json()["capacity"]["s3"]["user"][0]["objects"]
-            t_size = resp.json()["capacity"]["s3"]["user"][0]["used"]
-            m_size = resp.json()["capacity"]["s3"]["user"][0]["used_total"]
+            uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+            t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+            t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+            m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
 
             assert_utils.assert_equals(user_id, uid, "uid is not equal")
             assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
@@ -1489,7 +1489,7 @@ class TestCapacityQuota():
         try:
             resp = s3_misc.create_put_objects(self.obj_name, bucket_name,
                                           akey, skey)
-            assert_utils.assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp, "Put object Failed")
         except Exception as error:
             self.log.info("Expected exception received %s", error)
 
