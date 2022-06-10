@@ -37,6 +37,7 @@ HA_CONSUL_STR = 'consul kv get ' \
                 '--recurse "cortx>ha>v1>cluster_stop_key"'
 MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"
+HCTL_DISK_STATUS = "hctl status -d"
 NETSAT_CMD = "netstat -tnlp | grep {}"
 PCS_CLUSTER_START = "pcs cluster start {}"
 PCS_CLUSTER_STOP = "pcs cluster stop {}"
@@ -563,12 +564,10 @@ CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
 PRE_REQ_CMD = "cd $dir; ./prereq-deploy-cortx-cloud.sh -d $disk"
 DEPLOY_CLUSTER_CMD = "cd $path; ./deploy-cortx-cloud.sh > $log"
 DESTROY_CLUSTER_CMD = "cd $dir; ./destroy-cortx-cloud.sh --force"
-UPGRADE_CLUSTER_DESTRUPTIVE_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
-UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
-UPGRADE_COLD_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -cold"
+UPGRADE_CLUSTER_CMD = "cd $dir; ./upgrade-cortx-cloud.sh start -p $pod"
 
 # Incomplete commands
-UPGRADE_NEG_CMD = "cd {}; ./upgrade-cortx-cloud.sh"
+UPGRADE_NEG_CMD = "cd $dir; ./upgrade-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
@@ -617,10 +616,10 @@ SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle ge
 
 # SNS repair
 SNS_REPAIR_CMD = "hctl repair {}"
-CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json '{\"node\" : \"node_val\", " \
-                               "\"source_type\" : \"drive\",  \"device\" : \"device_val\", " \
-                               "\"state\" : \"status_val\"}'"
-
+SNS_REBALANCE_CMD = "hctl rebalance {}"
+CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json $(jq --null-input --compact-output "\
+                                " '{node : \"cortx_nod\", source_type : \"drive\", "\
+                                " device : \"device_val\", state : \"status_val\"}')"
 # Procpath Collection
 PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'); procpath " \
            "record -i 45 -d {} -p $pid"

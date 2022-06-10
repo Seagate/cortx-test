@@ -164,32 +164,6 @@ def delete_objects_bucket(bucket_name, access_key: str, secret_key: str, **kwarg
     LOGGER.debug("Verified bucket is deleted.")
     return not result
 
-def delete_object(bucket_name, obj_name, access_key: str, secret_key: str, **kwargs):
-    """
-    Deleting Object.
-    :param bucket_name: Name of the bucket.
-    :param obj_name: Name of object.
-    :return: response.
-    """
-    LOGGER.debug("BucketName: %s, ObjectName: %s", bucket_name, obj_name)
-    LOGGER.debug("Access Key : %s", access_key)
-    LOGGER.debug("Secret Key : %s", secret_key)
-    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
-    LOGGER.debug("S3 Endpoint : %s", endpoint)
-    region = S3_CFG["region"]
-    LOGGER.debug("Region : %s", region)
-    s3_resource = boto3.resource('s3', verify=False,
-                                 endpoint_url=endpoint,
-                                 aws_access_key_id=access_key,
-                                 aws_secret_access_key=secret_key,
-                                 region_name=region,
-                                 **kwargs)
-    LOGGER.debug("S3 boto resource created")
-    resp_obj = s3_resource.Object(bucket_name, obj_name)
-    response = resp_obj.delete()
-    LOGGER.debug(response)
-    LOGGER.info("Object Deleted Successfully")
-
 def create_put_objects(object_name: str, bucket_name: str,
                        access_key: str, secret_key: str, object_size:int=10, **kwargs):
     """
@@ -336,3 +310,35 @@ def get_object_checksum(obj_name, bucket_name, access_key: str, secret_key: str,
             csum = file_hash.hexdigest()
             break
     return csum
+def delete_all_buckets(access_key: str, secret_key: str, **kwargs):
+    """
+    Delete bucket from give access key and secret key.
+    """
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    LOGGER.debug("S3 Endpoint : %s", endpoint)
+
+    region = S3_CFG["region"]
+    LOGGER.debug("Region : %s", region)
+
+    s3_resource = boto3.resource('s3', verify=False,
+                        endpoint_url=endpoint,
+                        aws_access_key_id=access_key,
+                        aws_secret_access_key=secret_key,
+                        region_name=region,
+                        **kwargs)
+    LOGGER.debug("S3 boto resource created")
+
+    for bucket in s3_resource.buckets.all():
+
+        bucket = s3_resource.Bucket(bucket.name)
+        LOGGER.debug("Delete all associated objects.")
+        bucket.objects.all().delete()
+
+        LOGGER.debug("Delete bucket : %s", bucket)
+        bucket.delete()
+
+    result = not list(s3_resource.buckets.all())
+    del s3_resource
+    return result

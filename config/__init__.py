@@ -26,6 +26,7 @@ import munch
 from typing import List
 from commons import configmanager
 from commons.params import S3_CONFIG
+from commons.params import DURABILITY_CFG_PATH
 from commons.params import COMMON_CONFIG
 from commons.params import CSM_CONFIG
 from commons.params import RAS_CONFIG_PATH
@@ -158,7 +159,7 @@ DTM_CFG = configmanager.get_config_wrapper(fpath=DTM_TEST_CFG_PATH)
 
 DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH)
 DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
-
+DURABILITY_CFG = configmanager.get_config_wrapper(fpath=DURABILITY_CFG_PATH)
 # Munched configs. These can be used by dot "." operator.
 
 di_cfg = munch.munchify(DI_CFG)

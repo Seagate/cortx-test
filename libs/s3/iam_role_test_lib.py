@@ -69,7 +69,7 @@ class IamRoleTestLib(IamRole):
             LOGGER.exception("Error in  %s: %s",
                              IamRoleTestLib.create_role.__name__,
                              error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args)
+            raise CTException(err.S3_CLIENT_ERROR, error.args) from error
 
         return True, response
 

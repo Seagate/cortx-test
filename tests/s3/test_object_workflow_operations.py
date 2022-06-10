@@ -31,10 +31,12 @@ from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
 from commons.utils import assert_utils
+from commons.utils.s3_utils import assert_s3_err_msg
 from config.s3 import S3_OBJ_TST
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_cmd_test_lib
 from libs.s3 import s3_multipart_test_lib
+from libs.s3 import CMN_CFG
 
 
 class TestObjectWorkflowOperations:
@@ -108,7 +110,6 @@ class TestObjectWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_put_file_2208(self):
@@ -685,11 +686,11 @@ class TestObjectWorkflowOperations:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
-            assert errmsg.S3_MULTI_BUCKET_DELETE_ERR in error.message, error.message
+            assert_s3_err_msg(errmsg.RGW_MULTI_DELETE_ERR, errmsg.S3_MULTI_BUCKET_DELETE_ERR,
+                              CMN_CFG["s3_engine"], error)
         self.log.info(
             "Step 3: Deleting %s objects from a bucket failed with %s",
-            cfg_7656["del_obj_cnt"],
-            errmsg.S3_MULTI_BUCKET_DELETE_ERR)
+            cfg_7656["del_obj_cnt"], errmsg.S3_MULTI_BUCKET_DELETE_ERR)
         self.buckets_list.append(self.bucket_name)
         self.log.info("ENDED: Delete objects and mention 1001 objects.")
 

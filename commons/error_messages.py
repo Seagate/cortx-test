@@ -58,6 +58,8 @@ CORTX_INVALD_BYTERANGE = ("An error occurred (InvalidRange) when calling the Get
                            "The requested range is not satisfiable")
 RGW_INVALD_BYTERANGE =("An error occurred (InvalidRange) when calling the GetObject operation: "
                        "Unknown")
+RGW_MULTI_DELETE_ERR = ("An error occurred (400) when calling the DeleteObjects operation: "
+                        "Bad Request")
 
 ACCOUNT_ERR = "attempted to create an account that already exists"
 ACCESS_DENIED_ERR_KEY = "AccessDenied"
@@ -75,6 +77,7 @@ CRED_INVALID_ERR = "InvalidCredentials"
 NO_SUCH_ENTITY_ERR = "NoSuchEntity"
 NOT_FOUND_ERR = "Not Found"
 MALFORMED_XML_ERR = "MalformedXML"
+INVALID_ARG_ERR = "InvalidArgument"
 
 # S3 Bucket Tagging
 S3_BKT_SET_TAG_ERR = "NoSuchTagSetError"

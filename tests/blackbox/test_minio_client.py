@@ -38,6 +38,7 @@ from libs.s3 import s3_test_lib
 from libs.s3.s3_blackbox_test_lib import MinIOClient
 
 
+# pylint: disable=too-many-instance-attributes
 class TestMinioClient:
     """Black box minio client Testsuite."""
 
@@ -54,7 +55,7 @@ class TestMinioClient:
             minio_cert_path_list=S3_CFG["minio_crt_path_list"],
             access=ACCESS_KEY,
             secret=SECRET_KEY)
-        assert_utils.assert_true(resp, "failed to setup minio: {}".format(resp))
+        assert_utils.assert_true(resp, f"failed to setup minio: {resp}")
         resp = system_utils.path_exists(S3_CFG["minio_path"])
         assert_utils.assert_true(
             resp, "minio config not exists: {}".format(S3_CFG["minio_path"]))
@@ -82,11 +83,11 @@ class TestMinioClient:
             system_utils.make_dirs(self.root_path)
             self.log.info("Created path: %s", self.root_path)
 
-        self.bucket_name = "min-bkt-{}".format(time.perf_counter_ns())
-        self.test_file = "minio_client{}.txt".format(time.perf_counter_ns())
+        self.bucket_name = f"min-bkt-{time.perf_counter_ns()}"
+        self.test_file = f"minio_client{time.perf_counter_ns()}.txt"
         self.file_path = os.path.join(self.root_path, self.test_file)
         self.minio_cnf = S3_BLKBOX_CFG["minio_cfg"]
-        self.minio_bucket_list = list()
+        self.minio_bucket_list = []
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -194,7 +195,7 @@ class TestMinioClient:
         self.log.info("Step 1 : Deleted all existing buckets for the user")
         self.log.info("Step 2: Creating %s buckets using minio", self.minio_cnf["no_of_buckets"])
         for cnt in range(self.minio_cnf["no_of_buckets"]):
-            bkt_name = "{0}{1}".format(self.bucket_name, str(cnt))
+            bkt_name = f"{self.bucket_name}{str(cnt)}"
             cmd = self.minio_cnf["create_bkt_cmd"].format(bkt_name) + self.minio_obj.validate_cert
             resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_true(resp[0], resp[1])
@@ -207,7 +208,7 @@ class TestMinioClient:
         self.log.info("Cleanup: Deleting created buckets")
         resp, output = self.s3t_obj.delete_multiple_buckets(bucket_list=self.minio_bucket_list)
         if resp:
-            self.minio_bucket_list = list()
+            self.minio_bucket_list = []
         else:
             self.log.info("Buckets are not deleted: %s", output)
         self.log.info("Step 3: Verified that buckets are created")
@@ -231,7 +232,7 @@ class TestMinioClient:
         resp = self.s3t_obj.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_not_in(self.bucket_name, resp[1])
-        self.minio_bucket_list = list()
+        self.minio_bucket_list = []
         self.log.info("Step 3: Verified that %s bucket is deleted", self.bucket_name)
         self.log.info("ENDED: Delete empty bucket using Minion client")
 
@@ -263,7 +264,7 @@ class TestMinioClient:
         self.log.info("Step 3: Deleting bucket which has a object")
         resp = system_utils.run_local_cmd(dlt_bkt_cmd)
         assert_utils.assert_false(resp[0], resp)
-        self.minio_bucket_list = list()
+        self.minio_bucket_list = []
         self.log.info("Step 1: Bucket is deleted with name %s", self.bucket_name)
         self.log.info("ENDED: delete bucket which has objects using Minion Client")
 

@@ -229,6 +229,21 @@ test_28526:
           - part_size: 824
             count: 1
 
+test_42770:
+  file_size: 358400
+  chunk_size: 1048576
+  part_sizes:
+    - part_size: 5100
+      count: 69
+    - part_size: 1531.8
+      count: 1
+    - part_size: 6.6
+      count: 1
+    - part_size: 824
+      count: 1
+    - part_size: 4137.6
+      count: 1
+
 test_28528:
   file_size: 50300
   chunk_size: 1048576
@@ -272,7 +287,7 @@ test_29167:
     file_size: 300
     chunk_size: 1048576
     total_parts: 5
-   
+
 test_29164:
     file_size: 600
     chunk_size: 1048576
@@ -327,11 +342,11 @@ test_32702_2:
           count: 1
 
 test_40265:
-  file_size: 6
+  file_size: 10
   chunk_size: 1048576
   part_sizes:
     - part_size: 5
       count: 1
-    - part_size: 1
+    - part_size: 5
       count: 1
 
