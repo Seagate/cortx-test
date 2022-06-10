@@ -26,6 +26,7 @@ import multiprocessing
 import os
 import secrets
 import threading
+import time
 from multiprocessing import Queue
 from time import perf_counter_ns
 
@@ -242,7 +243,7 @@ class TestRGWProcessRestart:
                                       no_of_clients=self.test_cfg['clients'],
                                       no_of_samples=self.test_cfg['samples'],
                                       log_file_prefix=test_prefix, queue=wr_output,
-                                      loop=test_cfg['num_loop'])
+                                      loop=test_cfg['num_loop'], skip_read=False, validate=True)
         resp = wr_output.get()
         assert_utils.assert_true(resp[0], resp[1])
 
@@ -561,7 +562,6 @@ class TestRGWProcessRestart:
         test_cfg = DTM_CFG["test_42246"]
         del_output = Queue()
         rd_output = Queue()
-
         event = threading.Event()  # Event to be used to send intimation of rgw_s3 process restart
 
         self.log.info("Step 1: Perform WRITEs-READs-Validate Operations")
@@ -570,7 +570,7 @@ class TestRGWProcessRestart:
                                       no_of_clients=self.test_cfg['clients'],
                                       no_of_samples=self.test_cfg['samples'],
                                       log_file_prefix=test_prefix, queue=wr_output,
-                                      loop=test_cfg['num_loop'])
+                                      loop=test_cfg['num_loop'], skip_read=False, validate=True)
         resp = wr_output.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
@@ -587,7 +587,6 @@ class TestRGWProcessRestart:
                           bkts_to_del)
             args = {'test_prefix': test_prefix, 'test_dir_path': self.test_dir_path,
                     'skipput': True, 'skipget': True, 'bkt_list': bkts_to_del, 'output': del_output}
-
             thread = threading.Thread(target=self.ha_obj.put_get_delete,
                                       args=(event, self.s3_test_obj,), kwargs=args)
             thread.daemon = True  # Daemonize thread
@@ -632,3 +631,68 @@ class TestRGWProcessRestart:
         self.test_completed = True
         self.log.info("ENDED: Verify continuous DELETEs during rgw_s3 service restart using "
                       "pkill")
+
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-42255")
+    def test_ios_during_rc_rgw_restart(self):
+        """Verify IOs during RC pod rgw_s3 restart using pkill."""
+        self.log.info("STARTED: Verify IOs during RC pod rgw_s3 restart using pkill")
+        test_cfg = DTM_CFG['test_42255']
+        output = Queue()
+        test_prefix = 'test-42255'
+
+        self.log.info("Step 1: Perform WRITEs/READs-Verify/DELETEs with variable object sizes in "
+                      "background")
+
+        args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
+                'no_of_clients': test_cfg['clients'], 'no_of_samples': test_cfg['samples'],
+                'log_file_prefix': test_prefix, 'queue': output, 'loop': test_cfg['num_loop'],
+                'retry': DTM_CFG["io_retry_count"], 'skip_read': False, 'skip_cleanup': False,
+                'validate': True}
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
+                                                kwargs=args)
+        proc_write_op.start()
+        self.log.info("Step 1: Started WRITEs/READs-Verify/DELETEs with variable object sizes "
+                      "in background")
+        self.log.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+
+        self.log.info("Step 2: Perform restart of rgw process %s times during IOs, on pod hosted "
+                      "on RC node and check hctl status", DTM_CFG["rgw_restart_cnt"])
+        self.log.info("Get RC node name")
+        rc_node = self.ha_obj.get_rc_node(self.master_node_list[0])
+        rc_info = self.master_node_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
+        rc_node_name = list(rc_info.values())[0]
+        self.log.info("RC Node is running on %s node", rc_node_name)
+        self.log.info("Get the server pod running on %s node", rc_node_name)
+        server_pods = self.master_node_list[0].get_pods_node_fqdn(const.SERVER_POD_NAME_PREFIX)
+        rc_serverpod = None
+        for pod_name, node in server_pods.items():
+            if node == rc_node_name:
+                rc_serverpod = pod_name
+                break
+        self.log.info("RC node %s has server pod: %s ", rc_node_name, rc_serverpod)
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=rc_serverpod,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
+                                            process=self.rgw_process, check_proc_state=True,
+                                            restart_cnt=DTM_CFG["rgw_restart_cnt"])
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+        self.log.info("Step 2: Successfully performed restart of rgw process %s times during IOs, "
+                      "on pod hosted on RC node and checked hctl status",
+                      DTM_CFG["rgw_restart_cnt"])
+        if proc_write_op.is_alive():
+            proc_write_op.join()
+        self.log.info("Thread has joined.")
+
+        self.log.info("Step 3: Verify responses from background process")
+        resp = output.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Successfully completed WRITEs/READs-Verify/DELETEs with variable "
+                      "object sizes in background")
+        self.test_completed = True
+        self.log.info("ENDED: Verify IOs during RC pod rgw_s3 restart using pkill")

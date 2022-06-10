@@ -31,3 +31,8 @@ test_42246:
 test_42247:
   nclients: 10
   nsamples: 50
+
+test_42255:
+  nclients: 10
+  nsamples: 70
+  num_loop: 10
