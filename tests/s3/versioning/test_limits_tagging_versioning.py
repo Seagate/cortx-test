@@ -274,7 +274,7 @@ class TestObjectTaggingVerLimits:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_id=latest_ver)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
         LOGGER.info("Step 4: Performed GET Object Tagging for %s with versionId=%s is %s",
@@ -288,6 +288,7 @@ class TestObjectTaggingVerLimits:
                                              versions_dict=self.versions, tag_val_ran=[(257, 257)],
                                              version_id=latest_ver)
         assert_utils.assert_false(resp[0], resp)
+        assert_utils.assert_in("InvalidTag", resp[1].message)
         LOGGER.info("Step 5: PUT Object Tagging for %s with 257 char tag value failed as expected",
                     self.object_name)
         LOGGER.info("Step 6: Perform GET Object Tagging for %s with versionId=%s",
@@ -297,7 +298,7 @@ class TestObjectTaggingVerLimits:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_id=latest_ver)
         assert_utils.assert_true(resp[0], resp)
-        get_tag1 = resp[1]['TagSet'][0]
+        get_tag1 = resp[1][0]
         assert_utils.assert_equal(get_tag1, put_tag, "Mismatch in tag Key-Value pair."
                                                      f"Expected: {put_tag} \n Actual: {get_tag1}")
         LOGGER.info("Step 6: Performed GET Object Tagging for %s with versionId=%s is %s",
