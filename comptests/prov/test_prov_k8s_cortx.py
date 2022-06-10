@@ -224,7 +224,7 @@ class TestProvK8Cortx:
             resp = self.master_node_obj.execute_cmd(
                 cmd=commands.K8S_POD_INTERACTIVE_CMD.format(pod_name, 'ls /etc/cortx'),
                 read_lines=True)
-            LOGGER.info(resp)
+            LOGGER.info("Output %s", resp)
             assert_utils.assert_is_not_none(resp)
             for out in resp:
                 out = out.split("\n")
