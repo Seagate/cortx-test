@@ -310,6 +310,7 @@ def get_object_checksum(obj_name, bucket_name, access_key: str, secret_key: str,
             csum = file_hash.hexdigest()
             break
     return csum
+
 def delete_all_buckets(access_key: str, secret_key: str, **kwargs):
     """
     Delete bucket from give access key and secret key.

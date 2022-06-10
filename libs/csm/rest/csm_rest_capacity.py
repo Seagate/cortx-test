@@ -235,71 +235,6 @@ class SystemCapacity(RestTestLib):
         self.log.info("Parsed response : %s", resp)
         return json.loads(resp)
 
-    def verify_degraded_capacity_all(self, cap_df, num_nodes: int, data_written: int = 0):
-        """
-        Verify the consistency of degraded, healthy.. bytes for csm, consul, hctl in data frame
-        """
-        cap_df = cap_df.fillna(0)
-        self.log.debug("Collected data frame : %s", cap_df.to_string())
-        self.log.info(
-            "Checking HCTL , CSM and Consul healthy byte response are consistent.")
-        cap_df['result'] = ((cap_df['consul_healthy'] == cap_df['hctl_healthy']) &
-                            (cap_df['consul_healthy'] == cap_df['csm_healthy']))
-        healthy_eq = cap_df["result"].all()
-
-        self.log.info(
-            "Checking HCTL , CSM and Consul degraded byte response are consistent.")
-        cap_df['result'] = ((cap_df['consul_degraded'] == cap_df['hctl_degraded']) &
-                            (cap_df['consul_degraded'] == cap_df['csm_degraded']))
-        degraded_eq = cap_df["result"].all()
-
-        self.log.info(
-            "Checking HCTL , CSM and Consul Critical byte response are consistent.")
-        cap_df['result'] = ((cap_df['consul_critical'] == cap_df['hctl_critical']) &
-                            (cap_df['consul_critical'] == cap_df['csm_critical']))
-        critical_eq = cap_df["result"].all()
-
-        self.log.info(
-            "Checking HCTL , CSM and Consul damaged byte response are consistent.")
-        cap_df['result'] = ((cap_df['consul_damaged'] == cap_df['hctl_damaged']) &
-                            (cap_df['consul_damaged'] == cap_df['csm_damaged']))
-        damaged_eq = cap_df["result"].all()
-
-        self.log.info(
-            "Checking HCTL , CSM and Consul repaired byte response are consistent.")
-        cap_df['result'] = ((cap_df['consul_repaired'] == cap_df['hctl_repaired']) &
-                            (cap_df['consul_repaired'] == cap_df['csm_repaired']))
-        repaired_eq = cap_df["result"].all()
-        self.log.info("Checking total bytes adds up to data written")
-        cap_df["csm_sum"] = cap_df["csm_healthy"] + cap_df["csm_degraded"] + \
-            cap_df["csm_critical"] + \
-            cap_df["csm_damaged"] + cap_df["csm_repaired"]
-        cap_df["total_check"] = data_written == cap_df["csm_sum"]
-        total_chk = cap_df["total_check"].all()
-        self.log.info(
-            "Summation check of the healthy bytes from each node failure for csm")
-
-        actual_written = 0
-        for node in range(num_nodes):
-            node_name = self.row_temp.format(node)
-            actual_written = actual_written + cap_df.loc[node_name]["csm_healthy"]
-
-        data_written_hchk = data_written == actual_written
-
-        actual_written = 0
-        for node in range(num_nodes):
-            node_name = self.row_temp.format(node)
-            actual_written = actual_written + cap_df.loc[node_name]["csm_damaged"]
-
-        self.log.info(
-            "Summation check of the damaged bytes from each node failure for csm")
-        data_written_dchk = data_written == actual_written
-
-        result = (data_written_hchk and data_written_dchk and healthy_eq and degraded_eq and
-                  critical_eq and damaged_eq and repaired_eq and total_chk)
-        return result
-
-
     def get_degraded_all(self, master_obj):
         """
         """
@@ -312,20 +247,20 @@ class SystemCapacity(RestTestLib):
         hctl_op = master_obj.hctl_status_json()["bytecount"]
         self.log.info("[End] Fetch degraded capacity on HCTL")
 
-        #self.log.info("[Start] Fetch degraded capacity on CSM")
-        #resp = self.get_degraded_capacity()
-        #assert resp.status_code == HTTPStatus.OK.value, "Status code check failed."
-        #resp = resp.json()["bytecount"]
-        #self.log.info("[End] Fetch degraded capacity on CSM")
+        self.log.info("[Start] Fetch degraded capacity on CSM")
+        resp = self.get_degraded_capacity()
+        assert resp.status_code == HTTPStatus.OK.value, "Status code check failed."
+        resp = resp.json()["bytecount"]
+        self.log.info("[End] Fetch degraded capacity on CSM")
 
         assert hctl_op["healthy"] == consul_op["healthy"], "HCTL & Consul healthy byte mismatch"
         assert hctl_op["degraded"] == consul_op["degraded"], "HCTL & Consul degraded byte mismatch"
         assert hctl_op["critical"] == consul_op["critical"], "HCTL & Consul critical byte mismatch"
         assert hctl_op["damaged"] == consul_op["damaged"], "HCTL & Consul healthy byte mismatch"
-        #assert resp["healthy"] == consul_op["healthy"], "CSM & Consul healthy byte mismatch"
-        #assert resp["degraded"] == consul_op["degraded"], "CSM & Consul degraded byte mismatch"
-        #assert resp["critical"] == consul_op["critical"], "CSM & Consul critical byte mismatch"
-        #assert resp["damaged"] == consul_op["damaged"], "CSM & Consul healthy byte mismatch"
+        assert resp["healthy"] == consul_op["healthy"], "CSM & Consul healthy byte mismatch"
+        assert resp["degraded"] == consul_op["degraded"], "CSM & Consul degraded byte mismatch"
+        assert resp["critical"] == consul_op["critical"], "CSM & Consul critical byte mismatch"
+        assert resp["damaged"] == consul_op["damaged"], "CSM & Consul healthy byte mismatch"
         return hctl_op
 
     def verify_bytecount_all(self, resp, failure_cnt, kvalue, err_margin, total_written,new_write=0):

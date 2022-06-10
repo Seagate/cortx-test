@@ -127,19 +127,20 @@ class TestSystemCapacity():
                       self.bucket, self.akey, self.skey)
         assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
         self.cap_df = pandas.DataFrame()
+        resp = s3_misc.delete_all_buckets(self.akey,self.skey)
+        assert resp, "Delete all buckets and object failed."
+        self.log.info("[Start] Start some IOs")
+        obj = f"object{self.s3_user}{time.time_ns()}.txt"
+        self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, self.aligned_size,
+                        self.bucket)
+        resp = s3_misc.create_put_objects(
+            obj, self.bucket, self.akey, self.skey, object_size=self.aligned_size)
+        assert resp, "Put object Failed"
+        self.log.info("[End] Start some IOs")
 
-        #self.log.info("[Start] Start some IOs")
-        #obj = f"object{self.s3_user}{time.time_ns()}.txt"
-        #self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, self.aligned_size,
-        #                self.bucket)
-        #resp = s3_misc.create_put_objects(
-        #    obj, self.bucket, self.akey, self.skey, object_size=self.aligned_size)
-        #assert resp, "Put object Failed"
-        #self.log.info("[End] Start some IOs")
-#
-        #self.log.info("[Start] Sleep %s", self.update_seconds)
-        #time.sleep(self.update_seconds)
-        #self.log.info("[Start] Sleep %s", self.update_seconds)
+        self.log.info("[Start] Sleep %s", self.update_seconds)
+        time.sleep(self.update_seconds)
+        self.log.info("[Start] Sleep %s", self.update_seconds)
 
     def teardown_method(self):
         """
@@ -984,4 +985,6 @@ class TestSystemCapacity():
                             degraded=0, critical=0, damaged=0, err_margin=self.err_margin,
                             total=total_written)
             assert result[0], result[1]
+            resp = s3_misc.delete_all_buckets(self.akey,self.skey)
+            assert resp, "Delete all buckets and object failed."
         self.log.info("[START] completed")
