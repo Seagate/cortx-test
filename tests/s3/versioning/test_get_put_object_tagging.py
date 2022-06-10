@@ -141,7 +141,7 @@ class TestGetPutObjectTagging:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_id=latest_v)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -162,7 +162,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_v)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -173,7 +173,7 @@ class TestGetPutObjectTagging:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -214,7 +214,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_v)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -227,7 +227,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_ver_id)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -239,7 +239,7 @@ class TestGetPutObjectTagging:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -260,7 +260,7 @@ class TestGetPutObjectTagging:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_id=latest_v)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -273,7 +273,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_ver_id)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -284,7 +284,7 @@ class TestGetPutObjectTagging:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -340,7 +340,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_ver_id1)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -353,6 +353,7 @@ class TestGetPutObjectTagging:
                                              version_tag=self.ver_tag, versions_dict=self.versions)
         assert_utils.assert_true(resp[0], resp)
 
+        put_tag = self.ver_tag[self.object_name][latest_ver_id1][-1]
         LOGGER.info("Step 7: Perform GET Object Tagging for %s with versionId=%s",
                     self.object_name, latest_ver_id1)
         resp = s3_cmn_lib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
@@ -361,7 +362,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_ver_id1)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -372,7 +373,7 @@ class TestGetPutObjectTagging:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -406,13 +407,14 @@ class TestGetPutObjectTagging:
 
         LOGGER.info("Step 12: Perform GET Object Tagging for %s with versionId=%s",
                     self.object_name, latest_ver_id1)
+        put_tag = self.ver_tag[self.object_name][latest_ver_id1][-1]
         resp = s3_cmn_lib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name,
                                              version_id=latest_ver_id1)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -425,7 +427,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_ver_id2)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -436,7 +438,7 @@ class TestGetPutObjectTagging:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -458,7 +460,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_ver_id1)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -471,7 +473,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_ver_id2)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -482,7 +484,7 @@ class TestGetPutObjectTagging:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -566,7 +568,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_ver_id2)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -577,7 +579,7 @@ class TestGetPutObjectTagging:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -600,7 +602,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_ver_id1)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -613,7 +615,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_ver_id2)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -624,7 +626,7 @@ class TestGetPutObjectTagging:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -652,7 +654,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_ver_id1)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -665,7 +667,7 @@ class TestGetPutObjectTagging:
                                              object_name=self.object_name,
                                              version_id=latest_ver_id2)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -677,7 +679,7 @@ class TestGetPutObjectTagging:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_id=latest_v)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
@@ -688,7 +690,7 @@ class TestGetPutObjectTagging:
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]['TagSet'][0]
+        get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
