@@ -218,6 +218,7 @@ class TestProvK8Cortx:
         LOGGER.info("Check files are copied and accessible to containers.")
         LOGGER.info("Step 1: Get all running data pods from cluster.")
         data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
+        time.sleep(100)
         assert_utils.assert_true(data_pod_list[0])
         LOGGER.info("Step 2: Check files are copied and accessible to containers.")
         for pod_name in data_pod_list[1]:
