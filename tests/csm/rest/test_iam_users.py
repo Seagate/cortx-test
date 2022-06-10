@@ -3425,10 +3425,10 @@ class TestIamUserRGW():
         for key in payload.keys():
             if key == "generate_key":
                 assert(len(get_resp["keys"]) < 2, "New key is not generated.")
-            elif key == "access_key" or key == "secret_key":
+            elif key == "access_key":
                 assert(len(self.csm_obj.search_list_of_dict(
                     key, payload[key], get_resp["keys"])) >= 1)
-            elif key == "key_type":
+            elif key == "key_type" or key == "secret_key":
                 pass
             else:
                 assert payload[key]==get_resp[key], "key mistmatch"
