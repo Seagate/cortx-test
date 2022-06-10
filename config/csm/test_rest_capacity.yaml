@@ -1,23 +1,16 @@
-update_seconds: 600
+update_seconds: 630
 test_33899:
   err_margin: 0
 test_33919:
-  err_margin: 10
+  err_margin: 0
 test_33920:
   err_margin: 0
-  object_size:
-    start_range: 10
-    stop_range: 100
 test_33928:
-  err_margin: 0
-  object_size:
-    start_range: 10
-    stop_range: 100
+  err_margin: 70
+  start_range: 1
+  stop_range: 1000
 test_33929:
   err_margin: 0
-  object_size:
-    start_range: 10
-    stop_range: 100
 test_33925:
   err_margin: 0
   object_size: 16
@@ -28,10 +21,9 @@ test_33926:
     start_range: 10
     stop_range: 100
 test_33927:
-  err_margin: 0
-  object_size:
-    start_range: 10
-    stop_range: 100
+  err_margin: 99.99
+  start_range: 10
+  stop_range: 1000
 test_34698:
   err_margin: 0
   object_size:
@@ -91,9 +83,11 @@ test_39924:
 test_39923:
   err_margin: 0
   obj_size: 12288
-  num_clients: 2
+  num_clients: 1
   num_sample: 5
-  obj_name_pref: "load_gen"
+  obj_name_pref: "test_39923_obj"
+  obj_size: "16Mb"
+  duration: "0h0m60s"
 test_41127:
   max_size: 12288
 test_41128:

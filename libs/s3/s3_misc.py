@@ -24,6 +24,7 @@ import boto3
 from config.s3 import S3_CFG
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
+from hashlib import md5
 
 LOGGER = logging.getLogger(__name__)
 
@@ -309,3 +310,29 @@ def get_objects_list(bucket_name, access_key: str, secret_key: str, **kwargs):
         obj_lst.append(key)
         LOGGER.debug("values are: %s", value)
     return obj_lst
+
+def get_object_checksum(obj_name, bucket_name, access_key: str, secret_key: str, **kwargs):
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    LOGGER.debug("S3 Endpoint : %s", endpoint)
+
+    region = S3_CFG["region"]
+    LOGGER.debug("Region : %s", region)
+
+    s3_resource = boto3.resource('s3', verify=False,
+                        endpoint_url=endpoint,
+                        aws_access_key_id=access_key,
+                        aws_secret_access_key=secret_key,
+                        region_name=region,
+                        **kwargs)
+    LOGGER.debug("S3 boto resource created")
+    objs = s3_resource.Bucket(bucket_name).objects.all()
+    for obj in objs:
+        if obj.key == obj_name:
+            body = obj.get()['Body'].read()
+            file_hash = md5()
+            file_hash.update(body)
+            csum = file_hash.hexdigest()
+            break
+    return csum

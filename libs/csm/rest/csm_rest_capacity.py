@@ -20,10 +20,8 @@
 """Test library for capacity related operations.
    Author: Divya Kachhwaha
 """
-import ast
 from random import SystemRandom
 import json
-import pandas as pd
 from config import CMN_CFG
 from commons.constants import Rest as const
 import commons.errorcodes as err
@@ -32,8 +30,9 @@ from commons.helpers.pods_helper import LogicalNode
 from commons import commands
 from commons import constants
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
-from commons.utils import assert_utils
+from libs.s3 import s3_misc
 from http import HTTPStatus
+
 class SystemCapacity(RestTestLib):
     """RestCsmUser contains all the Rest API calls for system health related
     operations"""
@@ -178,6 +177,8 @@ class SystemCapacity(RestTestLib):
             checklist.append("damaged")
         if repaired is not None:
             checklist.append("repaired")
+        if err_margin >= 100:
+            err_margin -= 0.01
         result_flag = True
         result_msg = ""
 
@@ -233,24 +234,6 @@ class SystemCapacity(RestTestLib):
         resp = "{\"" + resp.replace("bytecount/","").replace("\n" , ",\"").replace(":", "\":")+"}"
         self.log.info("Parsed response : %s", resp)
         return json.loads(resp)
-
-    def get_dataframe_all(self, num_nodes: int=None, rows:list=None):
-        """
-        Creates dataframe for the storing degraded capacity for csm, hctl, consul
-        """
-        col = ["consul_healthy", "consul_degraded", "consul_critical", "consul_damaged",
-               "consul_repaired", "hctl_healthy", "hctl_degraded", "hctl_critical", "hctl_damaged",
-               "hctl_repaired", "csm_healthy", "csm_degraded", "csm_critical", "csm_damaged",
-               "csm_repaired"]
-        row = ["No failure"]
-        if rows is not None:
-            for tmp_row in rows:
-                row.append(tmp_row)
-        else:
-            for node in range(num_nodes):
-                row.append(self.row_temp.format(node))
-        cap_df = pd.DataFrame(columns=col, index=row)
-        return cap_df
 
     def verify_degraded_capacity_all(self, cap_df, num_nodes: int, data_written: int = 0):
         """
@@ -316,20 +299,6 @@ class SystemCapacity(RestTestLib):
                   critical_eq and damaged_eq and repaired_eq and total_chk)
         return result
 
-    def get_dataframe_failure_recovery(self, num_nodes: int):
-        """
-        Creates dataframe for the storing degraded capacity for csm, hctl, consul
-        """
-
-        col = ["healthy", "degraded", "critical", "damaged"]
-        row = ["No failure"]
-        self.row_temp1 = "N{} fail beforeIO"
-        self.row_temp2 = "N{} fail afterIO"
-        for node in range(num_nodes):
-            row.append(self.row_temp1.format(node))
-            row.append(self.row_temp2.format(node))
-        cap_df = pd.DataFrame(columns=col, index=row)
-        return cap_df
 
     def get_degraded_all(self, master_obj):
         """
@@ -343,21 +312,21 @@ class SystemCapacity(RestTestLib):
         hctl_op = master_obj.hctl_status_json()["bytecount"]
         self.log.info("[End] Fetch degraded capacity on HCTL")
 
-        self.log.info("[Start] Fetch degraded capacity on CSM")
-        resp = self.get_degraded_capacity()
-        assert resp.status_code == HTTPStatus.OK.value, "Status code check failed."
-        resp = resp.json()["bytecount"]
-        self.log.info("[End] Fetch degraded capacity on CSM")
+        #self.log.info("[Start] Fetch degraded capacity on CSM")
+        #resp = self.get_degraded_capacity()
+        #assert resp.status_code == HTTPStatus.OK.value, "Status code check failed."
+        #resp = resp.json()["bytecount"]
+        #self.log.info("[End] Fetch degraded capacity on CSM")
 
         assert hctl_op["healthy"] == consul_op["healthy"], "HCTL & Consul healthy byte mismatch"
         assert hctl_op["degraded"] == consul_op["degraded"], "HCTL & Consul degraded byte mismatch"
         assert hctl_op["critical"] == consul_op["critical"], "HCTL & Consul critical byte mismatch"
         assert hctl_op["damaged"] == consul_op["damaged"], "HCTL & Consul healthy byte mismatch"
-        assert resp["healthy"] == consul_op["healthy"], "CSM & Consul healthy byte mismatch"
-        assert resp["degraded"] == consul_op["degraded"], "CSM & Consul degraded byte mismatch"
-        assert resp["critical"] == consul_op["critical"], "CSM & Consul critical byte mismatch"
-        assert resp["damaged"] == consul_op["damaged"], "CSM & Consul healthy byte mismatch"
-        return resp
+        #assert resp["healthy"] == consul_op["healthy"], "CSM & Consul healthy byte mismatch"
+        #assert resp["degraded"] == consul_op["degraded"], "CSM & Consul degraded byte mismatch"
+        #assert resp["critical"] == consul_op["critical"], "CSM & Consul critical byte mismatch"
+        #assert resp["damaged"] == consul_op["damaged"], "CSM & Consul healthy byte mismatch"
+        return hctl_op
 
     def verify_bytecount_all(self, resp, failure_cnt, kvalue, err_margin, total_written,new_write=0):
         """
@@ -384,13 +353,27 @@ class SystemCapacity(RestTestLib):
             total=total_written)
         return result
 
-    def append_df(self, cap_df, failed_pod, data_written):
+    def append_df(self, cap_df, failed_pod, data_written, obj = "NA", bucket = "NA", akey ="NA", skey="NA"):
         """Append the value to the data frame created in the test
         """
-        new_row={"data_written":data_written}
+        if obj == "NA":
+            csum = 0
+        else:
+            csum = s3_misc.get_object_checksum(obj, bucket, akey, skey)
+        new_row={"data_written":data_written, "csum": csum, "obj": obj, "bucket": bucket, "akey": akey, "skey": skey}
         deploy_list = list(cap_df.columns)
         if "data_written" in deploy_list:
             deploy_list.remove("data_written")
+        if "csum" in deploy_list:
+            deploy_list.remove("csum")
+        if "obj" in deploy_list:
+            deploy_list.remove("obj")
+        if "akey" in deploy_list:
+            deploy_list.remove("akey")
+        if "skey" in deploy_list:
+            deploy_list.remove("skey")
+        if "bucket" in deploy_list:
+            deploy_list.remove("bucket")
         for deploy in deploy_list:
             new_row[deploy] = not deploy in failed_pod
         cap_df = cap_df.append(new_row, ignore_index=True)
@@ -406,14 +389,22 @@ class SystemCapacity(RestTestLib):
         host_list = cap_df.columns.values.tolist()
         if "data_written" in host_list:
             host_list.remove("data_written")
-
+        if "csum" in host_list:
+            host_list.remove("csum")
+        if "obj" in host_list:
+            host_list.remove("obj")
+        if "akey" in host_list:
+            host_list.remove("akey")
+        if "skey" in host_list:
+            host_list.remove("skey")
+        if "bucket" in host_list:
+            host_list.remove("bucket")
         for row in cap_df.index:
             written_on = []
             for node in host_list:
                 if cap_df[node][row]:
                     written_on.append(node)
             corrupt_shards = len(set(written_on) & set(failed_pod))
-            
             if corrupt_shards == 0:
                 self.log.debug("Checking for %s less than to K value", corrupt_shards)
                 healthy += cap_df["data_written"][row]
@@ -431,5 +422,21 @@ class SystemCapacity(RestTestLib):
         result = self.verify_degraded_capacity(resp, healthy=healthy,
         degraded=degraded, critical=critical, damaged=damaged, err_margin=err_margin,
         total=total_written)
-
         return result
+
+    def verify_checksum(self, cap_df):
+        checksum_match = True
+        for row in cap_df.index:
+            obj = cap_df["obj"][row]
+            if obj != "NA":
+                bucket = cap_df["bucket"][row]
+                akey = cap_df["akey"][row]
+                skey = cap_df["skey"][row]
+                expected_csum = cap_df["csum"][row]
+                actual_csm = s3_misc.get_object_checksum(obj, bucket, akey, skey)
+                checksum_match = checksum_match and (expected_csum == actual_csm)
+                if checksum_match:
+                    self.log.info("Check for %s object in %s bucket correct.", obj, bucket)
+                else:
+                    self.log.error("Check for %s object in %s bucket incorrect.", obj, bucket)
+        return checksum_match
