@@ -285,7 +285,7 @@ class TestObjectTaggingVerLimits:
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
                                              object_name=self.object_name, version_tag=self.ver_tag,
-                                             versions_dict=self.versions, tag_val_ran=257,
+                                             versions_dict=self.versions, tag_val_ran=[(257, 257)],
                                              version_id=latest_ver)
         assert_utils.assert_false(resp[0], resp)
         LOGGER.info("Step 5: PUT Object Tagging for %s with 257 char tag value failed as expected",
