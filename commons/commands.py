@@ -157,20 +157,10 @@ IPMI_EVENT_CMD = "ipmitool event"
 AWS_INSTALL = "pip3 install awscli"
 AWS_PLUGIN = "pip3 install awscli-plugin-endpoint"
 AWS_VERSION = "aws --version"
-AWS_ENDPOINT = "aws configure set plugins.endpoint awscli_plugin_endpoint"
-AWS_REGION = "aws configure set default.region us-east-1"
-AWS_ACCESS_CONFIG = "aws configure set aws_access_key_id {}"
-AWS_SECRET_CONFIG = "aws configure set aws_secret_access_key {}"
 
 #IOs Opearations
-CREATE_BUCKET = "aws s3 mb s3://test-bucket --endpoint-url http://s3.seagate.com:{}"
-CREATE_ENDPOINT = "aws s3 ls --endpoint-url http://s3.seagate.com:{}"
-BUCKET_S3API = "aws s3api head-bucket --bucket test-bucket --endpoint-url http://s3.seagate.com:{}"
-FILE_CONF = "dd if=/dev/zero of=file bs=1M count=10"
 COPY_BUCKETFILE = "aws s3 cp file s3://test-bucket --endpoint-url http://s3.seagate.com:{}"
-GET_OBJECT = "aws s3api get-object --bucket test-bucket --key file " \
-             "--endpoint http://s3.seagate.com:{} outfile"
-AWS_URL = "aws s3 ls --endpoint-url http://s3.seagate.com:{}"
+GET_OBJECT = "aws s3api get-object --bucket test-bucket --key file --endpoint http://s3.seagate.com:{} outfile"
 BUCKET_SIZE = "aws s3 ls s3://test-bucket --endpoint-url http://s3.seagate.com:{}"
 REMOVE_BUCKET = "aws s3 rb s3://test-bucket --force --endpoint-url http://s3.seagate.com:{}"
 

@@ -479,7 +479,7 @@ class TestProvK8Cortx:
             LOGGER.info(resp)
             if not resp[0]:
                 LOGGER.debug("Did not get expected response: %s", resp)
-                assert_utils.assert_true(resp[0], "False")
+                # assert_utils.assert_true(resp[0], "False")
             ext_ip = resp[1]
             LOGGER.info("External IP: %s", ext_ip)
             port = resp[2]
@@ -504,24 +504,24 @@ class TestProvK8Cortx:
         resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_VERSION)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_ENDPOINT)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_CONF + " set plugins.endpoint awscli_plugin_endpoint")
         LOGGER.info(resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_REGION)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_CONF + " set default.region us-east-1")
         LOGGER.info(resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_ACCESS_CONFIG.format(access_key),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_CONF + " set aws_access_key_id {}".format(access_key),
                                                    read_lines=True)                         
-        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_SECRET_CONFIG.format(secret_key),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_CONF + " set aws_secret_access_key {}".format(secret_key),
                                                     read_lines=True)
         LOGGER.info("Step 4:Creating bucket")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CREATE_BUCKET.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_CREATE_BUCKET.format("test-bucket") + " --endpoint-url http://s3.seagate.com:{}".format(http_port),
                                                     read_lines=True)
         LOGGER.info("Make Bucket %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CREATE_ENDPOINT.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS+ " --endpoint-url http://s3.seagate.com:{}".format(http_port),
                                                     read_lines=True)
         LOGGER.info("Bucket Name %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.BUCKET_S3API.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_HEAD_BUCKET.format("test-bucket") + " --endpoint-url http://s3.seagate.com:{}".format(http_port),
                                                     read_lines=True)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.FILE_CONF,
+        resp = self.master_node_obj.execute_cmd(cmd=commands.WIPE_DISK_CMD.format("file") + " bs=1M count=10",
                                                     read_lines=True)
         LOGGER.info("File size %s", resp)
         resp = self.master_node_obj.execute_cmd(cmd=commands.COPY_BUCKETFILE.format(http_port),
@@ -531,14 +531,14 @@ class TestProvK8Cortx:
         resp = self.master_node_obj.execute_cmd(cmd=commands.GET_OBJECT.format(http_port),
                                                     read_lines=True)
         LOGGER.info("Get Object %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.AWS_URL.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS+ " --endpoint-url http://s3.seagate.com:{}".format(http_port),
                                                     read_lines=True)
         LOGGER.info("Bucket Name %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.BUCKET_SIZE.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format("test-bucket ") + " --endpoint-url http://s3.seagate.com:{}".format(http_port),
                                                     read_lines=True)
         LOGGER.info("Bucket Size %s", resp)
         LOGGER.info("Step 6:Removing bucket")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.REMOVE_BUCKET.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_DELETE_BUCKET.format("test-bucket") + " --force --endpoint-url http://s3.seagate.com:{}".format(http_port),
                                                     read_lines=True)
         LOGGER.info("Remove Bucket %s", resp)
         LOGGER.info("Test Completed.")
