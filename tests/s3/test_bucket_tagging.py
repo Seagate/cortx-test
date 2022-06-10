@@ -22,7 +22,10 @@
 import os
 import time
 import logging
+import string
+import secrets
 import pytest
+
 
 from commons.constants import S3_ENGINE_RGW
 from commons import error_messages as errmsg
@@ -826,3 +829,62 @@ class TestBucketTagging:
             assert_utils.assert_in(errmsg.NO_BUCKET_OBJ_ERR_KEY, str(error.message), error.message)
         self.log.info("Step 2: Deleting tag of a non existing bucket failed with NoSuchBucket")
         self.log.info("ENDED: Verify DELETE bucket tagging to non-existing bucket")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
+    @pytest.mark.tags("TEST-XXXXX")
+    @CTFailOn(error_handler)
+    def test_xxxx(self):
+        """Create bucket tags with encoded k:v pair with base64 encoding."""
+        self.log.info("STARTED: Create bucket tags with encoded k:v with base64 encoding")
+        self.log.info("Step 1: Creating a bucket %s", self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
+        self.log.info(resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(self.bucket_name, resp[1])
+        self.log.info("Step 1: Created a bucket %s", self.bucket_name)
+        self.log.info("Step 2: Setting a bucket tag with encoded key-value pair")
+        key = ''.join((secrets.choice(string.printable) for i in range(8)))
+        value = ''.join((secrets.choice(string.printable) for i in range(8)))
+        resp = self.tag_obj.set_encoded_tag_values(self.bucket_name, key, value, encoding_type = "base64")
+        self.log.info(resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 2: Set a bucket tag with encoded special characters")
+        self.log.info("Step 3: Retrieving tag of a bucket")
+        resp = self.tag_obj.get_bucket_tags(self.bucket_name)
+        self.log.info(resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Retrieved tag of a bucket")
+        self.log.info("Step 4: Verified tag values of a bucket are set correctly")
+        self.log.info("ENDED: Create bucket tags with encoded k:v with base64 encoding")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
+    @pytest.mark.tags("TEST-YYYY")
+    @CTFailOn(error_handler)
+    def test_yyyy(self):
+        """Create bucket tags with encoded k:v pair with utf-8 encoding."""
+        self.log.info("STARTED: Create bucket tags with encoded k:v with utf-8 encoding")
+        self.log.info("Step 1: Creating a bucket %s", self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
+        self.log.info(resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(self.bucket_name, resp[1])
+        self.log.info("Step 1: Created a bucket %s", self.bucket_name)
+        self.log.info("Step 2: Setting a bucket tag with encoded key-value pair")
+        key = ''.join((secrets.choice(string.printable) for i in range(8)))
+        value = ''.join((secrets.choice(string.printable) for i in range(8)))
+        resp = self.tag_obj.set_encoded_tag_values(self.bucket_name, key, value, encoding_type = "utf-8")
+        self.log.info(resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 2: Set a bucket tag with encoded special characters")
+        self.log.info("Step 3: Retrieving tag of a bucket")
+        resp = self.tag_obj.get_bucket_tags(self.bucket_name)
+        self.log.info(resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Retrieved tag of a bucket")
+        self.log.info("Step 4: Verified tag values of a bucket are valid")
+        self.log.info("ENDED: Create bucket tags with encoded k:v with utf-8 encoding")
+

@@ -471,3 +471,43 @@ class S3TaggingTestLib(Tagging):
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
+
+    def set_encoded_tag_values(
+            self,
+            bucket_name: str = None,
+            key: str = None,
+            value: str = None,
+            encoding_type: str = 'utf-8') -> tuple:
+        """
+        Set tag to a bucket with encoded tag values.
+
+        :param bucket_name: Name of bucket.
+        :param key: Key for bucket tagging.
+        :param value: Value for bucket tagging.
+        :param encoding_type: encoding type e.g. base64,utf-8
+        :return: True or False and response.
+        """
+        try:
+            LOGGER.info("Set bucket tag with encoded key value pair.")
+            tag_set = list()
+            if encoding_type == 'utf-8':
+                key_encode = key.encode('utf-8')
+                value_encode = value.encode('utf-8')
+            elif encoding_type == 'base64':
+                key_encode = base64.b64encode(key.encode())
+                value_encode = base64.b64encode(value.encode())
+            tag = dict()
+            tag.update([("Key", "{}".format(key_encode)),
+                        ("Value", "{}".format(value_encode))])
+            tag_set.append(tag)
+            LOGGER.info(
+                "Put bucket tagging with encoded value of TagSet: %s", str(tag_set))
+            response = super().set_bucket_tags(
+                bucket_name, tag_set={'TagSet': tag_set})
+        except (ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s",
+                         S3TaggingTestLib.set_encoded_tag_values.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
