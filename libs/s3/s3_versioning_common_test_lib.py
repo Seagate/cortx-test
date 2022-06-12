@@ -87,7 +87,7 @@ def parse_list_object_versions_response(list_response: dict) -> dict:
                     ...
                 }
             "version_count": N
-            "deletemarkers": M
+            "delete_markers": M
             "deletemarker_count": {
                 "<key_name>": {
                         "<version-id>": {
@@ -164,7 +164,7 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
     try:
         if list_params:
             list_response = s3_ver_test_obj.list_object_versions(bucket_name=bucket_name,
-                                                                 **list_params)
+                                                                 optional_params=list_params)
         else:
             list_response = s3_ver_test_obj.list_object_versions(bucket_name=bucket_name)
     except CTException as error:
@@ -203,12 +203,13 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
                                           resp_dict["versions"][key][version]["etag"])
                 expected_version_count += 1
             for delete_marker in expected_versions[key]["delete_markers"]:
-                assert_utils.assert_in(delete_marker, list(resp_dict["delete_markers"][key].keys()))
+                assert_utils.assert_in(delete_marker,
+                                       list(resp_dict["delete_markers"][key].keys()))
                 # Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
                 # is_latest = True if key["is_latest"] == delete_marker else False
                 # Uncomment once CORTX-30178 changes are available in main
                 # assert_utils.assert_in(is_latest,
-                #                        resp_dict["deletemarkers"][key][version]["is_latest"])
+                #                        resp_dict["delete_markers"][key][version]["is_latest"])
                 expected_deletemarker_count += 1
         assert_utils.assert_equal(expected_version_count, resp_dict["version_count"],
                                   "Unexpected Version entry count in the response")
@@ -259,7 +260,8 @@ def check_get_head_object_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3Ver
             get_response = s3_ver_test_obj.get_object_version(bucket_name, object_name,
                                                               version_id=version_id)
         else:
-            get_response = s3_test_obj.get_object(bucket=bucket_name, key=object_name)
+            get_response = s3_test_obj.get_object(bucket=bucket_name, key=object_name,
+                                                  skip_polling=True)
         assert_utils.assert_true(get_response[0], get_response[1])
         if version_id:
             assert_utils.assert_equal(get_response[1]["VersionId"], version_id)
@@ -368,16 +370,17 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
                            object_name=object_name, versions_dict=versions,
                            is_unversioned=True)
 
-    for versioning_config, object_name, count in obj_list:
-        resp = s3_ver_test_obj.put_bucket_versioning(bucket_name=bucket_name,
-                                                     status=versioning_config)
-        assert_utils.assert_true(resp[0], resp[1])
-        for _ in range(count):
-            file_path = SystemRandom().choice(file_paths)  # nosec
-            chk_null_version = False if versioning_config == "Enabled" else True
-            upload_version(s3_test_obj, bucket_name=bucket_name, file_path=file_path,
-                           object_name=object_name, versions_dict=versions,
-                           chk_null_version=chk_null_version)
+    if obj_list:
+        for versioning_config, object_name, count in obj_list:
+            resp = s3_ver_test_obj.put_bucket_versioning(bucket_name=bucket_name,
+                                                        status=versioning_config)
+            assert_utils.assert_true(resp[0], resp[1])
+            for _ in range(count):
+                file_path = SystemRandom().choice(file_paths)  # nosec
+                chk_null_version = False if versioning_config == "Enabled" else True
+                upload_version(s3_test_obj, bucket_name=bucket_name, file_path=file_path,
+                               object_name=object_name, versions_dict=versions,
+                               chk_null_version=chk_null_version)
     return versions
 
 
@@ -437,12 +440,13 @@ def upload_version(s3_test_obj: Union[S3TestLib, S3MultipartTestLib], bucket_nam
     versions_dict[object_name]["is_latest"] = version_id
 
 
-def delete_version(s3_ver_test_obj: S3VersioningTestLib, bucket_name: str, object_name: str,
-                   versions_dict: dict, version_id: str = None,
+def delete_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib, bucket_name: str,
+                   object_name: str, versions_dict: dict, version_id: str = None,
                    check_deletemarker: bool = False) -> None:
     """ Delete object to a versioning enabled/suspended bucket and return dictionary of uploaded
     versions
 
+    :param s3_test_obj: S3TestLib object to perform S3 calls
     :param s3_ver_test_obj: S3VersioningTestLib object to perform S3 calls
     :param bucket_name: Bucket name for calling DELETE Object
     :param object_name: Object name for calling DELETE Object
@@ -455,7 +459,7 @@ def delete_version(s3_ver_test_obj: S3VersioningTestLib, bucket_name: str, objec
         res = s3_ver_test_obj.delete_object_version(bucket=bucket_name, key=object_name,
                                                     version_id=version_id)
     else:
-        res = s3_ver_test_obj.delete_object(bucket_name=bucket_name, obj_name=object_name)
+        res = s3_test_obj.delete_object(bucket_name=bucket_name, obj_name=object_name)
 
     assert_utils.assert_true(res[0], res[1])
     if check_deletemarker:
