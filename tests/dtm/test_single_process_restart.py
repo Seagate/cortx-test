@@ -925,3 +925,76 @@ class TestSingleProcessRestart:
             assert_utils.assert_true(resp, "Checksum validation Failed.")
         self.test_completed = True
         self.log.info("ENDED: Verify copy object during m0d restart using pkill.")
+
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-41245")
+    def test_multiple_rgw_single_m0d_restart(self):
+        """Verify IO operations work during multiple rgw restarts, single m0d restart
+        and multiple rgw restarts."""
+        self.log.info("STARTED: Verify IO operations work during multiple rgw restarts,"
+                      " single m0d restart and multiple rgw restarts.")
+        bucket_name = 'bucket-test-41245'
+        object_prefix = 'object-test-41245'
+        log_file_prefix = 'test-41245'
+        que = multiprocessing.Queue()
+        num_loops = num_buckets = self.test_cfg["test_41245"]["num_loop"]
+        rgw_restarts = self.test_cfg["test_41245"]["rgw_restarts"]
+
+        self.log.info("Step 1: Create %s buckets for IO operation during restarts", num_buckets)
+        resp = self.s3_test_obj.create_multiple_buckets(num_buckets, 'test-41245')
+        bucket_list = resp[1]
+        self.log.info("Step 1: Bucket created in healthy mode ")
+
+        self.log.info("Step 2: Perform Writes,Reads and Validate operation for %s iterations:",
+                      num_loops)
+        proc_ios = multiprocessing.Process(target=self.dtm_obj.perform_write_op, args=(
+            bucket_name, object_prefix, self.test_cfg['clients'], self.test_cfg['samples'],
+            log_file_prefix, que, self.test_cfg['size'], num_loops, bucket_list))
+        proc_ios.start()
+
+        self.log.info("Step 3 : Perform RGW Process Restarts for %s iteration during IO operations",
+                      rgw_restarts)
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
+                                            process=self.rgw_process,
+                                            check_proc_state=True,
+                                            restart_cnt=rgw_restarts)
+        assert_utils.assert_true(resp, "Failure observed during rgw process restart/recovery")
+
+        self.log.info("Step 4 : Perform single m0d Process Restarts during IO operations")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.POD_NAME_PREFIX,
+                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
+                                            process=self.m0d_process,
+                                            check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during m0d process restart/recovery")
+
+        self.log.info("Step 5 : Perform RGW Process Restarts for %s iteration during IO operations",
+                      rgw_restarts)
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
+                                            process=self.rgw_process,
+                                            check_proc_state=True,
+                                            restart_cnt=rgw_restarts)
+        assert_utils.assert_true(resp, "Failure observed during rgw process restart/recovery")
+
+        self.log.info("Step 6: Check if IO operations triggered in step 2 completed successfully")
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+
+        self.log.info("Step 7: Read, validate, Delete data written in Step 2")
+        self.dtm_obj.perform_ops(workload_info, que, False, True, False)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.test_completed = True
+        self.log.info("ENDED: Verify IO operations work during multiple rgw restarts,"
+                      " single m0d restart and multiple rgw restarts.")
