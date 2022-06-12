@@ -646,3 +646,139 @@ class TestRGWProcessRestart:
                       "object sizes in background")
         self.test_completed = True
         self.log.info("ENDED: Verify IOs during RC pod rgw_s3 restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-42250")
+    def test_write_read_delete_during_rgw_restart(self):
+        """Verify WRITE, READ, DELETE during rgw restart using pkill."""
+        self.log.info("STARTED: Verify WRITE, READ, DELETE during rgw restart using pkill")
+        bucket_name = 'bucket-test-42250'
+        object_prefix = 'object-test-42250'
+        log_file_prefix = 'test-42250'
+
+        que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Start Write Operations for parallel reads "
+                      "and parallel deletes during rgw restart:")
+        write_proc = []
+        for _ in range(0, 2):
+            proc = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
+                                           args=(bucket_name, object_prefix,
+                                                 self.test_cfg['clients'],
+                                                 self.test_cfg['samples'],
+                                                 self.test_cfg['size'],
+                                                 log_file_prefix,
+                                                 que))
+            proc.start()
+            write_proc.append(proc)
+
+        self.log.info("Step 2: Wait for Write Operation to complete.")
+        workload_info_list = []
+        for each in write_proc:
+            if each.is_alive():
+                each.join()
+            resp = que.get()
+            assert_utils.assert_true(resp[0], resp[1])
+            workload_info_list.append(resp[1])
+
+        self.log.info("Step 3: Perform Write,Read,Delete Parallely during rgw restart")
+        parallel_proc = []
+        self.log.info("Step 3a: Start Write in new process")
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
+                                                args=(bucket_name, object_prefix,
+                                                      self.test_cfg['clients'],
+                                                      self.test_cfg['samples'],
+                                                      self.test_cfg['size'],
+                                                      log_file_prefix,
+                                                      que))
+        proc_write_op.start()
+        parallel_proc.append(proc_write_op)
+        self.log.info("Step 3b: Start Read in new process")
+        # Reads, validate and delete
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
+                                               args=(workload_info_list[0], que,
+                                                     False,
+                                                     True,
+                                                     True))
+        proc_read_op.start()
+        parallel_proc.append(proc_read_op)
+        self.log.info("Step 3c: Start Deletes in new process")
+        # delete
+        proc_delete_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
+                                                 args=(workload_info_list[1], que,
+                                                       True,
+                                                       False,
+                                                       False))
+        proc_delete_op.start()
+        parallel_proc.append(proc_delete_op)
+
+        self.log.info(
+            "Step 4: Perform Single rgw Process Restart During Write/Read/Delete Operations")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
+                                            process=self.rgw_process,
+                                            check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+
+        self.log.info("Step 5: Check if all the operations were successful")
+        write_during_restart = None
+        for each in parallel_proc:
+            if each.is_alive():
+                each.join()
+            resp = que.get()
+            assert_utils.assert_true(resp[0], resp[1])
+            if isinstance(resp[1], dict):
+                write_during_restart = resp[1]
+
+        if not write_during_restart:
+            assert_utils.assert_true(False, 'No workload returned for writes performed during rgw '
+                                            'restart')
+
+        self.log.info("Step 6: Perform read, delete operation on object written during rgw restart "
+                      "during step 3")
+        self.dtm_obj.perform_ops(write_during_restart, que, False, True, False)
+
+        self.test_completed = True
+        self.log.info("ENDED: Verify WRITE, READ, DELETE during rgw restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-42251")
+    def test_overwrite_same_object_during_rgw_restart(self):
+        """Overwrite same object during rgw restart."""
+        self.log.info("STARTED: Overwrite same object during m0d restart.")
+        bucket_name = 'bucket-test-42251'
+        object_prefix = 'object-test-42251'
+        overwrite_cnt = self.test_cfg['test_42251']['overwrite_cnt']
+        max_object_size = self.test_cfg['test_42251']['max_object_size']
+        que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Create bucket : %s", bucket_name)
+        s3_test_obj = S3TestLib()
+        s3_test_obj.create_bucket(bucket_name)
+
+        self.log.info("Step 2 : Start continuous overwrite on same object")
+        proc_overwrite_op = multiprocessing.Process(target=self.dtm_obj.perform_object_overwrite,
+                                                    args=(bucket_name, object_prefix, overwrite_cnt,
+                                                          max_object_size, que))
+        proc_overwrite_op.start()
+
+        self.log.info("Step 3 : Perform Single rgw Process Restart during overwrite ")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
+                                            process=self.rgw_process,
+                                            check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+
+        self.log.info("Step 4: Wait for Overwrite Operation to complete.")
+        if proc_overwrite_op.is_alive():
+            proc_overwrite_op.join()
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.test_completed = True
+        self.log.info("ENDED: Overwrite same object during m0d restart.")
