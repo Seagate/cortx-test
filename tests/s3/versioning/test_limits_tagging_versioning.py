@@ -437,8 +437,9 @@ class TestObjectTaggingVerLimits:
                                              object_name=self.object_name, version_id=latest_ver)
         assert_utils.assert_true(resp[0], resp)
         get_tag = resp[1]
-        assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
-                                                    f"Expected: {put_tag} \n Actual: {get_tag}")
+        for pair in put_tag:
+            assert_utils.assert_in(pair, get_tag, "Mismatch in tag Key-Value pair."
+                                                  f"Expected: {put_tag} \n Actual: {get_tag}")
         LOGGER.info("Step 4: Performed GET Object Tagging for %s with versionId=%s is %s",
                     self.object_name, latest_ver, get_tag)
         LOGGER.info("Completed: Test case sensitivity of tag key-value for a versioned object")
@@ -499,8 +500,9 @@ class TestObjectTaggingVerLimits:
                                              object_name=self.object_name, version_id=latest_ver)
         assert_utils.assert_true(resp[0], resp)
         get_tag = resp[1]
-        assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
-                                                    f"Expected: {put_tag} \n Actual: {get_tag}")
+        for pair in put_tag:
+            assert_utils.assert_in(pair, get_tag, "Mismatch in tag Key-Value pair."
+                                                  f"Expected: {put_tag} \n Actual: {get_tag}")
         LOGGER.info("Step 4: Performed GET Object Tagging for %s with versionId=%s is %s",
                     self.object_name, latest_ver, get_tag)
         tag_or = [{"Key": "tag*key", "Value": "tag1value"},
@@ -526,8 +528,9 @@ class TestObjectTaggingVerLimits:
                                              object_name=self.object_name, version_id=latest_ver)
         assert_utils.assert_true(resp[0], resp)
         get_tag1 = resp[1]
-        assert_utils.assert_equal(get_tag1, put_tag, "Mismatch in tag Key-Value pair."
-                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
+        for pair in put_tag:
+            assert_utils.assert_in(pair, get_tag1, "Mismatch in tag Key-Value pair."
+                                                  f"Expected: {put_tag} \n Actual: {get_tag1}")
         LOGGER.info("Step 6: Performed GET Object Tagging for %s with versionId=%s is %s",
                     self.object_name, latest_ver, get_tag)
         LOGGER.info("Completed: Test allowed special characters in tag key for a versioned object")
