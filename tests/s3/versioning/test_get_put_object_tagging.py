@@ -754,7 +754,6 @@ class TestGetPutObjectTagging:
                                   object_name=self.object_name, versions_dict=self.versions,
                                   check_deletemarker=True)
         dm_id = self.versions[self.object_name]["delete_markers"][0]
-        assert_utils.assert_in("No Content", resp[1].message)
 
         LOGGER.info("Step 7: Perform GET Object Tagging for %s with versionId=%s",
                     self.object_name, latest_ver_id)
