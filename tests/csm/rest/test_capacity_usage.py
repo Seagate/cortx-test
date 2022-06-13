@@ -110,16 +110,13 @@ class TestSystemCapacity():
         cls.aligned_size = 4 * cls.nvalue
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.err_margin = (cls.nvalue/(cls.nvalue+cls.kvalue))*100 + 1
+        cls.s3_cleanup = False
+        cls.deploy = True
 
     def setup_method(self):
         """
         Setup method for creating s3 user
         """
-        self.deploy = True
-        self.s3_cleanup = False
-        resp = self.csm_obj.get_degraded_all(self.hlth_master)
-        total_written = resp["healthy"]
-
         self.log.info("Creating S3 account")
         resp = self.csm_obj.create_s3_account()
         assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
@@ -127,14 +124,14 @@ class TestSystemCapacity():
         self.skey = resp.json()["secret_key"]
         self.s3_user = resp.json()["account_name"]
         self.bucket = "iam-user-bucket-" + str(int(time.time()))
-
-        resp = s3_misc.delete_all_buckets(self.akey,self.skey)
-        assert resp, "Delete all buckets and object failed."
+        
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       self.bucket, self.akey, self.skey)
         assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
-        self.cap_df = pandas.DataFrame()
 
+        self.cap_df = pandas.DataFrame()
+        total_written = s3_misc.get_total_used(self.akey, self.skey)
+        
         self.log.info("[Start] Start some IOs")
         obj = f"object{self.s3_user}{time.time_ns()}.txt"
         self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, self.aligned_size,
@@ -153,7 +150,7 @@ class TestSystemCapacity():
         total_written += new_write
 
         result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=0, total=total_written)
+            critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
         assert result[0], result[1]
 
     def teardown_method(self):

@@ -345,3 +345,27 @@ def delete_all_buckets(access_key: str, secret_key: str, **kwargs):
     result = not list(s3_resource.buckets.all())
     del s3_resource
     return result
+
+def get_total_used(access_key: str, secret_key: str, **kwargs):
+    """
+    """
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    LOGGER.debug("S3 Endpoint : %s", endpoint)
+
+    region = S3_CFG["region"]
+    LOGGER.debug("Region : %s", region)
+
+    s3_resource = boto3.resource('s3', verify=False,
+                        endpoint_url=endpoint,
+                        aws_access_key_id=access_key,
+                        aws_secret_access_key=secret_key,
+                        region_name=region,
+                        **kwargs)
+    LOGGER.debug("S3 boto resource created")
+
+    size =0
+    for bucket in s3_resource.buckets.all():
+        size += get_objects_size_bucket(bucket.name,access_key, secret_key, **kwargs)[1]
+    return size
