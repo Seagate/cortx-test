@@ -30,16 +30,19 @@ assertions as well, with the main aim being to have leaner and cleaner code in t
 import logging
 import string
 from secrets import SystemRandom
+from typing import Union
 
-from commons import errorcodes as err
 from commons import error_messages as errmsg
+from commons import errorcodes as err
 from commons.constants import S3_ENGINE_RGW
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import s3_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3.s3_common_test_lib import create_s3_acc
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
@@ -377,25 +380,37 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
     return versions
 
 
-# pylint: disable=too-many-arguments
-def upload_version(s3_test_obj: S3TestLib, bucket_name: str, object_name: str,
-                   file_path: str, versions_dict: dict,
-                   chk_null_version: bool = False, is_unversioned: bool = False) -> None:
-    """ Upload objects to a versioning enabled/suspended bucket and return dictionary of uploaded
-    versions
+def upload_version(s3_test_obj: Union[S3TestLib, S3MultipartTestLib], bucket_name: str,
+                   object_name: str, file_path: str, versions_dict: dict, **kwargs) -> None:
+    """ Upload an object(Multipart/Regular) to a versioning enabled/suspended bucket and return
+    dictionary of uploaded versions.
 
     :param s3_test_obj: S3TestLib object to perform S3 calls
     :param bucket_name: Bucket name for calling PUT Object
     :param object_name: Object name for calling PUT Object
     :param file_path: File path that can be used for PUT Object call
-    :param chk_null_version: True, if 'null' version id is expected, else False
     :param versions_dict: Dictionary to be updated with uploaded version metadata
-    :param is_unversioned: Set to true if object is uploaded to an unversioned bucket
+    :keyword chk_null_version: True, if 'null' version id is expected, else False
+    :keyword is_unversioned: Set to true if object is uploaded to an unversioned bucket
         Can be used for setting up pre-existing objects before enabling/suspending bucket
         versioning
+    :keyword is_multipart: True if upload version of object is multipart
+    :keyword total_parts: Total number of parts used in multipart upload
+    :keyword file_size: Size of the object, multiple of 1MB
     """
-    res = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
-                                 file_path=file_path)
+    chk_null_version = kwargs.get("chk_null_version", False)
+    is_unversioned = kwargs.get("is_unversioned", False)
+    is_multipart = kwargs.get("is_multipart", False)
+    total_parts = kwargs.get("total_parts", 10)
+    file_size = kwargs.get("file_size", 10)
+    if is_multipart:
+        res = s3_test_obj.complete_multipart_upload_with_di(
+            bucket_name, object_name, file_path, total_parts=total_parts, file_size=file_size)
+    else:
+        if not system_utils.path_exists(file_path):
+            system_utils.create_file(file_path, file_size)
+        res = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
+                                     file_path=file_path)
     assert_utils.assert_true(res[0], res[1])
     if is_unversioned:
         version_id = "null"
