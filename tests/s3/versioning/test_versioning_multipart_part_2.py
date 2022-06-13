@@ -57,6 +57,7 @@ class TestMultipartVersioning:
         self.bucket_name = f"s3bkt-versioning-{perf_counter_ns()}"
         self.object_prefix = "s3obj-versioning-{}"
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestMultipartVersioning")
+        self.object_name = self.object_prefix.format(perf_counter_ns())
         self.test_file_path = os.path.join(self.test_dir_path, self.object_name)
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
@@ -66,6 +67,7 @@ class TestMultipartVersioning:
         res = self.s3test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
+        self.bkt_list = self.s3test_obj.bucket_list()[1]
         self.log.info("Created a bucket with name : %s", self.bucket_name)
         self.log.info("ENDED: Setup operations.")
         yield
@@ -82,10 +84,9 @@ class TestMultipartVersioning:
     def test_abort_multipart_upload_does_not_create_a_new_version_41288(self):
         """Test Abort Multipart Upload does not create a new version."""
         self.log.info("STARTED: Test Abort Multipart Upload does not create a new version.")
-        self.object_name = self.object_prefix.format(perf_counter_ns())
         self.log.info("Step 1: Create bucket.")
-        assert self.bucket_name in self.s3test_obj.bucket_list(),\
-            f"Bucket '{self.bucket_name}' does not exists"
+        assert_utils.assert_in(self.bucket_name, self.bkt_list,
+                               f"Bucket '{self.bucket_name}' does not exists")
         self.log.info("Step 2: PUT Bucket versioning with status as Enabled.")
         self.s3ver_test_obj.put_bucket_versioning(self.bucket_name, status="Enabled")
         self.log.info("Step 3: Initiate multipart upload.")
@@ -110,7 +111,7 @@ class TestMultipartVersioning:
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     self.bucket_name, self.object_name,
                                                     get_error_msg=err_msg.NO_SUCH_KEY_ERR,
-                                                    head_error_msg=err_msg.NO_SUCH_KEY_ERR)
+                                                    head_error_msg=err_msg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test Abort Multipart Upload does not create a new version.")
 
     @pytest.mark.s3_ops
@@ -121,8 +122,8 @@ class TestMultipartVersioning:
                       "a versioned bucket.")
         versions = {}
         self.log.info("Step 1: Create bucket.")
-        assert self.bucket_name in self.s3test_obj.bucket_list(), \
-            f"Bucket '{self.bucket_name}' does not exists"
+        assert_utils.assert_in(self.bucket_name, self.bkt_list,
+                               f"Bucket '{self.bucket_name}' does not exists")
         self.log.info("Step 2: PUT Bucket versioning with status as Enabled.")
         self.s3ver_test_obj.put_bucket_versioning(self.bucket_name, status="Enabled")
         self.log.info("Step 3: Upload a multipart object - mpobject1: mpversionid1")
@@ -141,15 +142,18 @@ class TestMultipartVersioning:
         self.s3ver_test_obj.put_bucket_versioning(self.bucket_name, status="Suspended")
         self.log.info("Step 6: Perform PUT Object to mpobject1 (version with 'versionId=null').")
         s3ver_cmn_lib.upload_version(self.s3test_obj, self.bucket_name, self.object_name,
-                                     self.test_file_path, versions_dict=versions)
+                                     self.test_file_path, versions_dict=versions,
+                                     chk_null_version=True)
         self.log.info("Step 7: Perform List Object Versions.")
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, self.bucket_name, versions)
         self.log.info("Step 8: Perform List Objects.")
-        resp = self.s3ver_test_obj.object_list(self.bucket_name)
+        resp = self.s3test_obj.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_in(self.object_name, resp[1],
+                               f"Failed to list versioned object {self.object_name}")
         self.log.info("Step 9: Perform GET/HEAD Object.")
-        resp = self.s3test_obj.object_info(self.bucket_name, self.object_name)
-        assert_utils.assert_true(resp[0], resp[1])
+        s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
+                                                    self.bucket_name, self.object_name)
         self.log.info("Step 10: Perform DELETE Object for all 6 versions viz. null, id1..id5.")
         s3ver_cmn_lib.empty_versioned_bucket(self.s3ver_test_obj, self.bucket_name)
         self.log.info("Step 11: Perform List Object Versions.")
@@ -163,7 +167,7 @@ class TestMultipartVersioning:
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     self.bucket_name, self.object_name,
                                                     get_error_msg=err_msg.NO_SUCH_KEY_ERR,
-                                                    head_error_msg=err_msg.NO_SUCH_KEY_ERR)
+                                                    head_error_msg=err_msg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test Upload multiple versions to a multipart uploaded object in a "
                       "versioned bucket.")
 
@@ -173,44 +177,46 @@ class TestMultipartVersioning:
         """Test Upload new versions to existing objects using multipart upload."""
         self.log.info("STARTED: Upload new versions to existing objects using multipart upload.")
         versions = {}
-        self.object_name1 = self.object_prefix.format(perf_counter_ns())
-        self.object_name2 = self.object_prefix.format(perf_counter_ns())
+        object_name1 = self.object_prefix.format(perf_counter_ns())
+        object_name2 = self.object_prefix.format(perf_counter_ns())
         self.log.info("Step 1: Create bucket.")
-        assert self.bucket_name in self.s3test_obj.bucket_list(), \
-            f"Bucket '{self.bucket_name}' does not exists"
+        assert_utils.assert_in(self.bucket_name, self.bkt_list,
+                               f"Bucket '{self.bucket_name}' does not exists")
         self.log.info("Step 2: Upload object - object1.")
-        s3ver_cmn_lib.upload_version(self.s3test_obj, self.bucket_name, self.object_name1,
-                                     self.test_file_path, versions_dict=versions)
+        s3ver_cmn_lib.upload_version(self.s3test_obj, self.bucket_name, object_name1,
+                                     self.test_file_path, versions_dict=versions,
+                                     chk_null_version=True)
         self.log.info("Step 3: PUT Bucket versioning with status as Enabled.")
         resp = self.s3ver_test_obj.put_bucket_versioning(self.bucket_name, status="Enabled")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Upload object - object2 (creates version with id = obj2versionid1).")
-        s3ver_cmn_lib.upload_version(self.s3test_obj, self.bucket_name, self.object_name2,
+        s3ver_cmn_lib.upload_version(self.s3test_obj, self.bucket_name, object_name2,
                                      self.test_file_path, versions_dict=versions)
         self.log.info("Step 5: Upload a new version to object2 using multipart upload (creates "
                       "version with id = obj2versionid2).")
-        s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name, self.object_name2,
+        s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name, object_name2,
                                      self.test_file_path, versions_dict=versions,
                                      is_multipart=True, total_parts=10, file_size=150)
         self.log.info("Step 6: PUT Bucket versioning with status as Suspended.")
         self.s3ver_test_obj.put_bucket_versioning(self.bucket_name, status="Suspended")
         self.log.info("Step 7: Upload a new version to object1 using multipart upload ("
                       "overwrites version with versionid = null).")
-        s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name, self.object_name1,
+        s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name, object_name1,
                                      self.test_file_path, versions_dict=versions,
-                                     is_multipart=True, total_parts=10, file_size=100)
+                                     is_multipart=True, total_parts=10, file_size=100,
+                                     chk_null_version=True)
         self.log.info("Step 8: Perform List Object Versions.")
         s3ver_cmn_lib.check_list_object_versions(
-            self.s3ver_test_obj, bucket_name=self.bucket_name, expected_versions={})
+            self.s3ver_test_obj, bucket_name=self.bucket_name, expected_versions=versions)
         self.log.info("Step 9: Perform List Objects.")
         resp = self.s3test_obj.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(self.object_name1, resp[1], f"Failed to list {self.object_name1}")
-        assert_utils.assert_in(self.object_name2, resp[1], f"Failed to list {self.object_name2}")
+        assert_utils.assert_in(object_name1, resp[1], f"Failed to list {object_name1}")
+        assert_utils.assert_in(object_name2, resp[1], f"Failed to list {object_name2}")
         self.log.info("Step 10: Perform GET/HEAD Object for object1.")
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
-                                                    self.bucket_name, self.object_name1)
+                                                    self.bucket_name, object_name1)
         self.log.info("Step 11: Perform GET/HEAD Object for object2.")
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
-                                                    self.bucket_name, self.object_name2)
+                                                    self.bucket_name, object_name2)
         self.log.info("ENDED: Upload new versions to existing objects using multipart upload.")

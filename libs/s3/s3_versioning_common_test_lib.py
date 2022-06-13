@@ -401,7 +401,7 @@ def upload_version(s3_test_obj: Union[S3TestLib, S3MultipartTestLib], bucket_nam
     chk_null_version = kwargs.get("chk_null_version", False)
     is_unversioned = kwargs.get("is_unversioned", False)
     is_multipart = kwargs.get("is_multipart", False)
-    total_parts = kwargs.get("total_parts", 10)
+    total_parts = kwargs.get("total_parts", 2)
     file_size = kwargs.get("file_size", 10)
     if is_multipart:
         res = s3_test_obj.complete_multipart_upload_with_di(
