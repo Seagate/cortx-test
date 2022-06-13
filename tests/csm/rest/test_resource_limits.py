@@ -118,7 +118,6 @@ class TestResourceLimits():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started - %s #####", test_case_name)
 
-        sessions_quota = self.csm_conf["test_43150"]["sessions_quota"]
         tmp_user_password = self.csm_conf["test_43150"]["tmp_user_password"]
 
         msg = "Step 1: Create CSM user."
@@ -132,15 +131,23 @@ class TestResourceLimits():
         self.created_users.append(user_id)
         msg = "Step 2: Fulfil the sessions quota by multiple login."
         self.log.info(msg)
-        for _ in range(sessions_quota):
-            response = self.csm_obj.rest_login(
-                login_as={"username": username, "password": tmp_user_password})
-        msg = "Step 3: Try to login above the sessions quota."
-        self.log.info(msg)
         response = self.csm_obj.rest_login(
             login_as={"username": username, "password": tmp_user_password})
-        assert response.status_code == const.UNAUTHORIZED
+        assert response.status_code == const.SUCCESS_STATUS
 
+        response = self.csm_obj.rest_login(
+            login_as={"username": username, "password": tmp_user_password})
+        assert response.status_code == const.SUCCESS_STATUS
+        self.log.debug("response is : %s", response)
+        first_token = response.headers['Authorization']
+
+        response = self.csm_obj.rest_login(
+            login_as={"username": username, "password": tmp_user_password})
+        assert response.status_code == const.SUCCESS_STATUS
+        self.log.debug("response is : %s", response)
+        second_token = response.headers['Authorization']
+
+        assert first_token == second_token
         self.log.info("################Test Passed##################")
 
     @pytest.mark.csmrest
