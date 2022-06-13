@@ -203,8 +203,14 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
                                           resp_dict["versions"][key][version]["etag"])
                 expected_version_count += 1
             for delete_marker in expected_versions[key]["delete_markers"]:
-                assert_utils.assert_in(delete_marker,
-                                       list(resp_dict["delete_markers"][key].keys()))
+                if delete_marker != "DMO_DELETEMARKERID_PLACEHOLDER":
+                    assert_utils.assert_in(delete_marker,
+                                        list(resp_dict["delete_markers"][key].keys()))
+                else:
+                    dm_id = list(resp_dict["delete_markers"][key].keys())[0]
+                    assert_utils.assert_not_equal(dm_id, "null",
+                                                  "Check DeleteObjects generates non-null delete "
+                                                  "marker VersionId in versioning enabled bucket")
                 # Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
                 # is_latest = True if key["is_latest"] == delete_marker else False
                 # Uncomment once CORTX-30178 changes are available in main
@@ -489,6 +495,89 @@ def delete_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
             versions_dict[object_name]["delete_markers"].append(dm_id)
             versions_dict[object_name]["version_history"].append(dm_id)
             versions_dict[object_name]["is_latest"] = dm_id
+
+
+def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict,
+                   obj_ver_list: list, quiet: bool = False,
+                   is_versioned: bool = True, expected_error: str = None) -> None:
+    """
+    Delete multiple objects with versioning support and check response.
+
+    :param s3_test_obj: S3TestLib object to perform S3 calls
+    :param bucket_name: Bucket name for calling DELETE Objects
+    :param versions_dict: Dictionary to be updated with deleted key/version metadata
+    :param obj_ver_list: List of tuples with key and version id details for DeleteObjects call
+    :param quiet: Enable quiet mode when performing DeleteObjects
+    :param is_versioned: Set to true if bucket versioning is enabled, False if Suspended
+    :param expected_error: Error message string to verify in case, error is expected
+    """
+    dmo_list = []
+    for obj, ver in obj_ver_list:
+        if ver is not None:
+            dmo_list.append({"Key": obj})
+        else:
+            dmo_list.append({"Key": obj, "VersionId": ver})
+    try:
+        resp = s3_test_obj.delete_multiple_objects(bucket_name=bucket_name, quiet=quiet,
+	                                               prepared_obj_list=dmo_list)
+    except CTException as error:
+        LOG.error(error)
+        dmo_error = error
+
+    if expected_error is not None:
+        assert_utils.assert_in(expected_error, dmo_error.message, dmo_error)
+        # If error is expected, check the error message and skip the further validation
+        return
+
+    assert_utils.assert_true(resp[0], resp[1])
+    delete_result = sorted(resp[1]["Deleted"])
+
+    if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+        assert_utils.assert_equal(sorted(dmo_list), delete_result,
+                                  "DeleteObjects returned unexpected DeleteResult response")
+    else:
+        trimmed_delete_result = []
+        for entry in delete_result:
+            obj = entry["Key"]
+            v_id = entry.get("VersionId", None)
+            if v_id is None:
+                trimmed_delete_result.append({"Key": obj})
+            else:
+                trimmed_delete_result.append({"Key": obj, "VersionId": v_id})
+        assert_utils.assert_equal(sorted(dmo_list), trimmed_delete_result,
+                                  "DeleteObjects returned unexpected DeleteResult response")
+
+    for delete_entry in delete_result:
+        obj = delete_entry["Key"]
+        ver = delete_entry("VersionId", None)
+
+        if ver is not None:
+            if ver in versions_dict[obj]["versions"].keys():
+                versions_dict[obj]["versions"].pop(ver)
+            else:
+                versions_dict[obj]["delete_markers"].remove(ver)
+
+            versions_dict[obj]["version_history"].remove(ver)
+            if ver == versions_dict[obj]["is_latest"]:
+                versions_dict[obj]["is_latest"] =  versions_dict[obj]["version_history"][-1]
+        else:
+            if is_versioned:
+                if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+                    # DeleteMarker not returned in response for RGW
+                    dm_id = "DMO_DELETEMARKERID_PLACEHOLDER"
+                else:
+                    dm_id = delete_entry["DeleteMarkerVersionId"]
+            else:
+                dm_id = "null"
+
+            if dm_id == "null":
+                # Remove null version id from version list and history if it exists
+                if "null" in versions_dict[obj]["versions"].keys():
+                    versions_dict[obj]["versions"].pop("null")
+                    versions_dict[obj]["version_history"].remove("null")
+            versions_dict[obj]["delete_markers"].append(dm_id)
+            versions_dict[obj]["version_history"].append(dm_id)
+            versions_dict[obj]["is_latest"] = dm_id
 
 
 def empty_versioned_bucket(s3_ver_test_obj: S3VersioningTestLib,
