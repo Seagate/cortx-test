@@ -348,6 +348,180 @@ class TestTaggingDeleteObject:
         LOGGER.info("ENDED: Test DELETE object tagging in a versioning enabled bucket.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-40437")
+    @CTFailOn(error_handler)
+    def test_del_obj_tag_40437(self):
+        """
+        Test DELETE object tagging in a versioning suspended  bucket
+        """
+        LOGGER.info("STARTED: Test DELETE object tagging in a versioning suspended  bucket")
+
+        LOGGER.info("Step 1: PUT Bucket versioning with status as Enabled")
+        res = self.s3_ver_obj.put_bucket_versioning(bucket_name=self.bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+
+        s3_ver_tlib.upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
+                                   file_path=self.file_path1, object_name=self.object_name,
+                                   versions_dict=self.versions,
+                                   chk_null_version=True)
+        null_version = self.versions[self.object_name]["version_history"][-1]
+
+        LOGGER.info("Step 2: Upload (creates version with versionId) of object - %s ", self.object_name)
+        s3_ver_tlib.upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
+                                   file_path=self.file_path1, object_name=self.object_name,
+                                   versions_dict=self.versions)
+        latest_v = self.versions[self.object_name]["version_history"][-1]
+
+        LOGGER.info("Step 3: Perform PUT Bucket versioning with status as Suspended")
+        res = self.s3_ver_obj.put_bucket_versioning(bucket_name=self.bucket_name, status="Suspended")
+        assert_utils.assert_true(res[0], res[1])
+
+        LOGGER.info("Step 4: Perform PUT Object for object1 (creates version with null versionId)")
+        resp = s3_ver_tlib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              version_id=null_version,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              version_tag=self.ver_tag,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name
+                                              )
+        assert_utils.assert_true(resp[0], resp)
+        ver_list = [latest_v, null_version]
+        LOGGER.info("Step 5: Perform PUT Object Tagging for object1 with a tag key-value pair for "
+                    "versionIds versionid1 and null version")
+
+        self.ver_tag.update({self.object_name: dict()})
+        for v_id in ver_list:
+            resp = s3_ver_tlib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj, version_id=v_id,
+                                                  s3_ver_test_obj=self.s3_ver_obj,
+                                                  version_tag=self.ver_tag,
+                                                  bucket_name=self.bucket_name,
+                                                  object_name=self.object_name)
+            assert_utils.assert_true(resp[0], resp)
+
+        self.ver_tag.update({self.object_name: dict()})
+
+        LOGGER.info("Step 6: GET Object Tagging for %s with versionId=%s", self.object_name, ver_list)
+        LOGGER.info("GET Object Tagging for %s with versionId=%s", self.object_name, v_id)
+        resp = s3_ver_tlib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name,
+                                              version_id=latest_v)
+        assert_utils.assert_true(resp[0], resp)
+        get_tag = resp[1]
+        put_tag = self.ver_tag[self.object_name][v_id]
+        assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
+                                                    f"Expected: {put_tag} \n Actual: {get_tag}")
+
+        LOGGER.info("Step 7: GET Object Tagging for %s (with versionId null)",
+                    self.object_name)
+        resp = s3_ver_tlib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name,
+                                              version_id=null_version)
+        assert_utils.assert_true(resp[0], resp)
+        get_tag = resp[1]
+        latest = self.versions[self.object_name]["version_history"][-1]  # Get the latest Version ID
+        put_tag = self.ver_tag[self.object_name][latest]
+        assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
+                                                    f"Expected: {put_tag} \n Actual: {get_tag}")
+
+        LOGGER.info("Step 8: GET Object Tagging for %s (without versionId specified)", self.object_name)
+        resp = s3_ver_tlib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name)
+        assert_utils.assert_true(resp[0], resp)
+        # expecting "TagSet": []
+        assert_utils.assert_false(resp[1], resp)
+
+        LOGGER.info("Step 9: DELETE Object Tagging for %s with versionId=%s", self.object_name,
+                    ver_list[0])
+        resp = s3_ver_tlib.delete_object_tagging(bucket_name=self.bucket_name,
+                                                 s3_ver_test_obj=self.s3_ver_obj,
+                                                 s3_tag_test_obj=self.s3_tag_obj,
+                                                 object_name=self.object_name,
+                                                 version_id=ver_list[0])
+        assert_utils.assert_true(resp[0], resp)
+
+        LOGGER.info("Step 10: GET Object Tagging for %s with versionId=%s", self.object_name,
+                    ver_list[0])
+        resp = s3_ver_tlib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name,
+                                              version_id=ver_list[0])
+        assert_utils.assert_true(resp[0], resp)
+        get_tag = resp[1]
+        put_tag = self.ver_tag[self.object_name][f"{ver_list[0]}"]
+        assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
+                                                    f"Expected: {put_tag} \n Actual: {get_tag}")
+
+        LOGGER.info("Step 11: GET Object Tagging for %s (with versionId=null)", self.object_name)
+        resp = s3_ver_tlib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name,
+                                              version_id=ver_list[1])
+        assert_utils.assert_true(resp[0], resp)
+        # expecting "TagSet": []
+        assert_utils.assert_false(resp[1], resp)
+
+        LOGGER.info("Step 12: GET Object Tagging for %s (without versionId specified)",
+                    self.object_name)
+        resp = s3_ver_tlib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name)
+        assert_utils.assert_true(resp[0], resp)
+        # expecting "TagSet": []
+        assert_utils.assert_false(resp[1], resp)
+
+        LOGGER.info("Step 13: DELETE Object Tagging for %s (with versionId=null) %s", self.object_name,
+                    ver_list[1])
+        resp = s3_ver_tlib.delete_object_tagging(bucket_name=self.bucket_name,
+                                                 s3_ver_test_obj=self.s3_ver_obj,
+                                                 s3_tag_test_obj=self.s3_tag_obj,
+                                                 object_name=self.object_name,
+                                                 version_id=ver_list[1])
+        assert_utils.assert_true(resp[0], resp)
+
+        LOGGER.info("Step 14: GET Object Tagging for %s with versionId=%s", self.object_name,
+                    ver_list[0])
+        resp = s3_ver_tlib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name,
+                                              version_id=ver_list[0])
+        assert_utils.assert_true(resp[0], resp)
+        get_tag = resp[1]
+        put_tag = self.ver_tag[self.object_name][f"{ver_list[0]}"]
+        assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
+                                                    f"Expected: {put_tag} \n Actual: {get_tag}")
+
+        LOGGER.info("Step 15: GET Object Tagging for %s (with versionId=null)", self.object_name)
+        resp = s3_ver_tlib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name,
+                                              version_id=ver_list[1])
+        assert_utils.assert_true(resp[0], resp)
+        # expecting "TagSet": []
+        assert_utils.assert_false(resp[1], resp)
+
+        LOGGER.info("Step 16: GET Object Tagging for %s (without versionId specified)",
+                    self.object_name)
+        resp = s3_ver_tlib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name)
+        assert_utils.assert_true(resp[0], resp)
+        # expecting "TagSet": []
+        assert_utils.assert_false(resp[1], resp)
+        LOGGER.info("ENDED: Test DELETE object tagging in a versioning suspended  bucket.")
+
+    @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-40438")
     def test_del_obj_tag_40438(self):
         """Test DELETE object tagging for a deleted versioned object."""
