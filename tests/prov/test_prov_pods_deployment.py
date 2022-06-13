@@ -354,7 +354,7 @@ class TestProvPodsDeployment:
                                         dix_data=config['dix_data'],
                                         dix_parity=config['dix_parity'],
                                         dix_spare=config['dix_spare'],
-                                        cvg_count="1",
+                                        cvg_count=self.prov_cfg["test_41907"]["cvg_count"],
                                         data_disk_per_cvg=config['data_disk_per_cvg'],
                                         master_node_list=self.master_node_list,
                                         worker_node_list=self.worker_node_list,
@@ -363,7 +363,7 @@ class TestProvPodsDeployment:
                                         pod_prefix=constants.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
         self.log.info("Pod list are %s", resp[0])
-        self.log.info("Pod count is %s", len(resp))
+        self.log.info("Data Pod on %s worker node is %s", len(self.worker_node_list), len(resp))
         assert_utils.assert_equal(len(resp), len(self.worker_node_list))
         self.collect_sb = False
         self.destroy_flag = False
@@ -388,7 +388,7 @@ class TestProvPodsDeployment:
                                         dix_data=config['dix_data'],
                                         dix_parity=config['dix_parity'],
                                         dix_spare=config['dix_spare'],
-                                        cvg_count="2",
+                                        cvg_count=self.prov_cfg["test_41909"]["cvg_count"],
                                         data_disk_per_cvg=config['data_disk_per_cvg'],
                                         master_node_list=self.master_node_list,
                                         worker_node_list=self.worker_node_list,
@@ -397,7 +397,7 @@ class TestProvPodsDeployment:
                                         pod_prefix=constants.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
         self.log.info("Pod list are %s", resp[0])
-        self.log.info("Pod count is %s", len(resp))
+        self.log.info("Data Pod on %s worker node is %s", len(self.worker_node_list), len(resp))
         assert_utils.assert_equal(len(resp), 2*len(self.worker_node_list))
         self.collect_sb = False
         self.destroy_flag = False

@@ -278,6 +278,10 @@ k8s_cortx_deploy:
       limits:
         mem: '1Gi'
         cpu: '500m'
+  test_41907:
+    cvg_count: 1
+  test_41909:
+    cvg_count: 2
 test_basic_io:
   io_upper_limits:
     Kb: 130
@@ -296,3 +300,4 @@ config_metallb:
   new_config_file: 'metallb_config.yaml'
   remote_path: '/root/metallb_config.yaml'
   apply_config: 'kubectl apply -f metallb_config.yaml'
+
