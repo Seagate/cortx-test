@@ -1,4 +1,4 @@
-#!/usr/bin/python # pylint: disable=C0302
+#!/usr/bin/python # pylint: disable=too-many-lines
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -81,9 +81,6 @@ class TestSingleProcessRestart:
                                 cls.master_node_list[0].password)
         cls.test_cfg = configmanager.get_config_wrapper(fpath="config/test_dtm_config.yaml")
         cls.m0d_process = 'm0d'
-        cls.rwg_process = 'rgw'
-        cls.dtm_obj = DTMRecoveryTestLib()
-        cls.s3_obj = S3TestLib()
         cls.log.info("Setup S3bench")
         resp = s3bench.setup_s3bench()
         assert_utils.assert_true(resp)
@@ -106,6 +103,19 @@ class TestSingleProcessRestart:
         self.object_name = f"dps-obj-{self.random_time}"
         self.deploy = False
         self.iam_user = dict()
+        self.log.info("Create IAM user with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.access_key = resp[1]["access_key"]
+        self.secret_key = resp[1]["secret_key"]
+        self.iam_user = {'s3_acc': {'accesskey': self.access_key, 'secretkey': self.secret_key,
+                                    'user_name': self.s3acc_name}}
+        self.s3_test_obj = S3TestLib(access_key=self.access_key, secret_key=self.secret_key,
+                                     endpoint_url=S3_CFG["s3_url"])
+        self.dtm_obj = DTMRecoveryTestLib(access_key=self.access_key, secret_key=self.secret_key)
+        self.log.info("Created IAM user with name %s", self.s3acc_name)
         if not os.path.exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
 
@@ -114,9 +124,8 @@ class TestSingleProcessRestart:
         if not self.test_completed:
             self.log.info("Test Failure observed, collecting support bundle")
             path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
-            resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
-                                                                   scripts_path=
-                                                                   const.K8S_SCRIPTS_PATH)
+            resp = support_bundle_utils.collect_support_bundle_k8s(
+                local_dir_path=path, scripts_path=const.K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
         if os.path.exists(self.test_dir_path):
             system_utils.remove_dirs(self.test_dir_path)
@@ -146,10 +155,7 @@ class TestSingleProcessRestart:
 
         self.log.info("Step 2: Perform Read Operations on the data written in step 1 in background")
         proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
-                                               args=(workload_info, que,
-                                                     True,
-                                                     True,
-                                                     True))
+                                               args=(workload_info, que, False, True, True))
         proc_read_op.start()
 
         self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
@@ -191,10 +197,8 @@ class TestSingleProcessRestart:
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
                                                 args=(bucket_name, object_prefix,
                                                       self.test_cfg['clients'],
-                                                      self.test_cfg['samples'],
-                                                      self.test_cfg['size'],
-                                                      log_file_prefix,
-                                                      que))
+                                                      self.test_cfg['samples'], log_file_prefix,
+                                                      que, self.test_cfg['size'],))
         proc_write_op.start()
 
         self.log.info("Step 2 : Perform Single m0d Process Restart During Write Operations")
@@ -213,7 +217,7 @@ class TestSingleProcessRestart:
         workload_info = resp[1]
 
         self.log.info("Step 4: Perform Read Operations on data written in Step 1:")
-        self.dtm_obj.perform_ops(workload_info, que, True, True, True)
+        self.dtm_obj.perform_ops(workload_info, que, False, True, True)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
@@ -236,29 +240,19 @@ class TestSingleProcessRestart:
         self.log.info("STARTED: Verify IOs before and after RC pod m0d restart using pkill")
         test_cfg = DTM_CFG['test_41234']
 
-        self.log.info("Step 1: Create IAM user and perform WRITEs/READs-Verify with variable "
-                      "object sizes in background")
+        self.log.info("Step 1: Perform WRITEs/READs-Verify with variable object sizes in "
+                      "background")
         event = threading.Event()  # Event to be used to send intimation of m0d restart
         output = Queue()
 
-        self.log.info("Create IAM user with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.iam_user = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
         test_prefix = 'test-41234'
         self.log.info("Create buckets for IOs")
-        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                endpoint_url=S3_CFG["s3_url"])
+
         workloads = HA_CFG["s3_bench_workloads"]
         if self.setup_type == "HW":
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
         for workload in workloads:
-            s3_test_obj.create_bucket(f"bucket-{workload.lower()}-{test_prefix}")
+            self.s3_test_obj.create_bucket(f"bucket-{workload.lower()}-{test_prefix}")
 
         self.log.info("Perform WRITEs/READs-Verify with variable object sizes in background")
         args = {'s3userinfo': self.iam_user, 'log_prefix': test_prefix,
@@ -337,35 +331,24 @@ class TestSingleProcessRestart:
         """Verify bucket creation and IOs after m0d restart using pkill."""
         self.log.info("STARTED: Verify bucket creation and IOs after m0d restart using pkill")
         test_cfg = DTM_CFG['test_41235']
-
-        self.log.info("Step 1: Create IAM user with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        self.iam_user = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
         test_prefix = 'test-41235'
-        self.log.info("Step 1: Created IAM user with name %s", self.s3acc_name)
 
-        self.log.info("Step 2: Perform Single m0d Process Restart")
+        self.log.info("Step 1: Perform Single m0d Process Restart")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.POD_NAME_PREFIX,
                                             container_prefix=const.MOTR_CONTAINER_PREFIX,
                                             process=self.m0d_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
-        self.log.info("Step 2: m0d restarted and recovered successfully")
+        self.log.info("Step 1: m0d restarted and recovered successfully")
 
-        self.log.info("Step 3: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
+        self.log.info("Step 2: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix,
                                                     nclients=test_cfg['nclients'],
                                                     nsamples=test_cfg['nsamples'])
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
+        self.log.info("Step 2: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
 
         self.log.info("ENDED: Verify bucket creation and IOs after m0d restart using pkill")
@@ -437,7 +420,7 @@ class TestSingleProcessRestart:
         self.log.info("Step 2: Start READ Operations in loop in background:")
         proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
                                                args=(workload_info, que,
-                                                     True,
+                                                     False,
                                                      True,
                                                      True, self.test_cfg['loop_count']))
         proc_read_op.start()
@@ -490,7 +473,6 @@ class TestSingleProcessRestart:
                                                 args=(bucket_name, object_prefix,
                                                       self.test_cfg['clients'],
                                                       self.test_cfg['samples'],
-                                                      self.test_cfg['size'],
                                                       log_file_prefix,
                                                       que, self.test_cfg['loop_count'],
                                                       bucket_list))
@@ -511,12 +493,14 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
 
-        self.log.info("Step 5: Perform Validate and Delete Operations on data written in Step 2")
-        self.dtm_obj.perform_ops(workload_info, que, True, True, False)
+        self.log.info("Step 4: Perform Read-Validate and Delete Operations on data written in Step "
+                      "1:")
+        self.dtm_obj.perform_ops(workload_info, que, False, True, False)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
 
         self.test_completed = True
+
         self.log.info("ENDED: Verify continuous WRITE during m0d restart using pkill")
 
     @pytest.mark.lc
@@ -535,7 +519,6 @@ class TestSingleProcessRestart:
                                       object_prefix=object_prefix,
                                       no_of_clients=self.test_cfg['clients'],
                                       no_of_samples=self.test_cfg['samples'],
-                                      obj_size=self.test_cfg['size'],
                                       log_file_prefix=log_file_prefix, queue=que,
                                       loop=self.test_cfg['loop_count'])
         resp = que.get()
@@ -549,7 +532,7 @@ class TestSingleProcessRestart:
                                                      False))
         proc_read_op.start()
 
-        self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
+        self.log.info("Step 3 : Perform Single m0d Process Restart During Delete Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.POD_NAME_PREFIX,
@@ -580,19 +563,6 @@ class TestSingleProcessRestart:
         multipart_obj_path = os.path.join(self.test_dir_path, "test_41244_file")
         download_path = os.path.join(self.test_dir_path, "test_41244_file_download")
 
-        self.log.info("Creating IAM user with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                endpoint_url=S3_CFG["s3_url"])
-        self.log.info("Successfully created IAM user with name %s", self.s3acc_name)
-        self.iam_user = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
-
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.iam_user,
                                                          bucket_name=self.bucket_name,
                                                          object_name=self.object_name,
@@ -600,7 +570,7 @@ class TestSingleProcessRestart:
                                                          total_parts=total_parts,
                                                          multipart_obj_path=multipart_obj_path)
         assert_utils.assert_true(resp[0], resp)
-        result = s3_test_obj.object_info(self.bucket_name, self.object_name)
+        result = self.s3_test_obj.object_info(self.bucket_name, self.object_name)
         obj_size = result[1]["ContentLength"]
         self.log.debug("Uploaded object info for %s is %s", self.bucket_name, result)
         assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
@@ -608,7 +578,7 @@ class TestSingleProcessRestart:
         self.log.info("Step 1: Successfully performed multipart upload for size 5GB.")
 
         self.log.info("Step 2: Download the uploaded object and verify checksum")
-        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        resp = self.s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
         self.log.info("Download object response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
@@ -629,7 +599,7 @@ class TestSingleProcessRestart:
         self.log.info("Step 3: m0d restarted and recovered successfully")
 
         self.log.info("Step 4: Download the uploaded object after m0d recovery and verify checksum")
-        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        resp = self.s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
         self.log.info("Download object response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         download_checksum1 = self.ha_obj.cal_compare_checksum(file_list=[download_path],
@@ -855,14 +825,14 @@ class TestSingleProcessRestart:
         self.log.info("Step 1: Start write Operations :")
         for i in range(0, 2):
             bucket_name = f"bucket-test-41232-{i}"
-            resp = self.s3_obj.create_bucket(bucket_name=bucket_name)
+            resp = self.s3_test_obj.create_bucket(bucket_name=bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             bucket_list.append(bucket_name)
         for size in self.test_cfg["size_list"]:
             file_name = "{}{}".format("dtm-test-41232", size)
             file_path = os.path.join(self.test_dir_path, file_name)
             system_utils.create_file(file_path, size)
-            resp = self.s3_obj.put_object(bucket_list[0], f"{object_name}_{size}", file_path)
+            resp = self.s3_test_obj.put_object(bucket_list[0], f"{object_name}_{size}", file_path)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Perform Single m0d Process Restart")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
@@ -874,16 +844,16 @@ class TestSingleProcessRestart:
         self.log.info("Step 3: Perform Copy Object to bucket-2, download and verify on copied "
                       "Objects")
         for size in self.test_cfg["size_list"]:
-            resp = self.s3_obj.copy_object(source_bucket=bucket_list[0],
-                                           source_object=f"{object_name}_{size}",
-                                           dest_bucket=bucket_list[1],
-                                           dest_object=f"{object_name}_{size}")
+            resp = self.s3_test_obj.copy_object(source_bucket=bucket_list[0],
+                                                source_object=f"{object_name}_{size}",
+                                                dest_bucket=bucket_list[1],
+                                                dest_object=f"{object_name}_{size}")
             assert_utils.assert_true(resp[0], resp[1])
             file_name_copy = "{}{}".format("dtm-test-41232-copy", size)
             file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
-            resp = self.s3_obj.object_download(bucket_name=bucket_list[1],
-                                               obj_name=f"{object_name}_{size}",
-                                               file_path=file_path_copy)
+            resp = self.s3_test_obj.object_download(bucket_name=bucket_list[1],
+                                                    obj_name=f"{object_name}_{size}",
+                                                    file_path=file_path_copy)
             assert_utils.assert_true(resp[0], resp[1])
             file_name = "{}{}".format("dtm-test-41232-", size)
             file_path = os.path.join(self.test_dir_path, file_name)
@@ -907,15 +877,15 @@ class TestSingleProcessRestart:
         self.log.info("Step 1: Start write Operations :")
         for i in range(0, 2):
             bucket_name = f"bucket-test-41233-{i}"
-            resp = self.s3_obj.create_bucket(bucket_name=bucket_name)
+            resp = self.s3_test_obj.create_bucket(bucket_name=bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             bucket_list.append(bucket_name)
         for size in self.test_cfg["size_list"]:
             file_name = "{}{}".format("dtm-test-41233-", size)
             file_path = os.path.join(self.test_dir_path, file_name)
             system_utils.create_file(file_path, size)
-            resp = self.s3_obj.put_object(bucket_list[0], f"{object_name}_{size}",
-                                          file_path)
+            resp = self.s3_test_obj.put_object(bucket_list[0], f"{object_name}_{size}",
+                                               file_path)
             obj_list.append(f"{object_name}_{size}")
             assert_utils.assert_true(resp[0], resp[1])
 
@@ -944,9 +914,9 @@ class TestSingleProcessRestart:
         for size in self.test_cfg["size_list"]:
             file_name_copy = "{}{}".format("dtm-test-41233-copy", size)
             file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
-            resp = self.s3_obj.object_download(bucket_name=bucket_list[1],
-                                               obj_name=f"{object_name}_{size}",
-                                               file_path=file_path_copy)
+            resp = self.s3_test_obj.object_download(bucket_name=bucket_list[1],
+                                                    obj_name=f"{object_name}_{size}",
+                                                    file_path=file_path_copy)
             assert_utils.assert_true(resp[0], resp[1])
             file_name = "{}{}".format("dtm-test-41233-", size)
             file_path = os.path.join(self.test_dir_path, file_name)
@@ -954,114 +924,3 @@ class TestSingleProcessRestart:
             assert_utils.assert_true(resp, "Checksum validation Failed.")
         self.test_completed = True
         self.log.info("ENDED: Verify copy object during m0d restart using pkill.")
-
-    @pytest.mark.lc
-    @pytest.mark.dtm
-    @pytest.mark.tags("TEST-42253")
-    def test_copy_object_after_rgw_restart(self):
-        """Verify copy object after rgw restart using pkill."""
-        self.log.info("STARTED: Verify copy object after rgw restart using pkill")
-        object_name = 'object-test-42253'
-        bucket_list = list()
-        self.log.info("Step 1: Start write Operations :")
-        for i in range(0, 2):
-            bucket_name = f"bucket-test-42253-{i}"
-            resp = self.s3_obj.create_bucket(bucket_name=bucket_name)
-            assert_utils.assert_true(resp[0], resp[1])
-            bucket_list.append(bucket_name)
-        for size in self.test_cfg["size_list"]:
-            file_name = "{}{}".format("dtm-test-42253", size)
-            file_path = os.path.join(self.test_dir_path, file_name)
-            system_utils.create_file(file_path, size)
-            resp = self.s3_obj.put_object(bucket_list[0], f"{object_name}_{size}", file_path)
-            assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 2: Perform Single rgw Process Restart")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rwg_process, check_proc_state=False)
-        assert_utils.assert_true(resp, "Failure observed during process restart")
-        self.log.info("Step 3: Perform Copy Object to bucket-2, download and verify on copied "
-                      "Objects")
-        for size in self.test_cfg["size_list"]:
-            resp = self.s3_obj.copy_object(source_bucket=bucket_list[0],
-                                           source_object=f"{object_name}_{size}",
-                                           dest_bucket=bucket_list[1],
-                                           dest_object=f"{object_name}_{size}")
-            assert_utils.assert_true(resp[0], resp[1])
-            file_name_copy = "{}{}".format("dtm-test-42253-copy", size)
-            file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
-            resp = self.s3_obj.object_download(bucket_name=bucket_list[1],
-                                               obj_name=f"{object_name}_{size}",
-                                               file_path=file_path_copy)
-            assert_utils.assert_true(resp[0], resp[1])
-            file_name = "{}{}".format("dtm-test-42253-", size)
-            file_path = os.path.join(self.test_dir_path, file_name)
-            resp = validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
-            assert_utils.assert_true(resp, "Checksum validation Failed.")
-        self.test_completed = True
-        self.log.info("ENDED: Verify copy object after rgw restart using pkill")
-
-    @pytest.mark.lc
-    @pytest.mark.dtm
-    @pytest.mark.tags("TEST-42254")
-    def test_copy_object_during_rgw_restart(self):
-        """Verify copy object during rgw restart using pkill."""
-        self.log.info("STARTED: Verify copy object during rgw restart using pkill")
-        object_name = 'object-test-42254'
-        workload = dict()
-        obj_list = list()
-        bucket_list = list()
-        que = multiprocessing.Queue()
-
-        self.log.info("Step 1: Start write Operations :")
-        for i in range(0, 2):
-            bucket_name = f"bucket-test-42254-{i}"
-            resp = self.s3_obj.create_bucket(bucket_name=bucket_name)
-            assert_utils.assert_true(resp[0], resp[1])
-            bucket_list.append(bucket_name)
-        for size in self.test_cfg["size_list"]:
-            file_name = "{}{}".format("dtm-test-42254-", size)
-            file_path = os.path.join(self.test_dir_path, file_name)
-            system_utils.create_file(file_path, size)
-            resp = self.s3_obj.put_object(bucket_list[0], f"{object_name}_{size}",
-                                          file_path)
-            obj_list.append(f"{object_name}_{size}")
-            assert_utils.assert_true(resp[0], resp[1])
-
-        self.log.info("Step 2: Perform Copy object to bucket-2 in background")
-        workload["source_bucket"] = bucket_list[0]
-        workload["dest_bucket"] = bucket_list[1]
-        workload["obj_list"] = obj_list
-        proc_cp_op = multiprocessing.Process(target=self.dtm_obj.perform_copy_objects,
-                                             args=(workload, que))
-        proc_cp_op.start()
-
-        self.log.info("Step 3: Perform Single m0d Process Restart")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rwg_process, check_proc_state=False)
-        assert_utils.assert_true(resp, "Failure observed during process restart")
-
-        self.log.info("Step 4: Wait for copy object to finish")
-        if proc_cp_op.is_alive():
-            proc_cp_op.join()
-        resp = que.get()
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 5: Perform Download and verify on copied Objects")
-        for size in self.test_cfg["size_list"]:
-            file_name_copy = "{}{}".format("dtm-test-42254-copy", size)
-            file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
-            resp = self.s3_obj.object_download(bucket_name=bucket_list[1],
-                                               obj_name=f"{object_name}_{size}",
-                                               file_path=file_path_copy)
-            assert_utils.assert_true(resp[0], resp[1])
-            file_name = "{}{}".format("dtm-test-42254-", size)
-            file_path = os.path.join(self.test_dir_path, file_name)
-            resp = validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
-            assert_utils.assert_true(resp, "Checksum validation Failed.")
-        self.test_completed = True
-        self.log.info("ENDED: Verify copy object during rgw restart using pkill.")

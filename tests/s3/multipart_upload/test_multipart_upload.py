@@ -27,12 +27,19 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.system_utils import create_file, remove_file, run_local_cmd, path_exists
-from commons.utils.system_utils import backup_or_restore_files, split_file, make_dirs, remove_dirs
+from commons.utils.system_utils import create_file
+from commons.utils.system_utils import remove_file
+from commons.utils.system_utils import run_local_cmd
+from commons.utils.system_utils import path_exists
+from commons.utils.system_utils import backup_or_restore_files
+from commons.utils.system_utils import split_file
+from commons.utils.system_utils import make_dirs
+from commons.utils.system_utils import remove_dirs
 from commons.utils import assert_utils
 from commons.utils.s3_utils import assert_s3_err_msg
 from commons.params import TEST_DATA_FOLDER
 from commons import error_messages as errmsg
+from commons.constants import S3_ENGINE_RGW
 from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
 from libs.s3.s3_test_lib import S3TestLib
@@ -517,7 +524,7 @@ class TestMultipartUpload:
         mpu_id = res[1]["UploadId"]
         self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
         self.log.info("Uploading parts into bucket")
-        try:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             resp = self.s3_mp_test_obj.upload_parts(
                 mpu_id,
                 self.bucket_name,
@@ -525,12 +532,23 @@ class TestMultipartUpload:
                 mp_config["file_size"],
                 total_parts=mp_config["total_parts"],
                 multipart_obj_path=self.mp_obj_path)
-            assert_utils.assert_false(resp[0], resp[1])
-        except CTException as error:
-            self.log.error(error.message)
-            assert_utils.assert_in(errmsg.S3_MULTIPART_INVALID_PART_ERR, error.message,
-                                   error.message)
-        self.log.info("Cannot upload more than 10000 parts upload")
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info("Uploaded more than 10000 parts")
+        else:
+            try:
+                resp = self.s3_mp_test_obj.upload_parts(
+                    mpu_id,
+                    self.bucket_name,
+                    self.object_name,
+                    mp_config["file_size"],
+                    total_parts=mp_config["total_parts"],
+                    multipart_obj_path=self.mp_obj_path)
+                assert_utils.assert_false(resp[0], resp[1])
+            except CTException as error:
+                self.log.error(error.message)
+                assert_utils.assert_in(errmsg.S3_MULTIPART_INVALID_PART_ERR, error.message,
+                                       error.message)
+            self.log.info("Verified that cannot upload more than 10000 parts")
         self.log.info("Create multipart upload having more than 10,000 parts")
 
     @pytest.mark.s3_ops
