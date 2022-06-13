@@ -29,6 +29,7 @@ import pytest
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils as sysutils
+from commons import constants as const
 from config.s3 import S3_CFG
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
@@ -473,7 +474,7 @@ class TestObjectTaggingVerLimits:
         LOGGER.info("Step 2: Successfully uploaded object %s to versioned bucket %s with "
                     "version ID %s", self.object_name, self.bucket_name, latest_ver)
         tag_or= list()
-        for char in S3_CFG["list_special_char"]:
+        for char in const.LIST_SPECIAL_CHAR:
             tag_key = f"tag{char}key"
             tag_or.append({"Key": tag_key, "Value": "tag1value"})
         LOGGER.info("Step 3: Perform PUT Object Tagging for %s with tag set as %s with tag key "

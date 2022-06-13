@@ -486,3 +486,6 @@ REQUIRED_MODULES = ["Procpath", "apsw-wheels"]
 DTM_RECOVERY_STATE = "RECOVERED"
 M0D_SVC = "ioservice"
 SERVER_SVC = "rgw_s3"
+
+LIST_SPECIAL_CHAR = ["~", "`", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "-", "_", "+", "=",
+                    ";", ":", "|", "\\", ":", ";", "\"", "\'", "<", ",", ">", ".", "?", "\/"]
