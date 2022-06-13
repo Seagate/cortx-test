@@ -36,13 +36,14 @@ from libs.s3 import s3_versioning_common_test_lib as s3_ver_tlib
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
-import libs.s3.s3_versioning_common_test_lib as s3_ver_cmn_lib
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=too-many-instance-attributes
+# pylint: disable=attribute-defined-outside-init
+
 class TestTaggingDeleteObject:
     """Test Delete Object Tagging"""
 
@@ -54,8 +55,8 @@ class TestTaggingDeleteObject:
         self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.s3_ver_obj = S3VersioningTestLib(endpoint_url=S3_CFG["s3_url"])
         self.s3_tag_obj = S3TaggingTestLib(endpoint_url=S3_CFG["s3_url"])
-        self.ver_tag = dict()
-        self.versions = dict()
+        self.ver_tag = {}
+        self.versions = {}
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestTaggingDeleteObject")
         if not sysutils.path_exists(self.test_dir_path):
             sysutils.make_dirs(self.test_dir_path)
@@ -107,12 +108,12 @@ class TestTaggingDeleteObject:
     @CTFailOn(error_handler)
     def test_del_obj_tag_40435(self):
         """
-        Test DELETE object tagging for pre-existing object in a versioning enabled bucket
+        Test DELETE object tagging for pre-existing object in a versioning enabled bucket.
         """
         LOGGER.info("STARTED: Test DELETE object tagging for pre-existing object in a versioning "
                     "enabled bucket")
 
-        self.ver_tag.update({self.object_name: dict()})
+        self.ver_tag.update({self.object_name: {}})
         LOGGER.info("Step 1: Upload object %s before enabling versioning on bucket %s",
                     self.object_name, self.bucket_name)
         s3_ver_tlib.upload_version(self.s3_test_obj, bucket_name=self.bucket_name,
@@ -204,8 +205,8 @@ class TestTaggingDeleteObject:
                                                     obj_list=[("Enabled", self.object_name, 2)])
         ver_list = list(self.versions[self.object_name]["versions"].keys())
         LOGGER.info("Step 3: Perform PUT Object Tagging for %s with a tag key-value pair for "
-            "versionIds %s", self.object_name, ver_list)
-        self.ver_tag.update({self.object_name: dict()})
+                    "versionIds %s", self.object_name, ver_list)
+        self.ver_tag.update({self.object_name: {}})
         for v_id in ver_list:
             resp = s3_ver_tlib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj, version_id=v_id,
                                                   s3_ver_test_obj=self.s3_ver_obj,
@@ -358,9 +359,7 @@ class TestTaggingDeleteObject:
         Test DELETE object tagging for a deleted versioned object
         """
         LOGGER.info("STARTED: Test DELETE object tagging for a deleted versioned object")
-        ver_tag = dict()
-        ver_tag.update({self.object_name: dict()})
-        versions = dict()
+        self.ver_tag.update({self.object_name: {}})
 
         LOGGER.info("Step 1: Perform PUT Bucket versioning with status as Enabled on %s",
                     self.bucket_name)
@@ -369,26 +368,32 @@ class TestTaggingDeleteObject:
         LOGGER.info("Step 1: Performed PUT Bucket versioning with status as Enabled on %s",
                     self.bucket_name)
 
-        LOGGER.info("Step 2: Upload object %s before enabling versioning on bucket %s",
+        LOGGER.info("Step 2: Upload object %s on bucket %s",
                     self.object_name, self.bucket_name)
-        upload_version(self.s3_test_obj, bucket_name=self.bucket_name, file_path=self.file_path,
-                       object_name=self.object_name, versions_dict=versions, is_unversioned=True)
-        latest_v = versions[self.object_name]["version_history"][-1]
-        LOGGER.info("Step 2: Successfully uploaded object %s before enabling versioning on  "
+        s3_ver_tlib.upload_version(self.s3_test_obj,
+                                   bucket_name=self.bucket_name,
+                                   file_path=self.file_path1,
+                                   object_name=self.object_name,
+                                   versions_dict=self.versions)
+        latest_v = self.versions[self.object_name]["version_history"][-1]
+        LOGGER.info("Step 2: Successfully uploaded object %s on  "
                     "bucket %s with version ID %s", self.object_name, self.bucket_name, latest_v)
 
         LOGGER.info("Step 3: Perform PUT Object Tagging for %s with a tag key-value pair",
                     self.object_name)
-        resp = put_object_tagging(s3_tag_test_obj=self.s3_tag_obj, s3_ver_test_obj=self.s3_ver_obj,
-                                  bucket_name=self.bucket_name, object_name=self.object_name,
-                                  version_tag=ver_tag, versions_dict=versions)
+        resp = s3_ver_tlib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name,
+                                              version_tag=self.ver_tag,
+                                              versions_dict=self.versions)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Performed PUT Object Tagging for %s with a tag key-value pair",
                     self.object_name)
 
         LOGGER.info("Step 4: Perform GET Object Tagging for %s with versionId=%s",
                     self.object_name, latest_v)
-        put_tag = ver_tag[self.object_name][latest_v][-1]
+        put_tag = self.ver_tag[self.object_name][latest_v][-1]
         resp = self.s3_ver_obj.get_obj_tag_ver(bucket_name=self.bucket_name,
                                                object_name=self.object_name, version=latest_v)
         assert_utils.assert_true(resp[0], resp)
@@ -400,15 +405,16 @@ class TestTaggingDeleteObject:
 
         LOGGER.info("Step 5: Perform DELETE Object %s to creates delete marker with versionId=%s",
                     self.object_name, latest_v)
-        s3_ver_cmn_lib.delete_version(s3_ver_test_obj=self.s3_ver_obj,
-                                      bucket_name=self.bucket_name,
-                                      object_name=self.object_name,
-                                      versions_dict=self.versions,
-                                      check_deletemarker=True)
+        s3_ver_tlib.delete_version(s3_ver_test_obj=self.s3_ver_obj,
+                                   bucket_name=self.bucket_name,
+                                   object_name=self.object_name,
+                                   versions_dict=self.versions,
+                                   check_deletemarker=True)
         dm_id = self.versions[self.object_name]["delete_markers"][0]
         assert_utils.assert_in("No Content", resp[1].message)
-        LOGGER.info("Step 5: Performed DELETE Object tagging %s with versionId=%s",
-                    self.object_name, latest_v)
+        LOGGER.info("Step 5: Performed DELETE Object tagging %s "
+                    " delete_marker id %s, with versionId=%s",
+                    self.object_name, str(dm_id), latest_v)
 
         LOGGER.info("Step 6: Perform DELETE Object tagging  %s with versionId %s",
                     self.object_name, latest_v)
@@ -429,9 +435,10 @@ class TestTaggingDeleteObject:
                     self.object_name, latest_v)
 
         LOGGER.info("Step 8: Perform Delete Object Tagging for %s with versionId specified %s",
-                    self.object_name)
+                    self.object_name, latest_v)
         resp = self.s3_ver_obj.delete_obj_tag_ver(bucket_name=self.bucket_name,
-                                                  object_name=self.object_name, version=latest_v)
+                                                  object_name=self.object_name,
+                                                  version=latest_v)
         assert_utils.assert_true(resp[0], resp)
         # For null version ID, expecting "TagSet": []
         assert_utils.assert_false(resp[1], resp)
@@ -447,10 +454,9 @@ class TestTaggingDeleteObject:
         """
         Test DELETE object tagging for non-existing version or object.
         """
-        LOGGER.info("Test DELETE object tagging for pre-existing object in a non-existing version or object.")
-        ver_tag = dict()
-        ver_tag.update({self.object_name: dict()})
-        versions = dict()
+        LOGGER.info(
+            "Test DELETE object tagging for non-existing version or object.")
+        self.ver_tag.update({self.object_name: {}})
         LOGGER.info("Step 1: Perform PUT Bucket versioning with status as Enabled on %s",
                     self.bucket_name)
         resp = self.s3_ver_obj.put_bucket_versioning(bucket_name=self.bucket_name)
@@ -460,24 +466,30 @@ class TestTaggingDeleteObject:
 
         LOGGER.info("Step 2: Upload object %s to create version on bucket %s",
                     self.object_name, self.bucket_name)
-        upload_version(self.s3_test_obj, bucket_name=self.bucket_name, file_path=self.file_path,
-                       object_name=self.object_name, versions_dict=versions, is_unversioned=True)
-        latest_v = versions[self.object_name]["version_history"][-1]
+        s3_ver_tlib.upload_version(self.s3_test_obj,
+                                   bucket_name=self.bucket_name,
+                                   file_path=self.file_path1,
+                                   object_name=self.object_name,
+                                   versions_dict=self.versions)
+        latest_v = self.versions[self.object_name]["version_history"][-1]
         LOGGER.info("Step 2: Successfully uploaded object %s enabling versioning on "
                     "bucket %s with version ID %s", self.object_name, self.bucket_name, latest_v)
 
         LOGGER.info("Step 3: Perform PUT Object Tagging for %s with a tag key-value pair",
                     self.object_name)
-        resp = put_object_tagging(s3_tag_test_obj=self.s3_tag_obj, s3_ver_test_obj=self.s3_ver_obj,
-                                  bucket_name=self.bucket_name, object_name=self.object_name,
-                                  version_tag=ver_tag, versions_dict=versions)
+        resp = s3_ver_tlib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name,
+                                              version_tag=self.ver_tag,
+                                              versions_dict=self.versions)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Performed PUT Object Tagging for %s with a tag key-value pair",
                     self.object_name)
 
         LOGGER.info("Step 4: Perform GET Object Tagging for %s with versionId=%s",
                     self.object_name, latest_v)
-        put_tag = ver_tag[self.object_name][latest_v][-1]
+        put_tag = self.ver_tag[self.object_name][latest_v][-1]
         resp = self.s3_ver_obj.get_obj_tag_ver(bucket_name=self.bucket_name,
                                                object_name=self.object_name, version=latest_v)
         assert_utils.assert_true(resp[0], resp)
@@ -487,7 +499,8 @@ class TestTaggingDeleteObject:
         LOGGER.info("Step 4: Performed GET Object Tagging for %s with versionId=%s is %s",
                     self.object_name, latest_v, get_tag)
 
-        LOGGER.info("Step 5: Perform DELETE Object Tagging for object1  %s with a tag key-value pair for non-existing "
+        LOGGER.info("Step 5: Perform DELETE Object Tagging for object1  %s "
+                    "with a tag key-value pair for non-existing "
                     "versionId=%s",
                     self.object_name, latest_v)
         resp = self.s3_ver_obj.delete_obj_tag_ver(bucket_name=self.bucket_name,
@@ -497,15 +510,16 @@ class TestTaggingDeleteObject:
         LOGGER.info("Step 5: Performed DELETE Object Tagging for %s with versionId=%s",
                     self.object_name, latest_v)
 
-        LOGGER.info("Step 6: Perform DELETE Object Tagging for non-existing object with a tag key-value pair "
+        LOGGER.info("Step 6: Perform DELETE Object Tagging for non-existing object "
+                    "with a tag key-value pair "
                     "with versionId=%s",
                     latest_v)
         resp = self.s3_ver_obj.delete_obj_tag_ver(bucket_name=self.bucket_name,
                                                   object_name="object2", version=latest_v)
-        assert_utils.assert_true(resp[0], resp)
-        # For null version ID, expecting "TagSet": []
-        assert_utils.assert_false(resp[1], resp)
-        LOGGER.info("Step 6: Perform DELETE Object Tagging for non-existing object object2 with a tag key-value pair "
-                    "with versionId=%s", )
+        # For non-existing object, expecting "404 Not Found (NoSuchKey)"
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 6: Perform DELETE Object Tagging for non-existing object %s "
+                    "with a tag key-value pair "
+                    "with versionId=%s", "object2", latest_v)
 
         LOGGER.info("ENDED: Test DELETE object tagging for non-existing version or object.")
