@@ -162,7 +162,7 @@ class TestRGWProcessRestart:
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False)
+                                            process=self.rgw_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for READ operation to complete.")
@@ -206,7 +206,7 @@ class TestRGWProcessRestart:
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False)
+                                            process=self.rgw_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 2: Wait for WRITE Operation to complete.")
@@ -268,7 +268,7 @@ class TestRGWProcessRestart:
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False)
+                                            process=self.rgw_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         event.clear()
         self.log.info("Step 3: Successfully Performed Single rgw_s3 Process Restart During Delete "
@@ -315,7 +315,7 @@ class TestRGWProcessRestart:
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False)
+                                            process=self.rgw_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart")
         self.log.info("Step 3: Perform Copy Object to bucket-2, download and verify on copied "
                       "Objects")
@@ -378,7 +378,7 @@ class TestRGWProcessRestart:
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False)
+                                            process=self.rgw_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart")
 
         self.log.info("Step 4: Wait for copy object to finish")
@@ -421,7 +421,7 @@ class TestRGWProcessRestart:
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
-        self.log.info("Step 2: Start READ Operations in loop in background:")
+        self.log.info("Step 2: Start READ-Validate Operations in loop in background:")
         args = {'workload_info': workload_info, 'queue': que, 'skipread': False, 'validate': True,
                 'skipcleanup': True, 'retry': DTM_CFG["io_retry_count"],
                 'loop': self.test_cfg['loop_count']}
@@ -434,7 +434,7 @@ class TestRGWProcessRestart:
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False,
+                                            process=self.rgw_process, check_proc_state=True,
                                             restart_cnt=DTM_CFG["rgw_restart_cnt"])
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
@@ -444,7 +444,7 @@ class TestRGWProcessRestart:
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
 
-        self.log.info("Step 5: Perform READ operations after rgw_s3 process restarts")
+        self.log.info("Step 5: Perform READ-Validate operations after rgw_s3 process restarts")
         args = {'workload_info': workload_info, 'queue': que, 'skipread': False, 'validate': True,
                 'skipcleanup': True}
         self.dtm_obj.perform_ops(**args)
@@ -478,7 +478,7 @@ class TestRGWProcessRestart:
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False,
+                                            process=self.rgw_process, check_proc_state=True,
                                             restart_cnt=DTM_CFG["rgw_restart_cnt"])
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
@@ -547,7 +547,7 @@ class TestRGWProcessRestart:
                                                 health_obj=self.health_obj,
                                                 pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                                 container_prefix=const.RGW_CONTAINER_NAME,
-                                                process=self.rgw_process, check_proc_state=False)
+                                                process=self.rgw_process, check_proc_state=True)
             assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
             event.clear()
             self.log.info("Step 3: Successfully Performed Single rgw_s3 Process Restart During "
@@ -594,7 +594,6 @@ class TestRGWProcessRestart:
 
         self.log.info("Step 1: Perform WRITEs/READs-Verify/DELETEs with variable object sizes in "
                       "background")
-
         args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
                 'no_of_clients': test_cfg['clients'], 'no_of_samples': test_cfg['samples'],
                 'log_file_prefix': test_prefix, 'queue': output, 'loop': test_cfg['num_loop'],
