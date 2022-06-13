@@ -75,11 +75,12 @@ class TestMultipartVersioning:
         s3ver_cmn_lib.empty_versioned_bucket(self.s3ver_test_obj, self.bucket_name)
         res = self.s3test_obj.delete_bucket(self.bucket_name, force=True)
         assert_utils.assert_true(res[0], res[1])
-        if system_utils.path_exists(self.test_dir_path):
-            system_utils.remove_dirs(self.test_dir_path)
+        if system_utils.path_exists(self.test_file_path):
+            system_utils.remove_file(self.test_file_path)
         self.log.info("ENDED: Teardown operations.")
 
     @pytest.mark.parallel
+    @pytest.mark.s3_versioning
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-41288')
     def test_abort_multipart_upload_does_not_create_a_new_version_41288(self):
@@ -116,6 +117,7 @@ class TestMultipartVersioning:
         self.log.info("ENDED: Test Abort Multipart Upload does not create a new version.")
 
     @pytest.mark.parallel
+    @pytest.mark.s3_versioning
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-41289')
     def test_upload_multiple_versions_to_multipart_uploaded_object_in_versioned_bucket_41289(self):
@@ -174,6 +176,7 @@ class TestMultipartVersioning:
                       "versioned bucket.")
 
     @pytest.mark.parallel
+    @pytest.mark.s3_versioning
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-41290')
     def test_upload_new_versions_to_existing_objects_using_multipart_upload_41290(self):
