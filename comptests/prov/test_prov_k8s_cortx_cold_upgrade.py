@@ -48,7 +48,7 @@ class TestProvK8CortxColdUpgrade:
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
-        cls.upgrade_lc_obj = ProvUpgradeK8sCortxLib()
+        cls.upgrade_obj = ProvUpgradeK8sCortxLib()
         cls.num_nodes = (CMN_CFG["nodes"])
         cls.worker_node_list = []
         cls.master_node_list = []
@@ -117,7 +117,7 @@ class TestProvK8CortxColdUpgrade:
         LOGGER.info("Step 6: Start upgrade.")
         LOGGER.info("Upgrading CORTX image to version: %s.",
                     self.cortx_all_image)
-        resp = self.upgrade_lc_obj.upgrade_software(self.master_node_obj,
+        resp = self.upgrade_obj.upgrade_software(self.master_node_obj,
                                                     self.prov_deploy_cfg["git_remote_path"],
                                                     upgrade_type="cold")
         assert_utils.assert_true(resp[0], resp[1])
@@ -185,7 +185,7 @@ class TestProvK8CortxColdUpgrade:
                     "Step 6: Start upgrade and verify pod went into crashloopbackoffstate or not")
                 LOGGER.info("Upgrading CORTX image to version: %s.",
                             self.cortx_all_image)
-                resp = self.upgrade_lc_obj.upgrade_software(self.master_node_obj,
+                resp = self.upgrade_obj.upgrade_software(self.master_node_obj,
                                                             self.prov_deploy_cfg["git_remote_path"],
                                                             upgrade_type="cold")
                 LOGGER.info("Step 6: Done.")

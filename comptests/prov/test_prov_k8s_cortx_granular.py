@@ -53,7 +53,7 @@ class TestProvK8CortxGranular:
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
-        cls.upgrade_lc_obj = ProvUpgradeK8sCortxLib()
+        cls.upgrade_obj = ProvUpgradeK8sCortxLib()
         cls.deploy_pod_obj = LogicalNode(hostname="hostname", username="user", password="pswd")
         cls.num_nodes = CMN_CFG["nodes"]
         cls.worker_node_list = []
@@ -119,7 +119,7 @@ class TestProvK8CortxGranular:
 
         LOGGER.info("Step 6: Start upgrade.")
         LOGGER.info("Upgrading HA CORTX image to version: %s.", self.cortx_ha_image)
-        resp = self.upgrade_lc_obj.upgrade_software(self.master_node_obj,
+        resp = self.upgrade_obj.upgrade_software(self.master_node_obj,
                                                     self.prov_deploy_cfg["git_remote_path"],
                                                     granular_type="ha")
         assert_utils.assert_true(resp[0], resp[1])
@@ -189,7 +189,7 @@ class TestProvK8CortxGranular:
 
         LOGGER.info("Step 6: Start upgrade.")
         LOGGER.info("Upgrading CORTX CONTROL image to version: %s.", self.cortx_control_image)
-        resp = self.upgrade_lc_obj.upgrade_software(self.master_node_obj,
+        resp = self.upgrade_obj.upgrade_software(self.master_node_obj,
                                                     self.prov_deploy_cfg["git_remote_path"],
                                                     granular_type="control")
         assert_utils.assert_true(resp[0], resp[1])
@@ -262,7 +262,7 @@ class TestProvK8CortxGranular:
 
         LOGGER.info("Step 6: Start upgrade.")
         LOGGER.info("Upgrading CORTX DATA image to version: %s.", self.cortx_data_image)
-        resp = self.upgrade_lc_obj.upgrade_software(self.master_node_obj,
+        resp = self.upgrade_obj.upgrade_software(self.master_node_obj,
                                                     self.prov_deploy_cfg["git_remote_path"],
                                                     granular_type="data")
         assert_utils.assert_true(resp[0], resp[1])
@@ -334,7 +334,7 @@ class TestProvK8CortxGranular:
 
         LOGGER.info("Step 6: Start upgrade.")
         LOGGER.info("Upgrading CORTX SERVER image to version: %s.", self.cortx_server_image)
-        resp = self.upgrade_lc_obj.upgrade_software(self.master_node_obj,
+        resp = self.upgrade_obj.upgrade_software(self.master_node_obj,
                                                     self.prov_deploy_cfg["git_remote_path"],
                                                     granular_type="server")
         assert_utils.assert_true(resp[0], resp[1])
