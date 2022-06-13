@@ -116,8 +116,10 @@ class TestSystemCapacity():
         Setup method for creating s3 user
         """
         self.deploy = True
+        self.s3_cleanup = False
         resp = self.csm_obj.get_degraded_all(self.hlth_master)
         total_written = resp["healthy"]
+
         self.log.info("Creating S3 account")
         resp = self.csm_obj.create_s3_account()
         assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
@@ -125,12 +127,14 @@ class TestSystemCapacity():
         self.skey = resp.json()["secret_key"]
         self.s3_user = resp.json()["account_name"]
         self.bucket = "iam-user-bucket-" + str(int(time.time()))
+
+        resp = s3_misc.delete_all_buckets(self.akey,self.skey)
+        assert resp, "Delete all buckets and object failed."
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       self.bucket, self.akey, self.skey)
         assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
         self.cap_df = pandas.DataFrame()
-        resp = s3_misc.delete_all_buckets(self.akey,self.skey)
-        assert resp, "Delete all buckets and object failed."
+
         self.log.info("[Start] Start some IOs")
         obj = f"object{self.s3_user}{time.time_ns()}.txt"
         self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, self.aligned_size,
@@ -166,12 +170,13 @@ class TestSystemCapacity():
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
 
         self.failed_pod = []
-        self.log.info("Deleting bucket %s & associated objects", self.bucket)
-        assert s3_misc.delete_objects_bucket(
-            self.bucket, self.akey, self.skey), "Failed to delete bucket."
-        self.log.info("Deleting S3 account %s created in setup", self.s3_user)
-        resp = self.csm_obj.delete_s3_account_user(self.s3_user)
-        assert resp.status_code == HTTPStatus.OK, "Failed to delete S3 user"
+        if self.s3_cleanup:
+            self.log.info("Deleting bucket %s & associated objects", self.bucket)
+            resp = s3_misc.delete_all_buckets(self.akey,self.skey)
+            assert resp, "Delete all buckets and object failed."
+            self.log.info("Deleting S3 account %s created in setup", self.s3_user)
+            resp = self.csm_obj.delete_s3_account_user(self.s3_user)
+            assert resp.status_code == HTTPStatus.OK, "Failed to delete S3 user"
 
         if self.deploy:
             self.log.info("Cleanup: Destroying the cluster ")
@@ -979,7 +984,7 @@ class TestSystemCapacity():
             _, new_write = s3_misc.get_objects_size_bucket(bucket,self.akey,self.skey)
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
             result = self.csm_obj.verify_degraded_capacity(resp, healthy=new_write,
-                degraded=total_written, critical=0, damaged=0, err_margin=self.err_margin,
+                degraded=total_written, critical=0, damaged=0, err_margin=test_cfg["err_margin"],
                 total=total_written+new_write)
             assert result, "Degraded byte check failed"
 
@@ -999,9 +1004,10 @@ class TestSystemCapacity():
             self.log.info("[Start] Sleep %s", self.update_seconds)
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
             result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written,
-                            degraded=0, critical=0, damaged=0, err_margin=self.err_margin,
+                            degraded=0, critical=0, damaged=0, err_margin=test_cfg["err_margin"],
                             total=total_written)
             assert result[0], result[1]
             resp = s3_misc.delete_all_buckets(self.akey,self.skey)
             assert resp, "Delete all buckets and object failed."
-        self.log.info("[START] completed")
+            break
+        self.log.info("[END] completed")
