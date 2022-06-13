@@ -555,13 +555,14 @@ class S3MultipartTestLib(Multipart):
             parts = res[1]
             LOGGER.info("Uploaded parts into bucket: %s", parts)
             LOGGER.info("Completing multipart upload")
-            self.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
+            status, response = self.complete_multipart_upload(mpu_id, parts, bucket_name,
+                                                             object_name)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.simple_multipart_upload.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
-
+        return status, response
     # pylint: disable-msg=too-many-locals
     def complete_multipart_upload_with_di(
             self,
