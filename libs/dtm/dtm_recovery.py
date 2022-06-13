@@ -296,7 +296,7 @@ class DTMRecoveryTestLib:
                                                          process_ids=process_ids)
             if not resp:
                 self.log.info("Failed to get process states for process with IDs %s. "
-                              "proccess_state dict: %s", process_ids, process_state)
+                              "process_state dict: %s", process_ids, process_state)
                 return resp
             self.log.debug("Process states: %s", process_state)
             states = list(process_state.values())
