@@ -457,7 +457,7 @@ class TestRGWProcessRestart:
     @pytest.mark.dtm
     @pytest.mark.tags("TEST-42248")
     def test_continuous_write_during_rgw_s3_restart(self):
-        """Verify continuous WRITEs during rgw_s3 service restart using pkill."""
+        """Verify continuous WRITEs during rgw_s3 service restart using pkill"""
         self.log.info("STARTED: Verify continuous WRITEs during rgw_s3 service restart using pkill")
         log_file_prefix = 'test-42248'
         que = multiprocessing.Queue()
