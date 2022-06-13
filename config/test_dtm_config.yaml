@@ -8,6 +8,9 @@ size_list: [1, 2, 3, 4, 5, 6, 7]
 rgw_restart_cnt: 5
 # count to retry IOs from client side
 io_retry_count: 5
+# delay between restarts
+m0d_delay_restarts: 0
+rgw_delay_restarts: 30
 
 test_41234:
   nclients: 10

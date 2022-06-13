@@ -35,6 +35,7 @@ from commons.utils import system_utils
 from config import CMN_CFG
 from config import HA_CFG
 from config import S3_CFG
+from config import DTM_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
@@ -237,7 +238,9 @@ class DTMRecoveryTestLib:
                     return False
 
                 self.log.info("Process %s restarted successfully", process)
-            time.sleep(delay)
+
+            if restart_cnt > 1:
+                time.sleep(delay)
 
         return True
 
@@ -312,8 +315,8 @@ class DTMRecoveryTestLib:
         :return: bool, list
         """
         switcher = {
-            'm0d': {'svc': const.M0D_SVC, 'delay': 0},
-            'rgw': {'svc': const.SERVER_SVC, 'delay': 30}
+            'm0d': {'svc': const.M0D_SVC, 'delay': DTM_CFG["m0d_delay_restarts"]},
+            'rgw': {'svc': const.SERVER_SVC, 'delay': DTM_CFG["rgw_delay_restarts"]}
         }
         resp, fids = health_obj.hctl_status_get_svc_fids()
         if not resp:
