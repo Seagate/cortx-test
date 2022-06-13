@@ -41,7 +41,7 @@ LOGGER = logging.getLogger(__name__)
 SECRETS_FILES_LIST = ["s3_auth_admin_secret", "openldap_admin_secret", "kafka_admin_secret",
                       "csm_mgmt_admin_secret", "csm_auth_admin_secret", "consul_admin_secret",
                       "common_admin_secret"]
-PVC_LIST = ["cluster.conf", "consul_conf", "hare", "log", "motr", "rgw_s3", "solution"]
+PVC_LIST = ["cluster.conf", "config", "consul_conf", "hare", "log", "motr", "rgw_s3", "solution"]
 
 
 class TestProvK8Cortx:
@@ -218,15 +218,18 @@ class TestProvK8Cortx:
         LOGGER.info("Check files are copied and accessible to containers.")
         LOGGER.info("Step 1: Get all running data pods from cluster.")
         data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
+        time.sleep(100)
         assert_utils.assert_true(data_pod_list[0])
         LOGGER.info("Step 2: Check files are copied and accessible to containers.")
         for pod_name in data_pod_list[1]:
             resp = self.master_node_obj.execute_cmd(
                 cmd=commands.K8S_POD_INTERACTIVE_CMD.format(pod_name, 'ls /etc/cortx'),
                 read_lines=True)
+            LOGGER.info("Output %s", resp)
             assert_utils.assert_is_not_none(resp)
             for out in resp:
                 out = out.split("\n")
+                LOGGER.info(out[0])
                 assert_utils.assert_in(out[0], PVC_LIST)
         LOGGER.info("Test Completed.")
 
@@ -330,6 +333,7 @@ class TestProvK8Cortx:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Check whether data and control pods are not present")
         resp2 = self.ha_obj.check_pod_status(self.master_node_list[0])
+        time.sleep(100)
         LOGGER.info(resp2)
         data = []
         data1 = []
@@ -383,6 +387,7 @@ class TestProvK8Cortx:
                                                dir_path=self.prov_deploy_cfg["git_remote_path"])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and running.")
+        time.sleep(100)
         LOGGER.info("Step 4: Checking whether all CORTX Data pods have been restarted.")
         resp = self.ha_obj.check_pod_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
