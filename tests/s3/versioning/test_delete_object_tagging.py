@@ -347,4 +347,4 @@ class TestTaggingDeleteObject:
         put_tag = self.ver_tag[self.object_name][latest]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
-        LOGGER.info("ENDED: Test DELETE object tagging in a versioning enabled bucket")
+        LOGGER.info("ENDED: Test DELETE object tagging in a versioning enabled bucket.")
