@@ -35,6 +35,7 @@ from commons.utils import system_utils
 from config import CMN_CFG
 from config import HA_CFG
 from config import S3_CFG
+from config import DTM_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
@@ -201,6 +202,12 @@ class DTMRecoveryTestLib:
         :param restart_cnt: Count to restart process from randomly selected pod (Restart once
         previously restarted process recovers)
         """
+        self.log.info("Get process IDs of %s", process)
+        resp = self.get_process_ids(health_obj=health_obj, process=process)
+        if not resp[0]:
+            return resp[0]
+        process_ids = resp[1]
+        delay = resp[2]
         for i_i in range(restart_cnt):
             self.log.info("Restarting %s process for %s time", process, i_i)
             pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
@@ -210,11 +217,6 @@ class DTMRecoveryTestLib:
                                                               container_prefix=container_prefix)
             container = container_list[random.randint(0, len(container_list) - 1)]
             self.log.info("Container selected : %s", container)
-            self.log.info("Get process IDs of %s", process)
-            resp = self.get_process_ids(health_obj=health_obj, process=process)
-            if not resp[0]:
-                return resp[0]
-            process_ids = resp[1]
             self.log.info("Perform %s restart", process)
             resp = master_node.kill_process_in_container(pod_name=pod_selected,
                                                          container_name=container,
@@ -237,9 +239,12 @@ class DTMRecoveryTestLib:
 
                 self.log.info("Process %s restarted successfully", process)
 
+            if restart_cnt > 1:
+                time.sleep(delay)
+
         return True
 
-    def get_process_state(self, master_node, pod_name, container_name, process_ids):
+    def get_process_state(self, master_node, pod_name, container_name, process_ids: list):
         """
         Function to get given process state
         :param master_node: Object of master node
@@ -310,15 +315,16 @@ class DTMRecoveryTestLib:
         :return: bool, list
         """
         switcher = {
-            'm0d': const.M0D_SVC,
-            'rgw': const.SERVER_SVC
+            'm0d': {'svc': const.M0D_SVC, 'delay': DTM_CFG["m0d_delay_restarts"]},
+            'radosgw': {'svc': const.SERVER_SVC, 'delay': DTM_CFG["rgw_delay_restarts"]}
         }
         resp, fids = health_obj.hctl_status_get_svc_fids()
         if not resp:
             return resp, "Failed to get process IDs"
-        svc = switcher[process]
+        svc = switcher[process]['svc']
+        delay = switcher[process]['delay']
         fids = fids[svc]
-        return True, fids
+        return True, fids, delay
 
     def perform_object_overwrite(self, bucket_name, object_name, iteration, object_size, queue):
         """
