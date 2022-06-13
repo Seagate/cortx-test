@@ -114,8 +114,14 @@ test_41750:
   max_size: 1048576
 test_41757:
   max_size: 1048576
+  error_code: 12288
+  message_id: "NoSuchUser"
+  message_index: 0 
 test_41758:
   max_size: 1048576
+  error_code: 12288
+  message_id: "NoSuchUser"
+  message_index: 0
 test_41954:
   max_size: 1048576
 test_41172:
