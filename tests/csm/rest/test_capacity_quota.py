@@ -21,6 +21,7 @@
 """
 import ast
 import logging
+from string import Template
 import math
 import os
 import time
@@ -34,6 +35,7 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from config.s3 import S3_CFG
+from config import CSM_REST_CFG
 from libs.csm.csm_interface import csm_api_factory
 from libs.s3 import s3_misc
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -52,6 +54,8 @@ class TestCapacityQuota():
         cls.csm_obj = csm_api_factory("rest")
         cls.log.info("Initiating Rest Client ...")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
+        cls.rest_resp_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/rest_response_data.yaml")
         cls.created_iam_users = set()
         cls.buckets_created = []
         cls.user_id = None
@@ -78,7 +82,8 @@ class TestCapacityQuota():
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
                                  "IAM user creation failed")
-        self.user_id = resp.json()['tenant'] + "$" + payload["uid"]
+        self.uid = payload["uid"]
+        self.user_id = resp.json()['tenant'] + "$" + self.uid
         self.created_iam_users.add(self.user_id)
         resp1 = self.csm_obj.compare_iam_payload_response(resp, payload)
         self.log.info("Printing response %s", resp1)
@@ -378,7 +383,7 @@ class TestCapacityQuota():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
+    #@pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -391,25 +396,20 @@ class TestCapacityQuota():
         """
         test_case_name = cortxlogging.get_frame()
         test_cfg = self.csm_conf["test_40637"]
-        quota_type = test_cfg["quota_type"]
         enabled = test_cfg["enabled"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
-        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,max_size,max_objects)
+        payload = self.csm_obj.iam_user_quota_payload(enabled,max_size,max_objects)
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step 2: Create bucket under above IAM user")
-        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
-                      self.bucket, self.akey, self.skey)
-        bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
-        assert bucket_created, "Failed to create bucket"
         self.log.info("Step 3: Perform s3 operation")
         random_size = self.csm_obj.random_gen.randrange(1, max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                          self.akey, self.skey, object_size=random_size)
+                                          self.akey, self.skey, object_size=random_size,
+                                          block_size="1K")
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 4: Perform get and set user level quota of less size")
         less_size = self.csm_obj.random_gen.randrange(1, max_size)
-        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,less_size,max_objects)
+        payload = self.csm_obj.iam_user_quota_payload(enabled,less_size,max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True)
         assert result, "Verification for get set user failed."
@@ -930,7 +930,6 @@ class TestCapacityQuota():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -943,34 +942,52 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_41151"]
+        resp_error_code_1 = test_cfg["error_code_1"]
+        resp_msg_id_1 = test_cfg["message_id_1"]
+        resp_data = self.rest_resp_conf[resp_error_code_1][resp_msg_id_1]
+        resp_msg_index = test_cfg["message_index_1"]
+        msg_1 = resp_data[resp_msg_index]
+        resp_error_code_2 = test_cfg["error_code_2"]
+        resp_msg_id_2 = test_cfg["message_id_2"]
+        resp_data = self.rest_resp_conf[resp_error_code_2][resp_msg_id_2]
+        resp_msg_index = test_cfg["message_index_2"]
+        msg_2 = resp_data[resp_msg_index]
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1, available_size)
         num_objects = math.floor(available_size / random_size)
         self.log.info("Random size generated is: %s", random_size)
         self.log.info("Number of objects to be created are: %s", num_objects)
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
+        obj_prefix = "created_obj"
         for num in range(0, num_objects):
+            obj_name=f'{self.obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Creating object number %s", num)
-            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                              self.akey, self.skey, object_size=random_size)
+            resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                              self.akey, self.skey, object_size=random_size,
+                                               block_size="1K")
             assert resp, "Put object Failed"
         self.log.info("Step 2: Perform GET API to get capacity usage "
                       "with empty key Parameters id and resource")
         uid = ""
         resource = ""
         resp = self.csm_obj.get_user_capacity_usage(resource, uid)
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.BAD_REQUEST,
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.NOT_FOUND,
                               "Status code check failed for get capacity")
-        #if CSM_REST_CFG["msg_check"] == "enable":
-           # TODO: Error code and message check part
+        if CSM_REST_CFG["msg_check"] == "enable":
+           assert_utils.assert_equals(resp.json()["error_code"], resp_error_code_1)
+           assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id_1)
+           assert_utils.assert_equals(resp.json()["message"], msg_1)
         self.log.info("Step 3: Perform GET API to get capacity usage "
                       "with invalid key Parameters id and resource")
         resource = uid = self.user_id
         resp = self.csm_obj.get_user_capacity_usage(resource, uid)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.BAD_REQUEST,
                    "Status code check failed for get capacity")
-        #if CSM_REST_CFG["msg_check"] == "enable":
-           # TODO: Error code and message check part
+        if CSM_REST_CFG["msg_check"] == "enable":
+           assert_utils.assert_equals(resp.json()["error_code"], resp_error_code_2)
+           assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id_2)
+           assert_utils.assert_equals(resp.json()["message"],
+                              Template(msg_2).substitute(A="Resource",B="user."))
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
