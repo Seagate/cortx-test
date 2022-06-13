@@ -283,8 +283,7 @@ CMD_GET_ACCESS_KEY= " kubectl get pods | grep cortx-server- | cut -d ' ' -f1 | h
                     "tail -1 | cut -d ':' -f2 | sed -e 's/^[[:space:]]*//'"
 CMD_GET_SECRET_KEY="cat /root/cortx-k8s/k8_cortx_cloud/solution.yaml |" \
                    "grep s3_auth_admin_secret: | cut -d ':' -f2"
-
-SET_NAMESPACE = "kubectl config set-context --current --namespace={}"
+                   
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
 CMD_ADD_REPO_3RDPARTY = "yum-config-manager --add-repo \"{0}/3rd_party/\""
