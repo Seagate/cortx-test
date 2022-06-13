@@ -506,8 +506,8 @@ class LogicalNode(Host):
         resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
                                  command_suffix=f"-c {container_name} -- {cmd}",
                                  decode=True)
-        pid = resp
-        cmd = commands.KILL_CMD.format(pid)
+        log.info("Killing PID %s", resp)
+        cmd = commands.KILL_CMD.format(resp)
         resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
                                  command_suffix=f"-c {container_name} -- {cmd}",
                                  decode=True)
