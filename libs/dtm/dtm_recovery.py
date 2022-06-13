@@ -316,7 +316,7 @@ class DTMRecoveryTestLib:
         """
         switcher = {
             'm0d': {'svc': const.M0D_SVC, 'delay': DTM_CFG["m0d_delay_restarts"]},
-            'rgw': {'svc': const.SERVER_SVC, 'delay': DTM_CFG["rgw_delay_restarts"]}
+            'radosgw': {'svc': const.SERVER_SVC, 'delay': DTM_CFG["rgw_delay_restarts"]}
         }
         resp, fids = health_obj.hctl_status_get_svc_fids()
         if not resp:

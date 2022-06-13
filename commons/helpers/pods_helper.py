@@ -501,8 +501,13 @@ class LogicalNode(Host):
         :param process_name: Process name to be killed
         :return resp: String.
         """
-        option = '-9'
-        cmd = commands.PKIL_CMD.format(option+" "+process_name)
+        log.info("Getting PID of %s", process_name)
+        cmd = commands.PIDOF_CMD.format(process_name)
+        resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
+                                 command_suffix=f"-c {container_name} -- {cmd}",
+                                 decode=True)
+        pid = resp
+        cmd = commands.KILL_CMD.format(pid)
         resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
                                  command_suffix=f"-c {container_name} -- {cmd}",
                                  decode=True)
