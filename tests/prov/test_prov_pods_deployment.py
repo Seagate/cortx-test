@@ -46,7 +46,7 @@ class TestProvPodsDeployment:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
-        cls.deploy_lc_obj = ProvDeployK8sCortxLib()
+        cls.deploy_obj = ProvDeployK8sCortxLib()
         cls.prov_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
@@ -77,8 +77,8 @@ class TestProvPodsDeployment:
                                                             scripts_path=
                                                             self.prov_cfg['k8s_dir'])
         if self.destroy_flag:
-            resp = self.deploy_lc_obj.destroy_setup(self.master_node_list[0],
-                                                    self.worker_node_list)
+            resp = self.deploy_obj.destroy_setup(self.master_node_list[0],
+                                                 self.worker_node_list)
             assert_utils.assert_true(resp)
 
     @pytest.mark.lc
@@ -88,23 +88,23 @@ class TestProvPodsDeployment:
         """
         Test to verify the CONTROL pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
+        config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         config = secrets.choice(config_list)
         self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", (len(self.worker_node_list)),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
-        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
-                                           sns_parity=config['sns_parity'],
-                                           sns_spare=config['sns_spare'],
-                                           dix_data=config['dix_data'],
-                                           dix_parity=config['dix_parity'],
-                                           dix_spare=config['dix_spare'],
-                                           cvg_count=config['cvg_count'],
-                                           data_disk_per_cvg=config['data_disk_per_cvg'],
-                                           master_node_list=self.master_node_list,
-                                           worker_node_list=self.worker_node_list,
-                                           destroy_setup_flag=False)
+        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
+                                        sns_parity=config['sns_parity'],
+                                        sns_spare=config['sns_spare'],
+                                        dix_data=config['dix_data'],
+                                        dix_parity=config['dix_parity'],
+                                        dix_spare=config['dix_spare'],
+                                        cvg_count=config['cvg_count'],
+                                        data_disk_per_cvg=config['data_disk_per_cvg'],
+                                        master_node_list=self.master_node_list,
+                                        worker_node_list=self.worker_node_list,
+                                        destroy_setup_flag=False)
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.CONTROL_POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
@@ -122,23 +122,23 @@ class TestProvPodsDeployment:
         """
         Test to verify the DATA pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
+        config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         config = secrets.choice(config_list)
         self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
-        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
-                                           sns_parity=config['sns_parity'],
-                                           sns_spare=config['sns_spare'],
-                                           dix_data=config['dix_data'],
-                                           dix_parity=config['dix_parity'],
-                                           dix_spare=config['dix_spare'],
-                                           cvg_count=config['cvg_count'],
-                                           data_disk_per_cvg=config['data_disk_per_cvg'],
-                                           master_node_list=self.master_node_list,
-                                           worker_node_list=self.worker_node_list,
-                                           destroy_setup_flag=False)
+        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
+                                        sns_parity=config['sns_parity'],
+                                        sns_spare=config['sns_spare'],
+                                        dix_data=config['dix_data'],
+                                        dix_parity=config['dix_parity'],
+                                        dix_spare=config['dix_spare'],
+                                        cvg_count=config['cvg_count'],
+                                        data_disk_per_cvg=config['data_disk_per_cvg'],
+                                        master_node_list=self.master_node_list,
+                                        worker_node_list=self.worker_node_list,
+                                        destroy_setup_flag=False)
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
@@ -156,23 +156,23 @@ class TestProvPodsDeployment:
         """
         Test to verify the SERVER pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
+        config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         config = secrets.choice(config_list)
         self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
-        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
-                                           sns_parity=config['sns_parity'],
-                                           sns_spare=config['sns_spare'],
-                                           dix_data=config['dix_data'],
-                                           dix_parity=config['dix_parity'],
-                                           dix_spare=config['dix_spare'],
-                                           cvg_count=config['cvg_count'],
-                                           data_disk_per_cvg=config['data_disk_per_cvg'],
-                                           master_node_list=self.master_node_list,
-                                           worker_node_list=self.worker_node_list,
-                                           destroy_setup_flag=False)
+        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
+                                        sns_parity=config['sns_parity'],
+                                        sns_spare=config['sns_spare'],
+                                        dix_data=config['dix_data'],
+                                        dix_parity=config['dix_parity'],
+                                        dix_spare=config['dix_spare'],
+                                        cvg_count=config['cvg_count'],
+                                        data_disk_per_cvg=config['data_disk_per_cvg'],
+                                        master_node_list=self.master_node_list,
+                                        worker_node_list=self.worker_node_list,
+                                        destroy_setup_flag=False)
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.SERVER_POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
@@ -190,23 +190,23 @@ class TestProvPodsDeployment:
         """
         Test to verify the HA pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=len(self.worker_node_list))
+        config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         config = secrets.choice(config_list)
         self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
-        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
-                                           sns_parity=config['sns_parity'],
-                                           sns_spare=config['sns_spare'],
-                                           dix_data=config['dix_data'],
-                                           dix_parity=config['dix_parity'],
-                                           dix_spare=config['dix_spare'],
-                                           cvg_count=config['cvg_count'],
-                                           data_disk_per_cvg=config['data_disk_per_cvg'],
-                                           master_node_list=self.master_node_list,
-                                           worker_node_list=self.worker_node_list,
-                                           destroy_setup_flag=False)
+        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
+                                        sns_parity=config['sns_parity'],
+                                        sns_spare=config['sns_spare'],
+                                        dix_data=config['dix_data'],
+                                        dix_parity=config['dix_parity'],
+                                        dix_spare=config['dix_spare'],
+                                        cvg_count=config['cvg_count'],
+                                        data_disk_per_cvg=config['data_disk_per_cvg'],
+                                        master_node_list=self.master_node_list,
+                                        worker_node_list=self.worker_node_list,
+                                        destroy_setup_flag=False)
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.HA_POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
@@ -224,26 +224,26 @@ class TestProvPodsDeployment:
         """
         Test to verify the data-only pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=
-                                                               len(self.worker_node_list))
+        config_list = self.deploy_obj.get_durability_config(num_nodes=
+                                                            len(self.worker_node_list))
         config = secrets.choice(config_list)
         self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
-        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
-                                           sns_parity=config['sns_parity'],
-                                           sns_spare=config['sns_spare'],
-                                           dix_data=config['dix_data'],
-                                           dix_parity=config['dix_parity'],
-                                           dix_spare=config['dix_spare'],
-                                           cvg_count=config['cvg_count'],
-                                           data_disk_per_cvg=config['data_disk_per_cvg'],
-                                           master_node_list=self.master_node_list,
-                                           worker_node_list=self.worker_node_list,
-                                           deployment_type=self.prov_cfg["deployment_type_data"],
-                                           client_instances=self.prov_cfg["data_client_instance"],
-                                           destroy_setup_flag=False)
+        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
+                                        sns_parity=config['sns_parity'],
+                                        sns_spare=config['sns_spare'],
+                                        dix_data=config['dix_data'],
+                                        dix_parity=config['dix_parity'],
+                                        dix_spare=config['dix_spare'],
+                                        cvg_count=config['cvg_count'],
+                                        data_disk_per_cvg=config['data_disk_per_cvg'],
+                                        master_node_list=self.master_node_list,
+                                        worker_node_list=self.worker_node_list,
+                                        deployment_type=self.prov_cfg["deployment_type_data"],
+                                        client_instances=self.prov_cfg["data_client_instance"],
+                                        destroy_setup_flag=False)
         self.log.info("Running m0kv tests")
         self.motr_obj = MotrCoreK8s()
         node_pod_dict = self.motr_obj.get_node_pod_dict()
@@ -285,26 +285,26 @@ class TestProvPodsDeployment:
         """
         Test to verify the data-only pod being deployed
         """
-        config_list = self.deploy_lc_obj.get_durability_config(num_nodes=
-                                                               len(self.worker_node_list))
+        config_list = self.deploy_obj.get_durability_config(num_nodes=
+                                                            len(self.worker_node_list))
         config = secrets.choice(config_list)
         self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
-        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
-                                           sns_parity=config['sns_parity'],
-                                           sns_spare=config['sns_spare'],
-                                           dix_data=config['dix_data'],
-                                           dix_parity=config['dix_parity'],
-                                           dix_spare=config['dix_spare'],
-                                           cvg_count=config['cvg_count'],
-                                           data_disk_per_cvg=config['data_disk_per_cvg'],
-                                           master_node_list=self.master_node_list,
-                                           worker_node_list=self.worker_node_list,
-                                           deployment_type=self.prov_cfg["deployment_type_data"],
-                                           client_instances=self.prov_cfg["data_client_instance"],
-                                           destroy_setup_flag=False)
+        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
+                                        sns_parity=config['sns_parity'],
+                                        sns_spare=config['sns_spare'],
+                                        dix_data=config['dix_data'],
+                                        dix_parity=config['dix_parity'],
+                                        dix_spare=config['dix_spare'],
+                                        cvg_count=config['cvg_count'],
+                                        data_disk_per_cvg=config['data_disk_per_cvg'],
+                                        master_node_list=self.master_node_list,
+                                        worker_node_list=self.worker_node_list,
+                                        deployment_type=self.prov_cfg["deployment_type_data"],
+                                        client_instances=self.prov_cfg["data_client_instance"],
+                                        destroy_setup_flag=False)
         self.log.info("STARTED: Verify multiple m0cp/m0cat operation")
         self.motr_obj = MotrCoreK8s()
         infile = TEMP_PATH + 'input'
@@ -333,4 +333,72 @@ class TestProvPodsDeployment:
             self.log.info("Stop: Verify multiple m0cp/cat operation")
         self.collect_sb = False
         self.destroy_flag = True
+        self.log.info("===Test Completed===")
+
+    @pytest.mark.lc
+    @pytest.mark.cluster_deployment
+    @pytest.mark.tags("TEST-41907")
+    def test_41907(self):
+        """
+        Test to verify the multidata pod being deployed
+        """
+        config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
+        config = secrets.choice(config_list)
+        self.log.info("config is picked :%s", config)
+        self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
+                      config['sns_data'], config['sns_parity'],
+                      config['sns_spare'])
+        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
+                                        sns_parity=config['sns_parity'],
+                                        sns_spare=config['sns_spare'],
+                                        dix_data=config['dix_data'],
+                                        dix_parity=config['dix_parity'],
+                                        dix_spare=config['dix_spare'],
+                                        cvg_count="1",
+                                        data_disk_per_cvg=config['data_disk_per_cvg'],
+                                        master_node_list=self.master_node_list,
+                                        worker_node_list=self.worker_node_list,
+                                        destroy_setup_flag=False)
+        resp = LogicalNode.get_all_pods(self.master_node_list[0],
+                                        pod_prefix=constants.POD_NAME_PREFIX)
+        assert_utils.assert_true(resp[0])
+        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Pod count is %s", len(resp))
+        assert_utils.assert_equal(len(resp), len(self.worker_node_list))
+        self.collect_sb = False
+        self.destroy_flag = False
+        self.log.info("===Test Completed===")
+
+    @pytest.mark.lc
+    @pytest.mark.cluster_deployment
+    @pytest.mark.tags("TEST-41909")
+    def test_41909(self):
+        """
+        Test to verify the multidata pod being deployed with 2 cvg
+        """
+        config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
+        config = secrets.choice(config_list)
+        self.log.info("config is picked :%s", config)
+        self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
+                      config['sns_data'], config['sns_parity'],
+                      config['sns_spare'])
+        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
+                                        sns_parity=config['sns_parity'],
+                                        sns_spare=config['sns_spare'],
+                                        dix_data=config['dix_data'],
+                                        dix_parity=config['dix_parity'],
+                                        dix_spare=config['dix_spare'],
+                                        cvg_count="2",
+                                        data_disk_per_cvg=config['data_disk_per_cvg'],
+                                        master_node_list=self.master_node_list,
+                                        worker_node_list=self.worker_node_list,
+                                        destroy_setup_flag=False)
+        resp = LogicalNode.get_all_pods(self.master_node_list[0],
+                                        pod_prefix=constants.POD_NAME_PREFIX)
+        assert_utils.assert_true(resp[0])
+        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Pod count is %s", len(resp))
+        assert_utils.assert_equal(len(resp), 2*len(self.worker_node_list))
+        self.collect_sb = False
+        self.destroy_flag = False
         self.log.info("===Test Completed===")
