@@ -35,6 +35,7 @@ from commons.utils.system_utils import make_dirs
 from commons.utils.system_utils import remove_dirs
 from commons.utils import assert_utils
 from commons.utils import s3_utils
+from commons import error_messages as errmsg
 
 from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
@@ -267,31 +268,55 @@ class TestVersioningMultipart:
     @CTFailOn(error_handler)
     def test_preexist_mpu_versioning_enabled_bkt_41287(self):
         """
-        Test multipart upload in a versioning suspended bucket
+        Test deletion of multipart upload in a versioning enabled bucket
         """
         self.log.info("STARTED: Test deletion of multipart upload in a versioning enabled bucket")
-        mp_config = MPART_CFG["test_8926"]
-        self.log.info("Step 2: PUT Bucket versioning with status as Enabled")
-        res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
-                                                         status="Enabled")
+        mp_config = MPART_CFG["test_40265"]
+        if os.path.exists(self.file_path):
+            os.remove(self.file_path)
+        create_file(self.file_path, mp_config["file_size"])
+        self.log.info("Step 2: PUT Bucket versioning with status as Suspended")
+        res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 3: Upload multipart object to a bucket")
         _, resp = self.s3_mp_test_obj.simple_multipart_upload(self.bucket_name,
                                                               self.object_name,
                                                               mp_config["file_size"],
                                                               self.file_path,
-                                                              mp_config["total_parts"])
+                                                              2)
+        self.log.info("resp has version id %s", resp)
+        versions_dict = {}
+        version_id = resp.get("VersionId", "null")
+        if self.object_name not in versions_dict:
+            versions_dict[self.object_name] = {}
+            versions_dict[self.object_name]["versions"] = {}
+            versions_dict[self.object_name]["delete_markers"] = []
+            versions_dict[self.object_name]["version_history"] = []
+            versions_dict[self.object_name]["is_latest"] = None
+        versions_dict[self.object_name]["versions"][version_id] = resp["ETag"]
+        versions_dict[self.object_name]["version_history"].append(version_id)
+        versions_dict[self.object_name]["is_latest"] = version_id
         self.log.info("Step 4: Perform DELETE Object for uploaded object ")
-        self.s3_test_obj.delete_object(self.bucket_name, self.object_name)
+        _, delete_res = self.s3_test_obj.delete_object(self.bucket_name, self.object_name)
+        self.log.info("delete resp %s", delete_res)
+        assert_utils.assert_in("DeleteMarker", delete_res.keys(), "DeleteMarker not available")
         self.log.info("Step 5: Check GET/HEAD Object")
         check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
-                                      bucket_name=self.bucket_name,
-                                      object_name=self.object_name)
+                                      bucket_name=self.bucket_name, object_name=self.object_name,
+                                      get_error_msg=errmsg.NO_SUCH_KEY_ERR,
+                                      head_error_msg=errmsg.NOT_FOUND_ERR)
+        versions_dict[self.object_name]["versions"][version_id] = resp["ETag"]
+        versions_dict[self.object_name]["delete_markers"] = resp.get("DeleteMarker", "True")
+        versions_dict[self.object_name]["version_history"].append(version_id)
+        self.log.info("versions_dict = %s", versions_dict)
         self.log.info("Step 6: List Object Versions")
-        check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                                   expected_versions={})
+        list_dict, list_resp = check_list_object_versions(self.s3_ver_test_obj,
+                                                          bucket_name=self.bucket_name,
+                                                          expected_versions=versions_dict)
+        self.log.info("list_dict %s, list_resp %s", list_dict, list_resp)
         self.log.info("Step 7: List Objects")
-        self.s3_test_obj.list_objects_details(self.bucket_name)
+        _, list_resp = self.s3_test_obj.list_objects_details(self.bucket_name)
+        assert_utils.assert_not_in(self.bucket_name, list_resp)
         self.log.info("ENDED: Test deletion of multipart upload in a versioning enabled bucket")
 
 

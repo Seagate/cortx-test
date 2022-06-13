@@ -189,6 +189,8 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
         expected_deletemarker_count = 0
 
         resp_dict = parse_list_object_versions_response(list_response)
+        LOG.info("expected_versions is %s and keys is %s",expected_versions,
+                 expected_versions.keys() )
         for key in expected_versions.keys():
             for version in expected_versions[key]["versions"].keys():
                 assert_utils.assert_in(version, list(resp_dict["versions"][key].keys()))
@@ -201,7 +203,7 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
                                           resp_dict["versions"][key][version]["etag"])
                 expected_version_count += 1
             for delete_marker in expected_versions[key]["delete_markers"]:
-                assert_utils.assert_in(delete_marker, list(resp_dict["deletemarkers"][key].keys()))
+                assert_utils.assert_in(delete_marker, list(resp_dict["delete_markers"][key].keys()))
                 # Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
                 # is_latest = True if key["is_latest"] == delete_marker else False
                 # Uncomment once CORTX-30178 changes are available in main
