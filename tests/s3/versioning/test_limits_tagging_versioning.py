@@ -474,7 +474,7 @@ class TestObjectTaggingVerLimits:
         LOGGER.info("Step 2: Successfully uploaded object %s to versioned bucket %s with "
                     "version ID %s", self.object_name, self.bucket_name, latest_ver)
         tag_or= list()
-        for char in const.LIST_SPECIAL_CHAR:
+        for char in S3_CFG["list_special_char"]:
             tag_key = f"tag{char}key"
             tag_or.append({"Key": tag_key, "Value": "tag1value"})
         LOGGER.info("Step 3: Perform PUT Object Tagging for %s with tag set as %s with tag key "
