@@ -27,6 +27,7 @@ import time
 import pytest
 
 from commons.ct_fail_on import CTFailOn
+from commons.error_messages import NO_SUCH_KEY_ERR
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
@@ -48,9 +49,7 @@ class TestTaggingDeleteObject:
     """Test Delete Object Tagging"""
 
     def setup_method(self):
-        """
-        Function will be invoked perform setup prior to each test case.
-        """
+        """Function will be invoked perform setup prior to each test case."""
         LOGGER.info("STARTED: Setup operations")
         self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.s3_ver_obj = S3VersioningTestLib(endpoint_url=S3_CFG["s3_url"])
@@ -79,9 +78,7 @@ class TestTaggingDeleteObject:
         LOGGER.info("ENDED: Setup operations")
 
     def teardown_method(self):
-        """
-        Function will be perform cleanup after each test case.
-        """
+        """Function will be performed cleanup after each test case."""
         LOGGER.info("STARTED: Teardown operations")
         LOGGER.info("CleanUP : %s", self.test_dir_path)
         for file_path in (self.file_path1, self.file_path2, self.file_path3, self.download_path):
@@ -107,9 +104,7 @@ class TestTaggingDeleteObject:
     @pytest.mark.tags("TEST-40435")
     @CTFailOn(error_handler)
     def test_del_obj_tag_40435(self):
-        """
-        Test DELETE object tagging for pre-existing object in a versioning enabled bucket.
-        """
+        """Test DELETE object tagging for pre-existing object in a versioning enabled bucket."""
         LOGGER.info("STARTED: Test DELETE object tagging for pre-existing object in a versioning "
                     "enabled bucket")
 
@@ -190,9 +185,7 @@ class TestTaggingDeleteObject:
     @pytest.mark.tags("TEST-40436")
     @CTFailOn(error_handler)
     def test_del_obj_tag_40436(self):
-        """
-        Test DELETE object tagging in a versioning enabled bucket
-        """
+        """Test DELETE object tagging in a versioning enabled bucket."""
         LOGGER.info("STARTED: Test DELETE object tagging in a versioning enabled bucket")
         LOGGER.info("Step 1: PUT Bucket versioning with status as Enabled")
         res = self.s3_ver_obj.put_bucket_versioning(bucket_name=self.bucket_name)
@@ -353,14 +346,10 @@ class TestTaggingDeleteObject:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-40438")
-    @CTFailOn(error_handler)
     def test_del_obj_tag_40438(self):
-        """
-        Test DELETE object tagging for a deleted versioned object
-        """
+        """Test DELETE object tagging for a deleted versioned object."""
         LOGGER.info("STARTED: Test DELETE object tagging for a deleted versioned object")
         self.ver_tag.update({self.object_name: {}})
-
         LOGGER.info("Step 1: Perform PUT Bucket versioning with status as Enabled on %s",
                     self.bucket_name)
         resp = self.s3_ver_obj.put_bucket_versioning(bucket_name=self.bucket_name)
@@ -502,11 +491,13 @@ class TestTaggingDeleteObject:
         LOGGER.info("Step 5: Perform DELETE Object Tagging for object1  %s "
                     "with a tag key-value pair for non-existing "
                     "versionId=%s",
-                    self.object_name, latest_v)
+                    self.object_name, "versionid2")
         resp = self.s3_ver_obj.delete_obj_tag_ver(bucket_name=self.bucket_name,
-                                                  object_name=self.object_name, version=latest_v)
-        assert_utils.assert_true(resp[0], resp)
-        assert_utils.assert_false(resp[1], resp)
+                                                  object_name=self.object_name,
+                                                  version="versionid2")
+        # For non-existing version ID , expecting "404 Not Found (NoSuchKey)"
+        assert_utils.assert_false(resp[0], resp)
+        assert_utils.assert_in(NO_SUCH_KEY_ERR, resp[1])
         LOGGER.info("Step 5: Performed DELETE Object Tagging for %s with versionId=%s",
                     self.object_name, latest_v)
 
@@ -518,6 +509,7 @@ class TestTaggingDeleteObject:
                                                   object_name="object2", version=latest_v)
         # For non-existing object, expecting "404 Not Found (NoSuchKey)"
         assert_utils.assert_false(resp[0], resp)
+        assert_utils.assert_in(NO_SUCH_KEY_ERR, resp[1])
         LOGGER.info("Step 6: Perform DELETE Object Tagging for non-existing object %s "
                     "with a tag key-value pair "
                     "with versionId=%s", "object2", latest_v)
