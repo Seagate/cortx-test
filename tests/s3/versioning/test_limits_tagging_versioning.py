@@ -472,14 +472,10 @@ class TestObjectTaggingVerLimits:
         latest_ver = self.versions[self.object_name]["version_history"][-1]
         LOGGER.info("Step 2: Successfully uploaded object %s to versioned bucket %s with "
                     "version ID %s", self.object_name, self.bucket_name, latest_ver)
-        tag_or = [{"Key": "tag+key", "Value": "tag1value"},
-                  {"Key": "tag-key", "Value": "tag1value"},
-                  {"Key": "tag=key", "Value": "tag1value"},
-                  {"Key": "tag.key", "Value": "tag1value"},
-                  {"Key": "tag_key", "Value": "tag1value"},
-                  {"Key": "tag:key", "Value": "tag1value"},
-                  {"Key": "tag/key", "Value": "tag1value"},
-                  {"Key": "tag@key", "Value": "tag1value"}]
+        tag_or= list()
+        for char in S3_CFG["list_special_char"]:
+            tag_key = f"tag{char}key"
+            tag_or.append({"Key": tag_key, "Value": "tag1value"})
         LOGGER.info("Step 3: Perform PUT Object Tagging for %s with tag set as %s with tag key "
                     "containing allowed special characters", self.object_name, tag_or)
         resp = s3_cmn_lib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
