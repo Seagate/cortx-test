@@ -86,7 +86,7 @@ class RestIamUser(RestTestLib):
         return response
 
     @RestTestLib.authenticate_and_login
-    def delete_iam_user(self, user=None, purge_data=False):
+    def delete_iam_user(self, user=None, purge_data=None):
         """
         This function will delete user
         :param user: userid of user
@@ -558,7 +558,7 @@ class RestIamUser(RestTestLib):
         return response
 
     @RestTestLib.authenticate_and_login
-    def delete_iam_user_rgw(self, uid, header, purge_data=False):
+    def delete_iam_user_rgw(self, uid, header, purge_data=None):
         """
         Delete IAM user
         :param uid: userid
@@ -568,9 +568,10 @@ class RestIamUser(RestTestLib):
         """
         self.log.info("Delete IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + uid
-        payload = {"purge_data": False}
-        if purge_data:
-            payload = {"purge_data": True}
+        if purge_data is not None:
+            payload = {"purge_data": purge_data}
+        else:
+            payload = None
         response = self.restapi.rest_call("delete", endpoint=endpoint, json_dict=payload,
                                           headers=header)
         self.log.info("Delete IAM user request successfully sent...")
@@ -824,7 +825,40 @@ class RestIamUser(RestTestLib):
             exc=False)
         node_obj.copy_file_to_local(
             remote_path=cons.CLUSTER_COPY_PATH, local_path=cons.CSM_COPY_PATH)
-        stream = open(cons.CSM_COPY_PATH, 'r')
+        stream = open(cons.CSM_COPY_PATH, 'r', encoding="utf-8")
         data = yaml.safe_load(stream)
         internal_user = data["cortx"]["rgw"]["auth_user"]
         return internal_user
+
+    @staticmethod
+    def get_iam_user_payload(param=None):
+        """
+        Creates selected parameters IAM user payload.
+        """
+        time.sleep(1)
+        res, temp = [], []
+        user_id = const.IAM_USER + str(int(time.time()))
+        display_name = const.IAM_USER + str(int(time.time()))
+        temp.append(user_id)
+        temp.append(display_name)
+        if param == "email":
+            email = user_id + "@seagate.com"
+            temp.append(email)
+            res = temp
+        elif param == "a_key":
+            access_key = user_id.ljust(const.S3_ACCESS_LL, "d")
+            temp.append(access_key)
+            res = temp
+        elif param == "s_key":
+            secret_key = config_utils.gen_rand_string(length=const.S3_SECRET_LL)
+            temp.append(secret_key)
+            res = temp
+        elif param == "keys":
+            acc_key = user_id.ljust(const.S3_ACCESS_LL, "d")
+            sec_key = config_utils.gen_rand_string(length=const.S3_SECRET_LL)
+            temp.append(acc_key)
+            temp.append(sec_key)
+            res = temp
+        else:
+            res = temp
+        return res
