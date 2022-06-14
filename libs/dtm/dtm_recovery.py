@@ -35,6 +35,7 @@ from commons.utils import system_utils
 from config import CMN_CFG
 from config import HA_CFG
 from config import S3_CFG
+from config import DTM_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
@@ -64,7 +65,7 @@ class DTMRecoveryTestLib:
     # pylint: disable=too-many-arguments
     def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples,
                          log_file_prefix, queue, obj_size: str = None, loop: int = 1,
-                         created_bucket: list = None, retry: int = None):
+                         created_bucket: list = None, retry: int = None, **kwargs):
         """
         Perform Write operations
         :param bucket_prefix: Bucket name
@@ -81,6 +82,9 @@ class DTMRecoveryTestLib:
         results = list()
         workload = list()
         log_path = None
+        skip_read = kwargs.get("skip_read", True)
+        skip_cleanup = kwargs.get("skip_cleanup", True)
+        validate = kwargs.get("validate", False)
         obj_size_list = copy.deepcopy(HA_CFG["s3_bench_workloads"])
         if self.setup_type == "HW":
             obj_size_list.extend(HA_CFG["s3_bench_large_workloads"])
@@ -96,7 +100,8 @@ class DTMRecoveryTestLib:
                                    self.secret_key, bucket=bucket_name,
                                    num_clients=no_of_clients, num_sample=no_of_samples,
                                    obj_name_pref=object_prefix, obj_size=obj_size,
-                                   skip_cleanup=True, duration=None,
+                                   skip_read=skip_read, validate=validate,
+                                   skip_cleanup=skip_cleanup, duration=None,
                                    log_file_prefix=str(log_file_prefix).upper(),
                                    end_point=S3_CFG["s3_url"],
                                    validate_certs=S3_CFG["validate_certs"],
@@ -201,6 +206,12 @@ class DTMRecoveryTestLib:
         :param restart_cnt: Count to restart process from randomly selected pod (Restart once
         previously restarted process recovers)
         """
+        self.log.info("Get process IDs of %s", process)
+        resp = self.get_process_ids(health_obj=health_obj, process=process)
+        if not resp[0]:
+            return resp[0]
+        process_ids = resp[1]
+        delay = resp[2]
         for i_i in range(restart_cnt):
             self.log.info("Restarting %s process for %s time", process, i_i)
             pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
@@ -210,11 +221,6 @@ class DTMRecoveryTestLib:
                                                               container_prefix=container_prefix)
             container = container_list[random.randint(0, len(container_list) - 1)]
             self.log.info("Container selected : %s", container)
-            self.log.info("Get process IDs of %s", process)
-            resp = self.get_process_ids(health_obj=health_obj, process=process)
-            if not resp[0]:
-                return resp[0]
-            process_ids = resp[1]
             self.log.info("Perform %s restart", process)
             resp = master_node.kill_process_in_container(pod_name=pod_selected,
                                                          container_name=container,
@@ -237,9 +243,12 @@ class DTMRecoveryTestLib:
 
                 self.log.info("Process %s restarted successfully", process)
 
+            if restart_cnt > 1:
+                time.sleep(delay)
+
         return True
 
-    def get_process_state(self, master_node, pod_name, container_name, process_ids):
+    def get_process_state(self, master_node, pod_name, container_name, process_ids: list):
         """
         Function to get given process state
         :param master_node: Object of master node
@@ -310,15 +319,16 @@ class DTMRecoveryTestLib:
         :return: bool, list
         """
         switcher = {
-            'm0d': const.M0D_SVC,
-            'rgw': const.SERVER_SVC
+            'm0d': {'svc': const.M0D_SVC, 'delay': DTM_CFG["m0d_delay_restarts"]},
+            'radosgw': {'svc': const.SERVER_SVC, 'delay': DTM_CFG["rgw_delay_restarts"]}
         }
         resp, fids = health_obj.hctl_status_get_svc_fids()
         if not resp:
             return resp, "Failed to get process IDs"
-        svc = switcher[process]
+        svc = switcher[process]['svc']
+        delay = switcher[process]['delay']
         fids = fids[svc]
-        return True, fids
+        return True, fids, delay
 
     def perform_object_overwrite(self, bucket_name, object_name, iteration, object_size, queue):
         """
