@@ -485,32 +485,28 @@ class S3TaggingTestLib(Tagging):
         :param encoding_type: encoding type e.g. base64,utf-8
         :return: True or False, response and encoded tag set.
         """
-        try:
-            LOGGER.info("Set bucket tag with encoded key value pair.")
-            key = ''.join((secrets.choice(string.printable) for i in range(8)))
-            value = ''.join((secrets.choice(string.printable) for i in range(8)))
-            tag_set = list()
-            if encoding_type == 'utf-8':
-                key_encode = key.encode('utf-8')
-                value_encode = value.encode('utf-8')
-            elif encoding_type == 'base64':
-                key_encode = base64.b64encode(key.encode())
-                value_encode = base64.b64encode(value.encode())
-            else:
-                raise Exception("Encoding is not supported")
-            tag = dict()
-            tag.update([("Key", "{}".format(key_encode)),
-                        ("Value", "{}".format(value_encode))])
-            tag_set.append(tag)
-            LOGGER.info(
-                "Put bucket tagging with encoded value of TagSet: %s", str(tag_set))
-            response = super().set_bucket_tags(
-                bucket_name, tag_set={'TagSet': tag_set})
-        except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3TaggingTestLib.set_encoded_tag_values.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+        LOGGER.info("Set bucket tag with encoded key value pair.")
+        
+        if encoding_type not in ("utf-8", "base64"):
+            raise Exception("Encoding is not supported")
+
+        key = ''.join((secrets.choice(string.printable) for i in range(8)))
+        value = ''.join((secrets.choice(string.printable) for i in range(8)))
+        tag_set = list()
+        if encoding_type == 'utf-8':
+            key_encode = key.encode('utf-8')
+            value_encode = value.encode('utf-8')
+        elif encoding_type == 'base64':
+            key_encode = base64.b64encode(key.encode())
+            value_encode = base64.b64encode(value.encode())
+        tag = dict()
+        tag.update([("Key", "{}".format(key_encode)),
+                    ("Value", "{}".format(value_encode))])
+        tag_set.append(tag)
+        LOGGER.info(
+            "Put bucket tagging with encoded value of TagSet: %s", str(tag_set))
+        response = super().set_bucket_tags(
+            bucket_name, tag_set={'TagSet': tag_set})
 
         return True, response, tag_set
 
