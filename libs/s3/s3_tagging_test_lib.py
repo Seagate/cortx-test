@@ -486,7 +486,7 @@ class S3TaggingTestLib(Tagging):
         :return: True or False, response and encoded tag set.
         """
         LOGGER.info("Set bucket tag with encoded key value pair.")
-        
+
         if encoding_type not in ("utf-8", "base64"):
             raise Exception("Encoding is not supported")
 

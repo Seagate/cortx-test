@@ -73,15 +73,15 @@ class TestBucketTagging:
             resp = self.s3_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp)
         self.log.info("ENDED: Test teardown operations.")
-    
+
     @pytest.fixture(scope="function", autouse=False)
     def create_bucket(self):
         """Create bucket for test-cases"""
-        self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
+        self.log.info("Creating a bucket: %s", self.bucket_name)
         resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(resp[1], self.bucket_name, resp[1])
-        self.log.info("Step 1: Created a bucket: %s ", self.bucket_name)
+        self.log.info("Created a bucket: %s ", self.bucket_name)
 
     @pytest.mark.sanity
     @pytest.mark.parallel
@@ -93,7 +93,7 @@ class TestBucketTagging:
     def test_2432(self):
         """Verify PUT Bucket tagging."""
         self.log.info("STARTED: Verify PUT Bucket tagging")
-        self.log.info("Step 2: Setting tag for bucket")
+        self.log.info("Step 1: Setting tag for bucket")
         resp = self.tag_obj.set_bucket_tag(self.bucket_name, "testkey", "testval")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Tag is set for bucket")
@@ -115,7 +115,7 @@ class TestBucketTagging:
     def test_2433(self):
         """Verify GET Bucket tagging."""
         self.log.info("STARTED: Verify GET Bucket tagging")
-        self.log.info("Step 2: Setting tag for a bucket")
+        self.log.info("Step 1: Setting tag for a bucket")
         resp = self.tag_obj.set_bucket_tag(self.bucket_name, "testkey", "testval")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Tag is set for a bucket")
@@ -136,7 +136,7 @@ class TestBucketTagging:
     def test_2434(self):
         """Verify DELETE Bucket tagging."""
         self.log.info("STARTED: Verify DELETE Bucket tagging")
-        self.log.info("Step 2: Setting tag for a bucket")
+        self.log.info("Step 1: Setting tag for a bucket")
         resp = self.tag_obj.set_bucket_tag(self.bucket_name, "testkey", "testval")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Tag is set for a bucket")
@@ -165,7 +165,7 @@ class TestBucketTagging:
         self.log.info(
             "STARTED: Create a tag whose key is up to 128 Unicode "
             "characters in length")
-        self.log.info("Step 2: Setting tag for a bucket")
+        self.log.info("Step 1: Setting tag for a bucket")
         resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "organizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekey"
@@ -197,7 +197,7 @@ class TestBucketTagging:
         """
         self.log.info(
             "STARTED: Create a tag whose key is more than 128 Unicode characters in length")
-        self.log.info("Step 2: Setting tag for a bucket")
+        self.log.info("Step 1: Setting tag for a bucket")
         try:
             resp = self.tag_obj.set_bucket_tag(
                 self.bucket_name,
@@ -226,7 +226,7 @@ class TestBucketTagging:
         self.log.info(
             "STARTED: Create a tag having values up to 256 Unicode "
             "characters in length")
-        self.log.info("Step 2: Setting tag for a bucket")
+        self.log.info("Step 1: Setting tag for a bucket")
         resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "testkey",
@@ -262,7 +262,7 @@ class TestBucketTagging:
         """
         self.log.info(
             "STARTED: Create a tag having values more than 512 Unicode characters in length")
-        self.log.info("Step 2: Setting tag for a bucket")
+        self.log.info("Step 1: Setting tag for a bucket")
         try:
             resp = self.tag_obj.set_bucket_tag(
                 self.bucket_name,
@@ -295,7 +295,7 @@ class TestBucketTagging:
     def test_2439(self):
         """Create Bucket tags, up to 50."""
         self.log.info("STARTED: Create Bucket tags, up to 50")
-        self.log.info("Step 2: Setting %s tags for a bucket", self.bucket_name)
+        self.log.info("Step 1: Setting %s tags for a bucket", self.bucket_name)
         resp = self.tag_obj.set_bucket_tag(self.bucket_name, "testkey", "testval", 50)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: %d tags are set for a bucket", 50)
@@ -321,7 +321,7 @@ class TestBucketTagging:
     def test_2440(self):
         """Create Bucket tags, more than 50."""
         self.log.info("STARTED: Create Bucket tags, more than 50")
-        self.log.info("Step 2: Setting %d tags for a bucket", 51)
+        self.log.info("Step 1: Setting %d tags for a bucket", 51)
         try:
             resp = self.tag_obj.set_bucket_tag(self.bucket_name, "testkey", "testval", 51)
             assert_utils.assert_false(resp[0], resp[1])
@@ -343,10 +343,10 @@ class TestBucketTagging:
     def test_2441(self):
         """Verify bucket Tag Keys with case sensitive labels."""
         self.log.info("STARTED: Verify bucket Tag Keys with case sensitive labels")
-        self.log.info("Step 2 : Setting tag for a bucket with case sensitive tag keys")
+        self.log.info("Step 1: Setting tag for a bucket with case sensitive tag keys")
         resp = self.tag_obj.set_bucket_tag(self.bucket_name, "TESTKEY", "testval")
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 2 : Tag is set for a bucket with case sensitive tag keys")
+        self.log.info("Step 2: Tag is set for a bucket with case sensitive tag keys")
         self.log.info("Step 3: Retrieving tag of a bucket")
         resp = self.tag_obj.get_bucket_tags(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -364,7 +364,7 @@ class TestBucketTagging:
     def test_2442(self):
         """Verify bucket tag Values with case sensitive labels."""
         self.log.info("STARTED: Verify bucket tag Values with case sensitive labels")
-        self.log.info("Step 2: Setting tag for a bucket with case sensitive tag values")
+        self.log.info("Step 1: Setting tag for a bucket with case sensitive tag values")
         resp = self.tag_obj.set_bucket_tag(self.bucket_name, "testkey", "TESTVALUE")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Tag is set for a bucket with case sensitive tag values")
@@ -395,7 +395,7 @@ class TestBucketTagging:
                                 ]
         else:
             lst_special_chars = ["+", "-", "=", ".", "_", ":"]
-        self.log.info("Step 2: Setting multiple tags with tag keys having special characters")
+        self.log.info("Step 1: Setting multiple tags with tag keys having special characters")
         for char in lst_special_chars:
             tag_key = f"{char}key{char}"
             resp = self.tag_obj.set_bucket_tag(self.bucket_name, tag_key, "testval")
@@ -422,7 +422,7 @@ class TestBucketTagging:
         self.log.info(
             "STARTED: Create multiple tags with tag keys having invalid special characters")
         self.log.info(
-            "Step 2: Setting tags for a bucket with tag keys having invalid special characters")
+            "Step 1: Setting tags for a bucket with tag keys having invalid special characters")
         for char in ["?", "*", "!", "@", "#"]:
             key = f"{char}key{char}"
             try:
@@ -448,7 +448,7 @@ class TestBucketTagging:
         """Create multiple tags with tag values having invalid special character."""
         self.log.info("STARTED: Create multiple tags with tag values having "
                       "invalid special character")
-        self.log.info("Step 2: Setting multiple tags with tag values having "
+        self.log.info("Step 1: Setting multiple tags with tag values having "
                       "invalid special character")
         for char in ["?", "*", "!", "@", "#"]:
             value = f"{char}val{char}"
@@ -473,7 +473,7 @@ class TestBucketTagging:
     def test_2446(self):
         """Create bucket tags with duplicate keys."""
         self.log.info("STARTED: Create bucket tags with duplicate keys")
-        self.log.info("Step 2: Setting bucket tags with duplicate keys")
+        self.log.info("Step 1: Setting bucket tags with duplicate keys")
         try:
             resp = self.tag_obj.set_bucket_tag_duplicate_keys(
                 self.bucket_name, "testkey", "testval")
@@ -503,7 +503,7 @@ class TestBucketTagging:
     def test_2447(self):
         """verify values in a tag set should be unique."""
         self.log.info("STARTED: verify values in a tag set should be unique")
-        self.log.info("Step 2: Setting bucket tags with unique tag values")
+        self.log.info("Step 1: Setting bucket tags with unique tag values")
         resp = self.tag_obj.set_bucket_tag(self.bucket_name, "testkey", "testvalue", 2)
         assert_utils.assert_true(resp[0], resp[1])
         resp = self.tag_obj.set_bucket_tag(self.bucket_name, "testkey", "testvalue", 2)
@@ -531,7 +531,7 @@ class TestBucketTagging:
         self.log.info("STARTED: Create bucket tags with invalid "
                       "(characters outside the allowed set) special characters")
         self.log.info(
-            "Step 2: Setting a bucket tag with invalid special characters")
+            "Step 1: Setting a bucket tag with invalid special characters")
         resp = self.tag_obj.set_bucket_tag_invalid_char(self.bucket_name, "testkey", "testvalue")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Set a bucket tag with invalid special characters")
@@ -718,7 +718,7 @@ class TestBucketTagging:
     def test_43486(self):
         """Create bucket tags with encoded k:v pair with base64 encoding."""
         self.log.info("STARTED: Create bucket tags with encoded k:v with base64 encoding")
-        self.log.info("Step 2: Setting a bucket tag with encoded key-value pair")
+        self.log.info("Step 1: Setting a bucket tag with encoded key-value pair")
         set_resp = self.tag_obj.set_encoded_tag_values(self.bucket_name, encoding_type = "base64")
         assert_utils.assert_true(set_resp[0], set_resp[1])
         self.log.info("Step 2: Set a bucket tag with encoded special characters")
@@ -740,7 +740,7 @@ class TestBucketTagging:
     def test_43488(self):
         """Create bucket tags with encoded k:v pair with utf-8 encoding."""
         self.log.info("STARTED: Create bucket tags with encoded k:v with utf-8 encoding")
-        self.log.info("Step 2: Setting a bucket tag with encoded key-value pair")
+        self.log.info("Step 1: Setting a bucket tag with encoded key-value pair")
         set_resp = self.tag_obj.set_encoded_tag_values(self.bucket_name, encoding_type = "utf-8")
         assert_utils.assert_true(set_resp[0], set_resp[1])
         self.log.info("Step 2: Set a bucket tag with encoded special characters")
