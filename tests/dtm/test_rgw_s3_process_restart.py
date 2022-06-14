@@ -305,7 +305,7 @@ class TestRGWProcessRestart:
             assert_utils.assert_true(resp[0], resp[1])
             bucket_list.append(bucket_name)
         for size in self.test_cfg["size_list"]:
-            file_name = "{}{}".format("dtm-test-42253", size)
+            file_name = f"dtm-test-42253{size}"
             file_path = os.path.join(self.test_dir_path, file_name)
             system_utils.create_file(file_path, size)
             resp = self.s3_test_obj.put_object(bucket_list[0], f"{object_name}_{size}", file_path)
@@ -325,13 +325,13 @@ class TestRGWProcessRestart:
                                                 dest_bucket=bucket_list[1],
                                                 dest_object=f"{object_name}_{size}")
             assert_utils.assert_true(resp[0], resp[1])
-            file_name_copy = "{}{}".format("dtm-test-42253-copy", size)
+            file_name_copy = f"dtm-test-42253-copy{size}"
             file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
             resp = self.s3_test_obj.object_download(bucket_name=bucket_list[1],
                                                     obj_name=f"{object_name}_{size}",
                                                     file_path=file_path_copy)
             assert_utils.assert_true(resp[0], resp[1])
-            file_name = "{}{}".format("dtm-test-42253", size)
+            file_name = f"dtm-test-42253{size}"
             file_path = os.path.join(self.test_dir_path, file_name)
             resp = system_utils.validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
             assert_utils.assert_true(resp, "Checksum validation Failed.")
@@ -357,7 +357,7 @@ class TestRGWProcessRestart:
             assert_utils.assert_true(resp[0], resp[1])
             bucket_list.append(bucket_name)
         for size in self.test_cfg["size_list"]:
-            file_name = "{}{}".format("dtm-test-42254-", size)
+            file_name = f"dtm-test-42254-{size}"
             file_path = os.path.join(self.test_dir_path, file_name)
             system_utils.create_file(file_path, size)
             resp = self.s3_test_obj.put_object(bucket_list[0], f"{object_name}_{size}",
@@ -389,13 +389,13 @@ class TestRGWProcessRestart:
 
         self.log.info("Step 5: Perform Download and verify on copied Objects")
         for size in self.test_cfg["size_list"]:
-            file_name_copy = "{}{}".format("dtm-test-42254-copy", size)
+            file_name_copy = f"dtm-test-42254-copy{size}"
             file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
             resp = self.s3_test_obj.object_download(bucket_name=bucket_list[1],
                                                     obj_name=f"{object_name}_{size}",
                                                     file_path=file_path_copy)
             assert_utils.assert_true(resp[0], resp[1])
-            file_name = "{}{}".format("dtm-test-42254-", size)
+            file_name = f"dtm-test-42254-{size}"
             file_path = os.path.join(self.test_dir_path, file_name)
             resp = system_utils.validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
             assert_utils.assert_true(resp, "Checksum validation Failed.")
@@ -498,6 +498,8 @@ class TestRGWProcessRestart:
 
         self.log.info("ENDED: Verify continuous WRITEs during rgw_s3 restart using pkill")
 
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=cell-var-from-loop
     @pytest.mark.lc
     @pytest.mark.dtm
     @pytest.mark.tags("TEST-42249")
@@ -585,9 +587,10 @@ class TestRGWProcessRestart:
     @pytest.mark.lc
     @pytest.mark.dtm
     @pytest.mark.tags("TEST-42255")
-    def test_ios_during_rc_rgw_restart(self):
-        """Verify IOs during RC pod rgw_s3 restart using pkill."""
-        self.log.info("STARTED: Verify IOs during RC pod rgw_s3 restart using pkill")
+    def test_ios_during_multi_rc_rgw_restarts(self):
+        """Verify IOs during multiple RC pod rgw_s3 process restarts using pkill."""
+        self.log.info("STARTED: Verify IOs during multiple RC pod rgw_s3 process restarts using "
+                      "pkill")
         test_cfg = DTM_CFG['test_42255']
         output = Queue()
         test_prefix = 'test-42255'
