@@ -48,9 +48,7 @@ class TestVersioningDeleteObjects:
     # pylint:disable=attribute-defined-outside-init
     # pylint:disable-msg=too-many-instance-attributes
     def setup_method(self):
-        """
-        Function will be perform prerequisite test steps prior to each test case.
-        """
+        """Function will be perform prerequisite test steps prior to each test case."""
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
         self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
@@ -87,16 +85,9 @@ class TestVersioningDeleteObjects:
         self.log.info("Created a bucket with name : %s", self.bucket_name)
 
     def teardown_method(self):
-        """
-        Function will be invoked after each test case to clean up any test artifacts.
-        """
+        """Function will be invoked after each test case to clean up any test artifacts."""
         self.log.info("STARTED: Teardown operations")
         self.log.info("Clean : %s", self.test_dir_path)
-        for file_path in (self.file_path1, self.file_path2, self.file_path3, self.download_path,
-                          self.mp_file_path):
-            if path_exists(file_path):
-                res = remove_file(file_path)
-                self.log.info("cleaned path: %s, res: %s", file_path, res)
         if path_exists(self.test_dir_path):
             remove_dirs(self.test_dir_path)
         self.log.info("Cleanup test directory: %s", self.test_dir_path)
@@ -163,7 +154,7 @@ class TestVersioningDeleteObjects:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                         bucket_name=self.bucket_name, object_name=obj,
                                         get_error_msg=errmsg.NO_SUCH_KEY_ERR,
-                                        head_error_msg=errmsg.NOT_FOUND_ERR)         
+                                        head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test DELETE Objects for pre-existing objects in a versioned bucket")
 
     @pytest.mark.s3_ops
@@ -213,7 +204,7 @@ class TestVersioningDeleteObjects:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                         bucket_name=self.bucket_name, object_name=obj,
                                         get_error_msg=errmsg.NO_SUCH_KEY_ERR,
-                                        head_error_msg=errmsg.NOT_FOUND_ERR)              
+                                        head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test DELETE Objects for objects in a versioned bucket")
 
     @pytest.mark.s3_ops
@@ -261,7 +252,7 @@ class TestVersioningDeleteObjects:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                         bucket_name=self.bucket_name, object_name=obj,
                                         get_error_msg=errmsg.NO_SUCH_KEY_ERR,
-                                        head_error_msg=errmsg.NOT_FOUND_ERR)              
+                                        head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test DELETE Objects for objects in a versioning suspended bucket")
 
     @pytest.mark.s3_ops

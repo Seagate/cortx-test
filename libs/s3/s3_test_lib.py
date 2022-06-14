@@ -418,7 +418,9 @@ class S3TestLib(S3Lib):
         :param obj_list: List of objects to be deleted.
         :param quiet: It enables a quiet mode.
         :param prepared_obj_list: Override DeleteObjects Objects list generation,
-            list assigned is passed as-is to DeleteObjects call
+            list assigned is passed as-is to DeleteObjects call, expected format:
+                [{'Key': 'string', 'VersionId': 'string'}, ...]
+                where 'VersionId' is optional
         :return: True and response or False and error.
         :rtype: (boolean, dict/str)
         """

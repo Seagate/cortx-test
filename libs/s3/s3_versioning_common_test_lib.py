@@ -525,15 +525,12 @@ def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict
     except CTException as error:
         LOG.error(error)
         dmo_error = error
-
     if expected_error is not None:
         assert_utils.assert_in(expected_error, dmo_error.message, dmo_error)
         # If error is expected, check the error message and skip the further validation
         return
-
     assert_utils.assert_true(resp[0], resp[1])
     delete_result = sorted(resp[1]["Deleted"])
-
     if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
         assert_utils.assert_equal(sorted(dmo_list), delete_result,
                                   "DeleteObjects returned unexpected DeleteResult response")
@@ -548,7 +545,6 @@ def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict
                 trimmed_delete_result.append({"Key": obj, "VersionId": v_id})
         assert_utils.assert_equal(sorted(dmo_list), trimmed_delete_result,
                                   "DeleteObjects returned unexpected DeleteResult response")
-
     update_versions_dict_dmo(versions_dict, delete_result, is_versioned)
 
 
@@ -563,7 +559,6 @@ def update_versions_dict_dmo(versions_dict: dict, delete_result: list, is_versio
     for delete_entry in delete_result:
         obj = delete_entry["Key"]
         ver = delete_entry("VersionId", None)
-
         if ver is not None:
             if ver in versions_dict[obj]["versions"].keys():
                 versions_dict[obj]["versions"].pop(ver)
