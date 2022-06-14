@@ -177,7 +177,7 @@ def create_put_objects(object_name: str, bucket_name: str,
     LOGGER.debug("Region : %s", region)
 
     if "block_size" in kwargs.keys():
-         kwargs.pop("block_size")
+        kwargs.pop("block_size")
 
     s3_resource = boto3.resource('s3', verify=False,
                         endpoint_url=endpoint,

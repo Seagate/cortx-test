@@ -39,7 +39,6 @@ class GetSetQuota(RestTestLib):
         self.iam_user = None
         self.cryptogen = SystemRandom()
         self.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
-        #self.bucket = "iam-user-bucket-" + str(int(time.time_ns()))
         self.obj_name_prefix = "created_obj"
         self.obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
 
@@ -138,14 +137,17 @@ class GetSetQuota(RestTestLib):
 	Verify put object of random size fails after exceeding max size limit
         """
         err_msg = ""
+        obj_name_prefix="created_obj"
+        obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
         self.log.info("Perform Put operation for 1 object of max size")
-        res = s3_misc.create_put_objects(self.obj_name, bucket,
+        res = s3_misc.create_put_objects(obj_name, bucket,
                        akey, skey, object_size=int(max_size/(1024*1024)))
         if res:
+            obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Perform Put operation of Random size and 1 object")
             random_size = self.cryptogen.randrange(1, max_size)
             try:
-                resp = s3_misc.create_put_objects(self.obj_name, bucket,
+                resp = s3_misc.create_put_objects(obj_name, bucket,
                       akey, skey, object_size=int(random_size/1024))
                 res = False
                 err_msg = "Put operation passed for object size above max size"
@@ -156,7 +158,8 @@ class GetSetQuota(RestTestLib):
         else:
             err_msg = "Put operation failed for less than max size"
         return res, err_msg
-
+    
+    # pylint: disable=too-many-arguments
     def verify_max_objects(self, max_size: int, max_objects: int, akey: str, skey: str,
                            bucket: str):
         """
@@ -168,15 +171,14 @@ class GetSetQuota(RestTestLib):
         self.log.info("Perform Put operation of small size %s and N objects %s ",
                         small_size, max_objects)
         err_msg = ""
+        obj_name_prefix="created_obj"
         for _ in range(0, max_objects):
-            obj_prefix="created_obj"
-            obj_name=f'{self.obj_name_prefix}{time.perf_counter_ns()}'
+            obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
             res = s3_misc.create_put_objects(obj_name, bucket,
                                               akey, skey, object_size=small_size,
                                               block_size="1K")
         if res:
-            obj_prefix="created_obj"
-            obj_name=f'{self.obj_name_prefix}{time.perf_counter_ns()}'
+            obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Perform Put operation of Random size and 1 object")
             random_size = self.cryptogen.randrange(1, max_size)
             try:
