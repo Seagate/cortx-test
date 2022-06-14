@@ -279,8 +279,6 @@ CMD_GET_ACCESS_KEY= " kubectl get pods | grep cortx-server- | cut -d ' ' -f1 | h
                     " xargs -I{} kubectl exec -t {} -c cortx-rgw -- " \
                     "cat /etc/cortx/cluster.conf | grep auth_admin | head -2 | " \
                     "tail -1 | cut -d ':' -f2 | sed -e 's/^[[:space:]]*//'"
-CMD_GET_SECRET_KEY="cat /root/cortx-k8s/k8_cortx_cloud/solution.yaml |" \
-                   "grep s3_auth_admin_secret: | cut -d ':' -f2"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
