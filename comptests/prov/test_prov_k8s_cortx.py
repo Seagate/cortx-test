@@ -514,11 +514,11 @@ class TestProvK8Cortx:
         resp = self.master_node_obj.execute_cmd(cmd=commands.WIPE_DISK_CMD.format("file") + " bs=1M count=10",
                                                     read_lines=True)
         LOGGER.info("File size %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.COPY_BUCKETFILE.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(" file",bucket_name, " --endpoint-url " +  self.prov_deploy_cfg["endpoint_url"].format(http_port)),
                                                     read_lines=True)
         LOGGER.info("Upload File %s", resp)
         LOGGER.info("Step 5:Creating get object")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.GET_OBJECT.format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.GET_OBJECT.format(bucket_name,self.prov_deploy_cfg["endpoint_url"].format(http_port)),
                                                     read_lines=True)
         LOGGER.info("Get Object %s", resp)
         resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS+ " --endpoint-url " +  self.prov_deploy_cfg["endpoint_url"].format(http_port),

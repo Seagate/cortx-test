@@ -159,10 +159,7 @@ AWS_PLUGIN = "pip3 install awscli-plugin-endpoint"
 AWS_VERSION = "aws --version"
 
 #IOs Opearations
-COPY_BUCKETFILE = "aws s3 cp file s3://test-bucket --endpoint-url http://s3.seagate.com:{}"
-GET_OBJECT = "aws s3api get-object --bucket test-bucket --key file --endpoint http://s3.seagate.com:{} outfile"
-BUCKET_SIZE = "aws s3 ls s3://test-bucket --endpoint-url http://s3.seagate.com:{}"
-REMOVE_BUCKET = "aws s3 rb s3://test-bucket --force --endpoint-url http://s3.seagate.com:{}"
+GET_OBJECT = "aws s3api get-object --bucket {} --key file --endpoint {} outfile"
 
 # BMC commands.
 CHECK_IPMITOOL = "rpm -qa | grep ipmitool"
@@ -284,7 +281,7 @@ CMD_GET_ACCESS_KEY= " kubectl get pods | grep cortx-server- | cut -d ' ' -f1 | h
                     "tail -1 | cut -d ':' -f2 | sed -e 's/^[[:space:]]*//'"
 CMD_GET_SECRET_KEY="cat /root/cortx-k8s/k8_cortx_cloud/solution.yaml |" \
                    "grep s3_auth_admin_secret: | cut -d ':' -f2"
-                   
+
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
 CMD_ADD_REPO_3RDPARTY = "yum-config-manager --add-repo \"{0}/3rd_party/\""
