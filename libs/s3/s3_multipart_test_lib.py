@@ -555,7 +555,8 @@ class S3MultipartTestLib(Multipart):
             parts = res[1]
             LOGGER.info("Uploaded parts into bucket: %s", parts)
             LOGGER.info("Completing multipart upload")
-            self.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
+            self.complete_multipart_upload(mpu_id, parts, bucket_name,
+                                                             object_name)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.simple_multipart_upload.__name__,

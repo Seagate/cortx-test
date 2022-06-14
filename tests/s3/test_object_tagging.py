@@ -21,6 +21,7 @@
 import os
 import logging
 import time
+import urllib.parse
 
 import pytest
 
@@ -29,6 +30,7 @@ from commons import error_messages as errmsg
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
 from commons.utils.system_utils import create_file
 from commons.utils.system_utils import make_dirs
 from commons.utils.system_utils import path_exists
@@ -531,7 +533,7 @@ class TestObjectTagging:
             self.object_name,
             self.file_path,
             mb_count=S3_OBJ_TST["s3_object"]["mb_count"],
-            key=S3_OBJ_TST["s3_object"]["key"],
+            key=S3_OBJ_TST["test_9423"]["key"],
             value=S3_OBJ_TST["test_9423"]["value"])
         self.log.info(
             "Created a bucket, uploaded an object and tag is set for object")
@@ -759,7 +761,7 @@ class TestObjectTagging:
             self.object_name,
             self.file_path,
             mb_count=S3_OBJ_TST["s3_object"]["mb_count"],
-            key=S3_OBJ_TST["s3_object"]["key"],
+            key=S3_OBJ_TST["test_9429"]["key"],
             value=S3_OBJ_TST["test_9429"]["value"])
         self.log.info(
             "Created a bucket, uploaded an object and tag is set for object")
@@ -984,13 +986,12 @@ class TestObjectTagging:
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5562")
     @CTFailOn(error_handler)
-    def test_max_object_max_tags_2478(self):
-        """Verification of max. no. of Objects user can upload with max no. of tags per Object."""
-        self.log.info(
-            "Verification of max. no. of Objects user can upload with max no. of tags per Object")
-        self.log.info(
-            "Creating a bucket with name %s",
-            self.bucket_name)
+    def test_multiple_object_max_tags_2478(self):
+        """Verification of multiple no. of Objects user
+        can upload with max no. of tags per Object."""
+        self.log.info("Verification of multiple no. of Objects user can "
+                      "upload with max no. of tags per Object")
+        self.log.info("Creating a bucket with name %s", self.bucket_name)
         resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
@@ -1387,3 +1388,311 @@ class TestObjectTagging:
                 error.message), error.message
         self.log.info(
             "Verify get object with tagging support to non-existing object")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.tags("TEST-42780")
+    def test_delobj_tagging_42780(self):
+        """Verify already deleted tag using DELETE object tagging."""
+        self.log.info("Verify already deleted tag using DELETE object tagging")
+        self.log.info("Creating a bucket, uploading an object and setting tag for object")
+        self.create_put_set_object_tag(self.bucket_name, self.object_name, self.file_path,
+                                       mb_count=S3_OBJ_TST["s3_object"]["mb_count"],
+                                       key=S3_OBJ_TST["s3_object"]["key"],
+                                       value=S3_OBJ_TST["test_9415"]["value"])
+        self.log.info("Created a bucket, uploaded an object and tag is set for object")
+        self.log.info("Retrieving tag of an object %s", self.object_name)
+        resp = self.tag_obj.get_object_tags(self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Retrieved tag of an object")
+        self.log.info("Deleting tag of an object")
+        resp = self.tag_obj.delete_object_tagging(self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Deleting already deleted tag")
+        try:
+            self.tag_obj.delete_object_tagging(self.bucket_name, self.object_name)
+        except CTException as error:
+            assert_utils.assert_in(S3_OBJ_TST["s3_object"]["key_err"], str(error.message),
+                                   error.message)
+        self.log.info("verifying tag of same object after DELETE object tagging")
+        resp = self.tag_obj.get_object_tags(self.bucket_name, self.object_name)
+        assert_utils.assert_equal(len(resp[1]), S3_OBJ_TST["test_9415"]["tag_length"], resp[1])
+        self.log.info("Verify already deleted tag using DELETE object tagging")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.tags("TEST-42781")
+    def test_object_tag_count_get_object_42781(self):
+        """ verify Get object tags count using GET object on non tagged object"""
+        self.log.info("verify Get object tags count using GET object on non tagged object")
+        self.log.info("Creating a bucket with name %s", self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(resp[1], self.bucket_name, resp[1])
+        self.log.info("Bucket is created with name %s", self.bucket_name)
+        create_file(self.file_path, S3_OBJ_TST["s3_object"]["mb_count"])
+        self.log.info("Uploading an object %s", self.object_name)
+        resp = self.s3_test_obj.put_object(self.bucket_name, self.object_name, self.file_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Object is uploaded to a bucket")
+        self.log.info("Getting uploaded object")
+        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(resp[1]['TagCount'], 0, resp[1])
+        self.log.info("Object is Retrieved using GET object")
+        self.log.info("verify Get object tags count using GET object on non tagged object")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.tags("TEST-42782")
+    def test_object_tag_count_get_object_42782(self):
+        """ verify Get object tags count using GET object on tagged object"""
+        self.log.info("verify Get object tags count using GET object on tagged object")
+        self.log.info("Creating a bucket, uploading an object and setting 10 tags for object")
+        self.create_put_set_object_tag(self.bucket_name, self.object_name, self.file_path,
+                                       mb_count=S3_OBJ_TST["s3_object"]["mb_count"],
+                                       key=S3_OBJ_TST["s3_object"]["key"],
+                                       value=S3_OBJ_TST["test_9419"]["value"],
+                                       tag_count=S3_OBJ_TST["test_9419"]["tag_count"])
+        self.log.info("Created a bucket, uploading an object and setting tags for object")
+        self.log.info("Getting uploaded object")
+        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
+            resp[1]['TagCount'], S3_OBJ_TST["test_9419"]["tag_count"], resp[1])
+        self.log.info("Object is Retrieved using GET object")
+        self.log.info("verify Get object tags count using GET object on non tagged object")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.tags("TEST-42774")
+    def test_multipartupload_max_tags_42774(self):
+        """Verify Multipart Upload with max no. of tags"""
+        self.log.info("Verify Multipart Upload with max no.of tags for an Object")
+        self.log.info("Creating a bucket with name %s", self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(resp[1], self.bucket_name, resp[1])
+        self.log.info("Bucket is created with name %s", self.bucket_name)
+        self.log.info("Creating multipart upload with tagging")
+        resp = self.tag_obj.create_multipart_upload_with_tagging(self.bucket_name,
+                                                                 self.object_name,
+                                                                 S3_OBJ_TST["test_9437"]["object_tag"])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Created multipart upload with max no.of tags for an Object")
+        self.log.info("Performing list multipart uploads")
+        resp = self.s3_mp_obj.list_multipart_uploads(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        upload_id = resp[1]["Uploads"][0]["UploadId"]
+        self.log.info("Performed list multipart upload on a bucket %s", self.bucket_name)
+        self.log.info("Uploading parts to a bucket %s", self.bucket_name)
+        resp = self.s3_mp_obj.upload_parts(upload_id, self.bucket_name, self.object_name,
+                                           S3_OBJ_TST["test_9418"]["single_part_size"],
+                                           total_parts=S3_OBJ_TST["test_9418"]["total_parts"],
+                                           multipart_obj_path=self.file_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        upload_parts_list = resp[1]
+        self.log.info("Parts are uploaded to a bucket %s", self.bucket_name)
+        self.log.info("Performing list parts of object %s", self.object_name)
+        resp = self.s3_mp_obj.list_parts(upload_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Performed list parts operation")
+        self.log.info("Performing complete multipart upload on a bucket %s", self.bucket_name)
+        resp = self.s3_mp_obj.complete_multipart_upload(upload_id, upload_parts_list,
+                                                        self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Performed complete multipart upload on a bucket %s", self.bucket_name)
+        self.log.info("Retrieving tag of an object")
+        resp = self.tag_obj.get_object_tags(self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(len(resp[1]), 10, resp[1])
+        self.log.info("Retrieved tag of an object")
+        self.log.info("Verify Multipart Upload with max no.of tags for an Object")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.tags("TEST-42775")
+    def test_mpupload_valid_tagkeyspecialchars_42775(self):
+        """Verify Multipart Upload with tag key having valid special characters"""
+        self.log.info("Verify Multipart Upload with tag key having valid special characters")
+        self.log.info("Creating a bucket with name %s", self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(resp[1], self.bucket_name, resp[1])
+        self.log.info("Bucket is created with name %s", self.bucket_name)
+        self.log.info("Creating multipart upload with tagging")
+        tag = urllib.parse.urlencode({
+            S3_OBJ_TST["test_9429"]["key"]: S3_OBJ_TST["test_9429"]["value"]})
+        resp = self.tag_obj.create_multipart_upload_with_tagging(self.bucket_name,
+                                                                 self.object_name, tag)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Created multipart upload with tag key having valid special characters")
+        self.log.info("Performing list multipart uploads")
+        resp = self.s3_mp_obj.list_multipart_uploads(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        upload_id = resp[1]["Uploads"][0]["UploadId"]
+        self.log.info("Performed list multipart upload on a bucket %s", self.bucket_name)
+        self.log.info("Uploading parts to a bucket %s", self.bucket_name)
+        resp = self.s3_mp_obj.upload_parts(upload_id, self.bucket_name, self.object_name,
+                                           S3_OBJ_TST["test_9418"]["single_part_size"],
+                                           total_parts=S3_OBJ_TST["test_9418"]["total_parts"],
+                                           multipart_obj_path=self.file_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        upload_parts_list = resp[1]
+        self.log.info("Parts are uploaded to a bucket %s", self.bucket_name)
+        self.log.info("Performing list parts of object %s", self.object_name)
+        resp = self.s3_mp_obj.list_parts(upload_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Performed list parts operation")
+        self.log.info("Performing complete multipart upload on a bucket %s", self.bucket_name)
+        resp = self.s3_mp_obj.complete_multipart_upload(upload_id, upload_parts_list,
+                                                        self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Performed complete multipart upload on a bucket %s", self.bucket_name)
+        self.log.info("Retrieving tag of an object %s", self.object_name)
+        resp = self.tag_obj.get_object_tags(self.bucket_name, self.object_name)
+        assert_utils.assert_equal(
+            resp[1], {S3_OBJ_TST["test_9429"]["key"]: S3_OBJ_TST["test_9429"]["value"]}, resp[1])
+        self.log.info("Retrieved tag of an object")
+        self.log.info("Verify Multipart Upload with tag key having valid special characters")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.tags("TEST-42776")
+    def test_mpupload_with_tagvalue256chars_42776(self):
+        """Verify Multipart Upload with tag having
+        tag values up to 256 Unicode characters in length"""
+        self.log.info("Verify Multipart Upload with tag having "
+                      "tag values up to 256 Unicode characters in length")
+        self.log.info("Creating a bucket with name %s", self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(resp[1], self.bucket_name, resp[1])
+        self.log.info("Bucket is created with name %s", self.bucket_name)
+        self.log.info("Creating multipart upload with tagging")
+        resp = self.tag_obj.create_multipart_upload_with_tagging(
+            self.bucket_name, self.object_name, S3_OBJ_TST["test_42776"]["object_tag"])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Created multipart upload with tag values up to 256 Unicode characters in length")
+        self.log.info("Performing list multipart uploads")
+        resp = self.s3_mp_obj.list_multipart_uploads(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        upload_id = resp[1]["Uploads"][0]["UploadId"]
+        self.log.info("Performed list multipart upload on a bucket %s", self.bucket_name)
+        self.log.info("Uploading parts to a bucket %s", self.bucket_name)
+        resp = self.s3_mp_obj.upload_parts(upload_id, self.bucket_name, self.object_name,
+                                           S3_OBJ_TST["test_9418"]["single_part_size"],
+                                           total_parts=S3_OBJ_TST["test_9418"]["total_parts"],
+                                           multipart_obj_path=self.file_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        upload_parts_list = resp[1]
+        self.log.info("Parts are uploaded to a bucket %s", self.bucket_name)
+        self.log.info("Performing list parts of object %s", self.object_name)
+        resp = self.s3_mp_obj.list_parts(upload_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Performed list parts operation")
+        self.log.info("Performing complete multipart upload on a bucket %s", self.bucket_name)
+        resp = self.s3_mp_obj.complete_multipart_upload(upload_id, upload_parts_list,
+                                                        self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Performed complete multipart upload on a bucket %s", self.bucket_name)
+        self.log.info("Retrieving tag of an object %s", self.object_name)
+        resp = self.tag_obj.get_object_tags(self.bucket_name, self.object_name)
+        assert_utils.assert_equal(len(resp[1]), S3_OBJ_TST["test_42776"]["tag_count"], resp[1])
+        self.log.info("Retrieved tag of an object")
+        self.log.info("Verify Multipart Upload with tag having "
+                      "tag values up to 256 Unicode characters in length")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.tags("TEST-42777")
+    def test_mpupload_tagkey128chars_42777(self):
+        """Verify Multipart Upload with tag having tag key up to 128 Unicode characters in length"""
+        self.log.info("Verify Multipart Upload with tag having "
+                      "tag key up to 128 Unicode characters in length")
+        self.log.info("Creating a bucket with name %s", self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(resp[1], self.bucket_name, resp[1])
+        self.log.info("Bucket is created with name %s", self.bucket_name)
+        self.log.info("Creating multipart upload with tagging")
+        resp = self.tag_obj.create_multipart_upload_with_tagging(
+            self.bucket_name, self.object_name, S3_OBJ_TST["test_42777"]["object_tag"])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Created multipart upload with tag key up to 128 Unicode characters in length")
+        self.log.info("Performing list multipart uploads")
+        resp = self.s3_mp_obj.list_multipart_uploads(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        upload_id = resp[1]["Uploads"][0]["UploadId"]
+        self.log.info("Performed list multipart upload on a bucket %s", self.bucket_name)
+        self.log.info("Uploading parts to a bucket %s", self.bucket_name)
+        resp = self.s3_mp_obj.upload_parts(upload_id, self.bucket_name, self.object_name,
+                                           S3_OBJ_TST["test_9418"]["single_part_size"],
+                                           total_parts=S3_OBJ_TST["test_9418"]["total_parts"],
+                                           multipart_obj_path=self.file_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        upload_parts_list = resp[1]
+        self.log.info("Parts are uploaded to a bucket %s", self.bucket_name)
+        self.log.info("Performing list parts of object %s", self.object_name)
+        resp = self.s3_mp_obj.list_parts(upload_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Performed list parts operation")
+        self.log.info("Performing complete multipart upload on a bucket %s", self.bucket_name)
+        resp = self.s3_mp_obj.complete_multipart_upload(upload_id, upload_parts_list,
+                                                        self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Performed complete multipart upload on a bucket %s", self.bucket_name)
+        self.log.info("Retrieving tag of an object %s", self.object_name)
+        resp = self.tag_obj.get_object_tags(self.bucket_name, self.object_name)
+        assert_utils.assert_equal(len(resp[1]), S3_OBJ_TST["test_42777"]["tag_count"], resp[1])
+        self.log.info("Retrieved tag of an object")
+        self.log.info("Verify Multipart Upload with tag having "
+                      "tag key up to 128 Unicode characters in length")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.tags("TEST-42778")
+    def test_mpupload_casesensitive_tag_42778(self):
+        """Verify Multipart Upload with tag Keys & value having case sensitive labels"""
+        self.log.info("Verify Multipart Upload with tag Keys & value having case sensitive labels")
+        self.log.info("Creating a bucket with name %s", self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(resp[1], self.bucket_name, resp[1])
+        self.log.info("Bucket is created with name %s", self.bucket_name)
+        self.log.info("Creating multipart upload with tagging")
+        resp = self.tag_obj.create_multipart_upload_with_tagging(
+            self.bucket_name, self.object_name,
+            S3_OBJ_TST["test_42778"]["object_tag"])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Created multipart upload with Keys & value having case sensitive labels")
+        self.log.info("Performing list multipart uploads")
+        resp = self.s3_mp_obj.list_multipart_uploads(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        upload_id = resp[1]["Uploads"][0]["UploadId"]
+        self.log.info("Performed list multipart upload on a bucket %s", self.bucket_name)
+        self.log.info("Uploading parts to a bucket %s", self.bucket_name)
+        resp = self.s3_mp_obj.upload_parts(upload_id, self.bucket_name, self.object_name,
+                                           S3_OBJ_TST["test_9418"]["single_part_size"],
+                                           total_parts=S3_OBJ_TST["test_9418"]["total_parts"],
+                                           multipart_obj_path=self.file_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        upload_parts_list = resp[1]
+        self.log.info("Parts are uploaded to a bucket %s", self.bucket_name)
+        self.log.info("Performing list parts of object %s", self.object_name)
+        resp = self.s3_mp_obj.list_parts(upload_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Performed list parts operation")
+        self.log.info("Performing complete multipart upload on a bucket %s", self.bucket_name)
+        resp = self.s3_mp_obj.complete_multipart_upload(upload_id, upload_parts_list,
+                                                        self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Performed complete multipart upload on a bucket %s", self.bucket_name)
+        self.log.info("Retrieving tag of an object %s", self.object_name)
+        resp = self.tag_obj.get_object_tags(self.bucket_name, self.object_name)
+        assert_utils.assert_equal(len(resp[1]), S3_OBJ_TST["test_42778"]["tag_count"], resp[1])
+        self.log.info("Retrieved tag of an object")
+        self.log.info("Verify Multipart Upload with tag Keys & value having case sensitive labels")
