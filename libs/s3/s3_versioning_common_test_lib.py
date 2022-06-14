@@ -497,6 +497,8 @@ def delete_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
             versions_dict[object_name]["is_latest"] = dm_id
 
 
+# pylint: disable=too-many-branches
+# pylint: disable-msg=too-many-statements
 def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict,
                    obj_ver_list: list, quiet: bool = False,
                    is_versioned: bool = True, expected_error: str = None) -> None:
