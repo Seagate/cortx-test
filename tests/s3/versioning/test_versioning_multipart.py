@@ -189,14 +189,15 @@ class TestVersioningMultipart:
         res = self.s3ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         versions = {}
         self.log.info("Step 3: Upload multipart object")
-        s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name,
-                                                self.object_name, self.test_file_path,
-                                                versions_dict=versions, is_multipart=True,
-                                                total_parts=2, file_size=10, is_unversioned=False)
+        s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name, self.object_name,
+                                     self.test_file_path, versions_dict=versions, is_multipart=True,
+                                     total_parts=2, file_size=10, is_unversioned=False)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 4: Perform DELETE Object for uploaded object ")
-        _, delete_res = self.s3test_obj.delete_object(self.bucket_name, self.object_name)
-        assert_utils.assert_in("DeleteMarker", delete_res.keys(), "DeleteMarker not available")
+        """TODO: this test needs to be rechecked and executed throughly in next sprint"""
+        s3ver_cmn_lib.delete_version(self.s3ver_test_obj, self.bucket_name, self.object_name,
+                                     versions_dict=versions,
+                                     version_id=versions[self.object_name]["version_history"][0])
         self.log.info("Step 5: Check GET/HEAD Object")
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
@@ -207,6 +208,6 @@ class TestVersioningMultipart:
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
                                                  expected_versions=versions,)
         self.log.info("Step 7: List Objects")
-        _, resp = self.s3test_obj.list_objects_details(self.bucket_name)
-        assert_utils.assert_not_in(self.object_name, resp, "object is not deleted")
+        s3ver_cmn_lib.check_list_objects(self.s3test_obj, self.bucket_name,
+                                         expected_objects=[self.object_name])
         self.log.info("ENDED: Test deletion of multipart upload in a versioning enabled bucket")
