@@ -108,7 +108,7 @@ class S3VersioningTestLib(Versioning):
         try:
             response = super().list_object_versions(bucket_name=bucket_name,
                                                     optional_params=optional_params)
-            
+
             LOGGER.info("Successfully fetched bucket object versions list: %s", response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s", S3VersioningTestLib.list_object_versions.__name__,

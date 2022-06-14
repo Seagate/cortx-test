@@ -365,7 +365,6 @@ class TestListObjectVersions:
                                        list_params={"Prefix": "key3"}, expected_versions={})
             self.log.info("Step 3: Test List Object Versions with valid prefix")
             expected_versions = {object_name2: versions[object_name2]}
-            expected_flags = {}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"Prefix": "key2"},
                                        expected_versions=expected_versions)

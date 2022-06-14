@@ -66,7 +66,6 @@ class Versioning(S3Lib):
         :return: response
         """
         if optional_params is not None:
-            LOGGER.debug(f"Optional params for List Object Versions: {optional_params}")
             response = self.s3_client.list_object_versions(Bucket=bucket_name, **optional_params)
         else:
             response = self.s3_client.list_object_versions(Bucket=bucket_name)

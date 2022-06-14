@@ -35,7 +35,6 @@ from commons.utils import assert_utils
 from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
-from libs.s3.s3_versioning_common_test_lib import empty_versioned_bucket
 from libs.s3.s3_versioning_common_test_lib import check_get_head_object_version
 from libs.s3.s3_versioning_common_test_lib import check_list_object_versions
 from libs.s3.s3_versioning_common_test_lib import check_list_objects
@@ -210,8 +209,9 @@ class TestVersioningDeleteObject:
         version_id1 = list(versions[self.object_name1]["versions"].keys())[2]
         version_id2 = list(versions[self.object_name1]["versions"].keys())[4]
         for v_id in [version_id1, version_id2]:
-            delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                           object_name=self.object_name1, versions_dict=versions, version_id=v_id)
+            delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                           bucket_name=self.bucket_name, object_name=self.object_name1,
+                           versions_dict=versions, version_id=v_id)
         self.log.info("Step 3: Verify remaining versions of object are present")
         for v_id in versions[self.object_name1]["versions"].keys():
             etag = versions[self.object_name1]["versions"][v_id]
