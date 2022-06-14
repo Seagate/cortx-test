@@ -186,6 +186,8 @@ class TestVersioningMultipart:
         s3ver_cmn_lib.delete_version(self.s3ver_test_obj, self.bucket_name, self.object_name,
                                      versions_dict=versions)
         self.log.info("Step 5: Check GET/HEAD Object")
+        v_id = versions[self.object_name]["version_history"][0]
+        etag = versions[self.object_name]["versions"][v_id]
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
