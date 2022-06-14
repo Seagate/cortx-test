@@ -29,6 +29,7 @@ import pytest
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils as sysutils
+from commons import error_messages as err_msg
 from config.s3 import S3_CFG
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
@@ -152,7 +153,7 @@ class TestObjectTaggingVerLimits:
                                              versions_dict=self.versions, tag_key_ran=[(129, 129)],
                                              version_id=latest_ver)
         assert_utils.assert_false(resp[0], resp)
-        assert_utils.assert_in("InvalidTag", resp[1].message)
+        assert_utils.assert_in(err_msg.S3_RGW_BKT_INVALID_TAG_ERR, resp[1].message)
         LOGGER.info("Step 5: PUT Object Tagging for %s with 129 char tag key failed as expected",
                     self.object_name)
         LOGGER.info("Step 6: Perform GET Object Tagging for %s with versionId=%s",
@@ -288,7 +289,7 @@ class TestObjectTaggingVerLimits:
                                              versions_dict=self.versions, tag_val_ran=[(257, 257)],
                                              version_id=latest_ver)
         assert_utils.assert_false(resp[0], resp)
-        assert_utils.assert_in("InvalidTag", resp[1].message)
+        assert_utils.assert_in(err_msg.S3_RGW_BKT_INVALID_TAG_ERR, resp[1].message)
         LOGGER.info("Step 5: PUT Object Tagging for %s with 257 char tag value failed as expected",
                     self.object_name)
         LOGGER.info("Step 6: Perform GET Object Tagging for %s with versionId=%s",
@@ -370,7 +371,7 @@ class TestObjectTaggingVerLimits:
                                              versions_dict=self.versions, tag_count=11,
                                              version_id=latest_ver)
         assert_utils.assert_false(resp[0], resp)
-        assert_utils.assert_in("InvalidTag", resp[1].message)
+        assert_utils.assert_in(err_msg.S3_RGW_BKT_INVALID_TAG_ERR, resp[1].message)
         LOGGER.info("Step 5: PUT Object Tagging for %s with more than 10 tag key-value pairs "
                     "failed as expected", self.object_name)
         LOGGER.info("Step 6: Perform GET Object Tagging for %s with versionId=%s",
@@ -472,8 +473,8 @@ class TestObjectTaggingVerLimits:
         latest_ver = self.versions[self.object_name]["version_history"][-1]
         LOGGER.info("Step 2: Successfully uploaded object %s to versioned bucket %s with "
                     "version ID %s", self.object_name, self.bucket_name, latest_ver)
-        tag_or= list()
-        for char in S3_CFG["list_special_char"]:
+        tag_or = list()
+        for char in S3_CFG["object_tagging_special_char"]:
             tag_key = f"tag{char}key"
             tag_or.append({"Key": tag_key, "Value": "tag1value"})
         LOGGER.info("Step 3: Perform PUT Object Tagging for %s with tag set as %s with tag key "
@@ -512,7 +513,7 @@ class TestObjectTaggingVerLimits:
                                              versions_dict=self.versions, tag_overrides=tag_or,
                                              version_id=latest_ver)
         assert_utils.assert_false(resp[0], resp)
-        assert_utils.assert_in("InvalidTag", resp[1].message)
+        assert_utils.assert_in(err_msg.S3_RGW_BKT_INVALID_TAG_ERR, resp[1].message)
         LOGGER.info("Step 5: PUT Object Tagging for %s with tag set as %s with tag key containing "
                     "other than allowed special characters failed as expected", self.object_name,
                     tag_or)
