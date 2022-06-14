@@ -205,7 +205,7 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
             for delete_marker in expected_versions[key]["delete_markers"]:
                 if delete_marker != "DMO_DELETEMARKERID_PLACEHOLDER":
                     assert_utils.assert_in(delete_marker,
-                                        list(resp_dict["delete_markers"][key].keys()))
+                                           list(resp_dict["delete_markers"][key].keys()))
                 else:
                     dm_id = list(resp_dict["delete_markers"][key].keys())[0]
                     assert_utils.assert_not_equal(dm_id, "null",
@@ -379,7 +379,7 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
     if obj_list:
         for versioning_config, object_name, count in obj_list:
             resp = s3_ver_test_obj.put_bucket_versioning(bucket_name=bucket_name,
-                                                        status=versioning_config)
+                                                         status=versioning_config)
             assert_utils.assert_true(resp[0], resp[1])
             for _ in range(count):
                 file_path = SystemRandom().choice(file_paths)  # nosec
@@ -516,9 +516,9 @@ def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict
     dmo_list = []
     for obj, ver in obj_ver_list:
         if ver is not None:
-            dmo_list.append({"Key": obj})
-        else:
             dmo_list.append({"Key": obj, "VersionId": ver})
+        else:
+            dmo_list.append({"Key": obj})
     try:
         resp = s3_test_obj.delete_multiple_objects(bucket_name=bucket_name, quiet=quiet,
 	                                               prepared_obj_list=dmo_list)
@@ -540,9 +540,9 @@ def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict
             obj = entry["Key"]
             v_id = entry.get("VersionId", None)
             if v_id is None:
-                trimmed_delete_result.append({"Key": obj})
-            else:
                 trimmed_delete_result.append({"Key": obj, "VersionId": v_id})
+            else:
+                trimmed_delete_result.append({"Key": obj})
         assert_utils.assert_equal(sorted(dmo_list), trimmed_delete_result,
                                   "DeleteObjects returned unexpected DeleteResult response")
     update_versions_dict_dmo(versions_dict, delete_result, is_versioned)
