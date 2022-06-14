@@ -349,8 +349,8 @@ class S3MultipartTestLib(Multipart):
         """
         try:
             LOGGER.info("Listing uploaded parts.")
-            nxt_part_num_marker = kwargs.get("NextPartNumberMarker", 0)
-            response = super().list_parts(mpu_id, bucket_name, object_name, nxt_part_num_marker)
+            part_num_marker = kwargs.get("PartNumberMarker", 0)
+            response = super().list_parts(mpu_id, bucket_name, object_name, part_num_marker)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
