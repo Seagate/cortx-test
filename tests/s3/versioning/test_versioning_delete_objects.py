@@ -27,7 +27,7 @@ import pytest
 
 from commons import error_messages as errmsg
 from commons.params import TEST_DATA_FOLDER
-from commons.utils.system_utils import create_file, path_exists, remove_file
+from commons.utils.system_utils import create_file, path_exists
 from commons.utils.system_utils import make_dirs, remove_dirs
 from commons.utils import assert_utils
 from config.s3 import S3_CFG
