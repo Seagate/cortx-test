@@ -94,14 +94,17 @@ class TestVersioningMultipart:
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
                                                  expected_versions=versions)
         self.log.info("Step 7: Check GET/HEAD Object")
+        v_id = versions[self.object_name]["version_history"][0]
+        etag = versions[self.object_name]["versions"][v_id]
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
-                                                    object_name=self.object_name)
+                                                    object_name=self.object_name,
+                                                    etag=etag)
         self.log.info("Step 8: Check GET/HEAD Object with versionId = null")
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
-                                                    version_id="null")
+                                                    version_id="null", etag=etag)
         self.log.info("ENDED: Test pre-existing multipart upload in a versioning enabled bucket")
 
     @pytest.mark.s3_ops
@@ -122,6 +125,8 @@ class TestVersioningMultipart:
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
                                                  expected_versions=versions)
         self.log.info("Step 9: Check GET/HEAD Object")
+        v_id = versions[self.object_name]["version_history"][0]
+        etag = versions[self.object_name]["versions"][v_id]
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name)
@@ -129,8 +134,8 @@ class TestVersioningMultipart:
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
-                                                    version_id=versions[self.object_name]
-                                                    ["version_history"][0])
+                                                    version_id=v_id,
+                                                    etag=etag)
         self.log.info("ENDED: Test multipart upload in a versioning enabled bucket.")
 
     @pytest.mark.s3_ops
@@ -147,20 +152,22 @@ class TestVersioningMultipart:
         s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name,
                                                 self.object_name, self.test_file_path,
                                                 versions_dict=versions, is_multipart=True,
-                                                total_parts=2, file_size=10, is_unversioned=False,
+                                                total_parts=2, file_size=10,
                                                 chk_null_version=True)
         self.log.info("Step 8: List Object Versions")
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
                                                  expected_versions=versions)
         self.log.info("Step 9: Check GET/HEAD Object")
+        v_id = versions[self.object_name]["version_history"][0]
+        etag = versions[self.object_name]["versions"][v_id]
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
-                                                    object_name=self.object_name)
+                                                    object_name=self.object_name, etag=etag)
         self.log.info("Step 10: Check GET/HEAD Object with versionId = null")
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
-                                                    version_id="null")
+                                                    version_id="null", etag=etag)
         self.log.info("ENDED: Test multipart upload in a versioning suspended bucket.")
 
     @pytest.mark.s3_ops
@@ -174,23 +181,21 @@ class TestVersioningMultipart:
         self.log.info("Step 3: Upload multipart object")
         s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name, self.object_name,
                                      self.test_file_path, versions_dict=versions, is_multipart=True,
-                                     total_parts=2, file_size=10, is_unversioned=False)
+                                     total_parts=2, file_size=10)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 4: Perform DELETE Object for uploaded object ")
-        """TODO: this test needs to be rechecked and executed throughly in next sprint"""
         s3ver_cmn_lib.delete_version(self.s3ver_test_obj, self.bucket_name, self.object_name,
-                                     versions_dict=versions,
-                                     version_id=versions[self.object_name]["version_history"][0])
+                                     versions_dict=versions)
         self.log.info("Step 5: Check GET/HEAD Object")
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
                                                     get_error_msg=errmsg.NO_SUCH_KEY_ERR,
-                                                    head_error_msg=errmsg.NOT_FOUND_ERR)
+                                                    head_error_msg=errmsg.NOT_FOUND_ERR, etag=etag)
         self.log.info("Step 6: List Object Versions")
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
                                                  expected_versions=versions,)
         self.log.info("Step 7: List Objects")
         s3ver_cmn_lib.check_list_objects(self.s3test_obj, self.bucket_name,
-                                         expected_objects=[self.object_name])
+                                         expected_objects=[])
         self.log.info("ENDED: Test deletion of multipart upload in a versioning enabled bucket")
