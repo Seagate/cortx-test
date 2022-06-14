@@ -30,16 +30,19 @@ assertions as well, with the main aim being to have leaner and cleaner code in t
 import logging
 import string
 from secrets import SystemRandom
+from typing import Union
 
-from commons import errorcodes as err
 from commons import error_messages as errmsg
+from commons import errorcodes as err
 from commons.constants import S3_ENGINE_RGW
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import s3_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3.s3_common_test_lib import create_s3_acc
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
@@ -186,6 +189,8 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
         expected_deletemarker_count = 0
 
         resp_dict = parse_list_object_versions_response(list_response)
+        LOG.info("expected_versions is %s and keys is %s",expected_versions,
+                 expected_versions.keys() )
         for key in expected_versions.keys():
             for version in expected_versions[key]["versions"].keys():
                 assert_utils.assert_in(version, list(resp_dict["versions"][key].keys()))
@@ -198,7 +203,7 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
                                           resp_dict["versions"][key][version]["etag"])
                 expected_version_count += 1
             for delete_marker in expected_versions[key]["delete_markers"]:
-                assert_utils.assert_in(delete_marker, list(resp_dict["deletemarkers"][key].keys()))
+                assert_utils.assert_in(delete_marker, list(resp_dict["delete_markers"][key].keys()))
                 # Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
                 # is_latest = True if key["is_latest"] == delete_marker else False
                 # Uncomment once CORTX-30178 changes are available in main
@@ -228,7 +233,6 @@ def check_list_objects(s3_test_obj: S3TestLib, bucket_name: str,
     LOG.info("Verifying bucket object versions list for expected contents")
     assert_utils.assert_equal(sorted(expected_objects), sorted(list_response[1]),
                               "List Objects response does not contain expected object names")
-
 
 def check_get_head_object_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
                                   bucket_name: str, object_name: str, **kwargs) -> None:
@@ -377,25 +381,37 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
     return versions
 
 
-# pylint: disable=too-many-arguments
-def upload_version(s3_test_obj: S3TestLib, bucket_name: str, object_name: str,
-                   file_path: str, versions_dict: dict,
-                   chk_null_version: bool = False, is_unversioned: bool = False) -> None:
-    """ Upload objects to a versioning enabled/suspended bucket and return dictionary of uploaded
-    versions
+def upload_version(s3_test_obj: Union[S3TestLib, S3MultipartTestLib], bucket_name: str,
+                   object_name: str, file_path: str, versions_dict: dict, **kwargs) -> None:
+    """ Upload an object(Multipart/Regular) to a versioning enabled/suspended bucket and return
+    dictionary of uploaded versions.
 
     :param s3_test_obj: S3TestLib object to perform S3 calls
     :param bucket_name: Bucket name for calling PUT Object
     :param object_name: Object name for calling PUT Object
     :param file_path: File path that can be used for PUT Object call
-    :param chk_null_version: True, if 'null' version id is expected, else False
     :param versions_dict: Dictionary to be updated with uploaded version metadata
-    :param is_unversioned: Set to true if object is uploaded to an unversioned bucket
+    :keyword chk_null_version: True, if 'null' version id is expected, else False
+    :keyword is_unversioned: Set to true if object is uploaded to an unversioned bucket
         Can be used for setting up pre-existing objects before enabling/suspending bucket
         versioning
+    :keyword is_multipart: True if upload version of object is multipart
+    :keyword total_parts: Total number of parts used in multipart upload
+    :keyword file_size: Size of the object, multiple of 1MB
     """
-    res = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
-                                 file_path=file_path)
+    chk_null_version = kwargs.get("chk_null_version", False)
+    is_unversioned = kwargs.get("is_unversioned", False)
+    is_multipart = kwargs.get("is_multipart", False)
+    total_parts = kwargs.get("total_parts", 2)
+    file_size = kwargs.get("file_size", 10)
+    if is_multipart:
+        res = s3_test_obj.complete_multipart_upload_with_di(
+            bucket_name, object_name, file_path, total_parts=total_parts, file_size=file_size)
+    else:
+        if not system_utils.path_exists(file_path):
+            system_utils.create_file(file_path, file_size)
+        res = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
+                                     file_path=file_path)
     assert_utils.assert_true(res[0], res[1])
     if is_unversioned:
         version_id = "null"
@@ -613,3 +629,30 @@ def delete_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3
         LOG.exception(error)
         return False, error
     return resp
+
+def initiate_upload_list_mpu(self, bucket_name, object_name, **kwargs):
+    """
+    This initialises multipart, upload parts, list parts, complete mpu and return the
+    response and mpu id
+    """
+    is_part_upload = kwargs.get("is_part_upload", False)
+    is_lst_mpu = kwargs.get("is_lst_mpu", False)
+    parts = kwargs.get("parts", None)
+    res = self.s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+    mpu_id = res[1]["UploadId"]
+    parts_details = []
+    if is_part_upload and is_lst_mpu:
+        self.log.info("Uploading parts")
+        resp = self.s3_mp_test_obj.upload_parts_parallel(mpu_id, bucket_name,
+                                                          object_name, parts=parts)
+        assert_utils.assert_not_in("VersionId", resp[1])
+        for i in resp[1]['Parts']:
+            parts_details.append({"PartNumber": i['PartNumber'],
+                                  "ETag": i["ETag"]})
+        sorted_lst = sorted(parts_details, key=lambda x: x['PartNumber'])
+        res = self.s3_mp_test_obj.list_parts(mpu_id, bucket_name, object_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_not_in("VersionId", resp[1])
+        self.log.info("List Multipart uploads")
+        return mpu_id, resp, sorted_lst
+    return mpu_id

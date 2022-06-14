@@ -81,6 +81,7 @@ class TestSingleProcessRestart:
                                 cls.master_node_list[0].password)
         cls.test_cfg = configmanager.get_config_wrapper(fpath="config/test_dtm_config.yaml")
         cls.m0d_process = 'm0d'
+        cls.rgw_process = 'radosgw'
         cls.log.info("Setup S3bench")
         resp = s3bench.setup_s3bench()
         assert_utils.assert_true(resp)

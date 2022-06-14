@@ -46,6 +46,7 @@ S3_LDAP_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "test_openldap.yaml")
 RAS_CONFIG_PATH = "config/ras_config.yaml"
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
 PROV_TEST_CONFIG_PATH = "config/prov/prov_test.yaml"
+DEPLOY_TEST_CONFIG_PATH = "config/prov/deploy_config.yaml"
 COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 DI_CONFIG_PATH = os.path.join(CONFIG_DIR, 'di_config.yaml')
 DATA_PATH_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3/test_data_path_validate.yaml')
