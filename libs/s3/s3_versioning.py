@@ -65,7 +65,10 @@ class Versioning(S3Lib):
             Delimiter, EncodingType, KeyMarker, MaxKeys, Prefix, VersionIdMarker
         :return: response
         """
-        response = self.s3_client.list_object_versions(Bucket=bucket_name, **optional_params)
+        if optional_params is not None:
+            response = self.s3_client.list_object_versions(Bucket=bucket_name, **optional_params)
+        else:
+            response = self.s3_client.list_object_versions(Bucket=bucket_name)
         LOGGER.debug("List Object Versions response: %s", response)
 
         return response

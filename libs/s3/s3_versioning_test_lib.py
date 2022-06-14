@@ -95,33 +95,20 @@ class S3VersioningTestLib(Versioning):
 
         return True, response
 
-    def list_object_versions(self, bucket_name: str = None, **kwargs) -> tuple:
+    def list_object_versions(self, bucket_name: str = None, optional_params: dict = None) -> tuple:
         """
         List all the versions and delete markers present in a bucket.
 
         :param bucket_name: Target bucket for the List Object Versions call.
-        :param kwargs: Optional query args that can be supplied to the List Object Versions call
-            delimiter, encoding_type, key_marker, max_keys, prefix, version_id_marker
+        :param optional_params: Optional query args that can be supplied to the List Object Versions
+            call: Delimiter, EncodingType, KeyMarker, MaxKeys, Prefix, VersionIdMarker
         :return: response
         """
-        optional_params = dict()
-        user_params = list(kwargs.keys())
-        if "delimiter" in user_params:
-            optional_params["Delimiter"] = kwargs["delimiter"]
-        if "encoding_type" in user_params:
-            optional_params["EncodingType"] = kwargs["encoding_type"]
-        if "key_marker" in user_params:
-            optional_params["KeyMarker"] = kwargs["key_marker"]
-        if "max_keys" in user_params:
-            optional_params["MaxKeys"] = kwargs["max_keys"]
-        if "prefix" in user_params:
-            optional_params["Prefix"] = kwargs["prefix"]
-        if "version_id_marker" in user_params:
-            optional_params["VersionIdMarker"] = kwargs["version_id_marker"]
         LOGGER.info("Fetching bucket object versions list")
         try:
             response = super().list_object_versions(bucket_name=bucket_name,
                                                     optional_params=optional_params)
+
             LOGGER.info("Successfully fetched bucket object versions list: %s", response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s", S3VersioningTestLib.list_object_versions.__name__,
