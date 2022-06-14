@@ -454,7 +454,7 @@ class TestProvK8Cortx:
         resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_ACCESS_KEY, read_lines=True)
         access_key = "".join(resp).replace("\\n", "\n")
         LOGGER.info(access_key)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_SECRET_KEY, read_lines=True)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_RD_LOG.format(self.prov_deploy_cfg["git_remote_path"])+ "solution.yaml | grep s3_auth_admin_secret: | cut -d ':' -f2", read_lines=True)
         secret_key = "".join(resp).replace("\\n", "\n")
         LOGGER.info(secret_key)
         LOGGER.info("Step 2: Fetch Interface IP, HTTP and HTTPS Ports.")
