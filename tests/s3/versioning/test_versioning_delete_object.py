@@ -223,8 +223,9 @@ class TestVersioningDeleteObject:
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
         self.log.info("Step 5: Perform DELETE Object without version id")
-        delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                       object_name=self.object_name1, versions_dict=versions)
+        delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                       bucket_name=self.bucket_name, object_name=self.object_name1,
+                       versions_dict=versions)
         self.log.info("Step 6: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
