@@ -218,7 +218,7 @@ class TestProvK8Cortx:
         LOGGER.info("Check files are copied and accessible to containers.")
         LOGGER.info("Step 1: Get all running data pods from cluster.")
         data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
-        resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=100)
+        resp = self.ha_obj.poll_cluster_status(pod_obj=self.master_node_obj, timeout=100)
         assert_utils.assert_true(data_pod_list[0])
         LOGGER.info("Step 2: Check files are copied and accessible to containers.")
         for pod_name in data_pod_list[1]:
@@ -355,7 +355,7 @@ class TestProvK8Cortx:
             LOGGER.info("Cluster not in good state, trying to restart it.")
             resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0],
                                                    dir_path=self.prov_deploy_cfg["git_remote_path"])
-            resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=100)
+            resp = self.ha_obj.poll_cluster_status(pod_obj=self.master_node_obj, timeout=100)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and running.")
         LOGGER.info("Step 5: Cluster is back online.")
@@ -387,7 +387,7 @@ class TestProvK8Cortx:
                                                dir_path=self.prov_deploy_cfg["git_remote_path"])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and running.")
-        resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=100)
+        resp = self.ha_obj.poll_cluster_status(pod_obj=self.master_node_obj, timeout=100)
         LOGGER.info("Step 4: Checking whether all CORTX Data pods have been restarted.")
         resp = self.ha_obj.check_pod_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
