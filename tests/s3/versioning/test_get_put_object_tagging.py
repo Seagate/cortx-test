@@ -886,7 +886,7 @@ class TestGetPutObjectTagging:
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
 
         LOGGER.info("Step 5: Perform PUT Object Tagging for %s with a tag key-value pair"
-                    " with versionId=%s", self.object_name, non_existing_version_id)
+                    " with non-existing versionId=%s", self.object_name, non_existing_version_id)
         resp = s3_cmn_lib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
@@ -896,7 +896,7 @@ class TestGetPutObjectTagging:
         assert_utils.assert_false(resp[0], resp)
         assert_utils.assert_in(NO_SUCH_KEY_ERR, resp[1].message)
 
-        LOGGER.info("Step 6: Perform GET Object Tagging for %s with versionId=%s",
+        LOGGER.info("Step 6: Perform GET Object Tagging for %s with  non-existing versionId=%s",
                     self.object_name, non_existing_version_id)
         resp = s3_cmn_lib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
                                              s3_ver_test_obj=self.s3_ver_obj,
@@ -907,8 +907,8 @@ class TestGetPutObjectTagging:
         assert_utils.assert_in(NO_SUCH_KEY_ERR, resp[1].message)
 
         object_name_new = f"tag-obj-{time.perf_counter_ns()}"
-        LOGGER.info("Step 7: Perform PUT Object Tagging for %s with a tag key-value pair"
-                    " with versionId=%s", object_name_new, latest_ver_id1)
+        LOGGER.info("Step 7: Perform PUT Object Tagging for non-existing %s with a tag key-value"
+                    " pair with versionId=%s", object_name_new, latest_ver_id1)
         resp = s3_cmn_lib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
                                              s3_ver_test_obj=self.s3_ver_obj,
                                              bucket_name=self.bucket_name,
@@ -918,7 +918,7 @@ class TestGetPutObjectTagging:
         assert_utils.assert_false(resp[0], resp)
         assert_utils.assert_in(NO_SUCH_KEY_ERR, resp[1].message)
 
-        LOGGER.info("Step 8: Perform GET Object Tagging for %s with versionId=%s",
+        LOGGER.info("Step 8: Perform GET Object Tagging for non-existing %s with versionId=%s",
                     object_name_new, latest_ver_id1)
         resp = s3_cmn_lib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
                                              s3_ver_test_obj=self.s3_ver_obj,
