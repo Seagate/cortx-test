@@ -21,6 +21,7 @@
 import os
 import logging
 import time
+from time import perf_counter
 import urllib.parse
 
 import pytest
@@ -1696,3 +1697,32 @@ class TestObjectTagging:
         assert_utils.assert_equal(len(resp[1]), S3_OBJ_TST["test_42778"]["tag_count"], resp[1])
         self.log.info("Retrieved tag of an object")
         self.log.info("Verify Multipart Upload with tag Keys & value having case sensitive labels")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_tags
+    @pytest.mark.tags("TEST-42852")
+    def test_object_tag_count_get_object_42852(self):
+        """ verify Get object tags count doing GET object immediately after adding tag."""
+        self.log.info("Verify Get object tags count doing GET object immediately after adding tag")
+        self.log.info("Creating a bucket with name %s", self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(resp[1], self.bucket_name, resp[1])
+        self.log.info("Bucket is created with name %s", self.bucket_name)
+        create_file(self.file_path, S3_OBJ_TST["s3_object"]["mb_count"])
+        self.log.info("Uploading an object %s to a bucket %s", self.object_name, self.bucket_name)
+        resp = self.s3_test_obj.put_object(self.bucket_name, self.object_name, self.file_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Object is uploaded to a bucket")
+        self.log.info("Adding tags to an existing object")
+        start_time = perf_counter()
+        resp = self.tag_obj.set_object_tag(self.bucket_name, self.object_name,
+                                           S3_OBJ_TST["s3_object"]["key"],
+                                           S3_OBJ_TST["test_9434"]["value"], tag_count=1)
+        end_time = perf_counter()
+        self.log.info("#### set object tag TIME : %f ####", (end_time - start_time))
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(resp[1]['TagCount'], 1, resp[1])
+        self.log.info("Object is Retrieved using GET object")
