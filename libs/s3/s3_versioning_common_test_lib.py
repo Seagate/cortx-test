@@ -548,7 +548,18 @@ def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict
                 trimmed_delete_result.append({"Key": obj, "VersionId": v_id})
         assert_utils.assert_equal(sorted(dmo_list), trimmed_delete_result,
                                   "DeleteObjects returned unexpected DeleteResult response")
+    
+    update_versions_dict_dmo(versions_dict, delete_result, is_versioned)
 
+
+def update_versions_dict_dmo(versions_dict: dict, delete_result: list, is_versioned: bool = True):
+    """
+    Update versions dictionary for DeleteResult returned by DeleteObjects call.
+
+    :param versions_dict: Dictionary to be updated with deleted key/version metadata
+    :param is_versioned: Set to true if bucket versioning is enabled, False if Suspended
+    :param delete_result: DeleteResult returned in DeleteObjects call
+    """
     for delete_entry in delete_result:
         obj = delete_entry["Key"]
         ver = delete_entry("VersionId", None)

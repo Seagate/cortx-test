@@ -464,7 +464,7 @@ class TestVersioningDeleteObjects:
         versions = {}
         obj_names = [self.object_name1, self.object_name2]
         self.log.info("Step 1: Enable bucket versioning")
-        res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name")
+        res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 1: Upload multipart object object1")
         upload_version(self.s3mp_test_obj, self.bucket_name, self.object_name1, self.mp_file_path,
