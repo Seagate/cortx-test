@@ -79,8 +79,6 @@ class TestMultipartVersioning:
             system_utils.remove_file(self.test_file_path)
         self.log.info("ENDED: Teardown operations.")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3_versioning
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-41288')
     def test_abort_multipart_upload_does_not_create_a_new_version_41288(self):
@@ -116,8 +114,6 @@ class TestMultipartVersioning:
                                                     head_error_msg=err_msg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test Abort Multipart Upload does not create a new version.")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3_versioning
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-41289')
     def test_upload_multiple_versions_to_multipart_uploaded_object_in_versioned_bucket_41289(self):
@@ -151,22 +147,24 @@ class TestMultipartVersioning:
         self.log.info("Step 7: Perform List Object Versions.")
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, self.bucket_name, versions)
         self.log.info("Step 8: Perform List Objects.")
-        resp = self.s3test_obj.object_list(self.bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(self.object_name, resp[1],
-                               f"Failed to list versioned object {self.object_name}")
+        s3ver_cmn_lib.check_list_objects(self.s3test_obj, self.bucket_name,
+                                         expected_objects=[self.object_name])
         self.log.info("Step 9: Perform GET/HEAD Object.")
+        latest = versions[self.object_name]["is_latest"]
+        obj_versions = versions[self.object_name]["versions"]
+        self.log.info("Object '%s': version dict '%s'", self.object_name, obj_versions)
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
-                                                    self.bucket_name, self.object_name)
+                                                    self.bucket_name, self.object_name,
+                                                    etag=obj_versions[latest],
+                                                    version_id=latest)
         self.log.info("Step 10: Perform DELETE Object for all 6 versions viz. null, id1..id5.")
         s3ver_cmn_lib.empty_versioned_bucket(self.s3ver_test_obj, self.bucket_name)
         self.log.info("Step 11: Perform List Object Versions.")
         s3ver_cmn_lib.check_list_object_versions(
             self.s3ver_test_obj, bucket_name=self.bucket_name, expected_versions={})
         self.log.info("Step 12: Perform List Objects.")
-        resp = self.s3test_obj.object_list(self.bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_not_in(self.object_name, resp[1], f"Listed object {self.object_name}")
+        s3ver_cmn_lib.check_list_objects(
+            self.s3test_obj, self.bucket_name, expected_objects=[])
         self.log.info("Step 13: Perform GET/HEAD Object.")
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     self.bucket_name, self.object_name,
@@ -175,8 +173,6 @@ class TestMultipartVersioning:
         self.log.info("ENDED: Test Upload multiple versions to a multipart uploaded object in a "
                       "versioned bucket.")
 
-    @pytest.mark.parallel
-    @pytest.mark.s3_versioning
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-41290')
     def test_upload_new_versions_to_existing_objects_using_multipart_upload_41290(self):
@@ -191,7 +187,7 @@ class TestMultipartVersioning:
         self.log.info("Step 2: Upload object - object1.")
         s3ver_cmn_lib.upload_version(self.s3test_obj, self.bucket_name, object_name1,
                                      self.test_file_path, versions_dict=versions,
-                                     chk_null_version=True)
+                                     is_unversioned=True)
         self.log.info("Step 3: PUT Bucket versioning with status as Enabled.")
         resp = self.s3ver_test_obj.put_bucket_versioning(self.bucket_name, status="Enabled")
         assert_utils.assert_true(resp[0], resp[1])
@@ -215,14 +211,22 @@ class TestMultipartVersioning:
         s3ver_cmn_lib.check_list_object_versions(
             self.s3ver_test_obj, bucket_name=self.bucket_name, expected_versions=versions)
         self.log.info("Step 9: Perform List Objects.")
-        resp = self.s3test_obj.object_list(self.bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(object_name1, resp[1], f"Failed to list {object_name1}")
-        assert_utils.assert_in(object_name2, resp[1], f"Failed to list {object_name2}")
+        s3ver_cmn_lib.check_list_objects(self.s3test_obj, self.bucket_name,
+                                         expected_objects=[object_name1, object_name2])
         self.log.info("Step 10: Perform GET/HEAD Object for object1.")
+        latest = versions[object_name1]["is_latest"]
+        obj1_versions = versions[object_name1]["versions"]
+        self.log.info("Object1 '%s': version dict '%s'", object_name1, obj1_versions)
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
-                                                    self.bucket_name, object_name1)
+                                                    self.bucket_name, object_name1,
+                                                    etag=obj1_versions[latest],
+                                                    version_id=latest)
         self.log.info("Step 11: Perform GET/HEAD Object for object2.")
+        latest = versions[object_name2]["is_latest"]
+        obj2_versions = versions[object_name2]["versions"]
+        self.log.info("Object2 '%s': version dict '%s'", object_name2, obj2_versions)
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
-                                                    self.bucket_name, object_name2)
+                                                    self.bucket_name, object_name2,
+                                                    etag=obj2_versions[latest],
+                                                    version_id=latest)
         self.log.info("ENDED: Upload new versions to existing objects using multipart upload.")
