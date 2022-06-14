@@ -72,6 +72,7 @@ HA_CONFIG_FILE = "/root/config.json"
 MOTR_CLIENT="motr_client"
 UPGRADE_IN_PROGRESS_MSG = "An upgrade is already in progress"
 UPGRADE_SUSPEND_MSG = "Upgrade suspended"
+UPGRADE_SUSPENDED_MSG = "Upgrade Process Not found on the system, Suspend cannot be performed"
 
 # RAS Paths
 BYTES_TO_READ = 8000
