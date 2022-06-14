@@ -152,9 +152,9 @@ class TestVersioningDeleteObjects:
         self.log.info("Step 9: Perform GET/HEAD Object for object1 - object4")
         for obj in obj_names:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
-                                        bucket_name=self.bucket_name, object_name=obj,
-                                        get_error_msg=errmsg.NO_SUCH_KEY_ERR,
-                                        head_error_msg=errmsg.NOT_FOUND_ERR)
+                                          bucket_name=self.bucket_name, object_name=obj,
+                                          get_error_msg=errmsg.NO_SUCH_KEY_ERR,
+                                          head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test DELETE Objects for pre-existing objects in a versioned bucket")
 
     @pytest.mark.s3_ops
@@ -202,9 +202,9 @@ class TestVersioningDeleteObjects:
         self.log.info("Step 7: Perform GET/HEAD Object for object1 - object4")
         for obj in obj_names:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
-                                        bucket_name=self.bucket_name, object_name=obj,
-                                        get_error_msg=errmsg.NO_SUCH_KEY_ERR,
-                                        head_error_msg=errmsg.NOT_FOUND_ERR)
+                                          bucket_name=self.bucket_name, object_name=obj,
+                                          get_error_msg=errmsg.NO_SUCH_KEY_ERR,
+                                          head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test DELETE Objects for objects in a versioned bucket")
 
     @pytest.mark.s3_ops
@@ -250,9 +250,9 @@ class TestVersioningDeleteObjects:
         self.log.info("Step 7: Perform GET/HEAD Object for object1 - object4")
         for obj in obj_names:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
-                                        bucket_name=self.bucket_name, object_name=obj,
-                                        get_error_msg=errmsg.NO_SUCH_KEY_ERR,
-                                        head_error_msg=errmsg.NOT_FOUND_ERR)
+                                          bucket_name=self.bucket_name, object_name=obj,
+                                          get_error_msg=errmsg.NO_SUCH_KEY_ERR,
+                                          head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test DELETE Objects for objects in a versioning suspended bucket")
 
     @pytest.mark.s3_ops
@@ -329,9 +329,9 @@ class TestVersioningDeleteObjects:
         self.log.info("Step 5: Perform GET/HEAD Object for object1 - object4")
         for obj in obj_names:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
-                                        bucket_name=self.bucket_name, object_name=obj,
-                                        get_error_msg=errmsg.NO_SUCH_KEY_ERR,
-                                        head_error_msg=errmsg.NOT_FOUND_ERR)
+                                          bucket_name=self.bucket_name, object_name=obj,
+                                          get_error_msg=errmsg.NO_SUCH_KEY_ERR,
+                                          head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test Delete Objects in Quiet mode")
 
     @pytest.mark.s3_ops
@@ -398,9 +398,9 @@ class TestVersioningDeleteObjects:
         self.log.info("Step 5: Perform GET/HEAD Object for object1")
         for obj in obj_names:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
-                                        bucket_name=self.bucket_name, object_name=obj,
-                                        get_error_msg=errmsg.NO_SUCH_KEY_ERR,
-                                        head_error_msg=errmsg.NOT_FOUND_ERR)
+                                          bucket_name=self.bucket_name, object_name=obj,
+                                          get_error_msg=errmsg.NO_SUCH_KEY_ERR,
+                                          head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test Delete Objects for pre-existing multipart uploads")
 
     @pytest.mark.s3_ops
@@ -434,9 +434,9 @@ class TestVersioningDeleteObjects:
         self.log.info("Step 5: Perform GET/HEAD Object for object1")
         for obj in obj_names:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
-                                        bucket_name=self.bucket_name, object_name=obj,
-                                        get_error_msg=errmsg.NO_SUCH_KEY_ERR,
-                                        head_error_msg=errmsg.NOT_FOUND_ERR)
+                                          bucket_name=self.bucket_name, object_name=obj,
+                                          get_error_msg=errmsg.NO_SUCH_KEY_ERR,
+                                          head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test Delete Objects for multipart uploads in a versioning enabled "
                       "bucket")
 
@@ -476,8 +476,8 @@ class TestVersioningDeleteObjects:
         self.log.info("Step 5: Perform GET/HEAD Object for object1")
         for obj in obj_names:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
-                                        bucket_name=self.bucket_name, object_name=obj,
-                                        get_error_msg=errmsg.NO_SUCH_KEY_ERR,
-                                        head_error_msg=errmsg.NOT_FOUND_ERR)
+                                          bucket_name=self.bucket_name, object_name=obj,
+                                          get_error_msg=errmsg.NO_SUCH_KEY_ERR,
+                                          head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test Delete Objects for multipart uploads in a versioning "
                       "suspended bucket")

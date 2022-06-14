@@ -521,7 +521,7 @@ def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict
             dmo_list.append({"Key": obj})
     try:
         resp = s3_test_obj.delete_multiple_objects(bucket_name=bucket_name, quiet=quiet,
-	                                               prepared_obj_list=dmo_list)
+                                                   prepared_obj_list=dmo_list)
     except CTException as error:
         LOG.error(error)
         dmo_error = error
@@ -540,9 +540,9 @@ def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict
             obj = entry["Key"]
             v_id = entry.get("VersionId", None)
             if v_id is None:
-                trimmed_delete_result.append({"Key": obj, "VersionId": v_id})
-            else:
                 trimmed_delete_result.append({"Key": obj})
+            else:
+                trimmed_delete_result.append({"Key": obj, "VersionId": v_id})
         assert_utils.assert_equal(sorted(dmo_list), trimmed_delete_result,
                                   "DeleteObjects returned unexpected DeleteResult response")
     update_versions_dict_dmo(versions_dict, delete_result, is_versioned)
