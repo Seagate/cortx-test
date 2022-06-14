@@ -22,21 +22,14 @@
 
 import logging
 import os
-import time
+from time import perf_counter_ns
 import pytest
 
-
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
 from commons.utils import assert_utils
-from commons.utils import s3_utils
 from commons import error_messages as errmsg
 
-from time import perf_counter_ns
-
-from config.s3 import MPART_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 from libs.s3 import s3_versioning_common_test_lib as s3ver_cmn_lib
@@ -83,11 +76,10 @@ class TestVersioningMultipart:
             system_utils.remove_dirs(self.test_dir_path)
         self.log.info("ENDED: Teardown operations.")
 
-    @CTFailOn(error_handler)
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-41284")
     def test_preexist_mpu_versioning_enabled_bkt_41284(self):
-        """
-        Test pre-existing multipart upload in a versioning enabled bucket
-        """
+        """ Test pre-existing multipart upload in a versioning enabled bucket"""
         self.log.info("STARTED: Test pre-existing multipart upload in a versioning enabled bucket")
         self.log.info("Step 2-4: Upload multipart object to a bucket")
         versions = {}
@@ -114,11 +106,8 @@ class TestVersioningMultipart:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-41285")
-    @CTFailOn(error_handler)
     def test_mpu_ver_enabled_bkt_41285(self):
-        """
-        Test multipart upload in a versioning enabled bucket.
-        """
+        """ Test multipart upload in a versioning enabled bucket."""
         self.log.info("STARTED: Test multipart upload in a versioning enabled bucket.")
         self.log.info("Step 2: PUT Bucket versioning with status as Enabled")
         res = self.s3ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
@@ -146,11 +135,8 @@ class TestVersioningMultipart:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-41286")
-    @CTFailOn(error_handler)
     def test_mpu_versioning_suspended_bkt_41286(self):
-        """
-        Test multipart upload in a versioning suspended bucket
-        """
+        """ Test multipart upload in a versioning suspended bucket """
         self.log.info("STARTED: Test multipart upload in a versioning suspended bucket.")
         self.log.info("Step 2: PUT Bucket versioning with status as Suspended")
         res = self.s3ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
@@ -179,11 +165,8 @@ class TestVersioningMultipart:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-41287")
-    @CTFailOn(error_handler)
     def test_mpu_del_versioning_enabled_bkt_41287(self):
-        """
-        Test deletion of multipart upload in a versioning enabled bucket
-        """
+        """ Test deletion of multipart upload in a versioning enabled bucket """
         self.log.info("STARTED: Test deletion of multipart upload in a versioning enabled bucket")
         self.log.info("Step 2: PUT Bucket versioning with status as Enabled")
         res = self.s3ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
