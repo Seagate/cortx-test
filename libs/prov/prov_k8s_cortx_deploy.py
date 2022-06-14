@@ -1749,47 +1749,26 @@ class ProvDeployK8sCortxLib:
         """
         resp = HAK8s.get_config_value(master_node_obj)
         version = resp[1]['cortx']['common']['release']['version']
+        LOGGER.debug("Current Version is %s", version)
         return version
-
-    @staticmethod
-    def compare_version(installing_version, installed_version):
-        """
-        Compare two version
-        return : none
-        """
-        if installing_version > installed_version:
-            LOGGER.info("Installing version is higher than installed version.")
-        else:
-            LOGGER.info("Installing version is not higher than installed version.")
-
-    @staticmethod
-    def generate_and_compare_version(input_installing_version, installed_version):
-        """
-        Compare two version
-        return : none
-        """
-        installing_version = input_installing_version.split(":")[1].split("-")
-        installing_version = installing_version[0] + "-" + installing_version[1]
-        LOGGER.info("Installing CORTX image verson: %s", installing_version)
-        if installing_version > installed_version:
-            LOGGER.info("Installing version is higher than installed version.")
-        else:
-            LOGGER.info("Installing version is not higher than installed version.")
 
     @staticmethod
     def generate_and_compare_both_version(input_installing_version, installed_version):
         """
-        Compare two version
-        return : none
+        This method is used for comparing the versions
+        param: input_installing_version
+        param: installed_version
+        return : True/False, installing version
         """
         installing_version = input_installing_version.split(":")[1].split("-")
-        installing_version = installing_version[0] + "-" + installing_version[1]
-        LOGGER.info("Installing CORTX image verson: %s", installing_version)
-        if installing_version > installed_version:
-            LOGGER.info("Installing version is higher than installed version.")
-        else:
-            LOGGER.info("Installing version is not higher than installed version.")
-        return installing_version
+        installed_version = installed_version.split("-")
+        LOGGER.info("Current CORTX image version: %s", installed_version)
+        LOGGER.info("Installing CORTX image version: %s", installing_version)
+        if int(installing_version[1]) > int(installed_version[1]):
+            LOGGER.info("Installing version is higher than installed version. %s ,%s",
+                        installing_version[1], installed_version[1])
+            return True, installing_version
+        return False, installing_version, "Installing version is not lower than installed version"
 
     def update_sol_for_granular_deploy(self, file_path: str, host_list: list,master_node_list,
                                        image: str, deployment_type: str, **kwargs):

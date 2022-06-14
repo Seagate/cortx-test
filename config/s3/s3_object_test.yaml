@@ -581,7 +581,7 @@ test_9433:
 test_9434:
     bucket_name: "objtag9434"
     value: "testvalue"
-    object_count: 2
+    object_count: 50
     tag_count: 10
 test_9435:
     bucket_name: "objtag9435"
@@ -681,3 +681,12 @@ test_7657:
   bucket_name: "objworkflow7657"
   no_of_objects: 1010
   del_obj_cnt: 1000
+test_42776:
+  object_tag: "testkey=organizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128charorganizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128char"
+  tag_count: 1
+test_42777:
+  object_tag: "organizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyisupto128Unicodecharacterslengthshouldbe128char=valuekey"
+  tag_count: 1
+test_42778:
+  object_tag: "tEsTkeY=TESTVALUE&TeSteEy=testvalue"
+  tag_count: 2
