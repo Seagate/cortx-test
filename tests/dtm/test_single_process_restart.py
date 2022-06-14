@@ -197,7 +197,7 @@ class TestSingleProcessRestart:
                                                 args=(self.bucket_name, self.object_name,
                                                       self.test_cfg['clients'],
                                                       self.test_cfg['samples'], log_file_prefix,
-                                                      que, self.test_cfg['size'],1,
+                                                      que, self.test_cfg['size'], 1,
                                                       [self.bucket_name]))
         proc_write_op.start()
 
@@ -388,7 +388,6 @@ class TestSingleProcessRestart:
                       "sizes objects.")
 
         self.log.info("ENDED: Verify bucket creation and IOs after m0d restart using pkill")
-
 
     @pytest.mark.lc
     @pytest.mark.dtm
@@ -669,7 +668,7 @@ class TestSingleProcessRestart:
                 each.join()
             resp = que.get()
             assert_utils.assert_true(resp[0], resp[1])
-            if isinstance(resp[1], dict):
+            if isinstance(resp[1], list):
                 write_during_restart = resp[1]
 
         if not write_during_restart:
@@ -689,18 +688,17 @@ class TestSingleProcessRestart:
     def test_overwrite_same_object_during_m0d_restart(self):
         """Overwrite same object during m0d restart."""
         self.log.info("STARTED: Overwrite same object during m0d restart.")
-        bucket_name = 'bucket-test-41230'
-        object_prefix = 'object-test-41230'
         overwrite_cnt = self.test_cfg['test_41230']['overwrite_cnt']
         max_object_size = self.test_cfg['test_41230']['max_object_size']
         que = multiprocessing.Queue()
 
-        self.log.info("Step 1: Create bucket : %s", bucket_name)
-        self.s3_test_obj.create_bucket(bucket_name)
+        self.log.info("Step 1: Create bucket : %s", self.bucket_name)
+        self.s3_test_obj.create_bucket(self.bucket_name)
 
         self.log.info("Step 2 : Start continuous overwrite on same object")
         proc_overwrite_op = multiprocessing.Process(target=self.dtm_obj.perform_object_overwrite,
-                                                    args=(bucket_name, object_prefix, overwrite_cnt,
+                                                    args=(self.bucket_name, self.object_name,
+                                                          overwrite_cnt,
                                                           max_object_size, que))
         proc_overwrite_op.start()
 
@@ -727,14 +725,12 @@ class TestSingleProcessRestart:
     def test_io_operations_before_after_m0d_restart(self):
         """Verify IO operations work after m0d restart using pkill."""
         self.log.info("STARTED: Verify IO operations work after m0d restart using pkill.")
-        bucket_name = 'bucket-test-41231'
-        object_prefix = 'object-test-41231'
         log_file_prefix = 'test-41231'
         que = multiprocessing.Queue()
 
         self.log.info("Step 1: Perform Write/Read Operations :")
-        self.dtm_obj.perform_write_op(bucket_prefix=bucket_name,
-                                      object_prefix=object_prefix,
+        self.dtm_obj.perform_write_op(bucket_prefix=self.bucket_name,
+                                      object_prefix=self.object_name,
                                       no_of_clients=self.test_cfg['clients'],
                                       no_of_samples=self.test_cfg['samples'],
                                       obj_size=self.test_cfg['size'],
@@ -748,7 +744,7 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
 
         self.log.info("Step 2: Create bucket for IO operation post m0d restart")
-        bucket_post_m0d = f"{bucket_name}-post-m0d-restart"
+        bucket_post_m0d = f"{self.bucket_name}-post-m0d-restart"
         self.s3_test_obj.create_bucket(bucket_post_m0d)
 
         self.log.info("Step 3 : Perform Single m0d Process Restart ")
@@ -767,8 +763,8 @@ class TestSingleProcessRestart:
 
         self.log.info("Step 5: Perform Write/Read/Delete Operations on new bucket %s",
                       bucket_post_m0d)
-        self.dtm_obj.perform_write_op(bucket_prefix=bucket_name,
-                                      object_prefix=object_prefix,
+        self.dtm_obj.perform_write_op(bucket_prefix=self.bucket_name,
+                                      object_prefix=self.object_name,
                                       no_of_clients=self.test_cfg['clients'],
                                       no_of_samples=self.test_cfg['samples'],
                                       obj_size=self.test_cfg['size'],
@@ -895,7 +891,6 @@ class TestSingleProcessRestart:
             assert_utils.assert_true(resp, "Checksum validation Failed.")
         self.test_completed = True
         self.log.info("ENDED: Verify copy object during m0d restart using pkill.")
-
 
     @pytest.mark.lc
     @pytest.mark.dtm
