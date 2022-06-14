@@ -91,4 +91,4 @@ class EncodingNotSupported(Exception):
         """
         Representation of this exception.
         """
-        return f"EncodingException: with Error Message {self.messsage}:"e
+        return f"EncodingException: with Error Message {self.messsage}:"
