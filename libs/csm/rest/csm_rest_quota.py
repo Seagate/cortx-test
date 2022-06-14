@@ -39,7 +39,6 @@ class GetSetQuota(RestTestLib):
         self.iam_user = None
         self.cryptogen = SystemRandom()
         self.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
-        self.bucket = "iam-user-bucket-" + str(int(time.time_ns()))
         self.obj_name_prefix = "created_obj"
         self.obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
 
@@ -64,13 +63,12 @@ class GetSetQuota(RestTestLib):
         return response
 
     #pylint disable=no-self-use
-    def iam_user_quota_payload(self,quota_type: str, enabled: str,
+    def iam_user_quota_payload(self,enabled: str,
                         max_size: int, max_objects: int):
         """
         Create IAM user quota payload
         """
         payload = {}
-        payload.update({"quota_type": quota_type})
         payload.update({"enabled": enabled})
         payload.update({"max_size": max_size})
         payload.update({"max_objects" : max_objects})
@@ -100,7 +98,7 @@ class GetSetQuota(RestTestLib):
         return response
 
     def verify_get_set_user_quota(self, uid: str, payload: dict, verify_response=False,
-                                  expected_response = HTTPStatus.CREATED,
+                                  expected_response = HTTPStatus.OK,
                                   login_as="csm_admin_user"):
         """
         Verify get and set user quota
@@ -124,7 +122,7 @@ class GetSetQuota(RestTestLib):
                     if key in ("enabled","max_size","max_objects","check_on_raw"):
                         continue
                     if key == "max_size_kb":
-                        payload.update({"max_size_kb":get_response["max_size"]/1000})
+                        payload.update({"max_size_kb":round(get_response["max_size"]/1024)})
                     self.log.info("Actual response for %s: %s", key, payload[key])
                     if value != payload[key]:
                         self.log.error("Actual and expected response for %s didnt match", key)
@@ -134,58 +132,72 @@ class GetSetQuota(RestTestLib):
             result = False
         return result, get_response
 
-    def verify_max_size(self, max_size: int, akey: str, skey: str):
+    def verify_max_size(self, max_size: int, akey: str, skey: str, bucket: str):
         """
 	Verify put object of random size fails after exceeding max size limit
         """
         err_msg = ""
+        obj_name_prefix="created_obj"
+        obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
         self.log.info("Perform Put operation for 1 object of max size")
-        res = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                       akey, skey, object_size=max_size)
+        res = s3_misc.create_put_objects(obj_name, bucket,
+                       akey, skey, object_size=int(max_size/(1024*1024)))
         if res:
+            obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Perform Put operation of Random size and 1 object")
             random_size = self.cryptogen.randrange(1, max_size)
             try:
-                resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                      akey, skey, object_size=random_size)
+                resp = s3_misc.create_put_objects(obj_name, bucket,
+                      akey, skey, object_size=int(random_size/1024))
+                self.log.info("Response of max size is %s", resp)
                 res = False
                 err_msg = "Put operation passed for object size above max size"
             except ClientError as error:
                 self.log.info("Expected exception received %s", error)
-                res = resp['Error']['Code'] == "....."
+                res = error.response['Error']['Code'] == "QuotaExceeded"
                 err_msg = "Message check verification failed for object size above max size"
         else:
             err_msg = "Put operation failed for less than max size"
         return res, err_msg
-
-    def verify_max_objects(self, max_size: int, max_objects: int, akey: str, skey: str):
+ 
+    # pylint: disable=too-many-arguments
+    def verify_max_objects(self, max_size: int, max_objects: int, akey: str, skey: str,
+                           bucket: str):
         """
         Verify put object of random size fails after exceeding max number of objects limit
         """
         self.log.info("Perform Put operation of small size and N object")
         small_size = math.floor(max_size / max_objects)
+        small_size = int((small_size/(1024*1024)*100))
+        self.log.info("Perform Put operation of small size %s and N objects %s ",
+                        small_size, max_objects)
         err_msg = ""
+        obj_name_prefix="created_obj"
         for _ in range(0, max_objects):
-            res = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                              akey, skey, object_size=small_size)
+            obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
+            res = s3_misc.create_put_objects(obj_name, bucket,
+                                              akey, skey, object_size=small_size,
+                                              block_size="1K")
         if res:
+            obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Perform Put operation of Random size and 1 object")
             random_size = self.cryptogen.randrange(1, max_size)
             try:
-                resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                          akey, skey, object_size=random_size)
+                resp = s3_misc.create_put_objects(obj_name, bucket,
+                                          akey, skey, object_size=int(random_size/1024),
+                                                  block_size="1K")
                 res = False
                 err_msg = "Put operation passed for object size above random size"
             except ClientError as error:
                 self.log.info("Expected exception received %s", error)
-                res = resp['Error']['Code'] == "......."#TODO
+                res = error.response['Error']['Code'] == "QuotaExceeded"
                 err_msg = "Message check verification failed for objects more than max objects"
         else:
             err_msg = "Put operation failed for less than max objects"
         return res, err_msg
 
     @RestTestLib.authenticate_and_login
-    def get_user_capacity_usage(self, uid, resource,
+    def get_user_capacity_usage(self, resource, uid,
                              **kwargs):
         """
         Get user or bucket quota
