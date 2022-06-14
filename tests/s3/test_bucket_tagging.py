@@ -22,8 +22,6 @@
 import os
 import time
 import logging
-import string
-import secrets
 import pytest
 
 
@@ -834,7 +832,6 @@ class TestBucketTagging:
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-XXXXX")
-    @CTFailOn(error_handler)
     def test_xxxx(self):
         """Create bucket tags with encoded k:v pair with base64 encoding."""
         self.log.info("STARTED: Create bucket tags with encoded k:v with base64 encoding")
@@ -845,25 +842,23 @@ class TestBucketTagging:
         assert_utils.assert_equal(self.bucket_name, resp[1])
         self.log.info("Step 1: Created a bucket %s", self.bucket_name)
         self.log.info("Step 2: Setting a bucket tag with encoded key-value pair")
-        key = ''.join((secrets.choice(string.printable) for i in range(8)))
-        value = ''.join((secrets.choice(string.printable) for i in range(8)))
-        resp = self.tag_obj.set_encoded_tag_values(self.bucket_name, key, value, encoding_type = "base64")
-        self.log.info(resp)
-        assert_utils.assert_true(resp[0], resp[1])
+        set_resp = self.tag_obj.set_encoded_tag_values(self.bucket_name, encoding_type = "base64")
+        assert_utils.assert_true(set_resp[0], set_resp[1])
         self.log.info("Step 2: Set a bucket tag with encoded special characters")
         self.log.info("Step 3: Retrieving tag of a bucket")
-        resp = self.tag_obj.get_bucket_tags(self.bucket_name)
-        self.log.info(resp)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Retrieved tag of a bucket")
-        self.log.info("Step 4: Verified tag values of a bucket are set correctly")
+        put_resp = self.tag_obj.get_bucket_tags(self.bucket_name)
+        assert_utils.assert_true(put_resp[0], put_resp[1])
+        assert_utils.assert_equal(set_resp[2][0]["Key"], put_resp[1][0]["Key"],
+                                  put_resp[1][0]["Key"])
+        assert_utils.assert_equal(set_resp[2][0]["Value"], put_resp[1][0]["Value"],
+                                  put_resp[1][0]["Value"])
+        self.log.info("Step 3: Retrieved tag set of a bucket is valid")
         self.log.info("ENDED: Create bucket tags with encoded k:v with base64 encoding")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-YYYY")
-    @CTFailOn(error_handler)
     def test_yyyy(self):
         """Create bucket tags with encoded k:v pair with utf-8 encoding."""
         self.log.info("STARTED: Create bucket tags with encoded k:v with utf-8 encoding")
@@ -874,17 +869,15 @@ class TestBucketTagging:
         assert_utils.assert_equal(self.bucket_name, resp[1])
         self.log.info("Step 1: Created a bucket %s", self.bucket_name)
         self.log.info("Step 2: Setting a bucket tag with encoded key-value pair")
-        key = ''.join((secrets.choice(string.printable) for i in range(8)))
-        value = ''.join((secrets.choice(string.printable) for i in range(8)))
-        resp = self.tag_obj.set_encoded_tag_values(self.bucket_name, key, value, encoding_type = "utf-8")
-        self.log.info(resp)
-        assert_utils.assert_true(resp[0], resp[1])
+        set_resp = self.tag_obj.set_encoded_tag_values(self.bucket_name, encoding_type = "utf-8")
+        assert_utils.assert_true(set_resp[0], set_resp[1])
         self.log.info("Step 2: Set a bucket tag with encoded special characters")
         self.log.info("Step 3: Retrieving tag of a bucket")
-        resp = self.tag_obj.get_bucket_tags(self.bucket_name)
-        self.log.info(resp)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Retrieved tag of a bucket")
-        self.log.info("Step 4: Verified tag values of a bucket are valid")
+        put_resp = self.tag_obj.get_bucket_tags(self.bucket_name)
+        assert_utils.assert_true(put_resp[0], put_resp[1])
+        assert_utils.assert_equal(set_resp[2][0]["Key"], put_resp[1][0]["Key"],
+                                  put_resp[1][0]["Key"])
+        assert_utils.assert_equal(set_resp[2][0]["Value"], put_resp[1][0]["Value"],
+                                  put_resp[1][0]["Value"])
+        self.log.info("Step 3: Retrieved tag set of a bucket is valid")
         self.log.info("ENDED: Create bucket tags with encoded k:v with utf-8 encoding")
-

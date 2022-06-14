@@ -24,6 +24,8 @@
 import os
 import base64
 import logging
+import string
+import secrets
 from botocore.exceptions import ClientError
 from commons import errorcodes as err
 from commons.exceptions import CTException
@@ -475,20 +477,18 @@ class S3TaggingTestLib(Tagging):
     def set_encoded_tag_values(
             self,
             bucket_name: str = None,
-            key: str = None,
-            value: str = None,
-            encoding_type: str = 'utf-8') -> tuple:
+            encoding_type: str = "utf-8") -> tuple:
         """
         Set tag to a bucket with encoded tag values.
 
         :param bucket_name: Name of bucket.
-        :param key: Key for bucket tagging.
-        :param value: Value for bucket tagging.
         :param encoding_type: encoding type e.g. base64,utf-8
-        :return: True or False and response.
+        :return: True or False, response and encoded tag set.
         """
         try:
             LOGGER.info("Set bucket tag with encoded key value pair.")
+            key = ''.join((secrets.choice(string.printable) for i in range(8)))
+            value = ''.join((secrets.choice(string.printable) for i in range(8)))
             tag_set = list()
             if encoding_type == 'utf-8':
                 key_encode = key.encode('utf-8')
@@ -496,6 +496,8 @@ class S3TaggingTestLib(Tagging):
             elif encoding_type == 'base64':
                 key_encode = base64.b64encode(key.encode())
                 value_encode = base64.b64encode(value.encode())
+            else:
+                raise Exception("Encoding is not supported")
             tag = dict()
             tag.update([("Key", "{}".format(key_encode)),
                         ("Value", "{}".format(value_encode))])
@@ -510,4 +512,5 @@ class S3TaggingTestLib(Tagging):
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
-        return True, response
+        return True, response, tag_set
+
