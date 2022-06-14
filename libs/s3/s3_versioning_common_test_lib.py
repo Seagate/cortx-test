@@ -548,7 +548,7 @@ def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict
                 trimmed_delete_result.append({"Key": obj, "VersionId": v_id})
         assert_utils.assert_equal(sorted(dmo_list), trimmed_delete_result,
                                   "DeleteObjects returned unexpected DeleteResult response")
-    
+
     update_versions_dict_dmo(versions_dict, delete_result, is_versioned)
 
 

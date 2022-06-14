@@ -26,8 +26,6 @@ import time
 import pytest
 
 from commons import error_messages as errmsg
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
 from commons.utils.system_utils import create_file, path_exists, remove_file
 from commons.utils.system_utils import make_dirs, remove_dirs
@@ -40,8 +38,6 @@ from libs.s3.s3_versioning_common_test_lib import check_get_head_object_version
 from libs.s3.s3_versioning_common_test_lib import check_list_object_versions
 from libs.s3.s3_versioning_common_test_lib import check_list_objects
 from libs.s3.s3_versioning_common_test_lib import delete_objects
-from libs.s3.s3_versioning_common_test_lib import delete_version
-from libs.s3.s3_versioning_common_test_lib import empty_versioned_bucket
 from libs.s3.s3_versioning_common_test_lib import upload_version
 from libs.s3.s3_versioning_common_test_lib import upload_versions
 
@@ -167,7 +163,7 @@ class TestVersioningDeleteObjects:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                         bucket_name=self.bucket_name, object_name=obj,
                                         get_error_msg=errmsg.NO_SUCH_KEY_ERR,
-                                        head_error_msg=errmsg.NOT_FOUND_ERR)              
+                                        head_error_msg=errmsg.NOT_FOUND_ERR)         
         self.log.info("ENDED: Test DELETE Objects for pre-existing objects in a versioned bucket")
 
     @pytest.mark.s3_ops
@@ -282,7 +278,7 @@ class TestVersioningDeleteObjects:
                                    file_paths=self.upload_file_paths,
                                    obj_list=[("Enabled", self.object_name1, 1001)])
         self.log.info("Step 1: DeleteObjects with 1001 versions specified")
-        obj_list = [(self.object_name1, v_id) 
+        obj_list = [(self.object_name1, v_id)
                     for v_id in versions[self.object_name1]["version_history"]]
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
                        versions_dict=versions, obj_ver_list=obj_list,
@@ -459,8 +455,8 @@ class TestVersioningDeleteObjects:
         """
         Test Delete Objects for multipart uploads in a versioning suspended bucket.
         """
-        self.log.info("STARTED: Test Delete Objects for multipart uploads in a versioning suspended "
-                      "bucket")
+        self.log.info("STARTED: Test Delete Objects for multipart uploads in a versioning "
+                      "suspended bucket")
         versions = {}
         obj_names = [self.object_name1, self.object_name2]
         self.log.info("Step 1: Enable bucket versioning")
@@ -492,5 +488,5 @@ class TestVersioningDeleteObjects:
                                         bucket_name=self.bucket_name, object_name=obj,
                                         get_error_msg=errmsg.NO_SUCH_KEY_ERR,
                                         head_error_msg=errmsg.NOT_FOUND_ERR)
-        self.log.info("ENDED: Test Delete Objects for multipart uploads in a versioning suspended "
-                      "bucket")
+        self.log.info("ENDED: Test Delete Objects for multipart uploads in a versioning "
+                      "suspended bucket")
