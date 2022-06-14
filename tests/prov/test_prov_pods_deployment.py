@@ -96,17 +96,13 @@ class TestProvPodsDeployment:
         self.log.info("Running %s N with config %s+%s+%s", (len(self.worker_node_list)),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
-        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
-                                        sns_parity=config['sns_parity'],
-                                        sns_spare=config['sns_spare'],
-                                        dix_data=config['dix_data'],
-                                        dix_parity=config['dix_parity'],
-                                        dix_spare=config['dix_spare'],
-                                        cvg_count=config['cvg_count'],
-                                        data_disk_per_cvg=config['data_disk_per_cvg'],
-                                        master_node_list=self.master_node_list,
-                                        worker_node_list=self.worker_node_list,
-                                        destroy_setup_flag=False)
+        self.deploy_obj.test_deployment(
+            sns_data=config['sns_data'], sns_parity=config['sns_parity'],
+            sns_spare=config['sns_spare'], dix_data=config['dix_data'],
+            dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
+            cvg_count=config['cvg_count'], data_disk_per_cvg=config['data_disk_per_cvg'],
+            master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
+            destroy_setup_flag=False)
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.CONTROL_POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
@@ -130,17 +126,13 @@ class TestProvPodsDeployment:
         self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
-        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
-                                        sns_parity=config['sns_parity'],
-                                        sns_spare=config['sns_spare'],
-                                        dix_data=config['dix_data'],
-                                        dix_parity=config['dix_parity'],
-                                        dix_spare=config['dix_spare'],
-                                        cvg_count=config['cvg_count'],
-                                        data_disk_per_cvg=config['data_disk_per_cvg'],
-                                        master_node_list=self.master_node_list,
-                                        worker_node_list=self.worker_node_list,
-                                        destroy_setup_flag=False)
+        self.deploy_obj.test_deployment(
+            sns_data=config['sns_data'], sns_parity=config['sns_parity'],
+            sns_spare=config['sns_spare'], dix_data=config['dix_data'],
+            dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
+            cvg_count=config['cvg_count'], data_disk_per_cvg=config['data_disk_per_cvg'],
+            master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
+            destroy_setup_flag=False)
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
@@ -164,17 +156,13 @@ class TestProvPodsDeployment:
         self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
-        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
-                                        sns_parity=config['sns_parity'],
-                                        sns_spare=config['sns_spare'],
-                                        dix_data=config['dix_data'],
-                                        dix_parity=config['dix_parity'],
-                                        dix_spare=config['dix_spare'],
-                                        cvg_count=config['cvg_count'],
-                                        data_disk_per_cvg=config['data_disk_per_cvg'],
-                                        master_node_list=self.master_node_list,
-                                        worker_node_list=self.worker_node_list,
-                                        destroy_setup_flag=False)
+        self.deploy_obj.test_deployment(
+            sns_data=config['sns_data'], sns_parity=config['sns_parity'],
+            sns_spare=config['sns_spare'], dix_data=config['dix_data'],
+            dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
+            cvg_count=config['cvg_count'], data_disk_per_cvg=config['data_disk_per_cvg'],
+            master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
+            destroy_setup_flag=False)
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.SERVER_POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
@@ -198,17 +186,13 @@ class TestProvPodsDeployment:
         self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
-        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
-                                        sns_parity=config['sns_parity'],
-                                        sns_spare=config['sns_spare'],
-                                        dix_data=config['dix_data'],
-                                        dix_parity=config['dix_parity'],
-                                        dix_spare=config['dix_spare'],
-                                        cvg_count=config['cvg_count'],
-                                        data_disk_per_cvg=config['data_disk_per_cvg'],
-                                        master_node_list=self.master_node_list,
-                                        worker_node_list=self.worker_node_list,
-                                        destroy_setup_flag=False)
+        self.deploy_obj.test_deployment(
+            sns_data=config['sns_data'], sns_parity=config['sns_parity'],
+            sns_spare=config['sns_spare'], dix_data=config['dix_data'],
+            dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
+            cvg_count=config['cvg_count'], data_disk_per_cvg=config['data_disk_per_cvg'],
+            master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
+            destroy_setup_flag=False)
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.HA_POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
@@ -233,19 +217,15 @@ class TestProvPodsDeployment:
         self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
-        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
-                                        sns_parity=config['sns_parity'],
-                                        sns_spare=config['sns_spare'],
-                                        dix_data=config['dix_data'],
-                                        dix_parity=config['dix_parity'],
-                                        dix_spare=config['dix_spare'],
-                                        cvg_count=config['cvg_count'],
-                                        data_disk_per_cvg=config['data_disk_per_cvg'],
-                                        master_node_list=self.master_node_list,
-                                        worker_node_list=self.worker_node_list,
-                                        deployment_type=self.prov_cfg["deployment_type_data"],
-                                        client_instances=self.prov_cfg["data_client_instance"],
-                                        destroy_setup_flag=False)
+        self.deploy_obj.test_deployment(
+            sns_data=config['sns_data'], sns_parity=config['sns_parity'],
+            sns_spare=config['sns_spare'], dix_data=config['dix_data'],
+            dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
+            cvg_count=config['cvg_count'], data_disk_per_cvg=config['data_disk_per_cvg'],
+            master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
+            deployment_type=self.prov_cfg["deployment_type_data"], client_instances=
+            self.prov_cfg["data_client_instance"],
+            destroy_setup_flag=False)
         self.log.info("Running m0kv tests")
         self.motr_obj = MotrCoreK8s()
         node_pod_dict = self.motr_obj.get_node_pod_dict()
@@ -294,19 +274,14 @@ class TestProvPodsDeployment:
         self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
-        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
-                                        sns_parity=config['sns_parity'],
-                                        sns_spare=config['sns_spare'],
-                                        dix_data=config['dix_data'],
-                                        dix_parity=config['dix_parity'],
-                                        dix_spare=config['dix_spare'],
-                                        cvg_count=config['cvg_count'],
-                                        data_disk_per_cvg=config['data_disk_per_cvg'],
-                                        master_node_list=self.master_node_list,
-                                        worker_node_list=self.worker_node_list,
-                                        deployment_type=self.prov_cfg["deployment_type_data"],
-                                        client_instances=self.prov_cfg["data_client_instance"],
-                                        destroy_setup_flag=False)
+        self.deploy_obj.test_deployment(
+            sns_data=config['sns_data'], sns_parity=config['sns_parity'],
+            sns_spare=config['sns_spare'], dix_data=config['dix_data'],
+            dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
+            cvg_count=config['cvg_count'], data_disk_per_cvg=config['data_disk_per_cvg'],
+            master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
+            deployment_type=self.prov_cfg["deployment_type_data"],client_instances=
+            self.prov_cfg["data_client_instance"], destroy_setup_flag=False)
         self.log.info("STARTED: Verify multiple m0cp/m0cat operation")
         self.motr_obj = MotrCoreK8s()
         infile = TEMP_PATH + 'input'
