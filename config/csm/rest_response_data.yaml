@@ -73,6 +73,7 @@
 4113:
   HttpError:
     - 'Unauthorized'
+    - 'Not Found'
 12288:
   EntityAlreadyExists:
     - "The request was rejected because it attempted to create an account that already exists."
