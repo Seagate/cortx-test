@@ -28,9 +28,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class CTException(Exception):
-    """
-    Exception class for CT failures.
-    """
+    """Exception class for CT failures."""
 
     def __init__(self, ct_error, msg=None, **kwargs) -> None:
         """
@@ -49,9 +47,7 @@ class CTException(Exception):
         self.kwargs = kwargs  # Dictionary of 'other' information
 
     def __str__(self):
-        """
-        Return human-readable string representation of this exception
-        """
+        """Return human-readable string representation of this exception"""
         return "CTException: EC({})\nError Desc: {}\nError Message:" \
                " {}\nOther info:\n{}".format(self.ct_error.code,
                                              self.ct_error.desc,
@@ -71,10 +67,9 @@ class CortxTestException(Exception):
         self.message = msg
 
     def __str__(self):
-        """
-        Representation of this exception.
-        """
-        return f"TestException: with Error Message {self.messsage}:"
+        """Representation of this exception."""
+        return f"TestException: with Error Message {self.message}:"
+
 
 class EncodingNotSupported(Exception):
     """Intended for use to raise encoding errors."""
@@ -88,7 +83,5 @@ class EncodingNotSupported(Exception):
         self.message = msg
 
     def __str__(self):
-        """
-        Representation of this exception.
-        """
-        return f"EncodingException: with Error Message {self.messsage}:"
+        """Representation of this exception."""
+        return f"EncodingException: with Error Message {self.message}:"
