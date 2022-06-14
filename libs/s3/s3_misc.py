@@ -169,12 +169,15 @@ def create_put_objects(object_name: str, bucket_name: str,
     PUT and GET object in the given bucket with access key and secret key.
     :param object_size: size of the file in MB.
     """
-
+    b_size = kwargs.get("block_size", "1M")
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
 
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
+
+    if "block_size" in kwargs.keys():
+        kwargs.pop("block_size")
 
     s3_resource = boto3.resource('s3', verify=False,
                         endpoint_url=endpoint,
@@ -188,7 +191,7 @@ def create_put_objects(object_name: str, bucket_name: str,
     if not os.path.exists(TEST_DATA_FOLDER):
         os.mkdir(TEST_DATA_FOLDER)
     file_path = os.path.join(TEST_DATA_FOLDER, object_name)
-    resp = system_utils.create_file(file_path, object_size)
+    resp = system_utils.create_file(file_path, object_size, b_size=b_size)
     if not resp[0]:
         LOGGER.error("Unable to create object file: %s", file_path)
         return False

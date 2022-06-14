@@ -153,6 +153,10 @@ k8s_cortx_deploy:
   upgrade_type_cold: "cold"
   upgrade_type_rolling: "rolling"
   granular_type: "all"
+  upgrade_start: "start"
+  upgrade_status: "status"
+  upgrade_suspend: "suspend"
+  upgrade_resume: "resume"
   new_file_path: "solution.example.yaml"
   solution_file: "solution.yaml"
   deploy_file: "deploy-cortx-cloud.sh"
@@ -296,3 +300,4 @@ config_metallb:
   new_config_file: 'metallb_config.yaml'
   remote_path: '/root/metallb_config.yaml'
   apply_config: 'kubectl apply -f metallb_config.yaml'
+
