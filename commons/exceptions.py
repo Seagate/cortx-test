@@ -75,3 +75,20 @@ class CortxTestException(Exception):
         Representation of this exception.
         """
         return f"TestException: with Error Message {self.messsage}:"
+
+class EncodingNotSupported(Exception):
+    """Intended for use to raise encoding errors."""
+
+    def __init__(self, msg=None) -> None:
+        """
+        Create a encoding exception
+        :param msg: String error message from user.
+        """
+        super().__init__()
+        self.message = msg
+
+    def __str__(self):
+        """
+        Representation of this exception.
+        """
+        return f"EncodingException: with Error Message {self.messsage}:"e

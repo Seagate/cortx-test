@@ -29,6 +29,7 @@ import secrets
 from botocore.exceptions import ClientError
 from commons import errorcodes as err
 from commons.exceptions import CTException
+from commons.exceptions import EncodingNotSupported
 from commons.utils.system_utils import create_file
 from commons.utils.s3_utils import poll
 from config.s3 import S3_CFG
@@ -488,7 +489,7 @@ class S3TaggingTestLib(Tagging):
         LOGGER.info("Set bucket tag with encoded key value pair.")
 
         if encoding_type not in ("utf-8", "base64"):
-            raise Exception("Encoding is not supported")
+            raise EncodingNotSupported(f"Encoding {encoding_type} is not supported")
 
         key = ''.join((secrets.choice(string.printable) for i in range(8)))
         value = ''.join((secrets.choice(string.printable) for i in range(8)))
