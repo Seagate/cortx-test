@@ -409,23 +409,31 @@ class S3TestLib(S3Lib):
             self,
             bucket_name: str = None,
             obj_list: list = None,
-            quiet=False) -> tuple:
+            quiet: bool = False,
+            prepared_obj_list: list = None) -> tuple:
         """
         Delete multiple objects from a single bucket.
 
         :param bucket_name: Name of bucket.
         :param obj_list: List of objects to be deleted.
         :param quiet: It enables a quiet mode.
+        :param prepared_obj_list: Override DeleteObjects Objects list generation,
+            list assigned is passed as-is to DeleteObjects call, expected format:
+                [{'Key': 'string', 'VersionId': 'string'}, ...]
+                where 'VersionId' is optional
         :return: True and response or False and error.
         :rtype: (boolean, dict/str)
         """
         try:
             LOGGER.info("deleting multiple objects")
-            objects = []
-            for key in obj_list:
-                obj_d = dict()
-                obj_d["Key"] = key
-                objects.append(obj_d)
+            if prepared_obj_list:
+                objects = prepared_obj_list
+            else:
+                objects = []
+                for key in obj_list:
+                    obj_d = dict()
+                    obj_d["Key"] = key
+                    objects.append(obj_d)
             if quiet:
                 response = self.s3_client.delete_objects(
                     Bucket=bucket_name, Delete={
