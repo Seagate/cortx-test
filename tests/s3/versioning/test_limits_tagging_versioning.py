@@ -357,7 +357,6 @@ class TestObjectTaggingVerLimits:
         get_tag = resp[1]
         get_tag = sorted(get_tag, key=lambda item: item['Key'])
         put_tag = sorted(put_tag, key=lambda item: item['Key'])
-
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."
                                                     f"Expected: {put_tag} \n Actual: {get_tag}")
         LOGGER.info("Step 4: Performed GET Object Tagging for %s with versionId=%s is %s",

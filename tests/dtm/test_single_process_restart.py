@@ -81,7 +81,6 @@ class TestSingleProcessRestart:
                                 cls.master_node_list[0].password)
         cls.test_cfg = configmanager.get_config_wrapper(fpath="config/test_dtm_config.yaml")
         cls.m0d_process = 'm0d'
-        cls.rgw_process = 'rgw'
         cls.log.info("Setup S3bench")
         resp = s3bench.setup_s3bench()
         assert_utils.assert_true(resp)
@@ -238,7 +237,7 @@ class TestSingleProcessRestart:
     @pytest.mark.tags("TEST-41234")
     def test_ios_during_rc_m0d_restart(self):
         """Verify IOs during RC pod m0d restart using pkill."""
-        self.log.info("STARTED: Verify IOs before and after RC pod m0d restart using pkill")
+        self.log.info("STARTED: Verify IOs during RC pod m0d restart using pkill")
         test_cfg = DTM_CFG['test_41234']
 
         self.log.info("Step 1: Perform WRITEs/READs-Verify with variable object sizes in "
@@ -309,7 +308,7 @@ class TestSingleProcessRestart:
         assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background before and "
                                                 "after m0d restart. Logs which contain failures: "
                                                 f"{resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
         assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background during m0d"
                                                 f"restart. Logs which contain failures: {resp[1]}")
         self.log.info("Step 3: Successfully completed WRITEs/READs in background")
@@ -925,114 +924,3 @@ class TestSingleProcessRestart:
             assert_utils.assert_true(resp, "Checksum validation Failed.")
         self.test_completed = True
         self.log.info("ENDED: Verify copy object during m0d restart using pkill.")
-
-    @pytest.mark.lc
-    @pytest.mark.dtm
-    @pytest.mark.tags("TEST-42253")
-    def test_copy_object_after_rgw_restart(self):
-        """Verify copy object after rgw restart using pkill."""
-        self.log.info("STARTED: Verify copy object after rgw restart using pkill")
-        object_name = 'object-test-42253'
-        bucket_list = list()
-        self.log.info("Step 1: Start write Operations :")
-        for i in range(0, 2):
-            bucket_name = f"bucket-test-42253-{i}"
-            resp = self.s3_test_obj.create_bucket(bucket_name=bucket_name)
-            assert_utils.assert_true(resp[0], resp[1])
-            bucket_list.append(bucket_name)
-        for size in self.test_cfg["size_list"]:
-            file_name = "{}{}".format("dtm-test-42253", size)
-            file_path = os.path.join(self.test_dir_path, file_name)
-            system_utils.create_file(file_path, size)
-            resp = self.s3_test_obj.put_object(bucket_list[0], f"{object_name}_{size}", file_path)
-            assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 2: Perform Single rgw Process Restart")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False)
-        assert_utils.assert_true(resp, "Failure observed during process restart")
-        self.log.info("Step 3: Perform Copy Object to bucket-2, download and verify on copied "
-                      "Objects")
-        for size in self.test_cfg["size_list"]:
-            resp = self.s3_test_obj.copy_object(source_bucket=bucket_list[0],
-                                                source_object=f"{object_name}_{size}",
-                                                dest_bucket=bucket_list[1],
-                                                dest_object=f"{object_name}_{size}")
-            assert_utils.assert_true(resp[0], resp[1])
-            file_name_copy = "{}{}".format("dtm-test-42253-copy", size)
-            file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
-            resp = self.s3_test_obj.object_download(bucket_name=bucket_list[1],
-                                                    obj_name=f"{object_name}_{size}",
-                                                    file_path=file_path_copy)
-            assert_utils.assert_true(resp[0], resp[1])
-            file_name = "{}{}".format("dtm-test-42253-", size)
-            file_path = os.path.join(self.test_dir_path, file_name)
-            resp = validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
-            assert_utils.assert_true(resp, "Checksum validation Failed.")
-        self.test_completed = True
-        self.log.info("ENDED: Verify copy object after rgw restart using pkill")
-
-    @pytest.mark.lc
-    @pytest.mark.dtm
-    @pytest.mark.tags("TEST-42254")
-    def test_copy_object_during_rgw_restart(self):
-        """Verify copy object during rgw restart using pkill."""
-        self.log.info("STARTED: Verify copy object during rgw restart using pkill")
-        object_name = 'object-test-42254'
-        workload = dict()
-        obj_list = list()
-        bucket_list = list()
-        que = multiprocessing.Queue()
-
-        self.log.info("Step 1: Start write Operations :")
-        for i in range(0, 2):
-            bucket_name = f"bucket-test-42254-{i}"
-            resp = self.s3_test_obj.create_bucket(bucket_name=bucket_name)
-            assert_utils.assert_true(resp[0], resp[1])
-            bucket_list.append(bucket_name)
-        for size in self.test_cfg["size_list"]:
-            file_name = "{}{}".format("dtm-test-42254-", size)
-            file_path = os.path.join(self.test_dir_path, file_name)
-            system_utils.create_file(file_path, size)
-            resp = self.s3_test_obj.put_object(bucket_list[0], f"{object_name}_{size}",
-                                               file_path)
-            obj_list.append(f"{object_name}_{size}")
-            assert_utils.assert_true(resp[0], resp[1])
-
-        self.log.info("Step 2: Perform Copy object to bucket-2 in background")
-        workload["source_bucket"] = bucket_list[0]
-        workload["dest_bucket"] = bucket_list[1]
-        workload["obj_list"] = obj_list
-        proc_cp_op = multiprocessing.Process(target=self.dtm_obj.perform_copy_objects,
-                                             args=(workload, que))
-        proc_cp_op.start()
-
-        self.log.info("Step 3: Perform Single m0d Process Restart")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=False)
-        assert_utils.assert_true(resp, "Failure observed during process restart")
-
-        self.log.info("Step 4: Wait for copy object to finish")
-        if proc_cp_op.is_alive():
-            proc_cp_op.join()
-        resp = que.get()
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 5: Perform Download and verify on copied Objects")
-        for size in self.test_cfg["size_list"]:
-            file_name_copy = "{}{}".format("dtm-test-42254-copy", size)
-            file_path_copy = os.path.join(self.test_dir_path, file_name_copy)
-            resp = self.s3_test_obj.object_download(bucket_name=bucket_list[1],
-                                                    obj_name=f"{object_name}_{size}",
-                                                    file_path=file_path_copy)
-            assert_utils.assert_true(resp[0], resp[1])
-            file_name = "{}{}".format("dtm-test-42254-", size)
-            file_path = os.path.join(self.test_dir_path, file_name)
-            resp = validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
-            assert_utils.assert_true(resp, "Checksum validation Failed.")
-        self.test_completed = True
-        self.log.info("ENDED: Verify copy object during rgw restart using pkill.")
