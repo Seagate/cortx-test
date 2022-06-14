@@ -129,13 +129,12 @@ class TestVersioningMultipart:
         etag = versions[self.object_name]["versions"][v_id]
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
-                                                    object_name=self.object_name)
+                                                    object_name=self.object_name, etag=etag)
         self.log.info("Step 10: Check GET/HEAD Object with versionId")
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
-                                                    version_id=v_id,
-                                                    etag=etag)
+                                                    version_id=v_id, etag=etag)
         self.log.info("ENDED: Test multipart upload in a versioning enabled bucket.")
 
     @pytest.mark.s3_ops
