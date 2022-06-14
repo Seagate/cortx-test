@@ -581,7 +581,7 @@ test_9433:
 test_9434:
     bucket_name: "objtag9434"
     value: "testvalue"
-    object_count: 2
+    object_count: 50
     tag_count: 10
 test_9435:
     bucket_name: "objtag9435"
