@@ -653,10 +653,7 @@ class TestRGWProcessRestart:
     def test_write_read_delete_during_rgw_restart(self):
         """Verify WRITE, READ, DELETE during rgw restart using pkill."""
         self.log.info("STARTED: Verify WRITE, READ, DELETE during rgw restart using pkill")
-        bucket_name = 'bucket-test-42250'
-        object_prefix = 'object-test-42250'
         log_file_prefix = 'test-42250'
-
         que = multiprocessing.Queue()
 
         self.log.info("Step 1: Start Write Operations for parallel reads "
@@ -664,7 +661,7 @@ class TestRGWProcessRestart:
         write_proc = []
         for _ in range(0, 2):
             proc = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
-                                           args=(bucket_name, object_prefix,
+                                           args=(self.bucket_name, self.object_name,
                                                  self.test_cfg['clients'],
                                                  self.test_cfg['samples'],
                                                  self.test_cfg['size'],
@@ -686,7 +683,7 @@ class TestRGWProcessRestart:
         parallel_proc = []
         self.log.info("Step 3a: Start Write in new process")
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
-                                                args=(bucket_name, object_prefix,
+                                                args=(self.bucket_name, self.object_name,
                                                       self.test_cfg['clients'],
                                                       self.test_cfg['samples'],
                                                       self.test_cfg['size'],
@@ -730,7 +727,7 @@ class TestRGWProcessRestart:
                 each.join()
             resp = que.get()
             assert_utils.assert_true(resp[0], resp[1])
-            if isinstance(resp[1], dict):
+            if isinstance(resp[1], list):
                 write_during_restart = resp[1]
 
         if not write_during_restart:
@@ -750,19 +747,17 @@ class TestRGWProcessRestart:
     def test_overwrite_same_object_during_rgw_restart(self):
         """Overwrite same object during rgw restart."""
         self.log.info("STARTED: Overwrite same object during m0d restart.")
-        bucket_name = 'bucket-test-42251'
-        object_prefix = 'object-test-42251'
         overwrite_cnt = self.test_cfg['test_42251']['overwrite_cnt']
         max_object_size = self.test_cfg['test_42251']['max_object_size']
         que = multiprocessing.Queue()
 
-        self.log.info("Step 1: Create bucket : %s", bucket_name)
-        s3_test_obj = S3TestLib()
-        s3_test_obj.create_bucket(bucket_name)
+        self.log.info("Step 1: Create bucket : %s", self.bucket_name)
+        self.s3_test_obj.create_bucket(self.bucket_name)
 
         self.log.info("Step 2 : Start continuous overwrite on same object")
         proc_overwrite_op = multiprocessing.Process(target=self.dtm_obj.perform_object_overwrite,
-                                                    args=(bucket_name, object_prefix, overwrite_cnt,
+                                                    args=(self.bucket_name, self.object_name,
+                                                          overwrite_cnt,
                                                           max_object_size, que))
         proc_overwrite_op.start()
 
