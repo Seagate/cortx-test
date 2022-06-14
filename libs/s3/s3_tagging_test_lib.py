@@ -509,4 +509,3 @@ class S3TaggingTestLib(Tagging):
             bucket_name, tag_set={'TagSet': tag_set})
 
         return True, response, tag_set
-
