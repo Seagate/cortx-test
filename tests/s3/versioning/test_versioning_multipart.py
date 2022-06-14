@@ -61,7 +61,7 @@ class TestVersioningMultipart:
         self.s3ver_test_obj = S3VersioningTestLib()
         self.s3mp_test_obj = S3MultipartTestLib()
         self.bucket_name = f"s3bkt-versioning-{perf_counter_ns()}"
-        self.object_name = "s3obj-versioning-{}"
+        self.object_name = f"s3obj-versioning-{perf_counter_ns()}"
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestMultipartVersioning")
         self.test_file_path = os.path.join(self.test_dir_path, self.object_name)
         if not system_utils.path_exists(self.test_dir_path):
@@ -132,20 +132,16 @@ class TestVersioningMultipart:
         self.log.info("Step 8: List Object Versions")
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
                                                  expected_versions=versions)
-        self.log.info("versions is %s", versions)
-
         self.log.info("Step 9: Check GET/HEAD Object")
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name)
-        self.log.info("versions is %s", versions)
-
         self.log.info("Step 10: Check GET/HEAD Object with versionId")
-        self.log.info("versions is %s", versions)
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
-                                                    version_id=versions["VersionId"])
+                                                    version_id=versions[self.object_name]
+                                                    ["version_history"][0])
         self.log.info("ENDED: Test multipart upload in a versioning enabled bucket.")
 
     @pytest.mark.s3_ops
@@ -200,19 +196,16 @@ class TestVersioningMultipart:
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 4: Perform DELETE Object for uploaded object ")
         _, delete_res = self.s3test_obj.delete_object(self.bucket_name, self.object_name)
-        self.log.info("delete resp %s", delete_res)
         assert_utils.assert_in("DeleteMarker", delete_res.keys(), "DeleteMarker not available")
         self.log.info("Step 5: Check GET/HEAD Object")
         s3ver_cmn_lib.check_get_head_object_version(self.s3test_obj, self.s3ver_test_obj,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
-                                                    get_error_msg=errmsg.NOT_FOUND_ERR,
+                                                    get_error_msg=errmsg.NO_SUCH_KEY_ERR,
                                                     head_error_msg=errmsg.NOT_FOUND_ERR)
-        self.log.info("versions is %s", versions)
         self.log.info("Step 6: List Object Versions")
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
-                                                 expected_versions=versions)
-        self.log.info("versions is %s", versions)
+                                                 expected_versions=versions,)
         self.log.info("Step 7: List Objects")
         _, resp = self.s3test_obj.list_objects_details(self.bucket_name)
         assert_utils.assert_not_in(self.object_name, resp, "object is not deleted")
