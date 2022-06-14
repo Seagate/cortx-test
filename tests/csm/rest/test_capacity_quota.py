@@ -21,6 +21,7 @@
 """
 import ast
 import logging
+from string import Template
 import math
 import os
 import time
@@ -34,7 +35,9 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from config.s3 import S3_CFG
+from config import CSM_REST_CFG
 from libs.csm.csm_interface import csm_api_factory
+from libs.csm.csm_setup import CSMConfigsCheck
 from libs.s3 import s3_misc
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
@@ -52,6 +55,13 @@ class TestCapacityQuota():
         cls.csm_obj = csm_api_factory("rest")
         cls.log.info("Initiating Rest Client ...")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
+        cls.rest_resp_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/rest_response_data.yaml")
+        cls.config = CSMConfigsCheck()
+        setup_ready = cls.config.check_predefined_csm_user_present()
+        if not setup_ready:
+            setup_ready = cls.config.setup_csm_users()
+        assert setup_ready
         cls.created_iam_users = set()
         cls.buckets_created = []
         cls.user_id = None
@@ -78,7 +88,8 @@ class TestCapacityQuota():
         self.log.info("Verify Response : %s", resp)
         assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
                                  "IAM user creation failed")
-        self.user_id = resp.json()['tenant'] + "$" + payload["uid"]
+        self.uid = payload["uid"]
+        self.user_id = resp.json()['tenant'] + "$" + self.uid
         self.created_iam_users.add(self.user_id)
         resp1 = self.csm_obj.compare_iam_payload_response(resp, payload)
         self.log.info("Printing response %s", resp1)
@@ -158,7 +169,6 @@ class TestCapacityQuota():
         return mpu_id, parts
 
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -170,35 +180,32 @@ class TestCapacityQuota():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step 1: Create bucket under above IAM user")
-        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
-        self.bucket, self.akey, self.skey)
-        bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
-        assert bucket_created, "Failed to create bucket"
-        self.log.info("Step 2: Perform PUT API to set user level quota with max values")
+        self.log.info("Step 1: Perform PUT API to set user level quota with max values")
         test_cfg = self.csm_conf["test_40632"]
-        quota_type = test_cfg["quota_type"]
         enabled = test_cfg["enabled"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
-        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,max_size,max_objects)
+        payload = self.csm_obj.iam_user_quota_payload(enabled,max_size,max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True)
         assert result, "Verification for get set user failed."
         self.log.info("Response : %s", resp)
-        self.log.info("Step 3: Perform max size verification")
-        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
+        self.log.info("Step 2: Perform max size verification")
+        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey, self.bucket)
         assert res[0], res[1]
-        self.log.info("Step 4: Delete object")
+        self.log.info("Step 3: Delete object")
         assert s3_misc.delete_object(
-            self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
-        self.log.info("Step 5: Perform max objects verification")
-        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
+            self.obj_name, self.bucket, self.akey, self.skey), "Failed to delete bucket."
+        self.log.info("Step 4: Perform max objects verification")
+        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey,
+                                              self.bucket)
         assert res[0], res[1]
+        object_list = s3_misc.get_objects_list(self.bucket,
+                    self.akey, self.skey)
+        self.log.info("Object list is %s ", object_list)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -210,17 +217,11 @@ class TestCapacityQuota():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step 1: Create bucket under above IAM user")
-        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
-                      self.bucket, self.akey, self.skey)
-        bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
-        assert bucket_created, "Failed to create bucket"
         test_cfg = self.csm_conf["test_40633"]
-        quota_type = test_cfg["quota_type"]
         enabled = test_cfg["enabled"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
-        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,max_size,max_objects)
+        payload = self.csm_obj.iam_user_quota_payload(enabled,max_size,max_objects)
         self.log.info("Step 2: Perform PUT API to set user level quota with max values")
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True,
@@ -228,18 +229,18 @@ class TestCapacityQuota():
         assert result, "Verification for get set user failed."
         self.log.info("Response : %s", resp)
         self.log.info("Step 3: Perform max size verification")
-        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
+        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey, self.bucket)
         assert res[0], res[1]
         self.log.info("Step 4: Delete object")
         assert s3_misc.delete_object(
-            self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
+            self.obj_name, self.bucket, self.akey, self.skey), "Failed to delete bucket."
         self.log.info("Step 5: Perform max object verification")
-        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
+        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey,
+                                              self.bucket)
         assert res[0], res[1]
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -251,37 +252,36 @@ class TestCapacityQuota():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step 1: Create bucket under above IAM user")
-        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
-                      self.bucket, self.akey, self.skey)
-        bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
-        assert bucket_created, "Failed to create bucket"
         test_cfg = self.csm_conf["test_40634"]
-        quota_type = test_cfg["quota_type"]
         enabled = test_cfg["enabled"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
-        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,max_size,max_objects)
+        payload = self.csm_obj.iam_user_quota_payload(enabled,max_size,max_objects)
         for num in range(0, test_cfg["num_iterations"]):
             self.log.info("Perform get set api for iteration: %s", num)
-            self.log.info("Step 2: Perform PUT API to set user level quota")
+            self.log.info("Payload is %s ", payload)
+            if "max_size_kb" in payload:
+                del payload["max_size_kb"]
+            self.log.info("Step 2: Perform PUT API to set user level quota with max values")
             result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True)
             assert result, "Verification for get set user failed."
             self.log.info("Response : %s", resp)
             self.log.info("Step 3: Perform max size verification")
-            res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
+            res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey, self.bucket)
             assert res[0], res[1]
             self.log.info("Step 4: Delete object")
             assert s3_misc.delete_object(
-                self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
-            self.log.info("Step 5: Perform max objects verification")
-            res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
+                self.obj_name, self.bucket, self.akey, self.skey), "Failed to delete bucket."
+            self.log.info("Step 5: Perform max object verification")
+            res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey,
+                                              self.bucket)
             assert res[0], res[1]
+
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
+    #@pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -294,36 +294,31 @@ class TestCapacityQuota():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step 2: Create bucket under above IAM user")
-        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
-                      self.bucket, self.akey, self.skey)
-        bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
-        assert bucket_created, "Failed to create bucket"
         test_cfg = self.csm_conf["test_40635"]
-        quota_type = test_cfg["quota_type"]
         enabled = test_cfg["enabled"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
-        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,max_size,max_objects)
+        payload = self.csm_obj.iam_user_quota_payload(enabled,max_size,max_objects)
         self.log.info("Step 2: Perform PUT API to set user level quota with max values")
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True)
         assert result, "Verification for get set user failed."
         self.log.info("Response : %s", resp)
         self.log.info("Step 3: Perform max size verification")
-        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
-        assert res[0], res[1]
+        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey, self.bucket)
+        assert_utils.assert_false(res[0], res[1])
         self.log.info("Step 4: Delete object")
         assert s3_misc.delete_object(
-            self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
+            self.obj_name, self.bucket, self.akey, self.skey), "Failed to delete bucket."
         self.log.info("Step 5: Perform max objects verification")
-        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
-        assert res[0], res[1]
+        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey,
+                                              self.bucket)
+        assert_utils.assert_false(res[0], res[1])
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
     # pylint: disable-msg=too-many-locals
-    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.skip(reason="CORTX-32043")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -339,46 +334,48 @@ class TestCapacityQuota():
         for cnt in range(2):
             tenant = "tenant_" + str(cnt)
             self.log.info("Creating new iam user with tenant %s", tenant)
-            optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
-            optional_payload.update({"tenant": tenant})
-            optional_payload.update({"uid": self.user_id})
-            optional_payload.update({"display_name": self.display_name})
-            self.log.info("updated payload :  %s", optional_payload)
-            resp1 = self.csm_obj.create_iam_user_rgw(optional_payload)
+            payload = self.csm_obj.iam_user_payload_rgw("random")
+            self.log.info("updated payload :  %s", payload)
+            resp1 = self.csm_obj.create_iam_user_rgw(payload)
             self.log.info("Verify Response : %s", resp1)
             assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
                                      "IAM user creation failed")
             uid = resp1.json()['tenant'] + "$" + payload["uid"]
-            self.created_iam_users.add(uid)
+            akey = resp1.json()["keys"][0]["access_key"]
+            skey = resp1.json()["keys"][0]["secret_key"]
+            usr_val = resp1.json()["keys"][0]
+            self.created_iam_users.update({usr_val['user']:usr_val})
             self.log.info("Step 2: Create bucket under above IAM user")
+            bucket = "iam-user-bucket-" + str(int(time.time_ns()))
             self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
-                          self.bucket, self.akey, self.skey)
-            bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
+                          bucket, akey, skey)
+            bucket_created = s3_misc.create_bucket(bucket, akey, skey)
             assert bucket_created, "Failed to create bucket"
             test_cfg = self.csm_conf["test_40636"]
-            quota_type = test_cfg["quota_type"]
             enabled = test_cfg["enabled"]
             max_size = test_cfg["max_size"]
             max_objects = test_cfg["max_objects"]
-            payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,max_size,max_objects)
+            payload = self.csm_obj.iam_user_quota_payload(enabled,max_size,max_objects)
             self.log.info("Step 3: Perform PUT API to set user level quota with max values")
             result, resp = self.csm_obj.verify_get_set_user_quota(uid, payload,
                                                                verify_response=True)
             assert result, "Verification for get set user failed."
             self.log.info("Response : %s", resp)
             self.log.info("Step 4: Perform max size verification")
-            res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
+            res = self.csm_obj.verify_max_size(max_size, akey, skey, bucket)
             assert res[0], res[1]
             self.log.info("Step 5: Delete object")
             assert s3_misc.delete_object(
-                self.bucket, self.obj_name, self.akey, self.skey), "Failed to delete bucket."
+                self.obj_name, bucket, akey, skey), "Failed to delete bucket."
             self.log.info("Step 6: Perform max object verification")
-            res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
+            res = self.csm_obj.verify_max_objects(max_size, max_objects, akey, skey,
+                                                 bucket)
             assert res[0], res[1]
+            self.log.info("print created iam users %s",created_iam_users)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
+    #@pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -391,25 +388,20 @@ class TestCapacityQuota():
         """
         test_case_name = cortxlogging.get_frame()
         test_cfg = self.csm_conf["test_40637"]
-        quota_type = test_cfg["quota_type"]
         enabled = test_cfg["enabled"]
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
-        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,max_size,max_objects)
+        payload = self.csm_obj.iam_user_quota_payload(enabled,max_size,max_objects)
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step 2: Create bucket under above IAM user")
-        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
-                      self.bucket, self.akey, self.skey)
-        bucket_created = s3_misc.create_bucket(self.bucket, self.akey, self.skey)
-        assert bucket_created, "Failed to create bucket"
         self.log.info("Step 3: Perform s3 operation")
         random_size = self.csm_obj.random_gen.randrange(1, max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                          self.akey, self.skey, object_size=random_size)
+                                          self.akey, self.skey, object_size=random_size,
+                                          block_size="1K")
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 4: Perform get and set user level quota of less size")
         less_size = self.csm_obj.random_gen.randrange(1, max_size)
-        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,less_size,max_objects)
+        payload = self.csm_obj.iam_user_quota_payload(enabled,less_size,max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                                verify_response=True)
         assert result, "Verification for get set user failed."
@@ -654,7 +646,7 @@ class TestCapacityQuota():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
+    #@pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -674,15 +666,19 @@ class TestCapacityQuota():
         self.log.info("Number of objects to be created are: %s", num_objects)
         data_size = num_objects * random_size
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
+        obj_name_prefix = "created_obj"
         for num in range(0, num_objects):
+            obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Creating object number %s", num)
-            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                              self.akey, self.skey, object_size=random_size)
+            resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                              self.akey, self.skey, object_size=random_size,
+                                              block_size="1K")
             assert resp, "Put object Failed"
         self.log.info("Step 3: Get capacity count from AWS")
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
                    self.akey, self.skey)
         self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Data size is %s ", data_size)
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
@@ -690,18 +686,17 @@ class TestCapacityQuota():
         uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
         t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
         t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
-
-        assert_utils.assert_equals(self.user_id, uid, "id is not equal")
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+ 
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
         assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
         assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_equal(total_size, data_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(total_size, m_size, "Total Used Size mismatch found ")
+        assert_utils.assert_equal(total_size, data_size*1024, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -720,16 +715,20 @@ class TestCapacityQuota():
         self.log.info("Random size generated is: %s", random_size)
         self.log.info("Number of objects to be created are: %s", num_objects)
         data_size = num_objects * random_size
+        obj_name_prefix = "created_obj"
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
         for num in range(0, num_objects):
+            obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Creating object number %s", num)
-            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                              self.akey, self.skey, object_size=random_size)
+            resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                              self.akey, self.skey, object_size=random_size,
+                                              block_size="1K")
             assert resp, "Put object Failed"
         self.log.info("Step 3: Get capacity count from AWS")
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
                  self.akey, self.skey)
-
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Data size is %s ", data_size)
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
                          login_as="csm_user_manage")
@@ -738,18 +737,17 @@ class TestCapacityQuota():
         uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
         t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
         t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
 
-        assert_utils.assert_equals(self.user_id, uid, "id is not equal")
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
         assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
         assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_equal(total_size, data_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(total_size, m_size, "Total Used Size mismatch found ")
+        assert_utils.assert_equal(total_size, data_size*1024, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -768,16 +766,20 @@ class TestCapacityQuota():
         self.log.info("Random size generated is: %s", random_size)
         self.log.info("Number of objects to be created are: %s", num_objects)
         data_size = num_objects * random_size
+        obj_name_prefix = "created_obj"
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
         for num in range(0, num_objects):
+            obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Creating object number %s", num)
-            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                              self.akey, self.skey, object_size=random_size)
+            resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                              self.akey, self.skey, object_size=random_size,
+                                              block_size="1K")
             assert resp, "Put object Failed"
         self.log.info("Step 3: Get capacity count from AWS")
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
                     self.akey, self.skey)
-
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Data size is %s ", data_size)
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
                                  login_as="csm_user_monitor")
@@ -786,18 +788,17 @@ class TestCapacityQuota():
         uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
         t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
         t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
 
-        assert_utils.assert_equals(self.user_id, uid, "id is not equal")
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
         assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
         assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_equal(total_size, data_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(total_size, m_size, "Total Used Size mismatch found ")
+        assert_utils.assert_equal(total_size, data_size*1024, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -809,8 +810,13 @@ class TestCapacityQuota():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Pre-condition: Create multiple objects (N) on 1 bucket")
+        self.log.info("Step 1: Create multiple objects (N) and put on 1 bucket")
         test_cfg = self.csm_conf["test_41757"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1, available_size)
         num_objects = math.floor(available_size / random_size)
@@ -819,25 +825,28 @@ class TestCapacityQuota():
         for num in range(0, num_objects):
             self.log.info("Creating object number %s", num)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                              self.akey, self.skey, object_size=random_size)
+                                              self.akey, self.skey, object_size=random_size,
+                                              block_size="1K")
             assert resp, "Put object Failed"
-        self.log.info("Step 1: Delete iam user")
+        self.log.info("Step 2: Delete iam user")
         self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
                       self.user_id, self.akey, self.skey)
-        purge_data = False
-        response = self.csm_obj.delete_iam_user_rgw(self.user_id, purge_data)
+        self.log.info("Step 3: Delete objects and buckets associated with iam user")
+        result = s3_misc.delete_all_buckets(self.akey, self.skey)
+        assert result, "Failed to delete buckets"
+        response = self.csm_obj.delete_iam_user(self.user_id)
         assert response.status_code == HTTPStatus.OK, \
-                           "Status code check failed for user deletion"
-        self.log.info("Step 2: Perform GET API to get capacity usage stats")
+            "Status code check failed for user deletion"
+        self.log.info("Step 4: Perform GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.BAD_REQUEST,
-                        "Status code check failed for user deletion")
-        #if CSM_REST_CFG["msg_check"] == "enable":
-            #TODO: Error code and message check part
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.NOT_FOUND,
+                 "Status code check failed for user deletion")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -850,7 +859,12 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Create multiple objects (N) and put on 1 bucket")
-        test_cfg = self.csm_conf["test_41158"]
+        test_cfg = self.csm_conf["test_41758"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1, available_size)
         num_objects = math.floor(available_size / random_size)
@@ -859,25 +873,28 @@ class TestCapacityQuota():
         for num in range(0, num_objects):
             self.log.info("Creating object number %s", num)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                              self.akey, self.skey, object_size=random_size)
+                                              self.akey, self.skey, object_size=random_size,
+                                              block_size="1K")
             assert resp, "Put object Failed"
         self.log.info("Step 2: Delete iam user")
         self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
                       self.user_id, self.akey, self.skey)
-        purge_data = True
-        response = self.csm_obj.delete_iam_user_rgw(self.user_id, purge_data)
+        self.log.info("Step 3: Delete objects and buckets associated with iam user")
+        result = s3_misc.delete_all_buckets(self.akey, self.skey)
+        assert result, "Failed to delete buckets"
+        response = self.csm_obj.delete_iam_user(self.user_id, purge_data=True)
         assert response.status_code == HTTPStatus.OK, \
             "Status code check failed for user deletion"
-        self.log.info("Step 2: Perform GET API to get capacity usage stats")
+        self.log.info("Step 4: Perform GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.BAD_REQUEST,
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.NOT_FOUND,
                  "Status code check failed for user deletion")
-        #if CSM_REST_CFG["msg_check"] == "enable":
-           # TODO: Error code and message check part
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(resp.json()["message"], msg)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -897,21 +914,21 @@ class TestCapacityQuota():
         self.log.info("Number of objects to be created are: %s", num_objects)
         data_size = num_objects * random_size
         self.log.info("Step 2: Perform PUT API to set user level quota")
-        quota_type = test_cfg["quota_type"]
         enabled = test_cfg["enabled"]
         max_objects = test_cfg["max_objects"]
-        payload = self.csm_obj.iam_user_quota_payload(quota_type,enabled,available_size,max_objects)
+        payload = self.csm_obj.iam_user_quota_payload(enabled,available_size,max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=True)
         assert result, "Verification for get set user failed."
         self.log.info("Response : %s", resp)
         self.log.info("Step 3: Perform max size verification")
-        res = self.csm_obj.verify_max_size(available_size, self.akey, self.skey)
+        res = self.csm_obj.verify_max_size(available_size, self.akey, self.skey,self.bucket)
         assert res[0], res[1]
         self.log.info("Step 3: Get capacity count from AWS")
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
                             self.akey, self.skey)
-
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Data size is %s ", data_size)
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
@@ -919,18 +936,15 @@ class TestCapacityQuota():
         uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
         t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
         t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
 
-        assert_utils.assert_equals(self.user_id, uid, "id is not equal")
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
         assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_equal(total_size, data_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(total_size, m_size, "Total Used Size mismatch found ")
+        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -943,34 +957,52 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_41151"]
+        resp_error_code_1 = test_cfg["error_code_1"]
+        resp_msg_id_1 = test_cfg["message_id_1"]
+        resp_data = self.rest_resp_conf[resp_error_code_1][resp_msg_id_1]
+        resp_msg_index = test_cfg["message_index_1"]
+        msg_1 = resp_data[resp_msg_index]
+        resp_error_code_2 = test_cfg["error_code_2"]
+        resp_msg_id_2 = test_cfg["message_id_2"]
+        resp_data = self.rest_resp_conf[resp_error_code_2][resp_msg_id_2]
+        resp_msg_index = test_cfg["message_index_2"]
+        msg_2 = resp_data[resp_msg_index]
         available_size = test_cfg["max_size"]
         random_size = self.csm_obj.random_gen.randrange(1, available_size)
         num_objects = math.floor(available_size / random_size)
         self.log.info("Random size generated is: %s", random_size)
         self.log.info("Number of objects to be created are: %s", num_objects)
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
+        obj_prefix = "created_obj"
         for num in range(0, num_objects):
+            obj_name=f'{obj_prefix}{time.perf_counter_ns()}'
             self.log.info("Creating object number %s", num)
-            resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                              self.akey, self.skey, object_size=random_size)
+            resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                              self.akey, self.skey, object_size=random_size,
+                                               block_size="1K")
             assert resp, "Put object Failed"
         self.log.info("Step 2: Perform GET API to get capacity usage "
                       "with empty key Parameters id and resource")
         uid = ""
         resource = ""
         resp = self.csm_obj.get_user_capacity_usage(resource, uid)
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.BAD_REQUEST,
+        assert_utils.assert_equals(resp.status_code, HTTPStatus.NOT_FOUND,
                               "Status code check failed for get capacity")
-        #if CSM_REST_CFG["msg_check"] == "enable":
-           # TODO: Error code and message check part
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code_1)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id_1)
+            assert_utils.assert_equals(resp.json()["message"], msg_1)
         self.log.info("Step 3: Perform GET API to get capacity usage "
                       "with invalid key Parameters id and resource")
         resource = uid = self.user_id
         resp = self.csm_obj.get_user_capacity_usage(resource, uid)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.BAD_REQUEST,
                    "Status code check failed for get capacity")
-        #if CSM_REST_CFG["msg_check"] == "enable":
-           # TODO: Error code and message check part
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code_2)
+            assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id_2)
+            assert_utils.assert_equals(resp.json()["message"],
+                              Template(msg_2).substitute(A="Resource",B="user."))
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
@@ -1039,7 +1071,6 @@ class TestCapacityQuota():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1060,17 +1091,17 @@ class TestCapacityQuota():
         for user in range(0, random_users):
             self.log.info("Step 1 : Creating IAM user %s", user)
             payload = self.csm_obj.iam_user_payload_rgw("random")
-            resp = self.csm_obj.create_iam_user_rgw(payload)
-            self.log.info("Verify Response : %s", resp)
-            assert_utils.assert_true(resp.status_code == HTTPStatus.CREATED,
+            resp1 = self.csm_obj.create_iam_user_rgw(payload)
+            self.log.info("Verify Response : %s", resp1)
+            assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
                                     "IAM user creation failed")
-            user_id = resp.json()['tenant'] + "$" + payload["uid"]
+            user_id = resp1.json()['tenant'] + "$" + payload["uid"]
             self.created_iam_users.add(user_id)
-            resp1 = self.csm_obj.compare_iam_payload_response(resp, payload)
+            resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
             self.log.info("Printing response %s", resp1)
-            assert_utils.assert_true(resp1[0], resp1[1])
-            akey = resp.json()["keys"][0]["access_key"]
-            skey = resp.json()["keys"][0]["secret_key"]
+            assert_utils.assert_true(resp[0], resp[1])
+            akey = resp1.json()["keys"][0]["access_key"]
+            skey = resp1.json()["keys"][0]["secret_key"]
 
             self.log.info("Step 2: Create bucket under above IAM user")
             bucket = "iam-user-bucket-" + str(int(time.time_ns()))
@@ -1090,12 +1121,14 @@ class TestCapacityQuota():
                 obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
                 self.log.info("initiate put object %s", obj)
                 resp = s3_misc.create_put_objects(obj_name, bucket,
-                                                akey, skey, object_size=random_size)
+                                                akey, skey, object_size=random_size,
+                                                 block_size="1K")
                 assert_utils.assert_true(resp, "Put object Failed")
 
             self.log.info("Step 3: Get capacity count from AWS")
             total_objects, total_size = s3_misc.get_objects_size_bucket(bucket, akey, skey)
-
+            self.log.info("total objects and size %s and %s ", total_objects, total_size)
+            self.log.info("Data size is %s ", data_size) 
             self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
             resp = self.csm_obj.get_user_capacity_usage("user", user_id)
             assert resp.status_code == HTTPStatus.OK, \
@@ -1103,17 +1136,17 @@ class TestCapacityQuota():
             uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
             t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
             t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-            m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
-
-            assert_utils.assert_equals(user_id, uid, "id is not equal")
+            m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+            self.log.info("t_obj %s t_size %s m_size %s ", t_obj, t_size, m_size)
+            assert_utils.assert_equals(resp1.json()['user_id'], uid, "id is not equal")
             assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
             assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
             assert_utils.assert_equal(
-                total_size / (1024 * 1024), t_size, "Total Size mismatch found")
+                total_size, t_size, "Total Size mismatch found")
             assert_utils.assert_equal(
-                total_size / (1024 * 1024), data_size, "Total Size mismatch found")
+                total_size / 1024, data_size, "Total Size mismatch found")
             assert_utils.assert_greater_equal(
-                total_size / (1024 * 1024), m_size, "Total Used Size mismatch found ")
+                m_size, total_size, "Total Used Size mismatch found ")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1182,9 +1215,9 @@ class TestCapacityQuota():
         uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
         t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
         t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
 
-        assert_utils.assert_equals(self.user_id, uid, "uid is not equal")
+        assert_utils.assert_equals(self.uid, uid, "uid is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
         assert_utils.assert_equals(total_objects, total_num_objects, "Number of objects not equal")
         assert_utils.assert_equal(
@@ -1197,7 +1230,6 @@ class TestCapacityQuota():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1218,28 +1250,26 @@ class TestCapacityQuota():
             tenant = "tenant_" + system_utils.random_string_generator()
             self.log.info("Step 1 : Creating new iam user with tenant %s in loop %s", tenant, tnt)
             optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
-            optional_payload.update({"tenant": tenant})
-            optional_payload.update({"uid": self.user_id})
-            optional_payload.update({"display_name": self.display_name})
             self.log.info("updated payload :  %s", optional_payload)
             resp1 = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp1)
             assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
                                      "IAM user creation failed")
-            self.created_iam_users.add(resp1.json()['tenant'] + "$" + optional_payload['uid'])
+            user_id = resp1.json()['tenant'] + "$" + optional_payload['uid']
+            self.created_iam_users.add(user_id)
             resp = self.csm_obj.compare_iam_payload_response(resp1, optional_payload)
             self.log.info("Printing response %s", resp)
             assert_utils.assert_true(resp[0], resp[1])
             akey = resp1.json()["keys"][0]["access_key"]
             skey = resp1.json()["keys"][0]["secret_key"]
-            user_id = tenant + "$" + self.user_id
 
             self.log.info("Step 2: Create bucket under above IAM user")
+            bucket = "iam-user-bucket-" + str(int(time.time_ns()))
             self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
-                          self.bucket, akey, skey)
-            bucket_created = s3_misc.create_bucket(self.bucket, akey, skey)
+                          bucket, akey, skey)
+            bucket_created = s3_misc.create_bucket(bucket, akey, skey)
             assert bucket_created, "Failed to create bucket"
-            self.buckets_created.append([self.bucket, akey, skey])
+            self.buckets_created.append([bucket, akey, skey])
 
             obj_name_prefix = "created_obj"
             random_size = self.csm_obj.random_gen.randrange(1, available_size)
@@ -1250,12 +1280,13 @@ class TestCapacityQuota():
             for obj in range(0, num_objects):
                 obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
                 self.log.info("initiate put object %s", obj)
-                resp = s3_misc.create_put_objects(obj_name, self.bucket,
-                                                akey, skey, object_size=random_size)
+                resp = s3_misc.create_put_objects(obj_name, bucket,
+                                                akey, skey, object_size=random_size,
+                                                block_size="1K")
                 assert_utils.assert_true(resp, "Put object Failed")
 
             self.log.info("Step 3: Get capacity count from AWS")
-            total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket, akey, skey)
+            total_objects, total_size = s3_misc.get_objects_size_bucket(bucket, akey, skey)
 
             self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
             resp = self.csm_obj.get_user_capacity_usage("user", user_id)
@@ -1264,17 +1295,17 @@ class TestCapacityQuota():
             uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
             t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
             t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-            m_size = resp.json()["capacity"]["s3"]["users"][0]["used_total"]
+            m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
 
-            assert_utils.assert_equals(user_id, uid, "uid is not equal")
+            assert_utils.assert_equals(resp1.json()['user_id'], uid, "uid is not equal")
             assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
             assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
             assert_utils.assert_equal(
-                total_size / (1024 * 1024), t_size, "Total Size mismatch found")
+                total_size, t_size, "Total Size mismatch found")
             assert_utils.assert_equal(
-                total_size / (1024 * 1024), data_size, "Total Size mismatch found")
+                total_size / 1024, data_size, "Total Size mismatch found")
             assert_utils.assert_greater_equal(
-                total_size / (1024 * 1024), m_size, "Total Used Size mismatch found ")
+                m_size, total_size, "Total Used Size mismatch found ")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1343,12 +1374,11 @@ class TestCapacityQuota():
         self.log.info("Step 1: Perform PUT API to set valid max size and negative "
                       "max object value")
         test_cfg = self.csm_conf["test_41965"]
-        quota_type = test_cfg["quota_type"]
         max_size = test_cfg["max_size"]
         small_size = test_cfg["small_size"]
         enabled = test_cfg["enabled"]
         max_objects = -(self.csm_obj.random_gen.randrange(1, small_size))
-        payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
+        payload = self.csm_obj.iam_user_quota_payload(enabled, max_size, max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=True)
         assert result, "Verification for get set user failed."
@@ -1358,18 +1388,19 @@ class TestCapacityQuota():
             self.log.info("Creating object number %s", num)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                               self.akey, self.skey,
-                                              object_size=small_size)
+                                              object_size=int(small_size/1024),
+                                              block_size="1K")
             assert resp, "Put object Failed"
         self.log.info("Maximum amount of objects should be created since max_objects"
                       "parameter is not effective")
         self.log.info("Step 3: Perform put 1 object of random size")
         random_size = self.csm_obj.random_gen.randrange(1, max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                          self.akey, self.skey, object_size=random_size)
+                                          self.akey, self.skey, object_size=random_size,
+                                          block_size="1K")
         assert not resp, "Put object passed even after exceeding max size"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1384,24 +1415,26 @@ class TestCapacityQuota():
         self.log.info("Step 1: Perform PUT API to set negative max size and valid"
                       "max object value")
         test_cfg = self.csm_conf["test_41966"]
-        quota_type = test_cfg["quota_type"]
-        max_size = (self.csm_obj.random_gen.randrange(-1, -999999))
+        available_size = test_cfg["available_size"]
+        max_size = -(self.csm_obj.random_gen.randrange(1, available_size))
         enabled = test_cfg["enabled"]
         max_objects = test_cfg["max_objects"]
-        payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
-        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
-                                                              verify_response=True)
-        assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
-        self.log.info("Step 2: Perform max_objects upload of random size")
-        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
+        self.log.info("Step 2: Perform get set user quota")
+        payload = self.csm_obj.iam_user_quota_payload(enabled, max_size, max_objects)
+        resp = self.csm_obj.set_user_quota(self.user_id, payload)
+        self.log.info("Set quota API response: %s", resp.json())
+        assert resp.status_code == HTTPStatus.OK, "Status code check failed" 
+        res = self.csm_obj.get_user_quota(self.user_id)
+        assert res.status_code == HTTPStatus.OK, "Status code check failed"
+        self.log.info("Step 3: Perform max_objects upload of random size")
+        res = self.csm_obj.verify_max_objects(available_size, max_objects, self.akey, self.skey,
+                                              self.bucket)
         assert res[0], res[1]
         self.log.info("Only maximum number of objects specified of any size should"
                       "be uploaded since max_size parameter is ineffective")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable=broad-except
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1416,26 +1449,28 @@ class TestCapacityQuota():
         self.log.info("Step 1: Perform PUT API to set valid max size and negative "
                       "max object value")
         test_cfg = self.csm_conf["test_41967"]
-        quota_type = test_cfg["quota_type"]
         enabled = test_cfg["enabled"]
         size_for_io = test_cfg["size_for_io"]
         objects_for_io = test_cfg["objects_for_io"]
-        max_size = -(self.csm_obj.random_gen.randrange(1, objects_for_io))
-        max_objects = -(self.csm_obj.random_gen.randrange(1, max_size))
-        payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size,
+        max_size = -(self.csm_obj.random_gen.randrange(1, size_for_io))
+        max_objects = -(self.csm_obj.random_gen.randrange(1, objects_for_io))
+        self.log.info("Step 2: Perform get set user quota")
+        payload = self.csm_obj.iam_user_quota_payload(enabled, max_size,
                                                       max_objects)
-        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
-                                                              verify_response=True)
-        assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
+        resp = self.csm_obj.set_user_quota(self.user_id, payload)
+        self.log.info("Set quota API response: %s", resp.json())
+        assert resp.status_code == HTTPStatus.OK, "Status code check failed"
+        res = self.csm_obj.get_user_quota(self.user_id)
+        assert res.status_code == HTTPStatus.OK, "Status code check failed"
         self.log.info("Step 2: Performing IOs of any size and any number of objects"
                       "should pass")
         for num in range(0, objects_for_io):
             self.log.info("Creating an uploading object %s:", num)
             random_size = math.floor(size_for_io/objects_for_io)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
-                                              self.akey, self.skey, object_size=random_size)
-        assert resp[0], resp[1]
+                                              self.akey, self.skey, object_size=random_size,
+                                              block_size="1K")
+            assert resp, "Put object Failed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.skip("Feature not ready")
@@ -1455,16 +1490,13 @@ class TestCapacityQuota():
         bucket_name = "iam-user-bucket-" + str(int(time.time()))
         tenant = "tenant_" + system_utils.random_string_generator()
         self.log.info("Creating new iam user  %s", uid)
-        payload = self.csm_obj.iam_user_payload_rgw("loaded")
-        payload.update({"uid": uid})
-        payload.update({"tenant": tenant})
-        payload.update({"display_name": uid})
+        payload = self.csm_obj.iam_user_payload_rgw("random")
         payload.update({"suspended": False})
         resp1 = self.csm_obj.create_iam_user_rgw(payload)
         self.log.info("Verify Response : %s", resp1)
         assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
                                  "IAM user creation failed")
-        user_id = resp1.json()['tenant'] + "$" + uid
+        user_id = resp1.json()['tenant'] + "$" + payload["uid"]
         self.created_iam_users.add(user_id)
         resp = self.csm_obj.compare_iam_payload_response(resp1, payload)
         assert_utils.assert_true(resp[0], resp[1])
