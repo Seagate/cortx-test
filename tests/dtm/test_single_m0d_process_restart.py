@@ -130,7 +130,7 @@ class TestSingleProcessRestart:
             assert_utils.assert_true(resp)
         if self.iam_user:
             self.log.info("Cleanup: Cleaning created IAM users and buckets.")
-            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.iam_user)
+            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.iam_user, True)
             assert_utils.assert_true(resp[0], resp[1])
         if os.path.exists(self.test_dir_path):
             system_utils.remove_dirs(self.test_dir_path)
