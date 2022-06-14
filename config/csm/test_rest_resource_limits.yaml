@@ -5,4 +5,4 @@ test_43150:
   tmp_user_password: "Seagate@123"
 test_43151:
   requests_rate: 200
-  api_endpoint: "/api/v2/csm/users"
+  api_endpoint: "/api/v2/system/users"

@@ -138,13 +138,13 @@ class TestResourceLimits():
         response = self.csm_obj.rest_login(
             login_as={"username": username, "password": tmp_user_password})
         assert response.status_code == const.SUCCESS_STATUS
-        self.log.debug("response is : %s", response)
+        self.log.debug("response is : %s", response.headers['Authorization'])
         first_token = response.headers['Authorization']
 
         response = self.csm_obj.rest_login(
             login_as={"username": username, "password": tmp_user_password})
         assert response.status_code == const.SUCCESS_STATUS
-        self.log.debug("response is : %s", response)
+        self.log.debug("response is : %s", response.headers['Authorization'])
         second_token = response.headers['Authorization']
 
         assert first_token == second_token
@@ -163,5 +163,6 @@ class TestResourceLimits():
         msg = f"Step 1: overflow {api_endpoint} with {requests_rate} requests"
         self.log.info(msg)
         is_overflow = self.csm_obj.flood(api_endpoint, requests_rate)
+        self.log.info(is_overflow)
         assert is_overflow
         self.log.info("################Test Passed##################")
