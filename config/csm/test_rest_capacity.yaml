@@ -62,11 +62,11 @@ test_40634:
 test_40635:
   max_size: 1048576
   max_objects: 4
-  enabled: True
+  enabled: False
 test_40636:
   max_size: 1048576
   max_objects: 4
-  enabled: True
+  enabled: False
 test_40637:
   max_size: 1048576
   max_objects: 4
