@@ -24,7 +24,7 @@
   Cannot create other users:
     - "Only $A user can create other $B users"
   PermissionDenied:
-    - 'Access to the requested resource is forbidden'
+    - 'Access to the requested resource is forbidden.'
 4099:
   invalid body msg_id:
     - "Invalid request body: {'bucket_name': [\"Bucket Name should be between 4-56 Characters long.Should contain either lowercase, numeric or '-' characters. Not starting or ending with '-'\"]}"

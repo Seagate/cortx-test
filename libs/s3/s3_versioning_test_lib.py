@@ -27,7 +27,6 @@ from commons import errorcodes as err
 from commons.exceptions import CTException
 
 from config.s3 import S3_CFG
-from commons.utils import assert_utils
 from libs.s3 import ACCESS_KEY
 from libs.s3 import SECRET_KEY
 from libs.s3.s3_versioning import Versioning
@@ -207,12 +206,10 @@ class S3VersioningTestLib(Versioning):
         try:
             resp = super().get_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
                                            version=version)
-            LOGGER.info("Successfully sent request for get object tagging for %s object with %s "
-                        "version", object_name, version)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s", S3VersioningTestLib.get_obj_tag_ver.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
-        return True, resp
+        return True, resp['TagSet']
 
     def put_obj_tag_ver(self, bucket_name: str = None, object_name: str = None,
                         version: str = None, tags: dict = None) -> tuple:
@@ -228,8 +225,6 @@ class S3VersioningTestLib(Versioning):
         try:
             resp = super().put_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
                                            version=version, tags=tags)
-            LOGGER.info("Successfully sent request for put object tagging for %s object with %s "
-                        "version", object_name, version)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s", S3VersioningTestLib.put_obj_tag_ver.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
@@ -248,8 +243,6 @@ class S3VersioningTestLib(Versioning):
         try:
             resp = super().delete_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
                                               version=version)
-            LOGGER.info("Successfully sent request for delete object tag for %s object with %s "
-                        "version", object_name, version)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s", S3VersioningTestLib.delete_obj_tag_ver.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
