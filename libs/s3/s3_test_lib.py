@@ -640,19 +640,25 @@ class S3TestLib(S3Lib):
             bucket: str = None,
             key: str = None,
             ranges: str = None,
-            raise_exec: bool = True) -> tuple:
+            **kwargs) -> tuple:
         """
         Retrieve object from specified S3 bucket.
 
-        :param raise_exec: raise an exception in default case.
         :param key: Key of the object to get.
         :param ranges: Byte range to be retrieved
         :param bucket: The bucket name containing the object.
+        :keyword raise_exec: raise an exception in default case.
+        :keyword skip_polling: Skip retry for GET Object, in case of failures
         :return: (Boolean, Response)
         """
+        raise_exec = kwargs.get("raise_exec", True)
+        skip_polling = kwargs.get("skip_polling", False)
         try:
             LOGGER.info("Retrieving object from a bucket")
-            response = poll(super().get_object, bucket, key, ranges)
+            if not skip_polling:
+                response = poll(super().get_object, bucket, key, ranges)
+            else:
+                response = super().get_object(bucket, key, ranges)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.get_object.__name__,
