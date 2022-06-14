@@ -10,8 +10,7 @@ k8s_prov_cortx_deploy:
   cvg_config: ["cvg1", "cvg2"]
   upgrade_process_file_path: "/tmp/upgrade-cortx-cloud.sh.pid"
   pre_req:  "/dev/sdb"
+  endpoint_url: "http://s3.seagate.com:{}"
 
-endpoint_url: "http://s3.seagate.com:{}"
-bucket_name: "test_bucket"
 
 

@@ -21,6 +21,7 @@
 """Provisioner Component level test cases for CORTX deployment in k8s environment."""
 
 import logging
+import os
 import time
 import pytest
 
@@ -29,6 +30,8 @@ from commons import constants as common_const
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
+from commons.utils import system_utils
+from commons.utils import ext_lbconfig_utils
 from config import CMN_CFG
 from config import PROV_CFG
 from config import PROV_TEST_CFG
@@ -43,6 +46,7 @@ SECRETS_FILES_LIST = ["s3_auth_admin_secret", "openldap_admin_secret", "kafka_ad
                       "csm_mgmt_admin_secret", "csm_auth_admin_secret", "consul_admin_secret",
                       "common_admin_secret"]
 PVC_LIST = ["cluster.conf", "config", "consul_conf", "hare", "log", "motr", "rgw_s3", "solution"]
+bucket_name =  'test-bucket'
 
 class TestProvK8Cortx:
 
@@ -53,6 +57,7 @@ class TestProvK8Cortx:
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
+        cls.service_type = os.getenv("SERVICE_TYPE", cls.deploy_cfg["service_type"])
         cls.ha_obj = HAK8s()
         cls.dir_path = common_const.K8S_SCRIPTS_PATH
         cls.num_nodes = len(CMN_CFG["nodes"])
@@ -498,13 +503,13 @@ class TestProvK8Cortx:
         resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_CONF + " set aws_secret_access_key {}".format(secret_key),
                                                     read_lines=True)
         LOGGER.info("Step 4:Creating bucket")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_CREATE_BUCKET.format(self.prov_deploy_cfg['bucket_name']) + " --endpoint-url" +  self.prov_deploy_cfg['endpoint_url'].format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_CREATE_BUCKET.format(bucket_name) + " --endpoint-url " +  (self.prov_deploy_cfg["endpoint_url"]).format(http_port),
                                                     read_lines=True)
         LOGGER.info("Make Bucket %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS+ " --endpoint-url" +  self.prov_deploy_cfg['endpoint_url'].format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS+ " --endpoint-url " +  self.prov_deploy_cfg["endpoint_url"].format(http_port),
                                                     read_lines=True)
         LOGGER.info("Bucket Name %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_HEAD_BUCKET.format(self.prov_deploy_cfg['bucket_name']) + " --endpoint-url" +  self.prov_deploy_cfg['endpoint_url'].format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_HEAD_BUCKET.format(bucket_name) + " --endpoint-url " +  self.prov_deploy_cfg["endpoint_url"].format(http_port),
                                                     read_lines=True)
         resp = self.master_node_obj.execute_cmd(cmd=commands.WIPE_DISK_CMD.format("file") + " bs=1M count=10",
                                                     read_lines=True)
@@ -516,14 +521,14 @@ class TestProvK8Cortx:
         resp = self.master_node_obj.execute_cmd(cmd=commands.GET_OBJECT.format(http_port),
                                                     read_lines=True)
         LOGGER.info("Get Object %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS+ " --endpoint-url" +  self.prov_deploy_cfg['endpoint_url'].format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS+ " --endpoint-url " +  self.prov_deploy_cfg["endpoint_url"].format(http_port),
                                                     read_lines=True)
         LOGGER.info("Bucket Name %s", resp)
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.prov_deploy_cfg['bucket_name']) + " --endpoint-url" +  self.prov_deploy_cfg['endpoint_url'].format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(bucket_name) + " --endpoint-url " +  self.prov_deploy_cfg["endpoint_url"].format(http_port),
                                                     read_lines=True)
         LOGGER.info("Bucket Size %s", resp)
         LOGGER.info("Step 6:Removing bucket")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_DELETE_BUCKET.format(self.prov_deploy_cfg['bucket_name']) + " --force " + " --endpoint-url" +  self.prov_deploy_cfg['endpoint_url'].format(http_port),
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_AWSCLI_DELETE_BUCKET.format(bucket_name) + " --force " + " --endpoint-url " +  self.prov_deploy_cfg["endpoint_url"].format(http_port),
                                                     read_lines=True)
         LOGGER.info("Remove Bucket %s", resp)
         LOGGER.info("Test Completed.")
