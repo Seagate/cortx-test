@@ -26,16 +26,15 @@ import os.path
 
 import pytest
 
-from commons import configmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LOG_DIR
 from commons.params import LATEST_LOG_FOLDER
 from commons.utils import assert_utils
 from commons.utils import support_bundle_utils
-from config import CMN_CFG, PROV_CFG
+from config import CMN_CFG
+from config import  PROV_CFG
+from config import  DEPLOY_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
-
-DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
 
 
 class TestMultipleConfDeploy:
@@ -45,7 +44,7 @@ class TestMultipleConfDeploy:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
-        cls.deploy_lc_obj = ProvDeployK8sCortxLib()
+        cls.deploy_obj = ProvDeployK8sCortxLib()
         cls.deploy_conf = PROV_CFG['k8s_cortx_deploy']
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
@@ -72,8 +71,8 @@ class TestMultipleConfDeploy:
             support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                             scripts_path=
                                                             self.deploy_conf['k8s_dir'])
-        resp = self.deploy_lc_obj.destroy_setup(self.master_node_list[0],
-                                                self.worker_node_list)
+        resp = self.deploy_obj.destroy_setup(self.master_node_list[0],
+                                             self.worker_node_list)
         assert_utils.assert_true(resp)
 
     def multiple_node_deployment(self, node, config):
@@ -87,16 +86,12 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG[f'nodes_{node}'][f'config_{config}']
         self.log.info("Running %s N with config %s+%s+%s",
                       node, config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
-                                           sns_parity=config['sns_parity'],
-                                           sns_spare=config['sns_spare'],
-                                           dix_data=config['dix_data'],
-                                           dix_parity=config['dix_parity'],
-                                           dix_spare=config['dix_spare'],
-                                           cvg_count=config['cvg_per_node'],
-                                           data_disk_per_cvg=config['data_disk_per_cvg'],
-                                           master_node_list=self.master_node_list,
-                                           worker_node_list=self.worker_node_list)
+        self.deploy_obj.test_deployment(
+            sns_data=config['sns_data'], sns_parity=config['sns_parity'],
+            sns_spare=config['sns_spare'], dix_data=config['dix_data'],
+            dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
+            cvg_count=config['cvg_per_node'], data_disk_per_cvg=config['data_disk_per_cvg'],
+            master_node_list=self.master_node_list, worker_node_list=self.worker_node_list)
         self.collect_sb = False
 
     @pytest.mark.lc

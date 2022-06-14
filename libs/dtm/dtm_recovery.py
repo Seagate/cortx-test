@@ -65,7 +65,7 @@ class DTMRecoveryTestLib:
     # pylint: disable=too-many-arguments
     def perform_write_op(self, bucket_prefix, object_prefix, no_of_clients, no_of_samples,
                          log_file_prefix, queue, obj_size: str = None, loop: int = 1,
-                         created_bucket: list = None, retry: int = None):
+                         created_bucket: list = None, retry: int = None, **kwargs):
         """
         Perform Write operations
         :param bucket_prefix: Bucket name
@@ -82,6 +82,9 @@ class DTMRecoveryTestLib:
         results = list()
         workload = list()
         log_path = None
+        skip_read = kwargs.get("skip_read", True)
+        skip_cleanup = kwargs.get("skip_cleanup", True)
+        validate = kwargs.get("validate", False)
         obj_size_list = copy.deepcopy(HA_CFG["s3_bench_workloads"])
         if self.setup_type == "HW":
             obj_size_list.extend(HA_CFG["s3_bench_large_workloads"])
@@ -97,7 +100,8 @@ class DTMRecoveryTestLib:
                                    self.secret_key, bucket=bucket_name,
                                    num_clients=no_of_clients, num_sample=no_of_samples,
                                    obj_name_pref=object_prefix, obj_size=obj_size,
-                                   skip_cleanup=True, duration=None,
+                                   skip_read=skip_read, validate=validate,
+                                   skip_cleanup=skip_cleanup, duration=None,
                                    log_file_prefix=str(log_file_prefix).upper(),
                                    end_point=S3_CFG["s3_url"],
                                    validate_certs=S3_CFG["validate_certs"],
@@ -292,7 +296,7 @@ class DTMRecoveryTestLib:
                                                          process_ids=process_ids)
             if not resp:
                 self.log.info("Failed to get process states for process with IDs %s. "
-                              "proccess_state dict: %s", process_ids, process_state)
+                              "process_state dict: %s", process_ids, process_state)
                 return resp
             self.log.debug("Process states: %s", process_state)
             states = list(process_state.values())
