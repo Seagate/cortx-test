@@ -300,3 +300,4 @@ config_metallb:
   new_config_file: 'metallb_config.yaml'
   remote_path: '/root/metallb_config.yaml'
   apply_config: 'kubectl apply -f metallb_config.yaml'
+
