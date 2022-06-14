@@ -237,7 +237,7 @@ class TestSingleProcessRestart:
     @pytest.mark.tags("TEST-41234")
     def test_ios_during_rc_m0d_restart(self):
         """Verify IOs during RC pod m0d restart using pkill."""
-        self.log.info("STARTED: Verify IOs before and after RC pod m0d restart using pkill")
+        self.log.info("STARTED: Verify IOs during RC pod m0d restart using pkill")
         test_cfg = DTM_CFG['test_41234']
 
         self.log.info("Step 1: Perform WRITEs/READs-Verify with variable object sizes in "
@@ -308,7 +308,7 @@ class TestSingleProcessRestart:
         assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background before and "
                                                 "after m0d restart. Logs which contain failures: "
                                                 f"{resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
         assert_utils.assert_false(len(resp[1]), "Failed WRITEs/READs in background during m0d"
                                                 f"restart. Logs which contain failures: {resp[1]}")
         self.log.info("Step 3: Successfully completed WRITEs/READs in background")
