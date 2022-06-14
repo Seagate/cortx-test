@@ -149,6 +149,7 @@ class GetSetQuota(RestTestLib):
             try:
                 resp = s3_misc.create_put_objects(obj_name, bucket,
                       akey, skey, object_size=int(random_size/1024))
+                self.log.info("Response of max size is %s", resp)
                 res = False
                 err_msg = "Put operation passed for object size above max size"
             except ClientError as error:
@@ -158,7 +159,7 @@ class GetSetQuota(RestTestLib):
         else:
             err_msg = "Put operation failed for less than max size"
         return res, err_msg
-    
+ 
     # pylint: disable=too-many-arguments
     def verify_max_objects(self, max_size: int, max_objects: int, akey: str, skey: str,
                            bucket: str):
