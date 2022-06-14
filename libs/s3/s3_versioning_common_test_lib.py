@@ -189,6 +189,8 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
         expected_deletemarker_count = 0
 
         resp_dict = parse_list_object_versions_response(list_response)
+        LOG.info("expected_versions is %s and keys is %s",expected_versions,
+                 expected_versions.keys() )
         for key in expected_versions.keys():
             for version in expected_versions[key]["versions"].keys():
                 assert_utils.assert_in(version, list(resp_dict["versions"][key].keys()))
@@ -201,7 +203,7 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
                                           resp_dict["versions"][key][version]["etag"])
                 expected_version_count += 1
             for delete_marker in expected_versions[key]["delete_markers"]:
-                assert_utils.assert_in(delete_marker, list(resp_dict["deletemarkers"][key].keys()))
+                assert_utils.assert_in(delete_marker, list(resp_dict["delete_markers"][key].keys()))
                 # Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
                 # is_latest = True if key["is_latest"] == delete_marker else False
                 # Uncomment once CORTX-30178 changes are available in main
@@ -231,7 +233,6 @@ def check_list_objects(s3_test_obj: S3TestLib, bucket_name: str,
     LOG.info("Verifying bucket object versions list for expected contents")
     assert_utils.assert_equal(sorted(expected_objects), sorted(list_response[1]),
                               "List Objects response does not contain expected object names")
-
 
 def check_get_head_object_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
                                   bucket_name: str, object_name: str, **kwargs) -> None:
@@ -628,3 +629,30 @@ def delete_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3
         LOG.exception(error)
         return False, error
     return resp
+
+def initiate_upload_list_mpu(self, bucket_name, object_name, **kwargs):
+    """
+    This initialises multipart, upload parts, list parts, complete mpu and return the
+    response and mpu id
+    """
+    is_part_upload = kwargs.get("is_part_upload", False)
+    is_lst_mpu = kwargs.get("is_lst_mpu", False)
+    parts = kwargs.get("parts", None)
+    res = self.s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+    mpu_id = res[1]["UploadId"]
+    parts_details = []
+    if is_part_upload and is_lst_mpu:
+        self.log.info("Uploading parts")
+        resp = self.s3_mp_test_obj.upload_parts_parallel(mpu_id, bucket_name,
+                                                          object_name, parts=parts)
+        assert_utils.assert_not_in("VersionId", resp[1])
+        for i in resp[1]['Parts']:
+            parts_details.append({"PartNumber": i['PartNumber'],
+                                  "ETag": i["ETag"]})
+        sorted_lst = sorted(parts_details, key=lambda x: x['PartNumber'])
+        res = self.s3_mp_test_obj.list_parts(mpu_id, bucket_name, object_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_not_in("VersionId", resp[1])
+        self.log.info("List Multipart uploads")
+        return mpu_id, resp, sorted_lst
+    return mpu_id
