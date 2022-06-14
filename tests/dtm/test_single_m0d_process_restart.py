@@ -129,7 +129,7 @@ class TestSingleProcessRestart:
                 local_dir_path=path, scripts_path=const.K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
         if self.iam_user:
-            self.log.info("Cleanup: Cleaning created IAM users and buckets.")
+            self.log.info("Cleanup: Deleting objects created during test.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.iam_user, True)
             assert_utils.assert_true(resp[0], resp[1])
         if os.path.exists(self.test_dir_path):
