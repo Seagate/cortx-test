@@ -26,16 +26,15 @@ import os.path
 
 import pytest
 
-from commons import configmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LOG_DIR
 from commons.params import LATEST_LOG_FOLDER
 from commons.utils import assert_utils
 from commons.utils import support_bundle_utils
-from config import CMN_CFG, PROV_CFG
+from config import CMN_CFG
+from config import  PROV_CFG
+from config import  DEPLOY_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
-
-DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
 
 
 class TestMultipleConfDeploy:
@@ -87,16 +86,12 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG[f'nodes_{node}'][f'config_{config}']
         self.log.info("Running %s N with config %s+%s+%s",
                       node, config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.deploy_obj.test_deployment(sns_data=config['sns_data'],
-                                        sns_parity=config['sns_parity'],
-                                        sns_spare=config['sns_spare'],
-                                        dix_data=config['dix_data'],
-                                        dix_parity=config['dix_parity'],
-                                        dix_spare=config['dix_spare'],
-                                        cvg_count=config['cvg_per_node'],
-                                        data_disk_per_cvg=config['data_disk_per_cvg'],
-                                        master_node_list=self.master_node_list,
-                                        worker_node_list=self.worker_node_list)
+        self.deploy_obj.test_deployment(
+            sns_data=config['sns_data'], sns_parity=config['sns_parity'],
+            sns_spare=config['sns_spare'], dix_data=config['dix_data'],
+            dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
+            cvg_count=config['cvg_per_node'], data_disk_per_cvg=config['data_disk_per_cvg'],
+            master_node_list=self.master_node_list, worker_node_list=self.worker_node_list)
         self.collect_sb = False
 
     @pytest.mark.lc

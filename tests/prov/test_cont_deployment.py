@@ -165,28 +165,16 @@ class TestContDeployment:
         iteration = 0
         while iteration < count:
             self.log.info("The iteration no is %s", (iteration + 1))
-            self.deploy_obj.test_deployment(sns_data=self.sns[0],
-                                            sns_parity=self.sns[1],
-                                            sns_spare=self.sns[2],
-                                            dix_data=self.dix[0],
-                                            dix_parity=self.dix[1],
-                                            dix_spare=self.dix[2],
-                                            cvg_count=self.cvg_per_node,
-                                            data_disk_per_cvg=self.data_disk_per_cvg,
-                                            master_node_list=self.master_node_list,
-                                            worker_node_list=self.worker_node_list,
-                                            setup_k8s_cluster_flag=self.setup_k8s_cluster_flag,
-                                            cortx_cluster_deploy_flag=
-                                            self.cortx_cluster_deploy_flag,
-                                            setup_client_config_flag=
-                                            self.setup_client_config_flag,
-                                            run_s3bench_workload_flag=
-                                            self.run_s3bench_workload_flag,
-                                            run_basic_s3_io_flag=self.run_basic_s3_io_flag,
-                                            destroy_setup_flag=self.destroy_setup_flag,
-                                            custom_repo_path=self.custom_repo_path,
-                                            namespace=self.namespace,
-                                            report_filepath=self.report_file,
-                                            data_disk_size=self.data_disk_size,
-                                            meta_disk_size=self.meta_disk_size)
+            self.deploy_obj.test_deployment(
+                sns_data=self.sns[0], sns_parity=self.sns[1], sns_spare=self.sns[2],
+                dix_data=self.dix[0], dix_parity=self.dix[1], dix_spare=self.dix[2],
+                cvg_count=self.cvg_per_node, data_disk_per_cvg=self.data_disk_per_cvg,
+                master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
+                setup_k8s_cluster_flag=self.setup_k8s_cluster_flag, cortx_cluster_deploy_flag=
+                self.cortx_cluster_deploy_flag, setup_client_config_flag=
+                self.setup_client_config_flag, run_s3bench_workload_flag=
+                self.run_s3bench_workload_flag, run_basic_s3_io_flag=self.run_basic_s3_io_flag,
+                destroy_setup_flag=self.destroy_setup_flag, custom_repo_path=self.custom_repo_path,
+                namespace=self.namespace, report_filepath=self.report_file, data_disk_size=
+                self.data_disk_size, meta_disk_size=self.meta_disk_size)
             iteration = iteration + 1
