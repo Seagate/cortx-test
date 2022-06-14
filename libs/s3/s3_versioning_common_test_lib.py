@@ -534,8 +534,13 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
     tag_set = []
     if tag_overrides is None:
         for tag_no in range(tag_count):
-            tag_set.append(get_tag_key_val_pair(key_ran=tag_key_ran[tag_no],
-                                                val_ran=tag_val_ran[tag_no]))
+            try:
+                key_temp = tag_key_ran[tag_no]
+                val_temp = tag_val_ran[tag_no]
+            except IndexError:
+                key_temp = (1, 128)
+                val_temp = (0, 256)
+            tag_set.append(get_tag_key_val_pair(key_ran=key_temp, val_ran=val_temp))
     else:
         tag_set = tag_overrides
 
