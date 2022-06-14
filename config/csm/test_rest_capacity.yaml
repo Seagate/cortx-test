@@ -53,12 +53,12 @@ test_40632:
 test_40633:
   max_size: 1048576
   max_objects: 4
-  enabled: True
+  enabled: False
 test_40634:
   max_size: 1048576
   max_objects: 4
-  enabled: True
-  num_iterations: 5
+  enabled: False
+  num_iterations: 2
 test_40635:
   max_size: 1048576
   max_objects: 4
@@ -147,10 +147,11 @@ test_41965:
   max_size: 1048576
 test_41966:
   enabled: True
-  max_objects: 5
+  max_objects: 4
+  available_size: 1048576
 test_41967:
   enabled: True
-  size_for_io: 1024
+  size_for_io: 1048576
   objects_for_io: 5
 test_41970:
   duration: 3600
