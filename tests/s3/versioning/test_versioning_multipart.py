@@ -82,7 +82,7 @@ class TestVersioningMultipart:
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-41284")
     def test_preexist_mpu_versioning_enabled_bkt_41284(self):
-        """ Test pre-existing multipart upload in a versioning enabled bucket"""
+        """Test pre-existing multipart upload in a versioning enabled bucket."""
         self.log.info("STARTED: Test pre-existing multipart upload in a versioning enabled bucket")
         self.log.info("Step 2-4: Upload multipart object to a bucket")
         versions = {}
@@ -113,7 +113,7 @@ class TestVersioningMultipart:
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-41285")
     def test_mpu_ver_enabled_bkt_41285(self):
-        """ Test multipart upload in a versioning enabled bucket."""
+        """Test multipart upload in a versioning enabled bucket."""
         self.log.info("STARTED: Test multipart upload in a versioning enabled bucket.")
         self.log.info("Step 2: PUT Bucket versioning with status as Enabled")
         res = self.s3ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
@@ -121,9 +121,9 @@ class TestVersioningMultipart:
         self.log.info("Step 3-7: Upload multipart object to a bucket")
         versions = {}
         s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name,
-                                                self.object_name, self.test_file_path,
-                                                versions_dict=versions, is_multipart=True,
-                                                total_parts=2, file_size=10, is_unversioned=False)
+                                     self.object_name, self.test_file_path,
+                                     versions_dict=versions, is_multipart=True,
+                                     total_parts=2, file_size=10, is_unversioned=False)
         self.log.info("Step 8: List Object Versions")
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
                                                  expected_versions=versions)
@@ -143,19 +143,19 @@ class TestVersioningMultipart:
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-41286")
     def test_mpu_versioning_suspended_bkt_41286(self):
-        """ Test multipart upload in a versioning suspended bucket """
+        """Test multipart upload in a versioning suspended bucket."""
         self.log.info("STARTED: Test multipart upload in a versioning suspended bucket.")
         self.log.info("Step 2: PUT Bucket versioning with status as Suspended")
         res = self.s3ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
-                                                         status="Suspended")
+                                                        status="Suspended")
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 3-7: Upload multipart object to a bucket")
         versions = {}
         s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name,
-                                                self.object_name, self.test_file_path,
-                                                versions_dict=versions, is_multipart=True,
-                                                total_parts=2, file_size=10,
-                                                chk_null_version=True)
+                                     self.object_name, self.test_file_path,
+                                     versions_dict=versions, is_multipart=True,
+                                     total_parts=2, file_size=10,
+                                     chk_null_version=True)
         self.log.info("Step 8: List Object Versions")
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
                                                  expected_versions=versions)
@@ -175,7 +175,7 @@ class TestVersioningMultipart:
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-41287")
     def test_mpu_del_versioning_enabled_bkt_41287(self):
-        """ Test deletion of multipart upload in a versioning enabled bucket """
+        """Test deletion of multipart upload in a versioning enabled bucket."""
         self.log.info("STARTED: Test deletion of multipart upload in a versioning enabled bucket")
         self.log.info("Step 2: PUT Bucket versioning with status as Enabled")
         res = self.s3ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
