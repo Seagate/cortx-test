@@ -4875,6 +4875,7 @@ class TestIamUserRGW():
             assert_utils.assert_equals(len(resp.json()["users"]), 0, "Users list is not empty")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("reason=CORTX-32043")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4887,19 +4888,22 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Create IAM User")
+        users_list = []
         resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True)
         assert resp[0], resp[1]
-        user_id = resp[1]['tenant'] + "$" + resp[1]['user_id']
+        usr_val = resp[1]["keys"][0]
+        self.created_iam_users.update({usr_val['user']:usr_val})
+        users_list.append(resp[1]["user_id"])
         self.log.info("Step 2: Delete IAM User")
-        resp = self.csm_obj.delete_iam_user(user_id)
+        resp = self.csm_obj.delete_iam_user(usr_val['user'])
         self.log.debug("Verify Response : %s", resp)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK,
                                    "Delete IAM User failed")
         self.log.info("Step 3: List IAM users with delete user name as marker")
-        resp = self.csm_obj.list_iam_users_rgw(marker=resp['user_id'])
+        resp = self.csm_obj.list_iam_users_rgw(marker=usr_val['user'])
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK,
                                  "List IAM User failed")
-        assert_utils.assert_equals(len(resp["keys"]), 0, "Users list is not empty")
+        assert_utils.assert_equals(len(resp.json()["users"]), 0, "Users list is not empty")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -4942,8 +4946,7 @@ class TestIamUserRGW():
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
         count_new = resp.json()["count"]
         get_user_list = resp.json()["users"]
-        actual_entries = self.csm_conf["common"]["num_users"] - user_index + 1
-        assert_utils.assert_equals(count_new, actual_entries, "Entries not returned as expected")
+        assert_utils.assert_equals(count_new, 15, "Entries not returned as expected")
         self.log.info("Printing first user of list %s", get_user_list[0])
         assert_utils.assert_equals(get_user_list[0], marker, "Marker not set"
                                                              "to in between user")
