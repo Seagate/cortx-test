@@ -33,6 +33,7 @@ from commons.params import RAS_CONFIG_PATH
 from commons.params import SSPL_TEST_CONFIG_PATH
 from commons.params import COMMON_DESTRUCTIVE_CONFIG_PATH
 from commons.params import PROV_TEST_CONFIG_PATH
+from commons.params import DEPLOY_TEST_CONFIG_PATH
 from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
 from commons.params import HA_TEST_CONFIG_PATH
@@ -156,6 +157,7 @@ PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
 HA_CFG = configmanager.get_config_wrapper(fpath=HA_TEST_CONFIG_PATH)
 PROV_TEST_CFG = configmanager.get_config_wrapper(fpath=PROV_CONFIG_PATH)
 DTM_CFG = configmanager.get_config_wrapper(fpath=DTM_TEST_CFG_PATH)
+DEPLOY_CFG = configmanager.get_config_wrapper(fpath=DEPLOY_TEST_CONFIG_PATH)
 
 DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH)
 DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
