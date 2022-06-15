@@ -27,7 +27,7 @@ MarkupSafe==1.1.1
 matplotlib==3.1.1
 mdstat==1.0.4
 mkdocs-material==2.7.3
-mkdocs==0.17.3  # this is to prevent a version non-compliant with mkdocs-material to be installed.
+mkdocs==1.2.3  # this is to prevent a version non-compliant with mkdocs-material to be installed.
 msgpack==0.6.2
 munch==2.5.0
 mypy==0.782
