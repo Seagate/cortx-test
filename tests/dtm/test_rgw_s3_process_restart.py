@@ -741,7 +741,7 @@ class TestRGWProcessRestart:
     @pytest.mark.tags("TEST-42251")
     def test_overwrite_same_object_during_rgw_restart(self):
         """Overwrite same object during rgw restart."""
-        self.log.info("STARTED: Overwrite same object during m0d restart.")
+        self.log.info("STARTED: Overwrite same object during rgw restart.")
         overwrite_cnt = self.test_cfg['test_42251']['overwrite_cnt']
         max_object_size = self.test_cfg['test_42251']['max_object_size']
         que = multiprocessing.Queue()
@@ -771,7 +771,7 @@ class TestRGWProcessRestart:
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         self.test_completed = True
-        self.log.info("ENDED: Overwrite same object during m0d restart.")
+        self.log.info("ENDED: Overwrite same object during rgw restart.")
 
     @pytest.mark.lc
     @pytest.mark.dtm
