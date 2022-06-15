@@ -4946,7 +4946,8 @@ class TestIamUserRGW():
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
         count_new = resp.json()["count"]
         get_user_list = resp.json()["users"]
-        assert_utils.assert_equals(count_new, 15, "Entries not returned as expected")
+        actual_entries = self.csm_conf["common"]["num_users"] - user_index + 1
+        assert_utils.assert_equals(count_new, actual_entries, "Entries not returned as expected")
         self.log.info("Printing first user of list %s", get_user_list[0])
         assert_utils.assert_equals(get_user_list[0], marker, "Marker not set"
                                                              "to in between user")
