@@ -1,0 +1,6 @@
+# delay between restarts
+m0d_delay_restarts: 0
+rgw_delay_restarts: 30
+
+# count to retry IOs from client side
+io_retry_count: 6

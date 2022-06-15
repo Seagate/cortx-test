@@ -48,6 +48,7 @@ from config.s3 import S3_CFG
 from conftest import LOG_DIR
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
@@ -88,6 +89,7 @@ class TestRGWProcessRestart:
         cls.setup_type = CMN_CFG["setup_type"]
         cls.system_random = secrets.SystemRandom()
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "DTMTestData")
+        cls.delay = cls.test_cfg['delay']
 
     def setup_method(self):
         """Setup Method"""
@@ -112,8 +114,14 @@ class TestRGWProcessRestart:
         self.iam_user = {'s3_acc': {'accesskey': self.access_key, 'secretkey': self.secret_key,
                                     'user_name': self.s3acc_name}}
         self.s3_test_obj = S3TestLib(access_key=self.access_key, secret_key=self.secret_key,
-                                     endpoint_url=S3_CFG["s3_url"])
-        self.dtm_obj = DTMRecoveryTestLib(access_key=self.access_key, secret_key=self.secret_key)
+                                     endpoint_url=S3_CFG["s3_url"],
+                                     max_attempts=DTM_CFG["io_retry_count"])
+        self.s3_mp_test_obj = S3MultipartTestLib(access_key=self.access_key,
+                                                 secret_key=self.secret_key,
+                                                 endpoint_url=S3_CFG["s3_url"],
+                                                 max_attempts=DTM_CFG["io_retry_count"])
+
+        self.dtm_obj = DTMRecoveryTestLib(self.access_key, self.secret_key)
         self.log.info("Created IAM user with name %s", self.s3acc_name)
         if not os.path.exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
@@ -151,12 +159,14 @@ class TestRGWProcessRestart:
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
+
         self.log.info("Step 2: Perform Read Operations on the data written in step 1 in background")
         args = {'workload_info': workload_info, 'queue': que, 'skipread': False, 'validate': True,
                 'skipcleanup': True, 'retry': DTM_CFG["io_retry_count"]}
         proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops, kwargs=args)
         proc_read_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 3: Perform rgw_s3 Process Restart During Read Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -201,6 +211,7 @@ class TestRGWProcessRestart:
                                                 kwargs=args)
         proc_write_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 2: Perform rgw_s3 Process Restart During WRITE Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -222,7 +233,6 @@ class TestRGWProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
 
         self.test_completed = True
-
         self.log.info("ENDED: Verify WRITEs during rgw_s3 restart using pkill")
 
     @pytest.mark.lc
@@ -233,20 +243,18 @@ class TestRGWProcessRestart:
         self.log.info("STARTED: Verify DELETEs during rgw_s3 service restart using pkill")
         test_prefix = 'test-42246'
         wr_output = Queue()
-        test_cfg = DTM_CFG["test_42246"]
-
         event = threading.Event()  # Event to be used to send intimation of rgw_s3 process restart
 
         self.log.info("Step 1: Perform WRITEs-READs-Validate Operations")
         self.dtm_obj.perform_write_op(bucket_prefix=f"bucket-{test_prefix}",
                                       object_prefix=f"object-{test_prefix}",
                                       no_of_clients=self.test_cfg['clients'],
-                                      no_of_samples=self.test_cfg['samples'],
+                                      no_of_samples=self.test_cfg['test_42246']['samples'],
                                       log_file_prefix=test_prefix, queue=wr_output,
-                                      loop=test_cfg['num_loop'], skip_read=False, validate=True)
+                                      loop=self.test_cfg['test_42246']['num_loop'],
+                                      skip_read=False, validate=True)
         resp = wr_output.get()
         assert_utils.assert_true(resp[0], resp[1])
-
         buckets = self.s3_test_obj.bucket_list()[1]
         self.log.info("Step 1: Successfully created %s buckets & performed WRITEs-READs-Validate"
                       " with variable size objects.", len(buckets))
@@ -261,8 +269,9 @@ class TestRGWProcessRestart:
         thread.daemon = True  # Daemonize thread
         thread.start()
         self.log.info("Step 2: Successfully started DELETEs in background")
-
         event.set()
+
+        time.sleep(self.delay)
         self.log.info("Step 3: Perform rgw_s3 Process Restart During DELETE Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -310,6 +319,7 @@ class TestRGWProcessRestart:
             system_utils.create_file(file_path, size)
             resp = self.s3_test_obj.put_object(bucket_list[0], f"{object_name}_{size}", file_path)
             assert_utils.assert_true(resp[0], resp[1])
+
         self.log.info("Step 2: Perform Single rgw Process Restart")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -373,6 +383,7 @@ class TestRGWProcessRestart:
                                              args=(workload, que))
         proc_cp_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 3: Perform Single rgw_s3 Process Restart")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -410,13 +421,12 @@ class TestRGWProcessRestart:
         self.log.info("STARTED: Verify continuous READ during rgw_s3 restart using pkill")
         log_file_prefix = 'test-42247'
         que = multiprocessing.Queue()
-        test_cfg = DTM_CFG["test_42247"]
 
         self.log.info("Step 1: Start write Operations :")
         self.dtm_obj.perform_write_op(bucket_prefix=self.bucket_name,
                                       object_prefix=self.object_name,
-                                      no_of_clients=test_cfg['nclients'],
-                                      no_of_samples=test_cfg['nsamples'],
+                                      no_of_clients=self.test_cfg['clients'],
+                                      no_of_samples=self.test_cfg['test_42247']['nsamples'],
                                       log_file_prefix=log_file_prefix, queue=que)
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
@@ -428,14 +438,15 @@ class TestRGWProcessRestart:
         proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops, kwargs=args)
         proc_read_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "
-                      "Operations", DTM_CFG["rgw_restart_cnt"])
+                      "Operations", self.test_cfg["rgw_restart_cnt"])
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
                                             process=self.rgw_process, check_proc_state=True,
-                                            restart_cnt=DTM_CFG["rgw_restart_cnt"])
+                                            restart_cnt=self.test_cfg["rgw_restart_cnt"])
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for READ Operation to complete.")
@@ -462,24 +473,25 @@ class TestRGWProcessRestart:
         self.log.info("STARTED: Verify continuous WRITEs during rgw_s3 service restart using pkill")
         log_file_prefix = 'test-42248'
         que = multiprocessing.Queue()
-        test_cfg = DTM_CFG["test_42247"]
 
         self.log.info("Step 1: Start WRITE operation in background")
         args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
-                'no_of_clients': test_cfg['clients'], 'no_of_samples': test_cfg['samples'],
+                'no_of_clients': self.test_cfg['clients'],
+                'no_of_samples': self.test_cfg['test_42248']['samples'],
                 'log_file_prefix': log_file_prefix, 'queue': que,
                 'retry': DTM_CFG["io_retry_count"], 'loop': self.test_cfg['loop_count']}
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
         proc_write_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 2: Perform rgw_s3 Process Restart for %s times During Write "
-                      "Operations", DTM_CFG["rgw_restart_cnt"])
+                      "Operations", self.test_cfg["rgw_restart_cnt"])
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
                                             pod_prefix=const.SERVER_POD_NAME_PREFIX,
                                             container_prefix=const.RGW_CONTAINER_NAME,
                                             process=self.rgw_process, check_proc_state=True,
-                                            restart_cnt=DTM_CFG["rgw_restart_cnt"])
+                                            restart_cnt=self.test_cfg["rgw_restart_cnt"])
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 3: Wait for WRITE Operation to complete.")
@@ -509,7 +521,6 @@ class TestRGWProcessRestart:
                       "pkill")
         test_prefix = 'test-42249'
         wr_output = Queue()
-        test_cfg = DTM_CFG["test_42246"]
         del_output = Queue()
         rd_output = Queue()
         event = threading.Event()  # Event to be used to send intimation of rgw_s3 process restart
@@ -520,7 +531,8 @@ class TestRGWProcessRestart:
                                       no_of_clients=self.test_cfg['clients'],
                                       no_of_samples=self.test_cfg['samples'],
                                       log_file_prefix=test_prefix, queue=wr_output,
-                                      loop=test_cfg['num_loop'], skip_read=False, validate=True)
+                                      loop=self.test_cfg['test_42246']['num_loop'], skip_read=False,
+                                      validate=True)
         resp = wr_output.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
@@ -529,7 +541,7 @@ class TestRGWProcessRestart:
         self.log.info("Step 1: Successfully created %s buckets & performed WRITEs-READs-Validate"
                       " with variable size objects.", len(buckets))
 
-        for i_i in range(DTM_CFG["rgw_restart_cnt"]):
+        for i_i in range(self.test_cfg["rgw_restart_cnt"]):
             self.log.info("Loop: %s", i_i)
             bkts_to_del = self.system_random.sample(buckets, 50)
 
@@ -542,8 +554,9 @@ class TestRGWProcessRestart:
             thread.daemon = True  # Daemonize thread
             thread.start()
             self.log.info("Step 2: Successfully started DELETEs in background")
-
             event.set()
+
+            time.sleep(self.delay)
             self.log.info("Step 3: Perform rgw_s3 Process Restart During DELETE Operations")
             resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                                 health_obj=self.health_obj,
@@ -591,15 +604,16 @@ class TestRGWProcessRestart:
         """Verify IOs during multiple RC pod rgw_s3 process restarts using pkill."""
         self.log.info("STARTED: Verify IOs during multiple RC pod rgw_s3 process restarts using "
                       "pkill")
-        test_cfg = DTM_CFG['test_42255']
         output = Queue()
         test_prefix = 'test-42255'
 
         self.log.info("Step 1: Perform WRITEs/READs-Verify/DELETEs with variable object sizes in "
                       "background")
         args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
-                'no_of_clients': test_cfg['clients'], 'no_of_samples': test_cfg['samples'],
-                'log_file_prefix': test_prefix, 'queue': output, 'loop': test_cfg['num_loop'],
+                'no_of_clients': self.test_cfg['clients'],
+                'no_of_samples': self.test_cfg['test_42255']['nsamples'],
+                'log_file_prefix': test_prefix, 'queue': output,
+                'loop': self.test_cfg['test_42255']['num_loop'],
                 'retry': DTM_CFG["io_retry_count"], 'skip_read': False, 'skip_cleanup': False,
                 'validate': True}
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
@@ -607,11 +621,11 @@ class TestRGWProcessRestart:
         proc_write_op.start()
         self.log.info("Step 1: Started WRITEs/READs-Verify/DELETEs with variable object sizes "
                       "in background")
-        self.log.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
-        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+        self.log.info("Sleep for %s sec", self.delay)
+        time.sleep(self.delay)
 
         self.log.info("Step 2: Perform restart of rgw process %s times during IOs, on pod hosted "
-                      "on RC node and check hctl status", DTM_CFG["rgw_restart_cnt"])
+                      "on RC node and check hctl status", self.test_cfg["rgw_restart_cnt"])
         self.log.info("Get RC node name")
         rc_node = self.ha_obj.get_rc_node(self.master_node_list[0])
         rc_info = self.master_node_list[0].get_pods_node_fqdn(pod_prefix=rc_node.split("svc-")[1])
@@ -630,11 +644,11 @@ class TestRGWProcessRestart:
                                             pod_prefix=rc_serverpod,
                                             container_prefix=const.RGW_CONTAINER_NAME,
                                             process=self.rgw_process, check_proc_state=True,
-                                            restart_cnt=DTM_CFG["rgw_restart_cnt"])
+                                            restart_cnt=self.test_cfg["rgw_restart_cnt"])
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 2: Successfully performed restart of rgw process %s times during IOs, "
                       "on pod hosted on RC node and checked hctl status",
-                      DTM_CFG["rgw_restart_cnt"])
+                      self.test_cfg["rgw_restart_cnt"])
         if proc_write_op.is_alive():
             proc_write_op.join()
         self.log.info("Thread has joined.")
@@ -705,6 +719,7 @@ class TestRGWProcessRestart:
         proc_delete_op.start()
         parallel_proc.append(proc_delete_op)
 
+        time.sleep(self.delay)
         self.log.info(
             "Step 4: Perform Single rgw Process Restart During Write/Read/Delete Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
@@ -756,6 +771,7 @@ class TestRGWProcessRestart:
                                                           max_object_size, que))
         proc_overwrite_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 3 : Perform Single rgw Process Restart during overwrite ")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -779,14 +795,14 @@ class TestRGWProcessRestart:
     def test_io_operations_before_after_rgw_restart(self):
         """Verify IO operations work after rgw restart using pkill"""
         self.log.info("STARTED: Verify IO operations work after rgw restart using pkill")
-        test_cfg = DTM_CFG['test_42252']
         test_prefix = 'test-42252-before-restart'
 
         self.log.info("Step 1: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix,
-                                                    nclients=test_cfg['nclients'],
-                                                    nsamples=test_cfg['nsamples'])
+                                                    nclients=self.test_cfg['clients'],
+                                                    nsamples=self.test_cfg['test_42255'][
+                                                        'nsamples'])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
@@ -804,8 +820,9 @@ class TestRGWProcessRestart:
         self.log.info("Step 3: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix,
-                                                    nclients=test_cfg['nclients'],
-                                                    nsamples=test_cfg['nsamples'])
+                                                    nclients=self.test_cfg['clients'],
+                                                    nsamples=self.test_cfg['test_42255'][
+                                                        'nsamples'])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
@@ -818,7 +835,6 @@ class TestRGWProcessRestart:
     def test_bkt_creation_ios_after_rgw_restart(self):
         """Verify bucket creation and IOs after rgw restart using pkill."""
         self.log.info("STARTED: Verify bucket creation and IOs after rgw restart using pkill")
-        test_cfg = DTM_CFG['test_42256']
         test_prefix = 'test-42256'
 
         self.log.info("Step 1: Perform Single rgw Process Restart")
@@ -841,10 +857,103 @@ class TestRGWProcessRestart:
         self.log.info("Step 3: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix,
-                                                    nclients=test_cfg['nclients'],
-                                                    nsamples=test_cfg['nsamples'])
+                                                    nclients=self.test_cfg['clients'],
+                                                    nsamples=self.test_cfg['test_42256'][
+                                                        'nsamples'])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
 
         self.log.info("ENDED: Verify bucket creation and IOs after rgw restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-42257")
+    def test_mpu_during_rgw_restart(self):
+        """Verify multipart upload during rgw is restart."""
+        self.log.info("STARTED: Verify multipart upload during rgw restart")
+
+        file_size = HA_CFG["5gb_mpu_data"]["file_size"]
+        total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
+        part_numbers = list(range(1, total_parts + 1))
+        self.system_random.shuffle(part_numbers)
+        multipart_obj_path = os.path.join(self.test_dir_path, "test_42257_file")
+        download_path = os.path.join(self.test_dir_path, "test_42257_file_download")
+        output = Queue()
+        parts_etag = list()
+        event = threading.Event()  # Event to be used to send intimation of rgw service restart
+
+        self.log.info("Step 1: Start multipart upload of 5GB object in background")
+        args = {'s3_data': self.iam_user, 'bucket_name': self.bucket_name,
+                'object_name': self.object_name, 'file_size': file_size, 'total_parts': total_parts,
+                'multipart_obj_path': multipart_obj_path, 'part_numbers': part_numbers,
+                'parts_etag': parts_etag, 'output': output}
+        thread = threading.Thread(target=self.ha_obj.start_random_mpu, args=(event,), kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        self.log.info("Step 1: Started multipart upload of 5GB object in background")
+
+        time.sleep(self.delay * 2)
+        self.log.info("Step 2: Perform Single rgw Process Restart")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
+                                            process=self.rgw_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+        self.log.info("Step 2: rgw restarted and recovered successfully")
+
+        self.log.info("Step 3: Wait for all parts to upload.")
+        thread.join()
+        responses = tuple()
+        while len(responses) < 4:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+
+        if not responses:
+            assert_utils.assert_true(False, "Background process failed to do multipart upload")
+
+        exp_failed_parts = responses[0]
+        failed_parts = responses[1]
+        parts_etag = responses[2]
+        mpu_id = responses[3]
+        self.log.debug("Responses received from background process:\nexp_failed_parts: "
+                       "%s\nfailed_parts: %s\nparts_etag: %s\nmpu_id: %s", exp_failed_parts,
+                       failed_parts, parts_etag, mpu_id)
+        if len(exp_failed_parts) == 0 and len(failed_parts) == 0:
+            self.log.info("All the parts are uploaded successfully")
+        else:
+            assert_utils.assert_true(False, f"Failed to upload parts when during rgw restart."
+                                            f"Failed parts: {failed_parts}")
+        self.log.info("Calculating checksum of file %s", multipart_obj_path)
+        upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[multipart_obj_path],
+                                                           compare=False)[0]
+        parts_etag = sorted(parts_etag, key=lambda d: d['PartNumber'])
+        self.log.info("Step 3: All part uploaded successfully")
+
+        self.log.info("Step 4: Listing parts of multipart upload")
+        res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res)
+        assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
+        self.log.info("Step 4: Listed parts of multipart upload: %s", res[1])
+
+        self.log.info("Step 5: Completing multipart upload")
+        res = self.s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
+                                                            self.object_name)
+        assert_utils.assert_true(res[0], res)
+        res = self.s3_test_obj.object_list(self.bucket_name)
+        assert_utils.assert_in(self.object_name, res[1], res)
+        self.log.info("Step 5: Multipart upload completed")
+
+        self.log.info("Step 6: Download the uploaded object and verify checksum")
+        resp = self.s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        self.log.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                             compare=False)[0]
+        assert_utils.assert_equal(upload_checksum, download_checksum,
+                                  f"Failed to match checksum: {upload_checksum},"
+                                  f" {download_checksum}")
+        self.log.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
+        self.log.info("Step 6: Successfully downloaded the object and verified the checksum")
+
+        self.log.info("ENDED: Verify multipart upload during rgw restart")

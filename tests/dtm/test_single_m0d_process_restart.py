@@ -90,6 +90,7 @@ class TestSingleProcessRestart:
         cls.setup_type = CMN_CFG["setup_type"]
         cls.system_random = secrets.SystemRandom()
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "DTMTestData")
+        cls.delay = cls.test_cfg['delay']
 
     def setup_method(self):
         """Setup Method"""
@@ -114,8 +115,8 @@ class TestSingleProcessRestart:
         self.iam_user = {'s3_acc': {'accesskey': self.access_key, 'secretkey': self.secret_key,
                                     'user_name': self.s3acc_name}}
         self.s3_test_obj = S3TestLib(access_key=self.access_key, secret_key=self.secret_key,
-                                     endpoint_url=S3_CFG["s3_url"])
-        self.dtm_obj = DTMRecoveryTestLib(access_key=self.access_key, secret_key=self.secret_key)
+                                     endpoint_url=S3_CFG["s3_url"], max_attempts=0)
+        self.dtm_obj = DTMRecoveryTestLib(self.access_key, self.secret_key, max_attempts=0)
         self.log.info("Created IAM user with name %s", self.s3acc_name)
         if not os.path.exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
@@ -157,6 +158,7 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
 
+        time.sleep(self.delay)
         self.log.info("Step 2: Perform Read Operations on the data written in step 1 in background")
         proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
                                                args=(workload_info, que, False, True, True))
@@ -201,6 +203,7 @@ class TestSingleProcessRestart:
                                                       [self.bucket_name]))
         proc_write_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 2 : Perform Single m0d Process Restart During Write Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -249,6 +252,7 @@ class TestSingleProcessRestart:
                                               args=(workload_info, que, True, False, False))
         proc_del_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 3: Perform Single m0d Process Restart During Delete Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -274,7 +278,6 @@ class TestSingleProcessRestart:
     def test_ios_during_rc_m0d_restart(self):
         """Verify IOs during RC pod m0d restart using pkill."""
         self.log.info("STARTED: Verify IOs during RC pod m0d restart using pkill")
-        test_cfg = DTM_CFG['test_41234']
 
         self.log.info("Step 1: Perform WRITEs/READs-Verify with variable object sizes in "
                       "background")
@@ -292,7 +295,8 @@ class TestSingleProcessRestart:
 
         self.log.info("Perform WRITEs/READs-Verify with variable object sizes in background")
         args = {'s3userinfo': self.iam_user, 'log_prefix': test_prefix,
-                'nclients': test_cfg['nclients'], 'nsamples': test_cfg['nsamples'],
+                'nclients': self.test_cfg['clients'],
+                'nsamples': self.test_cfg['test_41234']['nsamples'],
                 'skipcleanup': True, 'output': output}
 
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
@@ -302,8 +306,8 @@ class TestSingleProcessRestart:
 
         self.log.info("Step 1: Successfully created IAM user and started WRITEs/READs-Verify "
                       "with variable object sizes in background")
-        self.log.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
-        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+        self.log.info("Sleep for %s sec", self.delay)
+        time.sleep(self.delay)
 
         self.log.info("Step 2: Perform single restart of m0d process on pod hosted on RC node and "
                       "check hctl status")
@@ -352,8 +356,10 @@ class TestSingleProcessRestart:
         self.log.info("Step 4: Perform READs-Verify on already written data in Step 1")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix, skipwrite=True,
-                                                    skipcleanup=True, nclients=test_cfg['nclients'],
-                                                    nsamples=test_cfg['nsamples'])
+                                                    skipcleanup=True,
+                                                    nclients=self.test_cfg['clients'],
+                                                    nsamples=self.test_cfg['test_41234'][
+                                                        'nsamples'])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Successfully performed READs-Verify on already written data in "
                       "Step 1")
@@ -366,7 +372,6 @@ class TestSingleProcessRestart:
     def test_bkt_creation_ios_after_m0d_restart(self):
         """Verify bucket creation and IOs after m0d restart using pkill."""
         self.log.info("STARTED: Verify bucket creation and IOs after m0d restart using pkill")
-        test_cfg = DTM_CFG['test_41235']
         test_prefix = 'test-41235'
 
         self.log.info("Step 1: Perform Single m0d Process Restart")
@@ -381,8 +386,9 @@ class TestSingleProcessRestart:
         self.log.info("Step 2: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix,
-                                                    nclients=test_cfg['nclients'],
-                                                    nsamples=test_cfg['nsamples'])
+                                                    nclients=self.test_cfg['clients'],
+                                                    nsamples=self.test_cfg['test_41235'][
+                                                        'nsamples'])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
@@ -414,6 +420,7 @@ class TestSingleProcessRestart:
                                                      True, self.test_cfg['loop_count']))
         proc_read_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -458,6 +465,7 @@ class TestSingleProcessRestart:
                                                       bucket_list))
         proc_write_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 3 : Perform Single m0d Process Restart During Write Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -506,6 +514,7 @@ class TestSingleProcessRestart:
                                                args=(workload_info, que, True, False, False))
         proc_read_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 3 : Perform Single m0d Process Restart During Delete Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -651,6 +660,7 @@ class TestSingleProcessRestart:
         proc_delete_op.start()
         parallel_proc.append(proc_delete_op)
 
+        time.sleep(self.delay)
         self.log.info(
             "Step 4: Perform Single m0d Process Restart During Write/Read/Delete Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
@@ -702,6 +712,7 @@ class TestSingleProcessRestart:
                                                           max_object_size, que))
         proc_overwrite_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 3 : Perform Single m0d Process Restart during overwrite ")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -864,6 +875,7 @@ class TestSingleProcessRestart:
                                              args=(workload, que))
         proc_cp_op.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 3: Perform Single m0d Process Restart During Copy Object Operations")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -921,6 +933,7 @@ class TestSingleProcessRestart:
         proc_ios = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
         proc_ios.start()
 
+        time.sleep(self.delay)
         self.log.info("Step 3 : Perform RGW Process Restarts for %s iteration during IO operations",
                       rgw_restarts)
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
