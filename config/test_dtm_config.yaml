@@ -31,6 +31,10 @@ test_42246:
 test_42247:
   nclients: 10
   nsamples: 50
+test_41245:
+  #Before and after m0d restart
+  rgw_restarts: 5
+  num_loop: 500
 
 test_42255:
   nclients: 10
