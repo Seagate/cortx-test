@@ -1996,3 +1996,4 @@ class ProvDeployK8sCortxLib:
             secrets = parent_key['secrets']
             secret_key = secrets["content"]["s3_auth_admin_secret"]
         return access_key, secret_key
+        

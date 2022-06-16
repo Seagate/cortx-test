@@ -464,7 +464,7 @@ class TestProvK8Cortx:
         cmd = commands.CMD_AWSCLI_HEAD_BUCKET.format(bucket_name) + " --endpoint-url " + client_config_res[2][2]
         resp = system_utils.run_local_cmd(cmd=cmd, chk_stderr=True)
         assert_utils.assert_true(resp[0], resp[1])
-        resp=s3t_obj.delete_bucket(bucket)
+        resp=s3t_obj.delete_bucket(bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Uploading the bucket")
         self.deploy_lc_obj.basic_io_write_read_validate(s3t_obj, bucket_name)
