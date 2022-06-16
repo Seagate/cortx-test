@@ -979,21 +979,23 @@ class ProvDeployK8sCortxLib:
         return True
 
     @staticmethod
-    def post_deployment_steps_lc(s3_engine, endpoint):
+    def post_deployment_steps_lc(s3_engine, endpoint, **kwargs):
         """
         Perform CSM login, S3 account creation and AWS configuration on client
         returns status boolean
         """
+        access_key = kwargs.get("access_key", None)
+        secret_key = kwargs.get("secret_key", None)
         LOGGER.info("Post Deployment Steps")
-        csm_s3 = RestS3user()
-
-        LOGGER.info("Create S3 account")
-        csm_s3.create_custom_s3_payload("valid")
-        resp = csm_s3.create_s3_account()
-        LOGGER.info("Response for account creation: %s", resp.json())
-        details = resp.json()
-        access_key = details['access_key']
-        secret_key = details["secret_key"]
+        if not secret_key and not access_key:
+            LOGGER.info("Create S3 account")
+            csm_s3 = RestS3user()
+            csm_s3.create_custom_s3_payload("valid")
+            resp = csm_s3.create_s3_account()
+            LOGGER.info("Response for account creation: %s", resp.json())
+            details = resp.json()        
+            access_key = details['access_key']
+            secret_key = details["secret_key"]
 
         try:
             LOGGER.info("Configure AWS on Client")
@@ -1241,13 +1243,16 @@ class ProvDeployK8sCortxLib:
                         assert_utils.assert_true(resp[0], resp[1])
         return True, service_status[-1]
 
-    def client_config(self, master_node_list, namespace):
+    def client_config(self, master_node_list, namespace, **kwargs):
         """
         This method is used to setup the client
         param: master_node_list: master_node_obj
         param: namespace: custom namespace
-        returns True, s3t_obj, list of access,secret ksy with ext_port_ip
+        returns True, s3t_obj, list of access,secret key with ext_port_ip
         """
+        access_key = kwargs.get("access_key", None)
+        secret_key = kwargs.get("secret_key", None)
+        flag = kwargs.get("flag", None)
         LOGGER.info("Setting the current namespace")
         resp_ns = master_node_list[0].execute_cmd(
             cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
@@ -1263,9 +1268,14 @@ class ProvDeployK8sCortxLib:
                 LOGGER.debug("Did not get expected response: %s", resp)
             ext_ip = resp[1]
             port = resp[2]
+            http_port = resp[3]
             ext_port_ip = Template(self.deploy_cfg['https_protocol']
                                    + ":$port").substitute(ip=ext_ip, port=port)
             LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
+            if flag == "component":
+                ext_port_ip = Template(self.deploy_cfg['http_protocol']
+                                   + ":$port").substitute(ip=ext_ip, port=http_port)
+                LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
         else:
             LOGGER.info("Configure HAproxy on client")
             ext_lbconfig_utils.configure_haproxy_rgwlb(master_node_list[0].hostname,
@@ -1277,12 +1287,18 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Step to Create S3 account and configure credentials")
         if self.s3_engine == 2:  # "s3_engine flag is used for picking up the configuration
             # for legacy s3 and rgw, `1` - legacy s3 and `2` - rgw"
-            resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
-            assert_utils.assert_true(resp[0], resp[1])
-            access_key, secret_key = S3H_OBJ.get_local_keys()
+            if flag == "component":
+                LOGGER.debug("Access_key and Secret_key %s %s ", access_key, secret_key)
+                resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip, access_key=access_key, secret_key=secret_key)
+                assert_utils.assert_true(resp[0], resp[1])
+            else:
+                resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
+                assert_utils.assert_true(resp[0], resp[1])
+                access_key, secret_key = S3H_OBJ.get_local_keys()
             if self.service_type == "NodePort":
                 s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                     endpoint_url=ext_port_ip)
+                
             else:
                 s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
             response = [access_key, secret_key, ext_port_ip]
@@ -1965,3 +1981,18 @@ class ProvDeployK8sCortxLib:
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
         return True, filepath
+    
+    def get_access_secret_key(self, filepath):
+        """
+        This Method is used to access access key and secret key.
+        file: solution.yaml file
+        returns access key and secrets key
+        """
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']  # Parent key
+            common = parent_key['common']
+            access_key = common["s3"]["default_iam_users"]["auth_admin"]
+            secrets = parent_key['secrets']
+            secret_key = secrets["content"]["s3_auth_admin_secret"]
+        return access_key, secret_key
