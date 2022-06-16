@@ -1982,7 +1982,7 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
     
-    def get_access_secret_key(self, filepath):
+    def get_default_access_secret_key(self, filepath):
         """
         This Method is used to access access key and secret key.
         file: solution.yaml file
@@ -1996,4 +1996,3 @@ class ProvDeployK8sCortxLib:
             secrets = parent_key['secrets']
             secret_key = secrets["content"]["s3_auth_admin_secret"]
         return access_key, secret_key
-        

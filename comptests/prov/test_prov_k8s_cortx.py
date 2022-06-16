@@ -447,7 +447,7 @@ class TestProvK8Cortx:
         """
         S3 IO Operations
         """
-        access_key, secret_key = self.deploy_lc_obj.get_access_secret_key(self.local_sol_path)
+        access_key, secret_key = self.deploy_lc_obj.get_default_access_secret_key(self.local_sol_path)
         LOGGER.debug("access key and secret key are %s , %s",access_key, secret_key)
         client_config_res = self.deploy_lc_obj.client_config(self.master_node_list, common_const.NAMESPACE, access_key=access_key, secret_key=secret_key, flag="component")
         LOGGER.info(client_config_res)
