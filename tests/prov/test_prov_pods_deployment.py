@@ -110,7 +110,7 @@ class TestProvPodsDeployment:
         self.log.info("Pod count is %s", len(resp))
         assert_utils.assert_equal(len(resp), 1)
         self.collect_sb = False
-        self.destroy_flag = False
+        self.destroy_flag = True
         self.log.info("===Test Completed===")
 
     @pytest.mark.lc
@@ -140,7 +140,7 @@ class TestProvPodsDeployment:
         self.log.info("Pod count is %s", len(resp))
         assert_utils.assert_equal(len(resp), len(self.worker_node_list))
         self.collect_sb = False
-        self.destroy_flag = False
+        self.destroy_flag = True
         self.log.info("===Test Completed===")
 
     @pytest.mark.lc
@@ -170,7 +170,7 @@ class TestProvPodsDeployment:
         self.log.info("Pod count is %s", len(resp))
         assert_utils.assert_equal(len(resp), len(self.worker_node_list))
         self.collect_sb = False
-        self.destroy_flag = False
+        self.destroy_flag = True
         self.log.info("===Test Completed===")
 
     @pytest.mark.lc
@@ -200,7 +200,7 @@ class TestProvPodsDeployment:
         self.log.info("Pod count is %s", len(resp))
         assert_utils.assert_equal(len(resp), 1)
         self.collect_sb = False
-        self.destroy_flag = False
+        self.destroy_flag = True
         self.log.info("===Test Completed===")
 
     @pytest.mark.lc
