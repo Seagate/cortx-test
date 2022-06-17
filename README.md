@@ -618,3 +618,4 @@ While ordering client on ssc-cloud, make sure
     mkswap /dev/mapper/vg_sysvol-lv_swap
     swapon /dev/mapper/vg_sysvol-lv_swap
     ```
+# edited by divya
