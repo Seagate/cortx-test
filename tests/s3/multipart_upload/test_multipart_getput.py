@@ -699,7 +699,7 @@ class TestMultipartUploadGetPut:
         """
         This test is for multipart upload of an object having 10000 parts
         """
-        self.log.info("STARTED: Multipart Upload an object with 10000 parts")
+        self.log.info("STARTED: List parts after completion of Multipart upload of an object ")
         mp_config = MPART_CFG["test_28528"]
         self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
         self.log.info("start s3 IO's")
@@ -713,30 +713,29 @@ class TestMultipartUploadGetPut:
         sorted_part_list = sorted(mpu_upload["uploaded_parts"], key=lambda x: x['PartNumber'])
         res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
-        if S3_ENGINE_RGW != CMN_CFG["s3_engine"]:
-            self.log.info("Part Number marker is %s and list is truncated %s",
-                          res[1]['PartNumberMarker'],
-                          res[1]['IsTruncated'])
+        self.log.info("Part Number marker is %s and list is truncated %s",
+                      res[1]['PartNumberMarker'],
+                      res[1]['IsTruncated'])
+        part_num_marker = res[1]['PartNumberMarker']
+        is_truncated = res[1]['IsTruncated']
+        all_parts = list()
+        all_parts.append(res[1]["Parts"])
+        while is_truncated:
+            response = self.s3_mpu_test_obj.list_parts(
+                mpu_id, self.bucket_name, self.object_name, PartNumberMarker=part_num_marker)
+            assert_utils.assert_true(response[0], response[1])
             part_num_marker = res[1]['PartNumberMarker']
-            is_truncated = res[1]['IsTruncated']
-            all_parts = list()
+            is_truncated = response[1]['IsTruncated']
             all_parts.append(res[1]["Parts"])
-            while is_truncated:
-                response = self.s3_mpu_test_obj.list_parts(
-                    mpu_id, self.bucket_name, self.object_name, PartNumberMarker=part_num_marker)
-                assert_utils.assert_true(response[0], response[1])
-                part_num_marker = res[1]['PartNumberMarker']
-                is_truncated = response[1]['IsTruncated']
-                all_parts.append(res[1]["Parts"])
-            self.log.info("Listed parts of multipart upload: %s", len(all_parts))
-            assert_utils.assert_equal(len(all_parts), 10000, "Failed to list 10000 parts.")
+        self.log.info("Listed parts of multipart upload: %s", len(all_parts))
+        assert_utils.assert_equal(len(all_parts), 10000, "Failed to list 10000 parts.")
         self.log.info("Complete the multipart upload")
         resp = self.s3_mpu_test_obj.complete_multipart_upload(
                 mpu_id, sorted_part_list, self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], "Failed to complete the 10000 multipart")
         self.get_obj_compare_checksums(self.bucket_name, self.object_name, resp[1]["ETag"])
         self.log.info("Stop and validate parallel S3 IOs")
-        self.log.info("ENDED: Multipart Upload an object with 10000 parts")
+        self.log.info("ENDED: Test List multipart with 10000 parts")
 
     @pytest.mark.tags('TEST-40255')
     @pytest.mark.s3_ops
