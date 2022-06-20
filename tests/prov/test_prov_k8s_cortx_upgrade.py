@@ -378,7 +378,6 @@ class TestK8CortxUpgrade:
     @pytest.mark.tags("TEST-41951")
     def test_41951(self):
         """Verify suspend already suspended upgrade."""
-        process_list = []
         pull_image_thread_list = []
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
