@@ -443,7 +443,6 @@ class TestK8CortxUpgrade:
     @pytest.mark.tags("TEST-41952")
     def test_41952(self):
         """Verify verious stages upgrade status."""
-        process_list = []
         pull_image_thread_list = []
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
