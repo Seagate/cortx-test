@@ -559,7 +559,7 @@ class ProvDeployK8sCortxLib:
         if not resource_resp:
             return False, "Failed to update the resources for thirdparty"
         # Update resources for cortx component
-        cortx_resource_resp = self.update_res_limit_cortx(filepath)
+        cortx_resource_resp = self.update_res_limit_cortx(filepath, cvg_count=cvg_count)
         if not cortx_resource_resp:
             return False, "Failed to update the resources for cortx components"
         # Update the solution yaml file with images
@@ -1802,8 +1802,8 @@ class ProvDeployK8sCortxLib:
         for cvg in prov_deploy_cfg["cvg_config"]:
             if cvg == "cvg1":
                 cvg_key = storage_key[cvg]["devices"]["data"]
-                device_list = master_node_list.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
-                                               read_lines=True)[0].split(",")
+                device_list = master_node_list.execute_cmd(
+                    cmd=common_cmd.CMD_LIST_DEVICES, read_lines=True)[0].split(",")
                 device_list[-1] = device_list[-1].replace("\n", "")
                 if data_disk_per_cvg == 0:
                     data_disk_per_cvg = int(len(device_list[cvg_count + 1:]) / cvg_count)
@@ -1914,13 +1914,13 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    def update_res_limit_cortx(self, filepath):
+    def update_res_limit_cortx(self, filepath, **kwargs):
         """
         This Method is used to update the resource limits for cortx services
         param: filepath: solution.yaml filepath
         returns True, filepath
         """
-
+        cvg_count = kwargs.get("cvg", 2)
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
@@ -1943,6 +1943,10 @@ class ProvDeployK8sCortxLib:
                     cortx_resource['hax'][res_type]['cpu']
                 server_res[res_type]['memory'] = cortx_resource['rgw'][res_type]['mem']
                 server_res[res_type]['cpu'] = cortx_resource['rgw'][res_type]['cpu']
+                if res_type == "limits":
+                    server_res[res_type]['memory'] = cortx_resource['rgw'][res_type]['mem']
+                    server_res[res_type]['cpu'] = \
+                        str(int(cortx_resource['rgw'][res_type]['cpu']*cvg_count)) + "m"
                 control_res[res_type]['memory'] = cortx_resource['agent'][res_type]['mem']
                 control_res[res_type]['cpu'] = cortx_resource['agent'][res_type]['cpu']
             # updating the motr /confd requests and limits resources
@@ -1951,6 +1955,11 @@ class ProvDeployK8sCortxLib:
                         cortx_resource[elem][res_type]['mem']
                     data_res[elem]['resources'][res_type]['cpu'] = \
                         cortx_resource[elem][res_type]['cpu']
+                    if elem == "motr" and res_type == "limits":
+                        data_res[elem]['resources'][res_type]['memory'] = \
+                            str(int(cortx_resource[elem][res_type]['mem']/cvg_count)) + "Gi"
+                        data_res[elem]['resources'][res_type]['cpu'] = \
+                            str(int(cortx_resource[elem][res_type]['cpu']*cvg_count)) + "m"
             # updating the ha component resources
                 for ha_elem in ha_list:
                     ha_res[ha_elem]['resources'][res_type]['memory'] = \
