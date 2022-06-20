@@ -157,7 +157,6 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
     :keyword "expected_error": Error message string to verify in case, error is expected
     :keyword "list_params": Dictionary of query parameters to pass List Object Versions call
     """
-    LOG.info("Fetching bucket object versions list")
     expected_flags = kwargs.get("expected_flags", None)
     expected_error = kwargs.get("expected_error", None)
     list_params = kwargs.get("list_params", None)
@@ -408,11 +407,25 @@ def upload_version(s3_test_obj: Union[S3TestLib, S3MultipartTestLib], bucket_nam
     chk_null_version = kwargs.get("chk_null_version", False)
     is_unversioned = kwargs.get("is_unversioned", False)
     is_multipart = kwargs.get("is_multipart", False)
+    is_mpu_with_list_mpu = kwargs.get("is_mpu_with_lst_mpu", False)
     total_parts = kwargs.get("total_parts", 2)
     file_size = kwargs.get("file_size", 10)
+    calc_parts = kwargs.get("parts", "None")
     if is_multipart:
         res = s3_test_obj.complete_multipart_upload_with_di(
             bucket_name, object_name, file_path, total_parts=total_parts, file_size=file_size)
+    elif is_mpu_with_list_mpu:
+        mpu_id, _, parts = initiate_upload_list_mpu(s3_test_obj, bucket_name, object_name,
+                                                    calc_parts)
+        res = s3_test_obj.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
+        upload_etag = res[1]["ETag"]
+        LOG.info("Get the uploaded object")
+        resp = s3_test_obj.get_object(bucket_name, object_name, ranges="bytes=1-")
+        get_etag = resp['ETag']
+        LOG.info("Compare ETags")
+        if upload_etag != get_etag:
+            raise Exception(f"Failed to match ETag: {upload_etag}, {get_etag}")
+        LOG.info("Matched ETag: %s, %s", upload_etag, get_etag)
     else:
         if not system_utils.path_exists(file_path):
             system_utils.create_file(file_path, file_size)
@@ -463,7 +476,6 @@ def delete_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
                                                     version_id=version_id)
     else:
         res = s3_test_obj.delete_object(bucket_name=bucket_name, obj_name=object_name)
-
     assert_utils.assert_true(res[0], res[1])
     if check_deletemarker:
         assert_utils.assert_true(res[1]["DeleteMarker"], res[1])
@@ -742,29 +754,26 @@ def delete_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3
         return False, error
     return resp
 
-def initiate_upload_list_mpu(self, bucket_name, object_name, **kwargs):
+def initiate_upload_list_mpu(s3_mp_test_obj: S3MultipartTestLib, bucket_name, object_name,
+                             parts_: dict):
     """
-    This initialises multipart, upload parts, list parts, complete mpu and return the
-    response and mpu id
+    This initialises multipart, upload parts, list parts, list mpu and return the
+    response and mpu id, and sorted parts list
     """
-    is_part_upload = kwargs.get("is_part_upload", False)
-    is_lst_mpu = kwargs.get("is_lst_mpu", False)
-    parts = kwargs.get("parts", None)
-    res = self.s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+    res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
     mpu_id = res[1]["UploadId"]
     parts_details = []
-    if is_part_upload and is_lst_mpu:
-        self.log.info("Uploading parts")
-        resp = self.s3_mp_test_obj.upload_parts_parallel(mpu_id, bucket_name,
-                                                          object_name, parts=parts)
-        assert_utils.assert_not_in("VersionId", resp[1])
-        for i in resp[1]['Parts']:
-            parts_details.append({"PartNumber": i['PartNumber'],
-                                  "ETag": i["ETag"]})
-        sorted_lst = sorted(parts_details, key=lambda x: x['PartNumber'])
-        res = self.s3_mp_test_obj.list_parts(mpu_id, bucket_name, object_name)
-        assert_utils.assert_true(res[0], res[1])
-        assert_utils.assert_not_in("VersionId", resp[1])
-        self.log.info("List Multipart uploads")
-        return mpu_id, resp, sorted_lst
-    return mpu_id
+    LOG.info("Uploading parts")
+    resp = s3_mp_test_obj.upload_parts_parallel(mpu_id, bucket_name,
+                                                      object_name, parts=parts_)
+    assert_utils.assert_not_in("VersionId", resp[1])
+    for i in resp[1]['Parts']:
+        parts_details.append({"PartNumber": i['PartNumber'], "ETag": i["ETag"]})
+    sorted_lst = sorted(parts_details, key=lambda x: x['PartNumber'])
+    res = s3_mp_test_obj.list_parts(mpu_id, bucket_name, object_name)
+    assert_utils.assert_true(res[0], res[1])
+    assert_utils.assert_not_in("VersionId", resp[1])
+    LOG.info("List Multipart uploads")
+    res = s3_mp_test_obj.list_multipart_uploads(bucket_name)
+    assert_utils.assert_not_in("VersionId", res[1])
+    return mpu_id, resp, sorted_lst
