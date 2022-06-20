@@ -28,6 +28,7 @@ from typing import Union
 
 from boto3.s3.transfer import TransferConfig
 
+from commons.constants import ERR_MSG
 from libs.s3.s3_core_lib import S3Lib
 
 LOGGER = logging.getLogger(__name__)
@@ -82,21 +83,24 @@ class Multipart(S3Lib):
 
         return response
 
-    def list_parts(self, mpu_id: str = None, bucket: str = None,
-                   object_name: str = None, part_number_marker: int = 0) -> dict:
+    def list_parts(self, mpu_id: str = None, bucket_name: str = None,
+                   object_name: str = None, **kwargs) -> dict:
         """
         list parts of a specific multipart upload.
         :param mpu_id: Multipart upload ID
-        :param bucket: Name of the bucket
+        :param bucket_name: Name of the bucket
         :param object_name: Name of the object
-        :param part_number_marker: next part number in case parts greater than 1000.
+        :keyword part_number_marker: next part number in case parts greater than 1000.
         :return: response
         """
+        part_number_marker = kwargs.get("part_num_marker", 0)
         if part_number_marker:
-            response = self.s3_client.list_parts(Bucket=bucket, Key=object_name, UploadId=mpu_id,
+            response = self.s3_client.list_parts(Bucket=bucket_name, Key=object_name,
+                                                 UploadId=mpu_id,
                                                  PartNumberMarker=part_number_marker)
         else:
-            response = self.s3_client.list_parts(Bucket=bucket, Key=object_name, UploadId=mpu_id)
+            response = self.s3_client.list_parts(Bucket=bucket_name, Key=object_name,
+                                                 UploadId=mpu_id)
         LOGGER.debug(response)
 
         return response
@@ -278,5 +282,5 @@ class MultipartUsingBoto(S3Lib):
             self.s3_resource.Object(bucket_name, key). \
                 download_file(file_path, Config=config, Callback=ProgressPercentage(file_path))
         except Exception as error:
-            LOGGER.exception("Error in multipart_upload: %s", str(error))
+            LOGGER.exception(ERR_MSG, "multipart_download", str(error))
             raise error

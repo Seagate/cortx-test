@@ -167,10 +167,8 @@ class S3MultipartTestLib(Multipart):
     def upload_precalculated_parts(self, upload_id: int = None, bucket_name: str = None,
                                    object_name: str = None, **kwargs) -> tuple:
         """
-        Upload precalculated parts.
+        Upload precalculated part sizes for a specific multipart uploadID one part at a time.
 
-        Upload specified/precalculated part sizes for a specific multipart uploadID one part at
-        a time.
         :param upload_id: Multipart Upload ID.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
@@ -285,15 +283,17 @@ class S3MultipartTestLib(Multipart):
         """
         List parts of a specific multipart upload.
 
-        :param mpu_id: Id of complete multipart upload.
+        :param mpu_id: ID of complete multipart upload.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
+        :keyword part_number_marker: next part number in case parts greater than 1000.
         :return: (Boolean, response)
         """
         try:
             LOGGER.info("Listing uploaded parts.")
             part_num_marker = kwargs.get("PartNumberMarker", 0)
-            response = super().list_parts(mpu_id, bucket_name, object_name, part_num_marker)
+            response = super().list_parts(
+                mpu_id, bucket_name, object_name, part_num_marker=part_num_marker)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
             LOGGER.exception(ERR_MSG, S3MultipartTestLib.list_parts.__name__, error)
