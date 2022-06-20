@@ -64,7 +64,8 @@ class GetSetQuota(RestTestLib):
 
     #pylint disable=no-self-use
     def iam_user_quota_payload(self,enabled: str,
-                        max_size: int, max_objects: int):
+                        max_size: int, max_objects: int,
+                        check_on_raw: str):
         """
         Create IAM user quota payload
         """
@@ -72,6 +73,7 @@ class GetSetQuota(RestTestLib):
         payload.update({"enabled": enabled})
         payload.update({"max_size": max_size})
         payload.update({"max_objects" : max_objects})
+        payload.update({"check_on_raw": check_on_raw})
         self.log.info("Payload: %s", payload)
         return payload
 
@@ -137,13 +139,16 @@ class GetSetQuota(RestTestLib):
 	Verify put object of random size fails after exceeding max size limit
         """
         err_msg = ""
+        obj_list = []
         obj_name_prefix="created_obj"
         obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
+        obj_list.append(obj_name)
         self.log.info("Perform Put operation for 1 object of max size")
         res = s3_misc.create_put_objects(obj_name, bucket,
                        akey, skey, object_size=int(max_size/(1024*1024)))
         if res:
             obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
+            obj_list.append(obj_name)
             self.log.info("Perform Put operation of Random size and 1 object")
             random_size = self.cryptogen.randrange(1, max_size)
             try:
@@ -158,7 +163,7 @@ class GetSetQuota(RestTestLib):
                 err_msg = "Message check verification failed for object size above max size"
         else:
             err_msg = "Put operation failed for less than max size"
-        return res, err_msg
+        return res, obj_list
  
     # pylint: disable=too-many-arguments
     def verify_max_objects(self, max_size: int, max_objects: int, akey: str, skey: str,
@@ -168,18 +173,21 @@ class GetSetQuota(RestTestLib):
         """
         self.log.info("Perform Put operation of small size and N object")
         small_size = math.floor(max_size / max_objects)
-        small_size = int((small_size/(1024*1024)*100))
+        small_size = int(small_size/1024)
         self.log.info("Perform Put operation of small size %s and N objects %s ",
                         small_size, max_objects)
         err_msg = ""
+        obj_list = []
         obj_name_prefix="created_obj"
         for _ in range(0, max_objects):
             obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
+            obj_list.append(obj_name)
             res = s3_misc.create_put_objects(obj_name, bucket,
                                               akey, skey, object_size=small_size,
                                               block_size="1K")
         if res:
             obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
+            obj_list.append(obj_name)
             self.log.info("Perform Put operation of Random size and 1 object")
             random_size = self.cryptogen.randrange(1, max_size)
             try:
@@ -194,7 +202,7 @@ class GetSetQuota(RestTestLib):
                 err_msg = "Message check verification failed for objects more than max objects"
         else:
             err_msg = "Put operation failed for less than max objects"
-        return res, err_msg
+        return res, obj_list
 
     @RestTestLib.authenticate_and_login
     def get_user_capacity_usage(self, resource, uid,
