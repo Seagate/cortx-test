@@ -2,13 +2,13 @@ test_5001:
   invalid_sortby: "roles"
   response_msg:
     error_code: 4099
-    message_id: "Invalid parameter for user"
-    message_index : 2 
+    message_id: "MalformedRequest"
+    message_index : 15 
 test_5004:
   invalid_sortdir: "abc"
   error_code: 4099
-  message_id: "Invalid parameter for user"
-  message_index: 1
+  message_id: "MalformedRequest"
+  message_index: 16
 test_5000:
   valid_sortby: 
     - "username"
@@ -87,8 +87,8 @@ test_7408:
     old_password: ""
   response_mesg:
     error_code: 4099
-    message_id: "invalid request parameter"
-    message_index: 0
+    message_id: "MalformedRequest"
+    message_index: 17
 test_6220:
   response_duplicate_csm_manage_user:
     error_code: 4103
@@ -110,18 +110,18 @@ test_5021:
 test_5005:
   response_msg:
     error_code: 4099
-    message_id: "Invalid parameter for user"
-    message_index: 1
+    message_id: "MalformedRequest"
+    message_index: 16
 test_5002:
   response_msg:
     error_code: 4099
-    message_id: "Invalid parameter for user"
-    message_index: 2
+    message_id: "MalformedRequest"
+    message_index: 15
 test_5020:
   response_msg:
     error_code: 4099
-    message_id: "invalid request parameter"
-    message_index: 1
+    message_id: "MalformedRequest"
+    message_index: 18
 test_5017:
   invalid_user_id: "invaliduser123"
   payload:
@@ -201,8 +201,8 @@ test_25282:
     email_id: "testuser@seagate.com"
 test_25275:
     error_code: 4104
-    message_id: "Cannot create other users"
-    message_index: 0
+    message_id: "PermissionDenied"
+    message_index: 1
 test_25279:
     error_code: 4104
     message_id: "update_not_allowed"
@@ -240,14 +240,14 @@ test_28501:
     reset_password: True
 test_28502:
     error_code: 4099
-    message_id: "invalid parameter msg_id"
-    message_index: 0
+    message_id: "MalformedRequest"
+    message_index: 8
 test_28505:
     new_password: "D1wkl0ge5mqvq+6Ioah57QHUCdjbn2CarpIqocu2PkQ="
     reset_password: True
     error_code: 4099
-    message_id: "invalid parameter msg_id"
-    message_index: 0
+    message_id: "MalformedRequest"
+    message_index: 14
 test_28517:
     new_password: "+ZfWaNAnxT4p39QOZ1A2QG+OWYJmgI4dEk9WcG6wS04="
     reset_password: True
@@ -255,15 +255,15 @@ test_28517:
 test_28513:
     password: "1oa2EwRk/urr4oKeEiO6jCg8e74EVStVfw8WVZyw0An1fW0ingjZANtJ51xljjY4"
     status_code: 401
-    error_code: 4113
-    message_id : "HttpError"
-    message_index: 0
+    error_code: 4111
+    message_id : "UnauthorizedError"
+    message_index: 1
 test_28512:
     username: "incorrectuser123ABC"
     status_code: 401
-    error_code: 4113
-    message_id: "HttpError"
-    message_index: 0
+    error_code: 4111
+    message_id: "UnauthorizedError"
+    message_index: 1
 test_28515:
     password: "7uY5HlnrQgqcNMg1dG2AdUcU/344qPhx70zTTytHqPc="
     status_code: 401
@@ -273,29 +273,29 @@ test_28515:
 test_28514:
     username: "123"
     status_code: 401
-    error_code: 4113
-    message_id: "HttpError"
-    message_index: 0
+    error_code: 4111
+    message_id: "UnauthorizedError"
+    message_index: 1
 test_28511:
     status_code: 400
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 7
+    message_index: 30
 test_28510:
     status_code: 400
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 7
+    message_index: 31
 test_28509:
     status_code: 400
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 7
+    message_index: 32
 test_28508:
     status_code: 400
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 7
+    message_index: 33
 test_32171:
     error_code: 4104
     message_id: "update_not_allowed"
