@@ -124,7 +124,9 @@ class GetSetQuota(RestTestLib):
                     if key in ("enabled","max_size","max_objects","check_on_raw"):
                         continue
                     if key == "max_size_kb":
-                        payload.update({"max_size_kb":round(get_response["max_size"]/1024)})
+                        self.log.info("Printing actual max isze kb %s ",
+                                                 get_response["max_size"]/1024)
+                        payload.update({"max_size_kb":math.ceil(get_response["max_size"]/1024)})
                     self.log.info("Actual response for %s: %s", key, payload[key])
                     if value != payload[key]:
                         self.log.error("Actual and expected response for %s didnt match", key)
@@ -142,13 +144,12 @@ class GetSetQuota(RestTestLib):
         obj_list = []
         obj_name_prefix="created_obj"
         obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
-        obj_list.append(obj_name)
         self.log.info("Perform Put operation for 1 object of max size")
         res = s3_misc.create_put_objects(obj_name, bucket,
                        akey, skey, object_size=int(max_size/(1024*1024)))
+        obj_list.append(obj_name)
         if res:
             obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
-            obj_list.append(obj_name)
             self.log.info("Perform Put operation of Random size and 1 object")
             random_size = self.cryptogen.randrange(1, max_size)
             try:
@@ -163,7 +164,7 @@ class GetSetQuota(RestTestLib):
                 err_msg = "Message check verification failed for object size above max size"
         else:
             err_msg = "Put operation failed for less than max size"
-        return res, obj_list
+        return res, err_msg, obj_list
  
     # pylint: disable=too-many-arguments
     def verify_max_objects(self, max_size: int, max_objects: int, akey: str, skey: str,
@@ -181,13 +182,12 @@ class GetSetQuota(RestTestLib):
         obj_name_prefix="created_obj"
         for _ in range(0, max_objects):
             obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
-            obj_list.append(obj_name)
             res = s3_misc.create_put_objects(obj_name, bucket,
                                               akey, skey, object_size=small_size,
                                               block_size="1K")
+            obj_list.append(obj_name)
         if res:
             obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
-            obj_list.append(obj_name)
             self.log.info("Perform Put operation of Random size and 1 object")
             random_size = self.cryptogen.randrange(1, max_size)
             try:
@@ -202,7 +202,7 @@ class GetSetQuota(RestTestLib):
                 err_msg = "Message check verification failed for objects more than max objects"
         else:
             err_msg = "Put operation failed for less than max objects"
-        return res, obj_list
+        return res, err_msg, obj_list
 
     @RestTestLib.authenticate_and_login
     def get_user_capacity_usage(self, resource, uid,
