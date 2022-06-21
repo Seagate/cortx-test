@@ -58,6 +58,7 @@ class TestK8CortxUpgrade:
         cls.master_node_list = []
         cls.host_list = []
         cls.collect_sb = True
+        cls.upgrade_cleanup = False
         for node in range(cls.num_nodes):
             vm_name = CMN_CFG["nodes"][node]["hostname"].split(".")[0]
             cls.host_list.append(vm_name)
@@ -81,6 +82,11 @@ class TestK8CortxUpgrade:
             path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
             support_bundle_utils.collect_support_bundle_k8s(
                 local_dir_path=path, scripts_path=self.prov_conf['k8s_dir'])
+        if self.upgrade_cleanup:
+            resp = self.upgrade_obj.upgrade_software(
+                self.master_node_list[0], self.prov_conf['k8s_dir'], exc=False, flag=
+                self.prov_conf["upgrade_resume"])
+            return resp
 
     def rolling_upgrade(self, exc: bool = True, output=None, flag=None):
         """Function calls upgrade and put return value in queue object.
@@ -416,25 +422,31 @@ class TestK8CortxUpgrade:
         # verify the upgrade status
         status_resp = self.get_status()
         LOGGER.info("Status is %s", status_resp)
+        # Verify the POD status
+        LOGGER.info("Step 5: Verify the PODs status.")
+        pod_status = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
+        assert_utils.assert_true(pod_status)
         # Verify the already paused process by giving pause command
-        LOGGER.info("Step 5: verify the already suspended status.")
+        LOGGER.info("Step 6: verify the already suspended status.")
         suspended_resp = self.upgrade_obj.upgrade_software(self.master_node_list[0],
                                                             self.prov_conf['k8s_dir'],
                                                             exc=False, flag=
                                                             self.prov_conf["upgrade_suspend"])
         assert_utils.assert_true(suspended_resp)
-        assert_utils.assert_in(cons.UPGRADE_SUSPENDED_MSG, suspended_resp[1])
+        assert_utils.assert_in(cons.UPGRADE_ALREADY_SUSPENDED_MSG, suspended_resp[1])
         time.sleep(self.prov_conf["sleep_time"])
-        start_upgrade_proc.terminate()
+        start_upgrade_proc.kill()
         # Verify the POD and Service status
-        LOGGER.info("Step 6: Verify the PODs and Services status.")
+        LOGGER.info("Step 7: Verify the PODs and Services status.")
         pod_status = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
         assert_utils.assert_true(pod_status)
+        time.sleep(self.prov_conf["sleep_time"])
         resp = self.upgrade_obj.prov_obj.check_service_status(self.master_node_list[0])
         assert_utils.assert_true(resp)
         installed_version = self.upgrade_obj.prov_obj.get_installed_version(
             self.master_node_list[0])
         LOGGER.info("Upgraded to version %s", installed_version)
+        self.upgrade_cleanup = True        
         self.collect_sb = False
         LOGGER.info("--------- Test Completed ---------")
 
@@ -442,7 +454,7 @@ class TestK8CortxUpgrade:
     @pytest.mark.cortx_upgrade
     @pytest.mark.tags("TEST-41952")
     def test_41952(self):
-        """Verify verious stages upgrade status."""
+        """Verify start and upgrade status during upgrade."""
         pull_image_thread_list = []
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
