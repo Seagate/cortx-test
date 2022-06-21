@@ -446,7 +446,7 @@ class TestK8CortxUpgrade:
         installed_version = self.upgrade_obj.prov_obj.get_installed_version(
             self.master_node_list[0])
         LOGGER.info("Upgraded to version %s", installed_version)
-        self.upgrade_cleanup = True        
+        self.upgrade_cleanup = True
         self.collect_sb = False
         LOGGER.info("--------- Test Completed ---------")
 
