@@ -72,7 +72,7 @@ HA_CONFIG_FILE = "/root/config.json"
 MOTR_CLIENT="motr_client"
 UPGRADE_IN_PROGRESS_MSG = "An upgrade is already in progress"
 UPGRADE_SUSPEND_MSG = "Upgrade suspended"
-UPGRADE_ALREADY_SUSPENDED_MSG = "Upgrade Process Not found on the system, Suspend cannot be performed"
+UPGRADE_ALREADY_SUSPENDED = "Upgrade Process Not found on the system,Suspend cannot be performed"
 
 # common constant.
 ERR_MSG = "Error in %s: %s"

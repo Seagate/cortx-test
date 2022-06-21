@@ -433,7 +433,7 @@ class TestK8CortxUpgrade:
                                                             exc=False, flag=
                                                             self.prov_conf["upgrade_suspend"])
         assert_utils.assert_true(suspended_resp)
-        assert_utils.assert_in(cons.UPGRADE_ALREADY_SUSPENDED_MSG, suspended_resp[1])
+        assert_utils.assert_in(cons.UPGRADE_ALREADY_SUSPENDED, suspended_resp[1])
         time.sleep(self.prov_conf["sleep_time"])
         start_upgrade_proc.kill()
         # Verify the POD and Service status
