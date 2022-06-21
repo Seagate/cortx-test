@@ -73,6 +73,9 @@ MOTR_CLIENT="motr_client"
 UPGRADE_IN_PROGRESS_MSG = "An upgrade is already in progress"
 UPGRADE_SUSPEND_MSG = "Upgrade suspended"
 
+# common constant.
+ERR_MSG = "Error in %s: %s"
+
 # RAS Paths
 BYTES_TO_READ = 8000
 ONE_BYTE_TO_READ = 1
