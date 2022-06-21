@@ -1815,7 +1815,7 @@ class HAK8s:
 
         return True, f"Successfully failed over pods {list(pod_yaml.keys())}"
 
-    def iam_bucket_cruds(self, event, s3_obj, user_crud=False, num_users=None, bkt_crud=False,
+    def iam_bucket_cruds(self, event, s3_obj=None, user_crud=False, num_users=None, bkt_crud=False,
                          num_bkts=None, del_users_dict=None, output=None):
         """
         Function to perform iam user and bucket crud operations in loop (To be used for background)
@@ -1825,7 +1825,7 @@ class HAK8s:
         :param num_users: Number of iam users to be created and deleted
         :param bkt_crud: Flag for performing bucket crud operations
         :param num_bkts: Number of buckets to be created and deleted
-        :param del_users_dict: List of users to be deleted
+        :param del_users_dict: Dict of users to be deleted
         :param output: Output queue in which results should be put
         :return: Queue containing output lists
         """

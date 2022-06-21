@@ -1039,12 +1039,13 @@ class TestControlPodRestart:
         exp_fail = iam_resp[0]
         failed = iam_resp[1]
         user_del_failed = iam_resp[2]
-        created_users = iam_resp[3]
+        new_created_users = iam_resp[3]
         if user_del_failed:
-            for i in user_del_failed:
-                self.s3_clean.update(i)
-        if created_users:
-            for i in created_users:
+            for i_i in created_users:
+                if list(i_i.keys())[0] in user_del_failed:
+                    self.s3_clean.update(i_i)
+        if new_created_users:
+            for i in new_created_users:
                 self.s3_clean.update(i)
         assert_utils.assert_false(len(exp_fail) or len(failed), "Failure in IAM user CRUD "
                                                                 "operations. \nFailed users: "
