@@ -659,14 +659,14 @@ class TestRGWProcessRestart:
         self.log.info("Step 1: Start Write Operations for parallel reads "
                       "and parallel deletes during rgw restart:")
         write_proc = []
+        w_args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
+                  'no_of_clients': self.test_cfg['clients'],
+                  'no_of_samples': self.test_cfg['samples'],
+                  'log_file_prefix': log_file_prefix, 'queue': que}
+
         for _ in range(0, 2):
             proc = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
-                                           args=(self.bucket_name, self.object_name,
-                                                 self.test_cfg['clients'],
-                                                 self.test_cfg['samples'],
-                                                 self.test_cfg['size'],
-                                                 log_file_prefix,
-                                                 que))
+                                           kwargs=w_args)
             proc.start()
             write_proc.append(proc)
 
@@ -681,32 +681,27 @@ class TestRGWProcessRestart:
 
         self.log.info("Step 3: Perform Write,Read,Delete Parallely during rgw restart")
         parallel_proc = []
+
         self.log.info("Step 3a: Start Write in new process")
-        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
-                                                args=(self.bucket_name, self.object_name,
-                                                      self.test_cfg['clients'],
-                                                      self.test_cfg['samples'],
-                                                      self.test_cfg['size'],
-                                                      log_file_prefix,
-                                                      que))
+        w_args.update({'retry': DTM_CFG["io_retry_count"]})
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=w_args)
         proc_write_op.start()
         parallel_proc.append(proc_write_op)
+
         self.log.info("Step 3b: Start Read in new process")
         # Reads, validate and delete
-        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
-                                               args=(workload_info_list[0], que,
-                                                     False,
-                                                     True,
-                                                     True))
+        r_args = {'workload_info': workload_info_list[0], 'queue': que, 'skipread': False,
+                  'validate': True, 'skipcleanup': True, 'retry': DTM_CFG["io_retry_count"]}
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops, kwargs=r_args)
         proc_read_op.start()
         parallel_proc.append(proc_read_op)
+
         self.log.info("Step 3c: Start Deletes in new process")
         # delete
+        d_args = {'workload_info': workload_info_list[0], 'queue': que, 'skipread': True,
+                  'validate': False, 'skipcleanup': False, 'retry': DTM_CFG["io_retry_count"]}
         proc_delete_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
-                                                 args=(workload_info_list[1], que,
-                                                       True,
-                                                       False,
-                                                       False))
+                                                 kwargs=d_args)
         proc_delete_op.start()
         parallel_proc.append(proc_delete_op)
 
@@ -746,7 +741,7 @@ class TestRGWProcessRestart:
     @pytest.mark.tags("TEST-42251")
     def test_overwrite_same_object_during_rgw_restart(self):
         """Overwrite same object during rgw restart."""
-        self.log.info("STARTED: Overwrite same object during m0d restart.")
+        self.log.info("STARTED: Overwrite same object during rgw restart.")
         overwrite_cnt = self.test_cfg['test_42251']['overwrite_cnt']
         max_object_size = self.test_cfg['test_42251']['max_object_size']
         que = multiprocessing.Queue()
@@ -776,4 +771,80 @@ class TestRGWProcessRestart:
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         self.test_completed = True
-        self.log.info("ENDED: Overwrite same object during m0d restart.")
+        self.log.info("ENDED: Overwrite same object during rgw restart.")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-42252")
+    def test_io_operations_before_after_rgw_restart(self):
+        """Verify IO operations work after rgw restart using pkill"""
+        self.log.info("STARTED: Verify IO operations work after rgw restart using pkill")
+        test_cfg = DTM_CFG['test_42252']
+        test_prefix = 'test-42252-before-restart'
+
+        self.log.info("Step 1: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
+                                                    log_prefix=test_prefix,
+                                                    nclients=test_cfg['nclients'],
+                                                    nsamples=test_cfg['nsamples'])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 1: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
+                      "sizes objects.")
+
+        self.log.info("Step 2: Perform Single rgw Process Restart")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
+                                            process=self.rgw_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+        self.log.info("Step 2: rgw restarted and recovered successfully")
+
+        test_prefix = 'test-42252-after-restart'
+        self.log.info("Step 3: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
+                                                    log_prefix=test_prefix,
+                                                    nclients=test_cfg['nclients'],
+                                                    nsamples=test_cfg['nsamples'])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
+                      "sizes objects.")
+
+        self.log.info("ENDED: Verify IO operations work after rgw restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-42256")
+    def test_bkt_creation_ios_after_rgw_restart(self):
+        """Verify bucket creation and IOs after rgw restart using pkill."""
+        self.log.info("STARTED: Verify bucket creation and IOs after rgw restart using pkill")
+        test_cfg = DTM_CFG['test_42256']
+        test_prefix = 'test-42256'
+
+        self.log.info("Step 1: Perform Single rgw Process Restart")
+        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                            health_obj=self.health_obj,
+                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                            container_prefix=const.RGW_CONTAINER_NAME,
+                                            process=self.rgw_process, check_proc_state=True)
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+        self.log.info("Step 1: rgw restarted and recovered successfully")
+
+        self.log.info("Step 2: Create buckets for IOs")
+        workloads = HA_CFG["s3_bench_workloads"]
+        if self.setup_type == "HW":
+            workloads.extend(HA_CFG["s3_bench_large_workloads"])
+        for workload in workloads:
+            self.s3_test_obj.create_bucket(f"bucket-{workload.lower()}-{test_prefix}")
+        self.log.info("Step 2: Created buckets for IOs")
+
+        self.log.info("Step 3: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
+                                                    log_prefix=test_prefix,
+                                                    nclients=test_cfg['nclients'],
+                                                    nsamples=test_cfg['nsamples'])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
+                      "sizes objects.")
+
+        self.log.info("ENDED: Verify bucket creation and IOs after rgw restart using pkill")
