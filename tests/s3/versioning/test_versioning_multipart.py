@@ -29,15 +29,15 @@ import pytest
 from commons import error_messages as err_msg
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
-from libs.s3 import s3_versioning_common_test_lib as s3ver_cmn_lib
-from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from commons.utils import assert_utils
 from commons.utils.s3_utils import get_precalculated_parts
 
-from config.s3 import MPART_CFG
-
+from libs.s3 import s3_versioning_common_test_lib as s3ver_cmn_lib
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
+
+from config.s3 import MPART_CFG
 
 
 class TestVersioningMultipart:
