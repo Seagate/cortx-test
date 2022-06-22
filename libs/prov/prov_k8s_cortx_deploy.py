@@ -993,7 +993,7 @@ class ProvDeployK8sCortxLib:
             csm_s3.create_custom_s3_payload("valid")
             resp = csm_s3.create_s3_account()
             LOGGER.info("Response for account creation: %s", resp.json())
-            details = resp.json()      
+            details = resp.json()    
             access_key = details['access_key']
             secret_key = details["secret_key"]
 
@@ -1289,7 +1289,8 @@ class ProvDeployK8sCortxLib:
             # for legacy s3 and rgw, `1` - legacy s3 and `2` - rgw"
             if flag == "component":
                 LOGGER.debug("Access_key and Secret_key %s %s ", access_key, secret_key)
-                resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip, access_key=access_key, secret_key=secret_key)
+                resp = self.post_deployment_steps_lc(self.s3_engine, 
+                        ext_port_ip, access_key=access_key, secret_key=secret_key)
                 assert_utils.assert_true(resp[0], resp[1])
             else:
                 resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
