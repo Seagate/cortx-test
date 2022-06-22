@@ -289,6 +289,7 @@ class TestSystemCapacity():
             assert result[0], result[1] + f"for {failure_cnt} failures"
         self.deploy = True
 
+    # pylint: disable=broad-except
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -392,6 +393,7 @@ class TestSystemCapacity():
         assert self.csm_obj.verify_checksum(cap_df)
         self.deploy = True
 
+    # pylint: disable=broad-except
     @pytest.mark.skip(reason="CORTX-31578")
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -507,6 +509,7 @@ class TestSystemCapacity():
         assert self.csm_obj.verify_checksum(cap_df)
         self.deploy = True
 
+    # pylint: disable=too-many-statements
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -584,6 +587,8 @@ class TestSystemCapacity():
         assert result, "Values are not consistent."
         self.deploy=True
 
+    # pylint: disable=broad-except
+    # pylint: disable=too-many-statements
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -686,6 +691,8 @@ class TestSystemCapacity():
             assert result[0], result[1] + f"for {failure_cnt} failures"
         self.deploy = True
 
+    # pylint: disable=broad-except
+    # pylint: disable=too-many-statements
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops

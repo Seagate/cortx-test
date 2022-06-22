@@ -149,6 +149,7 @@ class SystemCapacity(RestTestLib):
                                           headers=header)
         return response
 
+    # pylint: disable=eval-used
     # pylint: disable=too-many-arguments
     # pylint: disable-msg=too-many-locals
     def verify_degraded_capacity(
@@ -195,7 +196,6 @@ class SystemCapacity(RestTestLib):
                 result_msg = "Summation check failed."
 
         for chk in checklist:
-            # pylint: disable=eval-used
             expected = eval(chk)
             actual = float(resp[chk])
             self.log.info("Actual %s byte count : %s", chk, actual)
@@ -321,8 +321,10 @@ class SystemCapacity(RestTestLib):
         for deploy in deploy_list:
             new_row[deploy] = not deploy in failed_pod
         cap_df = cap_df.append(new_row, ignore_index=True)
+        self.log.info("%s", cap_df.to_string())
         return cap_df
 
+    # pylint: disable=too-many-branches
     def verify_flexi_protection(self, resp, cap_df, failed_pod:list, kvalue:int, err_margin:int):
         """Check byte count based on flexible protection
         """

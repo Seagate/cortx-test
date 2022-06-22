@@ -350,7 +350,7 @@ def delete_all_buckets(access_key: str, secret_key: str, **kwargs):
     return result
 
 def get_total_used(access_key: str, secret_key: str, **kwargs):
-    """
+    """Returns total used capacity for given IAM user
     """
     LOGGER.debug("Access Key : %s", access_key)
     LOGGER.debug("Secret Key : %s", secret_key)
