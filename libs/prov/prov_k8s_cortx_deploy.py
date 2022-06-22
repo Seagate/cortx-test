@@ -1988,7 +1988,7 @@ class ProvDeployK8sCortxLib:
 
     def get_default_access_secret_key(self, filepath):
         """
-        This Method is used to access access key and secret key.
+        This is used to access access key and secret key.
         file: solution.yaml file
         returns access key and secrets key
         """
