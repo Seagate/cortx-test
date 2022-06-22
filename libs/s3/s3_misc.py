@@ -310,7 +310,7 @@ def get_object_checksum(obj_name, bucket_name, access_key: str, secret_key: str,
     for obj in objs:
         if obj.key == obj_name:
             body = obj.get()['Body'].read()
-            file_hash = md5()
+            file_hash = md5() # nosec
             file_hash.update(body)
             csum = file_hash.hexdigest()
             break

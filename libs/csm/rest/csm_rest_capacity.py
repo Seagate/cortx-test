@@ -196,7 +196,7 @@ class SystemCapacity(RestTestLib):
                 result_msg = "Summation check failed."
 
         for chk in checklist:
-            expected = eval(chk)
+            expected = eval(chk) # nosec
             actual = float(resp[chk])
             self.log.info("Actual %s byte count : %s", chk, actual)
             expected_err = expected/(1-err_margin/100)
