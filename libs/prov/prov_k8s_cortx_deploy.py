@@ -1986,7 +1986,6 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
     
-    @staticmethod
     def get_default_access_secret_key(self, filepath):
         """
         This is used to access access key and secret key.
