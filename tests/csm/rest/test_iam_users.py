@@ -203,6 +203,7 @@ class TestIamUserRGW():
             self.log.debug("File path not exists, create a directory")
             system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
         self.log.info("Done: Setup operations.")
+        self.created_iam_users = {}
 
     def teardown_method(self):
         """Teardown method which run after each function.
@@ -4928,6 +4929,10 @@ class TestIamUserRGW():
             self.log.info("%s IAM user created", count + 1)
         self.log.info("Created users: %s", users_list)
 
+        resp1 = self.csm_obj.list_iam_users_rgw()
+        self.log.info("getting existing users list %s ", resp1.json()["users"])
+        self.log.info("getting existing users count %s", len(resp1.json()["users"]))
+
         self.log.info("Step 2: Send GET request with max_entries as 5")
         resp = self.csm_obj.list_iam_users_rgw(
                                 max_entries=self.csm_conf["test_42284"]["max_entries"])
@@ -4939,15 +4944,18 @@ class TestIamUserRGW():
                                  "Entries not returned as expected")
         user_index = self.csm_obj.random_gen.randrange(1, count)
         marker = get_user_list[user_index]
-
+        self.log.info("User index is %s ", user_index)
         self.log.info("Step 3: Send GET request with max_entries as 15 and "
                       "marker as in between user")
         resp = self.csm_obj.list_iam_users_rgw(max_entries=15, marker=marker)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
         count_new = resp.json()["count"]
         get_user_list = resp.json()["users"]
-        actual_entries = self.csm_conf["common"]["num_users"] - user_index + 1
-        assert_utils.assert_equals(count_new, actual_entries, "Entries not returned as expected")
+        if len(resp1.json()["users"]) > 11:
+            assert_utils.assert_equals(count_new, 15, "Entries not returned as expected")
+        else:
+            actual_entries = len(resp1.json()["users"]) - user_index
+            assert_utils.assert_equals(count_new, actual_entries, "Entries not returned as expected")
         self.log.info("Printing first user of list %s", get_user_list[0])
         assert_utils.assert_equals(get_user_list[0], marker, "Marker not set"
                                                              "to in between user")
