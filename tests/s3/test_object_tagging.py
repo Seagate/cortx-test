@@ -1554,7 +1554,8 @@ class TestObjectTagging:
         self.log.info("Retrieving tag of an object %s", self.object_name)
         resp = self.tag_obj.get_object_tags(self.bucket_name, self.object_name)
         assert_utils.assert_equal(
-            resp[1], {S3_OBJ_TST["test_9429"]["key"]: S3_OBJ_TST["test_9429"]["value"]}, resp[1])
+            resp[1][0],
+            {'Key': f'{S3_OBJ_TST["test_9429"]["key"]}', 'Value': f'{S3_OBJ_TST["test_9429"]["value"]}'}, resp[1])
         self.log.info("Retrieved tag of an object")
         self.log.info("Verify Multipart Upload with tag key having valid special characters")
 
