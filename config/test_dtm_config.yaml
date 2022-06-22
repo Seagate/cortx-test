@@ -50,3 +50,11 @@ test_41245:
 test_42251:
   max_object_size: 512 #Mb
   overwrite_cnt: 200
+
+test_42252:
+  nclients: 10
+  nsamples: 50
+
+test_42256:
+  nclients: 10
+  nsamples: 50
