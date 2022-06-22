@@ -185,6 +185,7 @@ PCS_RESOURCE_STATUS_CMD = "pcs resource show {}"
 SYSTEM_CTL_RELOAD_CMD = "systemctl reload {}"
 GET_PID_CMD = "systemctl status {}.service | grep PID"
 KILL_CMD = "kill -9 {}"
+PIDOF_CMD = "pidof {}"
 
 # CORTXCLI Commands
 CMD_LOGIN_CORTXCLI = "cortxcli"
@@ -396,8 +397,15 @@ LDAP_PWD = ("s3cipher decrypt --data "  # nosec
 # Motr commands
 M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0CP_U = "m0cp -G -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} -O {} -u {}"
-# m0cp -G -l 192.168.59.17@tcp:12345:34:101 -H 192.168.59.17@tcp:12345:34:1 -p 0x7000000000000001:0
-# -P 0x7200000000000000:0 -o 1048580 /var/motr/update_file -s 4096 -c 8 -L 3 -u -O 4096
+# m0cp from data unit aligned offset 0
+# m0cp -G -l inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@21201
+# -H inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@22001 -p 0x7000000000000001:0x110
+# -P 0x7200000000000001:0xae -s 4096 -c 10 -o 1048583 /root/infile -L 3
+#
+# m0cp -G -l inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@21201
+# -H inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@22001 -p 0x7000000000000001:0x110
+# -P 0x7200000000000001:0xae -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
+
 
 M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"
@@ -561,7 +569,7 @@ CLSTR_START_CMD = "cd {}; ./start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; ./shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; ./status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
-PRE_REQ_CMD = "cd $dir; ./prereq-deploy-cortx-cloud.sh -d $disk"
+PRE_REQ_CMD = "cd $dir; ./prereq-deploy-cortx-cloud.sh -p -d $disk"
 DEPLOY_CLUSTER_CMD = "cd $path; ./deploy-cortx-cloud.sh > $log"
 DESTROY_CLUSTER_CMD = "cd $dir; ./destroy-cortx-cloud.sh --force"
 UPGRADE_CLUSTER_CMD = "cd $dir; ./upgrade-cortx-cloud.sh start -p $pod"

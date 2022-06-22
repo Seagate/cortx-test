@@ -265,9 +265,9 @@ class MotrCoreK8s():
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
 
-    def cp_corrupt_cmd(self, **kwargs):
+    def cp_update_cmd(self, **kwargs):
         """
-        M0CP command creation
+        M0CP update command which introduces corruption.
 
         :b_size: Block size
         :count: Block count
@@ -299,7 +299,7 @@ class MotrCoreK8s():
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                                          f"-- {cmd}", decode=True)
 
-        log.info("CP Resp: %s", resp)
+        log.info("CP Update Resp: %s", resp)
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')

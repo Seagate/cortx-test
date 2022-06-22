@@ -30,16 +30,19 @@ assertions as well, with the main aim being to have leaner and cleaner code in t
 import logging
 import string
 from secrets import SystemRandom
+from typing import Union
 
-from commons import errorcodes as err
 from commons import error_messages as errmsg
+from commons import errorcodes as err
 from commons.constants import S3_ENGINE_RGW
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import s3_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3.s3_common_test_lib import create_s3_acc
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
@@ -84,7 +87,7 @@ def parse_list_object_versions_response(list_response: dict) -> dict:
                     ...
                 }
             "version_count": N
-            "deletemarkers": M
+            "delete_markers": M
             "deletemarker_count": {
                 "<key_name>": {
                         "<version-id>": {
@@ -150,10 +153,9 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
                            "is_latest": "version_id1",
             ...
             }
-    :param **kwargs: Optional keyword arguments
-        "expected_flags": Dictionary of List Object Versions flags to verify
-        "expected_error": Error message string to verify in case, error is expected
-        "list_params": Dictionary of query parameters to pass List Object Versions call
+    :keyword "expected_flags": Dictionary of List Object Versions flags to verify
+    :keyword "expected_error": Error message string to verify in case, error is expected
+    :keyword "list_params": Dictionary of query parameters to pass List Object Versions call
     """
     LOG.info("Fetching bucket object versions list")
     expected_flags = kwargs.get("expected_flags", None)
@@ -162,7 +164,7 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
     try:
         if list_params:
             list_response = s3_ver_test_obj.list_object_versions(bucket_name=bucket_name,
-                                                                 **list_params)
+                                                                 optional_params=list_params)
         else:
             list_response = s3_ver_test_obj.list_object_versions(bucket_name=bucket_name)
     except CTException as error:
@@ -187,6 +189,8 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
         expected_deletemarker_count = 0
 
         resp_dict = parse_list_object_versions_response(list_response)
+        LOG.info("expected_versions is %s and keys is %s",expected_versions,
+                 expected_versions.keys() )
         for key in expected_versions.keys():
             for version in expected_versions[key]["versions"].keys():
                 assert_utils.assert_in(version, list(resp_dict["versions"][key].keys()))
@@ -199,12 +203,19 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
                                           resp_dict["versions"][key][version]["etag"])
                 expected_version_count += 1
             for delete_marker in expected_versions[key]["delete_markers"]:
-                assert_utils.assert_in(delete_marker, list(resp_dict["deletemarkers"][key].keys()))
+                if delete_marker != "DMO_DELETEMARKERID_PLACEHOLDER":
+                    assert_utils.assert_in(delete_marker,
+                                           list(resp_dict["delete_markers"][key].keys()))
+                else:
+                    dm_id = list(resp_dict["delete_markers"][key].keys())[0]
+                    assert_utils.assert_not_equal(dm_id, "null",
+                                                  "Check DeleteObjects generates non-null delete "
+                                                  "marker VersionId in versioning enabled bucket")
                 # Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
                 # is_latest = True if key["is_latest"] == delete_marker else False
                 # Uncomment once CORTX-30178 changes are available in main
                 # assert_utils.assert_in(is_latest,
-                #                        resp_dict["deletemarkers"][key][version]["is_latest"])
+                #                        resp_dict["delete_markers"][key][version]["is_latest"])
                 expected_deletemarker_count += 1
         assert_utils.assert_equal(expected_version_count, resp_dict["version_count"],
                                   "Unexpected Version entry count in the response")
@@ -230,7 +241,6 @@ def check_list_objects(s3_test_obj: S3TestLib, bucket_name: str,
     assert_utils.assert_equal(sorted(expected_objects), sorted(list_response[1]),
                               "List Objects response does not contain expected object names")
 
-
 def check_get_head_object_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
                                   bucket_name: str, object_name: str, **kwargs) -> None:
     """
@@ -240,12 +250,11 @@ def check_get_head_object_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3Ver
     :param s3_ver_test_obj: S3VersioningTestLib object to perform S3 versioning calls
     :param bucket_name: Target bucket name
     :param object_name: Target object name
-    :param **kwargs: Optional keyword arguments
-        "etag": Expected ETag of the version/object
-        "get_error_msg": Error message to verify for GET Object
-        "head_error_msg": Error message to verify for HEAD Object
-        "version_id": version ID for GET/HEAD Object call. In case it is not specified,
-            object is retrieved instead of a specific version.
+    :keyword "etag": Expected ETag of the version/object
+    :keyword "get_error_msg": Error message to verify for GET Object
+    :keyword "head_error_msg": Error message to verify for HEAD Object
+    :keyword "version_id": version ID for GET/HEAD Object call. In case it is not specified,
+    object is retrieved instead of a specific version.
     """
     etag = kwargs.get("etag", None)
     get_error_msg = kwargs.get("get_error_msg", None)
@@ -257,7 +266,8 @@ def check_get_head_object_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3Ver
             get_response = s3_ver_test_obj.get_object_version(bucket_name, object_name,
                                                               version_id=version_id)
         else:
-            get_response = s3_test_obj.get_object(bucket=bucket_name, key=object_name)
+            get_response = s3_test_obj.get_object(bucket=bucket_name, key=object_name,
+                                                  skip_polling=True)
         assert_utils.assert_true(get_response[0], get_response[1])
         if version_id:
             assert_utils.assert_equal(get_response[1]["VersionId"], version_id)
@@ -300,8 +310,7 @@ def download_and_check(s3_test_obj: S3TestLib, bucket_name: str, object_name: st
     :param object_name: Target object name
     :param file_path: File path of the uploaded file
     :param download_path: Path for the downloaded object contents to be saved to.
-    :param **kwargs: Optional keyword arguments
-        "version_id": Target version ID for GET/HEAD Object call.
+    :keyword "version_id": Target version ID for GET/HEAD Object call.
             In case it is not specified/None, object is retrieved instead of a specific version.
     """
     version_id = kwargs.get("version_id", None)
@@ -367,38 +376,51 @@ def upload_versions(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib
                            object_name=object_name, versions_dict=versions,
                            is_unversioned=True)
 
-    for versioning_config, object_name, count in obj_list:
-        resp = s3_ver_test_obj.put_bucket_versioning(bucket_name=bucket_name,
-                                                     status=versioning_config)
-        assert_utils.assert_true(resp[0], resp[1])
-        for _ in range(count):
-            file_path = SystemRandom().choice(file_paths)  # nosec
-            chk_null_version = False if versioning_config == "Enabled" else True
-            upload_version(s3_test_obj, bucket_name=bucket_name, file_path=file_path,
-                           object_name=object_name, versions_dict=versions,
-                           chk_null_version=chk_null_version)
+    if obj_list:
+        for versioning_config, object_name, count in obj_list:
+            resp = s3_ver_test_obj.put_bucket_versioning(bucket_name=bucket_name,
+                                                         status=versioning_config)
+            assert_utils.assert_true(resp[0], resp[1])
+            for _ in range(count):
+                file_path = SystemRandom().choice(file_paths)  # nosec
+                chk_null_version = False if versioning_config == "Enabled" else True
+                upload_version(s3_test_obj, bucket_name=bucket_name, file_path=file_path,
+                               object_name=object_name, versions_dict=versions,
+                               chk_null_version=chk_null_version)
     return versions
 
 
-# pylint: disable=too-many-arguments
-def upload_version(s3_test_obj: S3TestLib, bucket_name: str, object_name: str,
-                   file_path: str, versions_dict: dict,
-                   chk_null_version: bool = False, is_unversioned: bool = False) -> None:
-    """ Upload objects to a versioning enabled/suspended bucket and return dictionary of uploaded
-    versions
+def upload_version(s3_test_obj: Union[S3TestLib, S3MultipartTestLib], bucket_name: str,
+                   object_name: str, file_path: str, versions_dict: dict, **kwargs) -> None:
+    """ Upload an object(Multipart/Regular) to a versioning enabled/suspended bucket and return
+    dictionary of uploaded versions.
 
     :param s3_test_obj: S3TestLib object to perform S3 calls
     :param bucket_name: Bucket name for calling PUT Object
     :param object_name: Object name for calling PUT Object
     :param file_path: File path that can be used for PUT Object call
-    :param chk_null_version: True, if 'null' version id is expected, else False
     :param versions_dict: Dictionary to be updated with uploaded version metadata
-    :param is_unversioned: Set to true if object is uploaded to an unversioned bucket
+    :keyword chk_null_version: True, if 'null' version id is expected, else False
+    :keyword is_unversioned: Set to true if object is uploaded to an unversioned bucket
         Can be used for setting up pre-existing objects before enabling/suspending bucket
         versioning
+    :keyword is_multipart: True if upload version of object is multipart
+    :keyword total_parts: Total number of parts used in multipart upload
+    :keyword file_size: Size of the object, multiple of 1MB
     """
-    res = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
-                                 file_path=file_path)
+    chk_null_version = kwargs.get("chk_null_version", False)
+    is_unversioned = kwargs.get("is_unversioned", False)
+    is_multipart = kwargs.get("is_multipart", False)
+    total_parts = kwargs.get("total_parts", 2)
+    file_size = kwargs.get("file_size", 10)
+    if is_multipart:
+        res = s3_test_obj.complete_multipart_upload_with_di(
+            bucket_name, object_name, file_path, total_parts=total_parts, file_size=file_size)
+    else:
+        if not system_utils.path_exists(file_path):
+            system_utils.create_file(file_path, file_size)
+        res = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
+                                     file_path=file_path)
     assert_utils.assert_true(res[0], res[1])
     if is_unversioned:
         version_id = "null"
@@ -424,12 +446,13 @@ def upload_version(s3_test_obj: S3TestLib, bucket_name: str, object_name: str,
     versions_dict[object_name]["is_latest"] = version_id
 
 
-def delete_version(s3_ver_test_obj: S3VersioningTestLib, bucket_name: str, object_name: str,
-                   versions_dict: dict, version_id: str = None,
+def delete_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib, bucket_name: str,
+                   object_name: str, versions_dict: dict, version_id: str = None,
                    check_deletemarker: bool = False) -> None:
     """ Delete object to a versioning enabled/suspended bucket and return dictionary of uploaded
     versions
 
+    :param s3_test_obj: S3TestLib object to perform S3 calls
     :param s3_ver_test_obj: S3VersioningTestLib object to perform S3 calls
     :param bucket_name: Bucket name for calling DELETE Object
     :param object_name: Object name for calling DELETE Object
@@ -442,7 +465,7 @@ def delete_version(s3_ver_test_obj: S3VersioningTestLib, bucket_name: str, objec
         res = s3_ver_test_obj.delete_object_version(bucket=bucket_name, key=object_name,
                                                     version_id=version_id)
     else:
-        res = s3_ver_test_obj.delete_object(bucket_name=bucket_name, obj_name=object_name)
+        res = s3_test_obj.delete_object(bucket_name=bucket_name, obj_name=object_name)
 
     assert_utils.assert_true(res[0], res[1])
     if check_deletemarker:
@@ -474,6 +497,97 @@ def delete_version(s3_ver_test_obj: S3VersioningTestLib, bucket_name: str, objec
             versions_dict[object_name]["is_latest"] = dm_id
 
 
+# pylint: disable=too-many-branches
+# pylint: disable-msg=too-many-statements
+def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict,
+                   obj_ver_list: list, quiet: bool = False,
+                   is_versioned: bool = True, expected_error: str = None) -> None:
+    """
+    Delete multiple objects with versioning support and check response.
+
+    :param s3_test_obj: S3TestLib object to perform S3 calls
+    :param bucket_name: Bucket name for calling DELETE Objects
+    :param versions_dict: Dictionary to be updated with deleted key/version metadata
+    :param obj_ver_list: List of tuples with key and version id details for DeleteObjects call
+    :param quiet: Enable quiet mode when performing DeleteObjects
+    :param is_versioned: Set to true if bucket versioning is enabled, False if Suspended
+    :param expected_error: Error message string to verify in case, error is expected
+    """
+    dmo_list = []
+    for obj, ver in obj_ver_list:
+        if ver is not None:
+            dmo_list.append({"Key": obj, "VersionId": ver})
+        else:
+            dmo_list.append({"Key": obj})
+    try:
+        resp = s3_test_obj.delete_multiple_objects(bucket_name=bucket_name, quiet=quiet,
+                                                   prepared_obj_list=dmo_list)
+    except CTException as error:
+        LOG.error(error)
+        dmo_error = error
+    if expected_error is not None:
+        assert_utils.assert_in(expected_error, dmo_error.message, dmo_error)
+        # If error is expected, check the error message and skip the further validation
+        return
+    assert_utils.assert_true(resp[0], resp[1])
+    delete_result = sorted(resp[1]["Deleted"])
+    if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+        assert_utils.assert_equal(sorted(dmo_list), delete_result,
+                                  "DeleteObjects returned unexpected DeleteResult response")
+    else:
+        trimmed_delete_result = []
+        for entry in delete_result:
+            obj = entry["Key"]
+            v_id = entry.get("VersionId", None)
+            if v_id is None:
+                trimmed_delete_result.append({"Key": obj})
+            else:
+                trimmed_delete_result.append({"Key": obj, "VersionId": v_id})
+        assert_utils.assert_equal(sorted(dmo_list), trimmed_delete_result,
+                                  "DeleteObjects returned unexpected DeleteResult response")
+    update_versions_dict_dmo(versions_dict, delete_result, is_versioned)
+
+
+def update_versions_dict_dmo(versions_dict: dict, delete_result: list, is_versioned: bool = True):
+    """
+    Update versions dictionary for DeleteResult returned by DeleteObjects call.
+
+    :param versions_dict: Dictionary to be updated with deleted key/version metadata
+    :param is_versioned: Set to true if bucket versioning is enabled, False if Suspended
+    :param delete_result: DeleteResult returned in DeleteObjects call
+    """
+    for delete_entry in delete_result:
+        obj = delete_entry["Key"]
+        ver = delete_entry("VersionId", None)
+        if ver is not None:
+            if ver in versions_dict[obj]["versions"].keys():
+                versions_dict[obj]["versions"].pop(ver)
+            else:
+                versions_dict[obj]["delete_markers"].remove(ver)
+
+            versions_dict[obj]["version_history"].remove(ver)
+            if ver == versions_dict[obj]["is_latest"]:
+                versions_dict[obj]["is_latest"] =  versions_dict[obj]["version_history"][-1]
+        else:
+            if is_versioned:
+                if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+                    # DeleteMarker not returned in response for RGW
+                    dm_id = "DMO_DELETEMARKERID_PLACEHOLDER"
+                else:
+                    dm_id = delete_entry["DeleteMarkerVersionId"]
+            else:
+                dm_id = "null"
+
+            if dm_id == "null":
+                # Remove null version id from version list and history if it exists
+                if "null" in versions_dict[obj]["versions"].keys():
+                    versions_dict[obj]["versions"].pop("null")
+                    versions_dict[obj]["version_history"].remove("null")
+            versions_dict[obj]["delete_markers"].append(dm_id)
+            versions_dict[obj]["version_history"].append(dm_id)
+            versions_dict[obj]["is_latest"] = dm_id
+
+
 def empty_versioned_bucket(s3_ver_test_obj: S3VersioningTestLib,
                            bucket_name: str) -> None:
     """
@@ -501,11 +615,11 @@ def get_tag_key_val_pair(key_ran: tuple = (1, 128), val_ran: tuple = (0, 256),
     :return: dict {key,val}
     """
     tag_char = string.ascii_letters + string.digits + uni_char
-    key_len = SystemRandom().randrange(key_ran[0], key_ran[1])
+    key_len = SystemRandom().randrange(key_ran[0], key_ran[1]+1)
     key = ''.join([SystemRandom().choice(tag_char) for _ in range(key_len)])
-    val_len = SystemRandom().randrange(val_ran[0], val_ran[1])
+    val_len = SystemRandom().randrange(val_ran[0], val_ran[1]+1)
     val = ''.join([SystemRandom().choice(tag_char) for _ in range(val_len)])
-    return {key: val}
+    return {'Key': key, 'Value': val}
 
 
 def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3VersioningTestLib,
@@ -537,8 +651,13 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
     tag_set = []
     if tag_overrides is None:
         for tag_no in range(tag_count):
-            tag_set.append(get_tag_key_val_pair(key_ran=tag_key_ran[tag_no],
-                                                val_ran=tag_val_ran[tag_no]))
+            try:
+                key_temp = tag_key_ran[tag_no]
+                val_temp = tag_val_ran[tag_no]
+            except IndexError:
+                key_temp = (1, 128)
+                val_temp = (0, 256)
+            tag_set.append(get_tag_key_val_pair(key_ran=key_temp, val_ran=val_temp))
     else:
         tag_set = tag_overrides
 
@@ -549,7 +668,7 @@ def put_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3Ver
                                                    version=version_id, tags={'TagSet': tag_set})
             version_tag[object_name][version_id] = tag_set
         else:
-            resp = s3_tag_test_obj.set_object_tag(bucket_name=bucket_name, object_name=object_name,
+            resp = s3_tag_test_obj.set_object_tag(bucket_name=bucket_name, obj_name=object_name,
                                                   tags={'TagSet': tag_set})
             # Get the latest version ID to which put object tag is updated when no version ID
             # specified
@@ -611,3 +730,30 @@ def delete_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3
         LOG.exception(error)
         return False, error
     return resp
+
+def initiate_upload_list_mpu(self, bucket_name, object_name, **kwargs):
+    """
+    This initialises multipart, upload parts, list parts, complete mpu and return the
+    response and mpu id
+    """
+    is_part_upload = kwargs.get("is_part_upload", False)
+    is_lst_mpu = kwargs.get("is_lst_mpu", False)
+    parts = kwargs.get("parts", None)
+    res = self.s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+    mpu_id = res[1]["UploadId"]
+    parts_details = []
+    if is_part_upload and is_lst_mpu:
+        self.log.info("Uploading parts")
+        resp = self.s3_mp_test_obj.upload_parts_parallel(mpu_id, bucket_name,
+                                                          object_name, parts=parts)
+        assert_utils.assert_not_in("VersionId", resp[1])
+        for i in resp[1]['Parts']:
+            parts_details.append({"PartNumber": i['PartNumber'],
+                                  "ETag": i["ETag"]})
+        sorted_lst = sorted(parts_details, key=lambda x: x['PartNumber'])
+        res = self.s3_mp_test_obj.list_parts(mpu_id, bucket_name, object_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_not_in("VersionId", resp[1])
+        self.log.info("List Multipart uploads")
+        return mpu_id, resp, sorted_lst
+    return mpu_id

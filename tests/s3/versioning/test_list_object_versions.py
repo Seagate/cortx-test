@@ -20,6 +20,7 @@
 
 """List Object Versions test module for Object Versioning."""
 
+import copy
 import logging
 import os
 import time
@@ -69,8 +70,8 @@ class TestListObjectVersions:
             create_file(file_path, 1, "/dev/urandom")
             self.log.info("Created file: %s", file_path)
         self.bucket_name = "ver-bkt-{}".format(time.perf_counter_ns())
-        self.object_name1 = "key-obj-1-{}".format(time.perf_counter_ns())
-        self.object_name2 = "key-obj-2-{}".format(time.perf_counter_ns())
+        self.object_name1 = "key-name-obj1-{}".format(time.perf_counter_ns())
+        self.object_name2 = "key-name-obj2-{}".format(time.perf_counter_ns())
         res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
@@ -166,11 +167,13 @@ class TestListObjectVersions:
             expected_versions = {self.object_name1: versions[self.object_name1]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"Delimiter": self.object_name2},
-                                       expected_versions=versions, expected_flags=expected_flags)
+                                       expected_versions=expected_versions,
+                                       expected_flags=expected_flags)
             self.log.info("Step 4: Test List Object Versions with valid delimiter and prefix")
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"Delimiter": "obj2", "Prefix": "key"},
-                                       expected_versions=versions, expected_flags=expected_flags)
+                                       expected_versions=expected_versions,
+                                       expected_flags=expected_flags)
             self.log.info("Step 5: Test List Object Versions with valid delimiter and non-existent"
                           " prefix")
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
@@ -180,12 +183,14 @@ class TestListObjectVersions:
                           "valid prefix")
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"Delimiter": "obj3", "Prefix": "key"},
-                                       expected_versions={})
+                                       expected_versions=versions)
             self.log.info("Step 7: Test List Object Versions with valid delimiter and valid prefix"
                           " and max-keys set to value greater than mumber of entries")
             flags = {"Delimiter": "obj2", "Prefix": "key", "MaxKeys": 4}
+            expected_flags = {"Delimiter": "obj2", "Prefix": "key", "MaxKeys": 4,
+                              "CommonPrefixes": [{"Prefix": self.object_name2}]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                                       list_params=flags, expected_flags=flags,
+                                       list_params=flags, expected_flags=expected_flags,
                                        expected_versions=expected_versions)
             self.log.info("Step 8: Test List Object Versions with valid delimiter and valid prefix"
                           " and max-keys set to value less than or equal to number of entries")
@@ -198,13 +203,13 @@ class TestListObjectVersions:
                                        list_params=flags, expected_flags=flags,
                                        expected_versions=expected_versions)
             self.log.info("Step 9: Fetch next page of results")
-            flags = {"NextKeyMarker": self.object_name1,
-                     "NextVersionIdMarker": versions[self.object_name1]["is_latest"]}
-            expected_flags = {"IsTruncated": "false"}
-            expected_versions = {self.object_name1: versions[self.object_name2]}
+            flags = {"KeyMarker": self.object_name1, "Delimiter": "obj2", "Prefix": "key",
+                     "VersionIdMarker": versions[self.object_name1]["is_latest"],  "MaxKeys": 3}
+            expected_flags = {"IsTruncated": "false",
+                              "CommonPrefixes": [{"Prefix": self.object_name2}]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params=flags, expected_flags=expected_flags,
-                                       expected_versions=expected_versions)
+                                       expected_versions={})
         self.log.info("ENDED: Test List Object Versions with delimiter request parameter.")
 
     @pytest.mark.s3_ops
@@ -279,7 +284,7 @@ class TestListObjectVersions:
                                        list_params={"KeyMarker": "nonexistent"},
                                        expected_versions={})
             self.log.info("Step 3: Test List Object Versions with valid key-marker")
-            expected_versions = {versions[self.object_name2]}
+            expected_versions = {self.object_name2: versions[self.object_name2]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"KeyMarker": self.object_name2},
                                        expected_versions=expected_versions)
@@ -315,8 +320,12 @@ class TestListObjectVersions:
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"MaxKeys": -1}, expected_versions={})
             self.log.info("Step 4: Test List Object Versions with default max-keys")
+            expected_obj1_versions = copy.deepcopy(versions[self.object_name1])
+            version_id = versions[self.object_name1]["version_history"][0]
+            expected_obj1_versions["versions"].pop(version_id)
+            expected_versions = {self.object_name1: expected_obj1_versions}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                                       expected_versions=versions)
+                                       expected_versions=expected_versions)
             self.log.info("Step 5: Test List Object Versions with default max-keys=1001")
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"MaxKeys": 1001}, expected_versions=versions)
@@ -355,7 +364,7 @@ class TestListObjectVersions:
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"Prefix": "key3"}, expected_versions={})
             self.log.info("Step 3: Test List Object Versions with valid prefix")
-            expected_versions = {versions[object_name2]}
+            expected_versions = {object_name2: versions[object_name2]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"Prefix": "key2"},
                                        expected_versions=expected_versions)
@@ -389,15 +398,15 @@ class TestListObjectVersions:
             self.log.info("Step 1: Test List Object Versions with empty version-id-marker")
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"VersionIdMarker": ""},
-                                       expected_versions=expected_versions)
+                                       expected_versions=versions)
             self.log.info("Step 2: Test List Object Versions with invalid version-id-marker and "
                           "no key-marker")
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"VersionIdMarker": "abc"},
-                                       expected_versions=expected_versions)
+                                       expected_versions=versions)
             self.log.info("Step 3: Test List Object Versions with invalid version-id-marker and "
                           "valid key-marker")
-            expected_versions = {versions[self.object2]}
+            expected_versions = {self.object_name2: versions[self.object_name2]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"VersionIdMarker": "abc",
                                                     "KeyMarker": self.object_name1},
@@ -407,7 +416,7 @@ class TestListObjectVersions:
                           "key-marker")
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"VersionIdMarker": version_id},
-                                       expected_versions=expected_versions)
+                                       expected_versions=versions)
             self.log.info("Step 5: Test List Object Versions with valid version-id-marker and "
                           "non-existent key-marker")
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
@@ -416,6 +425,9 @@ class TestListObjectVersions:
                                        expected_versions={})
             self.log.info("Step 6: Test List Object Versions with valid version-id-marker and "
                           "valid key-marker")
+            expected_obj1_versions = copy.deepcopy(versions[self.object_name1])
+            expected_obj1_versions["versions"].pop(version_id)
+            expected_versions.update({self.object_name1: expected_obj1_versions})
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"KeyMarker": self.object_name1,
                                                     "VersionIdMarker": version_id},

@@ -27,7 +27,6 @@ from commons import errorcodes as err
 from commons.exceptions import CTException
 
 from config.s3 import S3_CFG
-from commons.utils import assert_utils
 from libs.s3 import ACCESS_KEY
 from libs.s3 import SECRET_KEY
 from libs.s3.s3_versioning import Versioning
@@ -96,33 +95,20 @@ class S3VersioningTestLib(Versioning):
 
         return True, response
 
-    def list_object_versions(self, bucket_name: str = None, **kwargs) -> tuple:
+    def list_object_versions(self, bucket_name: str = None, optional_params: dict = None) -> tuple:
         """
         List all the versions and delete markers present in a bucket.
 
         :param bucket_name: Target bucket for the List Object Versions call.
-        :param kwargs: Optional query args that can be supplied to the List Object Versions call
-            delimiter, encoding_type, key_marker, max_keys, prefix, version_id_marker
+        :param optional_params: Optional query args that can be supplied to the List Object Versions
+            call: Delimiter, EncodingType, KeyMarker, MaxKeys, Prefix, VersionIdMarker
         :return: response
         """
-        optional_params = dict()
-        user_params = list(kwargs.keys())
-        if "delimiter" in user_params:
-            optional_params["Delimiter"] = kwargs["delimiter"]
-        if "encoding_type" in user_params:
-            optional_params["EncodingType"] = kwargs["encoding_type"]
-        if "key_marker" in user_params:
-            optional_params["KeyMarker"] = kwargs["key_marker"]
-        if "max_keys" in user_params:
-            optional_params["MaxKeys"] = kwargs["max_keys"]
-        if "prefix" in user_params:
-            optional_params["Prefix"] = kwargs["prefix"]
-        if "version_id_marker" in user_params:
-            optional_params["VersionIdMarker"] = kwargs["version_id_marker"]
         LOGGER.info("Fetching bucket object versions list")
         try:
             response = super().list_object_versions(bucket_name=bucket_name,
                                                     optional_params=optional_params)
+
             LOGGER.info("Successfully fetched bucket object versions list: %s", response)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s", S3VersioningTestLib.list_object_versions.__name__,
@@ -207,12 +193,10 @@ class S3VersioningTestLib(Versioning):
         try:
             resp = super().get_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
                                            version=version)
-            LOGGER.info("Successfully sent request for get object tagging for %s object with %s "
-                        "version", object_name, version)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s", S3VersioningTestLib.get_obj_tag_ver.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
-        return True, resp
+        return True, resp['TagSet']
 
     def put_obj_tag_ver(self, bucket_name: str = None, object_name: str = None,
                         version: str = None, tags: dict = None) -> tuple:
@@ -228,8 +212,6 @@ class S3VersioningTestLib(Versioning):
         try:
             resp = super().put_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
                                            version=version, tags=tags)
-            LOGGER.info("Successfully sent request for put object tagging for %s object with %s "
-                        "version", object_name, version)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s", S3VersioningTestLib.put_obj_tag_ver.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
@@ -248,8 +230,6 @@ class S3VersioningTestLib(Versioning):
         try:
             resp = super().delete_obj_tag_ver(bucket_name=bucket_name, object_name=object_name,
                                               version=version)
-            LOGGER.info("Successfully sent request for delete object tag for %s object with %s "
-                        "version", object_name, version)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s", S3VersioningTestLib.delete_obj_tag_ver.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
