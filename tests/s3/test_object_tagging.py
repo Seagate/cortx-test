@@ -1439,7 +1439,7 @@ class TestObjectTagging:
         self.log.info("Getting uploaded object")
         resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_equal(resp[1]['TagCount'], 0, resp[1])
+        assert_utils.assert_equal(resp[1].get('TagCount', 0), 0, resp[1])
         self.log.info("Object is Retrieved using GET object")
         self.log.info("verify Get object tags count using GET object on non tagged object")
 
