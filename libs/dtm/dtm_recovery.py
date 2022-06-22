@@ -119,6 +119,7 @@ class DTMRecoveryTestLib:
                 workload.append({'bucket': bucket_name, 'obj_name_pref': object_prefix,
                                  'num_clients': no_of_clients, 'obj_size': obj_size,
                                  'num_sample': no_of_samples})
+            obj_size = None
         if all(results):
             queue.put([True, workload])
         else:
@@ -262,8 +263,8 @@ class DTMRecoveryTestLib:
         process_state = dict()
         self.log.info("Get processes running inside container %s of pod %s", container_name,
                       pod_name)
-        resp = master_node.get_all_container_processes(pod_name=pod_name,
-                                                       container_name=container_name)
+        resp = master_node.get_all_cluster_processes(pod_name=pod_name,
+                                                     container_name=container_name)
         self.log.info("Extract list of processes having IDs %s", process_ids)
         process_list = [(ele, p_id) for ele in resp for p_id in process_ids if p_id in ele]
         if len(process_ids) != len(process_list):
@@ -271,7 +272,8 @@ class DTMRecoveryTestLib:
                           f"All processes running in container are: {resp}"
         compile_exp = re.compile('"state": "(.*?)"')
         for i_i in process_list:
-            process_state[i_i[1]] = compile_exp.findall(i_i[0])[0]
+            stat = compile_exp.findall(i_i[0])[0]
+            process_state[i_i[1]] = stat.split('_')[-1]
 
         return True, process_state
 
@@ -288,6 +290,7 @@ class DTMRecoveryTestLib:
         :return: Bool
         """
         resp = False
+        process_state = None
         self.log.info("Polling process states")
         start_time = int(time.time())
         while timeout > int(time.time()) - start_time:
@@ -307,8 +310,7 @@ class DTMRecoveryTestLib:
                                int(time.time()) - start_time)
                 break
 
-        self.log.info("State of process with process ids %s is %s", process_ids,
-                      status)
+        self.log.info("State of process is : %s", process_state)
         return resp
 
     @staticmethod

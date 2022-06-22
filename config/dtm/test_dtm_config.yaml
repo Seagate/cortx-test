@@ -23,11 +23,10 @@ test_41230:
 test_42246:
   samples: 10
   num_loop: 300
+  nclients: 2
+  nsamples: 2
 
 test_42247:
-  nsamples: 50
-
-test_42248:
   nsamples: 50
 
 test_41245:

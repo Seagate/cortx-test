@@ -138,6 +138,11 @@ class TestRGWProcessRestart:
             self.log.info("Cleanup: Cleaning created IAM users and buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.iam_user)
             assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Cleanup: Checking cortx cluster state")
+        resp = self.ha_obj.poll_cluster_status(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Cleanup: Cluster status checked successfully")
+
         if os.path.exists(self.test_dir_path):
             system_utils.remove_dirs(self.test_dir_path)
 
@@ -427,7 +432,8 @@ class TestRGWProcessRestart:
                                       object_prefix=self.object_name,
                                       no_of_clients=self.test_cfg['clients'],
                                       no_of_samples=self.test_cfg['test_42247']['nsamples'],
-                                      log_file_prefix=log_file_prefix, queue=que)
+                                      log_file_prefix=log_file_prefix, queue=que,
+                                      loop=self.test_cfg['loop_count'])
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
@@ -477,7 +483,7 @@ class TestRGWProcessRestart:
         self.log.info("Step 1: Start WRITE operation in background")
         args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
                 'no_of_clients': self.test_cfg['clients'],
-                'no_of_samples': self.test_cfg['test_42248']['samples'],
+                'no_of_samples': self.test_cfg['samples'],
                 'log_file_prefix': log_file_prefix, 'queue': que,
                 'retry': DTM_CFG["io_retry_count"], 'loop': self.test_cfg['loop_count']}
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
