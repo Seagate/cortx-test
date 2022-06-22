@@ -993,7 +993,7 @@ class ProvDeployK8sCortxLib:
             csm_s3.create_custom_s3_payload("valid")
             resp = csm_s3.create_s3_account()
             LOGGER.info("Response for account creation: %s", resp.json())
-            details = resp.json()        
+            details = resp.json()      
             access_key = details['access_key']
             secret_key = details["secret_key"]
 
