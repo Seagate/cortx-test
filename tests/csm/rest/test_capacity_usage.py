@@ -107,7 +107,7 @@ class TestSystemCapacity():
             cls.log.info("Failed to get parity value, will use 1.")
             cls.kvalue = 1
         cls.cap_df = pandas.DataFrame()
-        cls.aligned_size = 4 * (cls.nvalue + cls.kvalue) #TODO
+        cls.aligned_size = 4 * cls.nvalue
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.err_margin = (cls.nvalue/(cls.nvalue+cls.kvalue))*100 + 1
         cls.s3_cleanup = False
@@ -536,7 +536,7 @@ class TestSystemCapacity():
         self.log.info("[Start] Sleep %s", self.update_seconds)
         time.sleep(self.update_seconds)
         self.log.info("[End] Sleep %s", self.update_seconds)
-        
+
         resp = self.csm_obj.get_degraded_all(self.hlth_master)
         total_written += obj_size * 1024 * 1024
         new_row = pandas.Series(data=resp, name='BeforeClusterRestart')
@@ -630,7 +630,7 @@ class TestSystemCapacity():
             self.log.info("[End] Sleep %s", self.update_seconds)
 
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
-            
+
             result = self.csm_obj.verify_degraded_capacity(resp, healthy=0, degraded=total_written,
             critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
             assert result[0], result[1]
@@ -1052,7 +1052,7 @@ class TestSystemCapacity():
                             total=total_written)
             assert result[0], result[1]
             # Uncomment next lines and remove break when CORTX-32322 is fixed.
-            #resp = s3_misc.delete_all_buckets(self.akey,self.skey) 
+            #resp = s3_misc.delete_all_buckets(self.akey,self.skey)
             #assert resp, "Delete all buckets and object failed."
             break
         self.log.info("[END] completed")
