@@ -999,8 +999,8 @@ class TestControlPodRestart:
         elif exp_fail:
             LOGGER.info("In-Flight IAM user creation/deletion failed for users: %s", exp_fail)
             LOGGER.info("In-Flight IAM user deletion failed for users: %s", user_del_failed)
-            for i in user_del_failed:
-                self.s3_clean.update({i: users[i]})
+            for i_i in user_del_failed:
+                self.s3_clean.update({i_i: users[i_i]})
         else:
             assert_utils.assert_true(False, "IAM user CRUD operations are expected to be failed "
                                             "during control pod failover")
@@ -1023,8 +1023,8 @@ class TestControlPodRestart:
         LOGGER.info("Step 6: Perform new IAM users(%s) and buckets(%s) creation/deletion in loop",
                     num_users, num_bkts)
         users_dict = dict()
-        for i in created_users:
-            users_dict.update(i)
+        for i_i in created_users:
+            users_dict.update(i_i)
         output = Queue()
         args = {'user_crud': True, 'bkt_crud': True, 'num_users': 10,
                 'del_users_dict': users_dict, 'num_bkts': 10, 's3_obj': s3_obj,
@@ -1045,8 +1045,8 @@ class TestControlPodRestart:
                 if list(i_i.keys())[0] in user_del_failed:
                     self.s3_clean.update(i_i)
         if new_created_users:
-            for i in new_created_users:
-                self.s3_clean.update(i)
+            for i_i in new_created_users:
+                self.s3_clean.update(i_i)
         assert_utils.assert_false(len(exp_fail) or len(failed), "Failure in IAM user CRUD "
                                                                 "operations. \nFailed users: "
                                                                 f"\nexp_fail: {exp_fail} and "
@@ -1158,7 +1158,7 @@ class TestControlPodRestart:
                     "failover", uids)
 
         LOGGER.info("Step 5: Upload remaining parts")
-        remaining_parts = list(filter(lambda i: i not in part_numbers,
+        remaining_parts = list(filter(lambda i_i: i_i not in part_numbers,
                                       list(range(1, total_parts + 1))))
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,

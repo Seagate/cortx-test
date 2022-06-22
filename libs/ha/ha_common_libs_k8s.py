@@ -1837,9 +1837,9 @@ class HAK8s:
         del_users = list(del_users_dict.keys()) if del_users_dict else list()
         if user_crud:
             LOGGER.info("Create and delete %s IAM users in loop", num_users)
-            for i in range(num_users):
+            for i_i in range(num_users):
                 try:
-                    LOGGER.debug("Creating %s user", i)
+                    LOGGER.debug("Creating %s user", i_i)
                     user = None
                     user = self.mgnt_ops.create_account_users(nusers=1)
                     if user is None:
@@ -1849,7 +1849,7 @@ class HAK8s:
                             failed.append(user)
                     else:
                         created_users.append(user)
-                        LOGGER.debug("Created %s user successfully", i)
+                        LOGGER.debug("Created %s user successfully", i_i)
                 except CTException as error:
                     LOGGER.exception("Error: %s", error)
                     if event.is_set():
@@ -1857,9 +1857,9 @@ class HAK8s:
                     else:
                         failed.append(user)
 
-                if len(del_users) > i:
-                    LOGGER.debug("Deleting %s user", del_users[i])
-                    user = del_users[i]
+                if len(del_users) > i_i:
+                    LOGGER.debug("Deleting %s user", del_users[i_i])
+                    user = del_users[i_i]
                     resp = self.delete_s3_acc_buckets_objects({user: del_users_dict[user]})
                     if not resp[0]:
                         user_del_failed.append(user)
@@ -1887,9 +1887,9 @@ class HAK8s:
         exp_fail = list()
         failed = list()
         bucket_name = None
-        for i in range(num_bkts):
+        for i_i in range(num_bkts):
             try:
-                bucket_name = f"bkt-loop-{i}"
+                bucket_name = f"bkt-loop-{i_i}"
                 res = s3_obj.create_bucket(bucket_name)
                 if res[1] != bucket_name:
                     if event.is_set():
@@ -1898,7 +1898,7 @@ class HAK8s:
                         failed.append(bucket_name)
                     break
                 s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
-                LOGGER.debug("Created and deleted %s bucket successfully", i)
+                LOGGER.debug("Created and deleted %s bucket successfully", i_i)
             except CTException as error:
                 LOGGER.exception("Error: %s", error)
                 if event.is_set():
