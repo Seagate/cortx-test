@@ -334,7 +334,7 @@ def delete_all_buckets(access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("S3 boto resource created")
 
     for bucket in s3_resource.buckets.all():
-
+        LOGGER.debug("Bucket: %s", bucket.name)
         bucket = s3_resource.Bucket(bucket.name)
         LOGGER.debug("Delete all associated objects.")
         bucket.objects.all().delete()

@@ -1,4 +1,4 @@
-update_seconds: 800
+update_seconds: 720
 test_33899:
   err_margin: 0
 test_33919:

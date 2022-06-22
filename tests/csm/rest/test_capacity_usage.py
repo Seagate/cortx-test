@@ -47,7 +47,7 @@ class TestSystemCapacity():
     def setup_class(cls):
         """ This is method is for test suite set-up """
         cls.log = logging.getLogger(__name__)
-        cls.log.info("Initializing test setups ......")
+        cls.log.info("[START] Setup Class")
         cls.csm_obj = csm_api_factory("rest")
         cls.log.info("Initiating Rest Client ...")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
@@ -107,16 +107,25 @@ class TestSystemCapacity():
             cls.log.info("Failed to get parity value, will use 1.")
             cls.kvalue = 1
         cls.cap_df = pandas.DataFrame()
-        cls.aligned_size = 4 * cls.nvalue
+        cls.aligned_size = 4 * (cls.nvalue + cls.kvalue) #TODO
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.err_margin = (cls.nvalue/(cls.nvalue+cls.kvalue))*100 + 1
         cls.s3_cleanup = False
-        cls.deploy = True
+        cls.deploy = False
+        cls.restore_pod = False
+        cls.log.info("[END] Setup Class")
 
     def setup_method(self):
         """
         Setup method for creating s3 user
         """
+        self.log.info("[START] Setup Method")
+
+        self.log.info("Cleanup: Check cluster status")
+        resp = self.ha_obj.poll_cluster_status(self.master)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Cleanup: Cluster status checked successfully")
+
         self.log.info("Creating S3 account")
         resp = self.csm_obj.create_s3_account()
         assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
@@ -124,14 +133,14 @@ class TestSystemCapacity():
         self.skey = resp.json()["secret_key"]
         self.s3_user = resp.json()["account_name"]
         self.bucket = "iam-user-bucket-" + str(int(time.time()))
-        
+
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       self.bucket, self.akey, self.skey)
         assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
 
         self.cap_df = pandas.DataFrame()
         total_written = s3_misc.get_total_used(self.akey, self.skey)
-        
+
         self.log.info("[Start] Start some IOs")
         obj = f"object{self.s3_user}{time.time_ns()}.txt"
         self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, self.aligned_size,
@@ -146,25 +155,29 @@ class TestSystemCapacity():
         self.log.info("[Start] Sleep %s", self.update_seconds)
 
         resp = self.csm_obj.get_degraded_all(self.hlth_master)
+
         new_write = self.aligned_size * 1024 * 1024
         total_written += new_write
 
         result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
             critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
         assert result[0], result[1]
+        self.log.info("[END] Setup Method")
 
     def teardown_method(self):
         """
         Teardowm method for deleting s3 account created in setup.
         """
-        self.log.info("Failed deployments : %s", self.failed_pod)
-        for deploy_name in self.failed_pod:
-            self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
-            self.log.debug("Response: %s", resp)
-            assert resp[0], f"Failed to restore pod by {self.restore_method} way"
-            self.log.info("Successfully restored pod by %s way", self.restore_method)
-            self.log.info("[End] Restore deleted pods : %s", deploy_name)
+        self.log.info("[START] Teardown Method")
+        if self.restore_pod:
+            self.log.info("Failed deployments : %s", self.failed_pod)
+            for deploy_name in self.failed_pod:
+                self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
+                resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+                self.log.debug("Response: %s", resp)
+                assert resp[0], f"Failed to restore pod by {self.restore_method} way"
+                self.log.info("Successfully restored pod by %s way", self.restore_method)
+                self.log.info("[End] Restore deleted pods : %s", deploy_name)
 
         self.failed_pod = []
         if self.s3_cleanup:
@@ -185,6 +198,7 @@ class TestSystemCapacity():
             self.deploy_lc_obj.execute_prereq_cortx(self.master,
                                                     K8S_SCRIPTS_PATH,
                                                     K8S_PRE_DISK)
+
             for node in self.node_list:
                 self.deploy_lc_obj.execute_prereq_cortx(node, K8S_SCRIPTS_PATH,
                                                         K8S_PRE_DISK)
@@ -192,9 +206,10 @@ class TestSystemCapacity():
 
             self.log.info("Cleanup: Deploying the Cluster")
             resp_cls = self.deploy_lc_obj.deploy_cluster(self.master,
-                                                         K8S_SCRIPTS_PATH)
+                                                            K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp_cls[0], resp_cls[1])
             self.log.info("Cleanup: Cluster deployment successfully")
+        self.log.info("[END] Teardown Method")
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -202,20 +217,17 @@ class TestSystemCapacity():
     @pytest.mark.tags('TEST-33899')
     def test_33899(self):
         """
-        Test degraded capacity with single node failure ( K>0 ) without IOs for 2+1+0 config with 3
-        nodes
+        Test degraded capacity with Transient node failure in flexible protection scheme with Y
+        extra nodes without write
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_33899"]
         cap_df = pandas.DataFrame()
         resp = self.csm_obj.get_degraded_all(self.hlth_master)
-        total_written = resp["healthy"]
+        total_written = s3_misc.get_total_used(self.akey, self.skey)
         new_row = pandas.Series(data=resp, name='Nofail')
         cap_df = cap_df.append(new_row, ignore_index=False)
-
-        resp = self.csm_obj.get_degraded_all(self.hlth_master)
-        total_written = resp["healthy"]
 
         result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
             critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
@@ -283,8 +295,8 @@ class TestSystemCapacity():
     @pytest.mark.tags('TEST-33919')
     def test_33919(self):
         """
-        Test degraded capacity with single node failure ( K>0 ) with IOs for 2+1+0 config with 3
-        nodes
+        Test degraded capacity with Transient node failure in flexible protection scheme with K
+        extra nodes with aligned write
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -293,7 +305,7 @@ class TestSystemCapacity():
         cap_df = pandas.DataFrame(columns=self.deploy_list)
 
         resp = self.csm_obj.get_degraded_all(self.hlth_master)
-        total_written = resp["healthy"]
+        total_written = s3_misc.get_total_used(self.akey, self.skey)
 
         cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, resp["healthy"])
         self.log.debug("Collected data frame : %s", cap_df.to_string())
@@ -317,6 +329,15 @@ class TestSystemCapacity():
             resp = self.ha_obj.check_cluster_status(self.master)
             assert_utils.assert_false(resp[0], resp)
             self.log.info("[End] Cluster is in degraded state")
+
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+            time.sleep(self.update_seconds)
+            self.log.info("[End] Sleep %s", self.update_seconds)
+
+            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            result = self.csm_obj.verify_degraded_capacity(resp, healthy=0, degraded=total_written,
+            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+            assert result[0], result[1]
 
             new_write = self.aligned_size * failure_cnt
             self.log.info("[Start] Start some IOs")
@@ -371,15 +392,15 @@ class TestSystemCapacity():
         assert self.csm_obj.verify_checksum(cap_df)
         self.deploy = True
 
-    #@pytest.skip.reason("CORTX-31578")
+    @pytest.mark.skip(reason="CORTX-31578")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-33920')
     def test_33920(self):
         """
-        Test degraded capacity with single node failure ( K>0 ) with IOs for 2+1+0 config with 3
-        nodes
+        Test degraded capacity with Transient node failure in flexible protection scheme with extra
+        nodes with create S3 account in degraded mode.
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -388,7 +409,7 @@ class TestSystemCapacity():
         cap_df = pandas.DataFrame(columns=self.deploy_list)
 
         resp = self.csm_obj.get_degraded_all(self.hlth_master)
-        total_written = resp["healthy"]
+        total_written = s3_misc.get_total_used(self.akey, self.skey)
 
         cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, resp["healthy"])
         self.log.debug("Collected data frame : %s", cap_df.to_string())
@@ -498,7 +519,7 @@ class TestSystemCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_33927"]
         cap_df = pandas.DataFrame()
-
+        total_written = s3_misc.get_total_used(self.akey, self.skey)
         self.log.info("[Start] IOs")
         obj = f"object{self.s3_user}{time.time_ns()}.txt"
         msg = f"bucket:{self.bucket} with access key: {self.akey} and secret key: {self.skey}"
@@ -512,14 +533,18 @@ class TestSystemCapacity():
         csum = s3_misc.get_object_checksum(obj, self.bucket, self.akey, self.skey)
         self.log.info("[End] IOs")
 
+        self.log.info("[Start] Sleep %s", self.update_seconds)
+        time.sleep(self.update_seconds)
+        self.log.info("[End] Sleep %s", self.update_seconds)
+        
         resp = self.csm_obj.get_degraded_all(self.hlth_master)
-        total_written = resp["healthy"]
+        total_written += obj_size * 1024 * 1024
         new_row = pandas.Series(data=resp, name='BeforeClusterRestart')
         cap_df = cap_df.append(new_row, ignore_index=False)
         cap_df["csum"] = csum
 
         result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+            critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
         assert result[0], result[1]
 
         self.log.info("[Start] Stop Cluster")
@@ -538,13 +563,17 @@ class TestSystemCapacity():
         assert resp[0], resp[1]
         self.log.info("[End] Cluster restart.")
 
+        self.log.info("[Start] Sleep %s", self.update_seconds)
+        time.sleep(self.update_seconds)
+        self.log.info("[End] Sleep %s", self.update_seconds)
+
         resp = self.csm_obj.get_degraded_all(self.hlth_master)
         total_written = resp["healthy"]
         new_row = pandas.Series(data=resp, name='AfterClusterRestart')
         cap_df = cap_df.append(new_row, ignore_index=False)
 
         result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+            critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
         assert result[0], result[1]
 
         csum = s3_misc.get_object_checksum(obj, self.bucket, self.akey, self.skey)
@@ -561,8 +590,8 @@ class TestSystemCapacity():
     @pytest.mark.tags('TEST-33929')
     def test_33929(self):
         """
-        Test degraded capacity with single node failure ( K>0 ) with IOs for 2+1+0 config with 3
-        nodes
+        Test degraded capacity with Transient node failure in flexible protection scheme with K+2
+        extra nodes with aligned write - recovery 2
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -595,6 +624,16 @@ class TestSystemCapacity():
             resp = self.ha_obj.check_cluster_status(self.master)
             assert_utils.assert_false(resp[0], resp)
             self.log.info("[End] Cluster is in degraded state")
+
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+            time.sleep(self.update_seconds)
+            self.log.info("[End] Sleep %s", self.update_seconds)
+
+            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            
+            result = self.csm_obj.verify_degraded_capacity(resp, healthy=0, degraded=total_written,
+            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+            assert result[0], result[1]
 
             new_write = self.aligned_size * failure_cnt
             self.log.info("[Start] Start some IOs")
@@ -764,6 +803,7 @@ class TestSystemCapacity():
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed for invalid key access")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+        self.deploy = False
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -787,6 +827,7 @@ class TestSystemCapacity():
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+        self.deploy = False
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -815,6 +856,7 @@ class TestSystemCapacity():
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+        self.deploy = False
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -836,6 +878,7 @@ class TestSystemCapacity():
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK,
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+        self.deploy = False
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -864,6 +907,7 @@ class TestSystemCapacity():
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+        self.deploy = False
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -887,6 +931,7 @@ class TestSystemCapacity():
         assert_utils.assert_equals(response.status_code, HTTPStatus.UNAUTHORIZED,
                                    "Status code check failed")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+        self.deploy = False
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -916,6 +961,7 @@ class TestSystemCapacity():
         resp = self.csm_obj.validate_metrics(response.json(), endpoint_param=None)
         assert_utils.assert_true(resp, "Rest data metrics check failed in full mode")
         self.log.info("##### Test ended -  %s #####", test_case_name)
+        self.deploy = False
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -931,7 +977,8 @@ class TestSystemCapacity():
 
         self.log.info("##### Test started -  %s #####", test_case_name)
         resp = self.csm_obj.get_degraded_all(self.hlth_master)
-        total_written = resp["healthy"]
+        total_written = s3_misc.get_total_used(self.akey, self.skey)
+        self.log.info("Bytes written : %s", total_written)
 
         cap_df = self.csm_obj.append_df(self.cap_df, self.failed_pod, resp["healthy"])
         self.log.debug("Collected data frame : %s", cap_df.to_string())
@@ -942,6 +989,7 @@ class TestSystemCapacity():
 
         self.log.info("[START] loop")
         for deploy_name in self.deploy_list:
+
             self.log.info("[Start] Shutdown the data pod safely %s", deploy_name)
             self.log.info("Deleting pod %s", deploy_name)
             resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
@@ -987,7 +1035,6 @@ class TestSystemCapacity():
 
             total_written += new_write
             self.log.info("[START] Recovery loop")
-
             self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
             resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
             self.log.debug("Response: %s", resp)
@@ -1004,7 +1051,9 @@ class TestSystemCapacity():
                             degraded=0, critical=0, damaged=0, err_margin=test_cfg["err_margin"],
                             total=total_written)
             assert result[0], result[1]
-            resp = s3_misc.delete_all_buckets(self.akey,self.skey)
-            assert resp, "Delete all buckets and object failed."
+            # Uncomment next lines and remove break when CORTX-32322 is fixed.
+            #resp = s3_misc.delete_all_buckets(self.akey,self.skey) 
+            #assert resp, "Delete all buckets and object failed."
             break
         self.log.info("[END] completed")
+        self.deploy = True
