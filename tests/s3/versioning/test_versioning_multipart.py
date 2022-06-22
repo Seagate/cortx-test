@@ -28,13 +28,11 @@ import pytest
 
 from commons import error_messages as err_msg
 from commons.params import TEST_DATA_FOLDER
-from commons.utils import assert_utils
 from commons.utils import system_utils
 from libs.s3 import s3_versioning_common_test_lib as s3ver_cmn_lib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from commons.utils import assert_utils
 from commons.utils.s3_utils import get_precalculated_parts
-from commons import error_messages as errmsg
 
 from config.s3 import MPART_CFG
 
@@ -171,13 +169,9 @@ class TestVersioningMultipart:
         parts = get_precalculated_parts(self.test_file_path, mp_config["part_sizes"],
                                         chunk_size=mp_config["chunk_size"])
         s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name,
-                                     self.object_name, self.test_file_path,
-                                     versions_dict=versions, is_multipart=True,
-                                     total_parts=2, file_size=10,
+                                     self.object_name, self.test_file_path, parts=parts,
+                                     versions_dict=versions, is_mpu_with_lst_mpu=True,
                                      chk_null_version=True)
-                                                self.object_name, self.test_file_path, parts=parts,
-                                                versions_dict=versions, is_mpu_with_lst_mpu=True,
-                                                chk_null_version=True)
         self.log.info("Step 8: List Object Versions")
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
                                                  expected_versions=versions)
