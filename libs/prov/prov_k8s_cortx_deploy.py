@@ -1990,7 +1990,7 @@ class ProvDeployK8sCortxLib:
         """
         This is used to access access key and secret key
         file: solution.yaml file
-        returns access key and secrets key
+        returns access key and secret key
         """
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
@@ -2000,4 +2000,4 @@ class ProvDeployK8sCortxLib:
             secrets = parent_key['secrets']
             secret_key = secrets["content"]["s3_auth_admin_secret"]
             LOGGER.info("Getting access and secret key")
-        return access_key, secret_key
+        return True, access_key, secret_key
