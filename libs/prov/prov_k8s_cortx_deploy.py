@@ -1999,4 +1999,5 @@ class ProvDeployK8sCortxLib:
             access_key = common["s3"]["default_iam_users"]["auth_admin"]
             secrets = parent_key['secrets']
             secret_key = secrets["content"]["s3_auth_admin_secret"]
+            LOGGER.info("Getting access and secret key")
         return access_key, secret_key
