@@ -425,7 +425,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["test_9420"]["value"],
                 tag_count=S3_OBJ_TST["test_9420"]["tag_count"])
         except CTException as error:
-            assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
+            assert errmsg.S3_RGW_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info("Add more than 10 tags to an existing object")
 
     @pytest.mark.parallel
@@ -658,7 +658,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["s3_object"]["key"],
                 S3_OBJ_TST["test_9426"]["value"])
         except CTException as error:
-            assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
+            assert errmsg.S3_RGW_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info(
             "Create a tag having values more than 512 Unicode characters in length")
 
@@ -1243,7 +1243,7 @@ class TestObjectTagging:
                 S3_OBJ_TST["test_9438"]["value"],
                 tag_count=S3_OBJ_TST["test_9438"]["tag_count"])
         except CTException as error:
-            assert errmsg.S3_BKT_INVALID_TAG_ERR in str(error.message), error.message
+            assert errmsg.S3_RGW_BKT_INVALID_TAG_ERR in str(error.message), error.message
         self.log.info(
             "Add maximum nos. of Object tags >100 using json file")
 
