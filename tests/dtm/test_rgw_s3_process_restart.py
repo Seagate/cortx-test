@@ -534,8 +534,8 @@ class TestRGWProcessRestart:
         self.log.info("Step 1: Perform WRITEs-READs-Validate Operations")
         self.dtm_obj.perform_write_op(bucket_prefix=f"bucket-{test_prefix}",
                                       object_prefix=f"object-{test_prefix}",
-                                      no_of_clients=self.test_cfg['clients'],
-                                      no_of_samples=self.test_cfg['samples'],
+                                      no_of_clients=test_cfg['nclients'],
+                                      no_of_samples=test_cfg['nsamples'],
                                       log_file_prefix=test_prefix, queue=wr_output,
                                       loop=self.test_cfg['test_42246']['num_loop'], skip_read=False,
                                       validate=True)

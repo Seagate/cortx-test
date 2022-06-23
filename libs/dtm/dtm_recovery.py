@@ -95,12 +95,11 @@ class DTMRecoveryTestLib:
             bucket_name = bucket_prefix + str(int(time.time()))
             if created_bucket:
                 bucket_name = created_bucket[iter_cnt]
-            if obj_size is None:
-                obj_size = self.system_random.choice(obj_size_list)
+            object_size = self.system_random.choice(obj_size_list) if obj_size is None else obj_size
             resp = s3bench.s3bench(self.access_key,
                                    self.secret_key, bucket=bucket_name,
                                    num_clients=no_of_clients, num_sample=no_of_samples,
-                                   obj_name_pref=object_prefix, obj_size=obj_size,
+                                   obj_name_pref=object_prefix, obj_size=object_size,
                                    skip_read=skip_read, validate=validate,
                                    skip_cleanup=skip_cleanup, duration=None,
                                    log_file_prefix=str(log_file_prefix).upper(),
@@ -108,7 +107,7 @@ class DTMRecoveryTestLib:
                                    validate_certs=S3_CFG["validate_certs"],
                                    max_retries=retry)
             self.log.info("Workload: %s objects of %s with %s parallel clients.",
-                          no_of_samples, obj_size, no_of_clients)
+                          no_of_samples, object_size, no_of_clients)
             self.log.info("Log Path %s", resp[1])
             log_path = resp[1]
             if s3bench.check_log_file_error(resp[1]):
@@ -117,9 +116,8 @@ class DTMRecoveryTestLib:
             else:
                 results.append(True)
                 workload.append({'bucket': bucket_name, 'obj_name_pref': object_prefix,
-                                 'num_clients': no_of_clients, 'obj_size': obj_size,
+                                 'num_clients': no_of_clients, 'obj_size': object_size,
                                  'num_sample': no_of_samples})
-            obj_size = None
         if all(results):
             queue.put([True, workload])
         else:
@@ -155,7 +153,7 @@ class DTMRecoveryTestLib:
                                            skip_write=True,
                                            skip_read=skipread,
                                            validate=validate,
-                                           log_file_prefix=f"read_workload_{workload['obj_size']}b",
+                                           log_file_prefix=f"read_workload_{workload['obj_size']}",
                                            end_point=S3_CFG["s3_url"],
                                            validate_certs=S3_CFG["validate_certs"],
                                            max_retries=retry)
@@ -215,7 +213,7 @@ class DTMRecoveryTestLib:
         process_ids = resp[1]
         delay = resp[2]
         for i_i in range(restart_cnt):
-            self.log.info("Restarting %s process for %s time", process, i_i)
+            self.log.info("Restarting %s process for %s time", process, i_i + 1)
             pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
             pod_selected = pod_list[random.randint(0, len(pod_list) - 1)]
             self.log.info("Pod selected for %s process restart : %s", process, pod_selected)
