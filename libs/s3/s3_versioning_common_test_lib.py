@@ -190,15 +190,15 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
 
         resp_dict = parse_list_object_versions_response(list_response)
         LOG.info("expected_versions is %s and keys is %s",expected_versions,
-                 expected_versions.keys() )
+                 expected_versions.keys())
+        LOG.debug("Expected versions: %s", expected_versions)
+        LOG.debug("Actual versions in list reponse: %s", resp_dict)
         for key in expected_versions.keys():
             for version in expected_versions[key]["versions"].keys():
                 assert_utils.assert_in(version, list(resp_dict["versions"][key].keys()))
-                # Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
-                # is_latest = True if expected_versions[key]["is_latest"] == version else False
-                # Uncomment once CORTX-30178 changes are available in main
-                # assert_utils.assert_equal(is_latest,
-                #                           resp_dict["versions"][key][version]["is_latest"])
+                is_latest = True if expected_versions[key]["is_latest"] == version else False
+                actual_is_latest = resp_dict["versions"][key][version]["is_latest"]
+                assert_utils.assert_equal(is_latest, actual_is_latest)
                 assert_utils.assert_equal(expected_versions[key]["versions"][version],
                                           resp_dict["versions"][key][version]["etag"])
                 expected_version_count += 1
@@ -206,16 +206,15 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
                 if delete_marker != "DMO_DELETEMARKERID_PLACEHOLDER":
                     assert_utils.assert_in(delete_marker,
                                            list(resp_dict["delete_markers"][key].keys()))
+                    is_latest = True \
+                                if expected_versions[key]["is_latest"] == delete_marker else False
+                    actual_is_latest = resp_dict["delete_markers"][key][delete_marker]["is_latest"]
+                    assert_utils.assert_equal(is_latest, actual_is_latest)
                 else:
                     dm_id = list(resp_dict["delete_markers"][key].keys())[0]
                     assert_utils.assert_not_equal(dm_id, "null",
                                                   "Check DeleteObjects generates non-null delete "
                                                   "marker VersionId in versioning enabled bucket")
-                # Work on IsLatest flag in ListObjectVersions is WIP (CORTX-30178)
-                # is_latest = True if key["is_latest"] == delete_marker else False
-                # Uncomment once CORTX-30178 changes are available in main
-                # assert_utils.assert_in(is_latest,
-                #                        resp_dict["delete_markers"][key][version]["is_latest"])
                 expected_deletemarker_count += 1
         assert_utils.assert_equal(expected_version_count, resp_dict["version_count"],
                                   "Unexpected Version entry count in the response")
@@ -480,8 +479,11 @@ def delete_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
 
         versions_dict[object_name]["version_history"].remove(version_id)
         if version_id == versions_dict[object_name]["is_latest"]:
-            versions_dict[object_name]["is_latest"] =  \
-                versions_dict[object_name]["version_history"][-1]
+            if len(versions_dict[object_name]["version_history"]) == 0:
+                versions_dict[object_name]["is_latest"] = None
+            else:
+                versions_dict[object_name]["is_latest"] =  \
+                    versions_dict[object_name]["version_history"][-1]
     else:
         dm_count = len(versions_dict[object_name]["delete_markers"])
         if S3_ENGINE_RGW != CMN_CFG["s3_engine"] or dm_count == 0:

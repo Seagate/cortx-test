@@ -39,6 +39,7 @@ from libs.s3.s3_versioning_common_test_lib import check_get_head_object_version
 from libs.s3.s3_versioning_common_test_lib import check_list_object_versions
 from libs.s3.s3_versioning_common_test_lib import check_list_objects
 from libs.s3.s3_versioning_common_test_lib import delete_version
+from libs.s3.s3_versioning_common_test_lib import empty_versioned_bucket
 from libs.s3.s3_versioning_common_test_lib import upload_version
 from libs.s3.s3_versioning_common_test_lib import upload_versions
 
@@ -94,16 +95,15 @@ class TestVersioningDeleteObject:
         if path_exists(self.test_dir_path):
             remove_dirs(self.test_dir_path)
         self.log.info("Cleanup test directory: %s", self.test_dir_path)
-        # DELETE Object with VersionId is WIP, uncomment once feature is available
-        # res = self.s3_test_obj.bucket_list()
-        # pref_list = []
-        # for bucket_name in res[1]:
-        #     if bucket_name.startswith("ver-bkt"):
-        #         empty_versioned_bucket(self.s3_ver_test_obj, bucket_name)
-        #         pref_list.append(bucket_name)
-        # if pref_list:
-        #     res = self.s3_test_obj.delete_multiple_buckets(pref_list)
-        #     assert_utils.assert_true(res[0], res[1])
+        res = self.s3_test_obj.bucket_list()
+        pref_list = []
+        for bucket_name in res[1]:
+            if bucket_name.startswith("ver-bkt"):
+                empty_versioned_bucket(self.s3_ver_test_obj, bucket_name)
+                pref_list.append(bucket_name)
+        if pref_list:
+            res = self.s3_test_obj.delete_multiple_buckets(pref_list)
+            assert_utils.assert_true(res[0], res[1])
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-32722")
@@ -172,7 +172,7 @@ class TestVersioningDeleteObject:
         self.log.info("Step 9: Delete pre-existing object2 in a versioned bucket by version id")
         delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
                        bucket_name=self.bucket_name, object_name=self.object_name2,
-                       check_deletemarker=True, versions_dict=versions, version_id="null")
+                       versions_dict=versions, version_id="null")
         self.log.info("Step 10: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
@@ -273,38 +273,40 @@ class TestVersioningDeleteObject:
                                                          status="Suspended")
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 3: Delete object1")
-        delete_version(s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                       object_name=self.object_name1, versions_dict=versions)
+        delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                       bucket_name=self.bucket_name, object_name=self.object_name1,
+                       versions_dict=versions)
         self.log.info("Step 4: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
         self.log.info("Step 5: Verify GET/HEAD response for object1")
         check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                       bucket_name=self.bucket_name, object_name=self.object_name1,
-                                      get_error_msg=errmsg.NOT_FOUND_ERR,
+                                      get_error_msg=errmsg.NO_SUCH_KEY_ERR,
                                       head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("Step 6: Verify GET/HEAD response for object1 with null version id")
         check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                       bucket_name=self.bucket_name, object_name=self.object_name1,
                                       version_id="null",
-                                      get_error_msg=errmsg.NOT_FOUND_ERR,
+                                      get_error_msg=errmsg.NO_SUCH_KEY_ERR,
                                       head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("Step 7: Delete object2")
-        delete_version(s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                       object_name=self.object_name2, versions_dict=versions)
+        delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                       bucket_name=self.bucket_name, object_name=self.object_name2,
+                       versions_dict=versions)
         self.log.info("Step 8: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
         self.log.info("Step 9: Verify GET/HEAD response for object2")
         check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                       bucket_name=self.bucket_name, object_name=self.object_name2,
-                                      get_error_msg=errmsg.NOT_FOUND_ERR,
+                                      get_error_msg=errmsg.NO_SUCH_KEY_ERR,
                                       head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("Step 10: Verify GET/HEAD response for object2 with null version id")
         check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                       bucket_name=self.bucket_name, object_name=self.object_name2,
                                       version_id="null",
-                                      get_error_msg=errmsg.NOT_FOUND_ERR,
+                                      get_error_msg=errmsg.NO_SUCH_KEY_ERR,
                                       head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("Step 11: Verify GET/HEAD response for object2 with version id "
                       "present before delete marker")
@@ -314,15 +316,16 @@ class TestVersioningDeleteObject:
                                       bucket_name=self.bucket_name, object_name=self.object_name2,
                                       version_id=v_id, etag=etag)
         self.log.info("Step 12: Delete object3")
-        delete_version(s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                       object_name=self.object_name3, versions_dict=versions)
+        delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                       bucket_name=self.bucket_name, object_name=self.object_name3,
+                       versions_dict=versions)
         self.log.info("Step 13: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
         self.log.info("Step 14: Verify GET/HEAD response for object3")
         check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                       bucket_name=self.bucket_name, object_name=self.object_name3,
-                                      get_error_msg=errmsg.NOT_FOUND_ERR,
+                                      get_error_msg=errmsg.NO_SUCH_KEY_ERR,
                                       head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("Step 15: Verify GET/HEAD response for object3 undeleted versions")
         for v_id in versions[self.object_name3]["version_history"][:2]:
@@ -353,22 +356,26 @@ class TestVersioningDeleteObject:
                                                          status="Enabled")
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 3: Create delete markers for object1 and object2")
-        delete_version(s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                       object_name=self.object_name1, versions_dict=versions)
-        delete_version(s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                       object_name=self.object_name2, versions_dict=versions)
+        delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                       bucket_name=self.bucket_name, object_name=self.object_name1,
+                       versions_dict=versions)
+        delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                       bucket_name=self.bucket_name, object_name=self.object_name2,
+                       versions_dict=versions)
         self.log.info("Step 4: Set bucket versioning to Suspended")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                          status="Suspended")
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 5: Create delete marker for object3")
-        delete_version(s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                       object_name=self.object_name3, versions_dict=versions)
+        delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                       bucket_name=self.bucket_name, object_name=self.object_name3,
+                       versions_dict=versions)
         self.log.info("Step 6: Delete the delete markers for all 3 objects")
         for obj_name in [self.object_name1, self.object_name2, self.object_name3]:
             dm_id = versions[obj_name]["delete_markers"][0]
-            delete_version(s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                           object_name=obj_name, versions_dict=versions, version_id=dm_id)
+            delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                           bucket_name=self.bucket_name, object_name=obj_name,
+                           versions_dict=versions, version_id=dm_id)
         self.log.info("Step 7: Verify GET/HEAD Object response for all 3 objects")
         for obj_name in [self.object_name1, self.object_name2]:
             v_id = versions[obj_name]["version_history"][0]
@@ -378,7 +385,7 @@ class TestVersioningDeleteObject:
                                           etag=etag)
         check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                       bucket_name=self.bucket_name, object_name=self.object_name3,
-                                      get_error_msg=errmsg.NOT_FOUND_ERR,
+                                      get_error_msg=errmsg.NO_SUCH_KEY_ERR,
                                       head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("Step 8: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
@@ -400,11 +407,13 @@ class TestVersioningDeleteObject:
                                    file_paths=self.upload_file_paths,
                                    obj_list=[("Enabled", self.object_name1, 1)])
         self.log.info("Step 2: Delete object object1 to create a delete marker")
-        delete_version(s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                       object_name=self.object_name1, versions_dict=versions)
+        delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                       bucket_name=self.bucket_name, object_name=self.object_name1,
+                       versions_dict=versions)
         self.log.info("Step 3: Delete object object1 with delete marker already present")
-        delete_version(s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                       object_name=self.object_name1, versions_dict=versions)
+        delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                       bucket_name=self.bucket_name, object_name=self.object_name1,
+                       versions_dict=versions)
         self.log.info("Step 4: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
@@ -425,13 +434,15 @@ class TestVersioningDeleteObject:
                                    file_paths=self.upload_file_paths,
                                    obj_list=[("Enabled", self.object_name1, 5)])
         self.log.info("Step 2: Delete all versions of object1")
-        for v_id in versions[self.object_name1]["versions"].keys():
-            delete_version(s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                           object_name=self.object_name1, versions_dict=versions, version_id=v_id)
+        version_ids = list(versions[self.object_name1]["versions"].keys())
+        for v_id in version_ids:
+            delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                           bucket_name=self.bucket_name, object_name=self.object_name1,
+                           versions_dict=versions, version_id=v_id)
         self.log.info("Step 3: Verify GET/HEAD response for deleted object")
         check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                       bucket_name=self.bucket_name, object_name=self.object_name1,
-                                      get_error_msg=errmsg.NOT_FOUND_ERR,
+                                      get_error_msg=errmsg.NO_SUCH_KEY_ERR,
                                       head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("Step 4: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
@@ -460,8 +471,9 @@ class TestVersioningDeleteObject:
                                              ("Enabled", self.object_name3, 2)])
         self.log.info("Step 2: Delete all 3 objects to create delete markers")
         for obj_name in [self.object_name1, self.object_name2, self.object_name3]:
-            delete_version(s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                           object_name=obj_name, versions_dict=versions)
+            delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                           bucket_name=self.bucket_name, object_name=obj_name,
+                           versions_dict=versions)
         self.log.info("Step 3: Upload new versions to all 3 objects")
         for obj_name in [self.object_name1, self.object_name2, self.object_name3]:
             upload_version(self.s3_test_obj, bucket_name=self.bucket_name, object_name=obj_name,
@@ -495,11 +507,12 @@ class TestVersioningDeleteObject:
                                    file_paths=self.upload_file_paths,
                                    obj_list=[("Suspended", self.object_name1, 1)])
         self.log.info("Step 2: Delete object1")
-        delete_version(s3_ver_test_obj=self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                       object_name=self.object_name1, versions_dict=versions)
+        delete_version(s3_test_obj=self.s3_test_obj, s3_ver_test_obj=self.s3_ver_test_obj,
+                       bucket_name=self.bucket_name, object_name=self.object_name1,
+                       versions_dict=versions)
         self.log.info("Step 3: Upload new version for object1")
         upload_version(self.s3_test_obj, bucket_name=self.bucket_name, versions_dict=versions,
-                       object_name=self.object_name1, file_path=self.file_path1)
+                       object_name=self.object_name1, file_path=self.file_path1, chk_null_version=True)
         self.log.info("Step 4: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
