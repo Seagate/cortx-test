@@ -74,6 +74,21 @@ class TestK8CortxUpgrade:
         cls.upgrade_obj.retain_solution_file(
             cls.master_node_list[0], cortx_control_img=cls.cortx_control_image,
             cortx_data_img=cls.cortx_data_image, cortx_server_img=cls.cortx_server_image)
+        LOGGER.info("Get installed version.")
+        installed_version = cls.upgrade_obj.prov_obj.get_installed_version(
+            cls.master_node_list[0])
+        resp = cls.upgrade_obj.prov_obj.generate_and_compare_both_version(
+            cls.upgrade_image, installed_version)
+        assert_utils.assert_true(resp[0])
+        # Pull upgrade Images on all worker nodes
+        pull_image_thread_list = []
+        for each in cls.worker_node_list:
+            worker_thread = Thread(target=cls.upgrade_obj.prov_obj.pull_cortx_image,
+                                   args=(each,))
+            worker_thread.start()
+            pull_image_thread_list.append(worker_thread)
+        for each in pull_image_thread_list:
+            each.join()
         LOGGER.info("Done: Setup operations finished.")
 
     def teardown_class(self):
@@ -83,10 +98,13 @@ class TestK8CortxUpgrade:
             support_bundle_utils.collect_support_bundle_k8s(
                 local_dir_path=path, scripts_path=self.prov_conf['k8s_dir'])
         if self.upgrade_cleanup:
+            LOGGER.debug("resuming incomplete upgrade")
             resp = self.upgrade_obj.upgrade_software(
                 self.master_node_list[0], self.prov_conf['k8s_dir'], exc=False, flag=
                 self.prov_conf["upgrade_resume"])
-            return resp
+            assert_utils.assert_true(resp[0], resp[1])
+            pod_status = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
+            assert_utils.assert_true(pod_status)
 
     def rolling_upgrade(self, exc: bool = True, output=None, flag=None):
         """Function calls upgrade and put return value in queue object.
@@ -197,22 +215,7 @@ class TestK8CortxUpgrade:
     def test_41953(self):
         """Verify resume of in progress rolling upgrade."""
         process_list = []
-        pull_image_thread_list = []
         LOGGER.info("Test Started.")
-        LOGGER.info("Step 1: Get installed version.")
-        installed_version = self.upgrade_obj.prov_obj.get_installed_version(
-            self.master_node_list[0])
-        resp = self.upgrade_obj.prov_obj.generate_and_compare_both_version(
-            self.upgrade_image, installed_version)
-        assert_utils.assert_true(resp)
-        # Pull upgrade Images on all worker nodes
-        for each in self.worker_node_list:
-            worker_thread = Thread(target=self.upgrade_obj.prov_obj.pull_cortx_image,
-                                   args=(each,))
-            worker_thread.start()
-            pull_image_thread_list.append(worker_thread)
-        for each in pull_image_thread_list:
-            each.join()
         que = multiprocessing.Queue()
         start_upgrade_proc = multiprocessing.Process(target=self.rolling_upgrade, args=(
             True, que, self.prov_conf["upgrade_start"]))
@@ -241,7 +244,7 @@ class TestK8CortxUpgrade:
         pod_status = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
         assert_utils.assert_true(pod_status)
         resp = self.upgrade_obj.prov_obj.check_service_status(self.master_node_list[0])
-        assert_utils.assert_true(resp)
+        assert_utils.assert_true(resp[0], resp[1])
         installed_version = self.upgrade_obj.prov_obj.get_installed_version(
             self.master_node_list[0])
         LOGGER.info("Upgraded to version %s", installed_version)
@@ -254,22 +257,7 @@ class TestK8CortxUpgrade:
     def test_42176(self):
         """Verify resume  functionality of upgrade,when abruptly stopped the upgrade process."""
         process_list = []
-        pull_image_thread_list = []
         LOGGER.info("Test Started.")
-        LOGGER.info("Step 1: Get installed version.")
-        installed_version = self.upgrade_obj.prov_obj.get_installed_version(
-            self.master_node_list[0])
-        resp = self.upgrade_obj.prov_obj.generate_and_compare_both_version(
-            self.upgrade_image, installed_version)
-        assert_utils.assert_true(resp)
-        # Pull upgrade Images on all worker nodes
-        for each in self.worker_node_list:
-            worker_thread = Thread(target=self.upgrade_obj.prov_obj.pull_cortx_image,
-                                   args=(each,))
-            worker_thread.start()
-            pull_image_thread_list.append(worker_thread)
-        for each in pull_image_thread_list:
-            each.join()
         que = multiprocessing.Queue()
         start_upgrade_proc = multiprocessing.Process(target=self.rolling_upgrade, args=(
             True, que, self.prov_conf["upgrade_start"]))
@@ -292,6 +280,8 @@ class TestK8CortxUpgrade:
         resp = que.get(1)
         LOGGER.debug("suspend %s", resp)
         assert_utils.assert_in(cons.UPGRADE_SUSPEND_MSG, resp[1])
+        pod_status = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
+        assert_utils.assert_true(pod_status)
         for process in process_list:
             process.terminate()
             process.join()
@@ -301,12 +291,12 @@ class TestK8CortxUpgrade:
         resp = self.upgrade_obj.upgrade_software(
             self.master_node_list[0], self.prov_conf["k8s_dir"], flag=
             self.prov_conf["upgrade_resume"])
-        assert_utils.assert_true(resp)
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Verify the PODs and Services status.")
         pod_status = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
         assert_utils.assert_true(pod_status)
         resp = self.upgrade_obj.prov_obj.check_service_status(self.master_node_list[0])
-        assert_utils.assert_true(resp)
+        assert_utils.assert_true(resp[0], resp[1])
         installed_version = self.upgrade_obj.prov_obj.get_installed_version(
             self.master_node_list[0])
         LOGGER.info("Upgraded to version %s", installed_version)
@@ -321,21 +311,6 @@ class TestK8CortxUpgrade:
         process_list = []
         count = 1
         LOGGER.info("Test Started.")
-        LOGGER.info("Step 1: Get installed version.")
-        installed_version = self.upgrade_obj.prov_obj.get_installed_version(
-            self.master_node_list[0])
-        resp = self.upgrade_obj.prov_obj.generate_and_compare_both_version(
-            self.upgrade_image, installed_version)
-        assert_utils.assert_true(resp)
-        # Pull upgrade Images on all worker nodes
-        pull_image_thread_list = []
-        for each in self.worker_node_list:
-            worker_thread = Thread(target=self.upgrade_obj.prov_obj.pull_cortx_image, args=(each
-                                                                                               ,))
-            worker_thread.start()
-            pull_image_thread_list.append(worker_thread)
-        for each in pull_image_thread_list:
-            each.join()
         que = multiprocessing.Queue()
         start_upgrade_proc = multiprocessing.Process(target=self.rolling_upgrade, args=(
             True, que, self.prov_conf["upgrade_start"]))
@@ -352,7 +327,7 @@ class TestK8CortxUpgrade:
             suspend_resp = self.upgrade_obj.upgrade_software(
                 self.master_node_list[0], self.prov_conf['k8s_dir'], exc=False, flag=
                 self.prov_conf["upgrade_suspend"])
-            assert_utils.assert_true(suspend_resp)
+            assert_utils.assert_true(suspend_resp[0])
             # verify the upgrade status
             status_resp = self.get_status()
             LOGGER.info("Status is %s", status_resp[1])
@@ -375,7 +350,7 @@ class TestK8CortxUpgrade:
         pod_status = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
         assert_utils.assert_true(pod_status)
         resp = self.upgrade_obj.prov_obj.check_service_status(self.master_node_list[0])
-        assert_utils.assert_true(resp)
+        assert_utils.assert_true(resp[0], resp[1])
         self.collect_sb = False
         LOGGER.info("--------- Test Completed ---------")
 
@@ -384,65 +359,51 @@ class TestK8CortxUpgrade:
     @pytest.mark.tags("TEST-41951")
     def test_41951(self):
         """Verify suspend already suspended upgrade."""
-        pull_image_thread_list = []
         LOGGER.info("Test Started.")
-        LOGGER.info("Step 1: Get installed version.")
-        installed_version = self.upgrade_obj.prov_obj.get_installed_version(
-            self.master_node_list[0])
-        resp = self.upgrade_obj.prov_obj.generate_and_compare_both_version(
-            self.upgrade_image, installed_version)
-        assert_utils.assert_true(resp)
-        # Pull upgrade Images on all worker nodes
-        for each in self.worker_node_list:
-            worker_thread = Thread(target=self.upgrade_obj.prov_obj.pull_cortx_image,
-                                   args=(each,))
-            worker_thread.start()
-            pull_image_thread_list.append(worker_thread)
-        for each in pull_image_thread_list:
-            each.join()
         que = multiprocessing.Queue()
         start_upgrade_proc = multiprocessing.Process(target=self.rolling_upgrade, args=(
             True, que, self.prov_conf["upgrade_start"]))
         # start the Upgrade
-        LOGGER.info("Step 2: Start the upgrade.")
+        LOGGER.info("Step 1: Start the upgrade.")
         start_upgrade_proc.start()
         time.sleep(self.prov_conf["sleep_time"])  # Wait to start upgrade_thread thread
         # Verify the upgrade status.
-        LOGGER.info("Step 3: Verify the upgrade status.")
+        LOGGER.info("Step 2: Verify the upgrade status.")
         status_resp = self.get_status()
+        assert_utils.assert_true(status_resp[0])
         LOGGER.info("Status is %s", status_resp)
         # suspend the upgrade.
-        LOGGER.info("Step 4: Suspend the upgrade.")
+        LOGGER.info("Step 3: Suspend the upgrade.")
         suspend_resp = self.upgrade_obj.upgrade_software(self.master_node_list[0],
-                                                            self.prov_conf['k8s_dir'],
-                                                            exc=False, flag=
-                                                            self.prov_conf["upgrade_suspend"])
-        assert_utils.assert_true(suspend_resp)
+                                                         self.prov_conf['k8s_dir'],
+                                                         exc=False, flag=
+                                                         self.prov_conf["upgrade_suspend"])
+        assert_utils.assert_true(suspend_resp[0])
         assert_utils.assert_in(cons.UPGRADE_SUSPEND_MSG, suspend_resp[1])
         # verify the upgrade status
         status_resp = self.get_status()
         LOGGER.info("Status is %s", status_resp)
         # Verify the POD status
-        LOGGER.info("Step 5: Verify the PODs status.")
+        LOGGER.info("Step 4: Verify the PODs status.")
         pod_status = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
         assert_utils.assert_true(pod_status)
         # Verify the already paused process by giving pause command
-        LOGGER.info("Step 6: verify the already suspended status.")
+        LOGGER.info("Step 5: verify the already suspended status.")
         suspended_resp = self.upgrade_obj.upgrade_software(self.master_node_list[0],
-                                                            self.prov_conf['k8s_dir'],
-                                                            exc=False, flag=
-                                                            self.prov_conf["upgrade_suspend"])
-        assert_utils.assert_true(suspended_resp)
+                                                           self.prov_conf['k8s_dir'],
+                                                           exc=False, flag=
+                                                           self.prov_conf["upgrade_suspend"])
+        assert_utils.assert_true(suspended_resp[0])
         assert_utils.assert_in(cons.UPGRADE_ALREADY_SUSPENDED, suspended_resp[1])
         time.sleep(self.prov_conf["sleep_time"])
         start_upgrade_proc.kill()
         # Verify the POD and Service status
-        LOGGER.info("Step 7: Verify the PODs and Services status.")
+        LOGGER.info("Step 6: Verify the PODs and Services status.")
         pod_status = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
         assert_utils.assert_true(pod_status)
         time.sleep(self.prov_conf["sleep_time"])
         resp = self.upgrade_obj.prov_obj.check_service_status(self.master_node_list[0])
-        assert_utils.assert_true(resp)
+        assert_utils.assert_true(resp[0], resp[1])
         installed_version = self.upgrade_obj.prov_obj.get_installed_version(
             self.master_node_list[0])
         LOGGER.info("Upgraded to version %s", installed_version)
@@ -455,42 +416,30 @@ class TestK8CortxUpgrade:
     @pytest.mark.tags("TEST-41952")
     def test_41952(self):
         """Verify start and upgrade status during upgrade."""
-        pull_image_thread_list = []
         LOGGER.info("Test Started.")
-        LOGGER.info("Step 1: Get installed version.")
-        installed_version = self.upgrade_obj.prov_obj.get_installed_version(
-            self.master_node_list[0])
-        resp = self.upgrade_obj.prov_obj.generate_and_compare_both_version(
-            self.upgrade_image, installed_version)
-        assert_utils.assert_true(resp)
-        # Pull upgrade Images on all worker nodes
-        for each in self.worker_node_list:
-            worker_thread = Thread(target=self.upgrade_obj.prov_obj.pull_cortx_image,
-                                   args=(each,))
-            worker_thread.start()
-            pull_image_thread_list.append(worker_thread)
-        for each in pull_image_thread_list:
-            each.join()
         que = multiprocessing.Queue()
         start_upgrade_proc = multiprocessing.Process(target=self.rolling_upgrade, args=(
             True, que, self.prov_conf["upgrade_start"]))
         # start the Upgrade
-        LOGGER.info("Step 2: Start the upgrade.")
+        LOGGER.info("Step 1: Start the upgrade.")
         start_upgrade_proc.start()
         time.sleep(self.prov_conf["sleep_time"])  # Wait to start upgrade_thread thread
         # Verify the upgrade status.
-        LOGGER.info("Step 3: Verify the upgrade status.")
+        LOGGER.info("Step 2: Verify the upgrade status.")
         status_resp = self.get_status()
         LOGGER.info("Status is %s", status_resp)
+        assert_utils.assert_true(status_resp[0])
+        assert_utils.assert_in(cons.UPGRADE_IN_PROGRESS_MSG, status_resp[1])
         start_upgrade_proc.join()
-        # Verify the POD and Sercice status
-        LOGGER.info("Step 4: Verify the PODs and Services status.")
+        # Verify the POD and Service status
+        LOGGER.info("Step 3: Verify the PODs and Services status.")
         pod_status = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
         assert_utils.assert_true(pod_status)
         resp = self.upgrade_obj.prov_obj.check_service_status(self.master_node_list[0])
-        assert_utils.assert_true(resp)
+        assert_utils.assert_true(resp[0], resp[1])
         installed_version = self.upgrade_obj.prov_obj.get_installed_version(
             self.master_node_list[0])
         LOGGER.info("Upgraded to version %s", installed_version)
         self.collect_sb = False
         LOGGER.info("--------- Test Completed ---------")
+
