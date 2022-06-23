@@ -136,11 +136,8 @@ class TestVersioningMultipart:
                                      is_mpu_with_lst_mpu=True)
         self.log.info("Verions has etag and version id %s", versions)
         self.log.info("Step 8: List Object Versions")
-        params = {"Prefix": "", "MaxKeys": 1000, "EncodingType": "url",
-                  "KeyMarker":self.object_name, "VersionIdMarker":""}
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
-                                                 expected_versions=versions,
-                                                 list_params=params)
+                                                 expected_versions=versions)
         self.log.info("Step 9: Check GET/HEAD Object")
         v_id = versions[self.object_name]["version_history"][0]
         etag = versions[self.object_name]["versions"][v_id]

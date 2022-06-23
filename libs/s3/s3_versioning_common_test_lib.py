@@ -418,14 +418,6 @@ def upload_version(s3_test_obj: Union[S3TestLib, S3MultipartTestLib], bucket_nam
         mpu_id, _, parts = initiate_upload_list_mpu(s3_test_obj, bucket_name, object_name,
                                                     calc_parts)
         res = s3_test_obj.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
-        upload_etag = res[1]["ETag"]
-        LOG.info("Get the uploaded object")
-        resp = s3_test_obj.get_object(bucket_name, object_name, ranges="bytes=1-")
-        get_etag = resp['ETag']
-        LOG.info("Compare ETags")
-        if upload_etag != get_etag:
-            raise Exception(f"Failed to match ETag: {upload_etag}, {get_etag}")
-        LOG.info("Matched ETag: %s, %s", upload_etag, get_etag)
     else:
         if not system_utils.path_exists(file_path):
             system_utils.create_file(file_path, file_size)
