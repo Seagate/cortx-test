@@ -1213,6 +1213,7 @@ class TestControlPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-40376")
     @CTFailOn(error_handler)
     def test_copy_obj_after_ctrl_pod_failover(self):
@@ -1460,6 +1461,7 @@ class TestControlPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-40382")
     @CTFailOn(error_handler)
     def test_copy_obj_during_ctrl_pod_failover(self):
