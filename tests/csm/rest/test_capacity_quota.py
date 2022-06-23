@@ -204,8 +204,8 @@ class TestCapacityQuota():
                                      self.bucket)
         assert res, err_msg
         for objs in obj_list:
-                self.log.info("Step 3: Delete object")
-                assert s3_misc.delete_object(
+            self.log.info("Step 3: Delete object")
+            assert s3_misc.delete_object(
                     objs, self.bucket, self.akey, self.skey), "Failed to delete object."
         self.log.info("Step 4: Perform max objects verification")
         res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey,
@@ -245,8 +245,8 @@ class TestCapacityQuota():
                                      self.bucket)
         assert res, err_msg
         for objs in obj_list:
-              self.log.info("Step 3: Delete object")
-              assert s3_misc.delete_object(
+            self.log.info("Step 3: Delete object")
+            assert s3_misc.delete_object(
                     objs, self.bucket, self.akey, self.skey), "Failed to delete object."
         self.log.info("Step 5: Perform max object verification")
         res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey,
@@ -287,8 +287,8 @@ class TestCapacityQuota():
                                       self.skey, self.bucket)
             assert res, err_msg
             for objs in obj_list:
-                 self.log.info("Step 3: Delete object")
-                 assert s3_misc.delete_object(
+                self.log.info("Step 3: Delete object")
+                assert s3_misc.delete_object(
                       objs, self.bucket, self.akey, self.skey), "Failed to delete object."
             self.log.info("Step 5: Perform max object verification")
             res, err_msg, obj_list = self.csm_obj.verify_max_objects(max_size, max_objects,
@@ -296,8 +296,8 @@ class TestCapacityQuota():
             assert res, err_msg
 
             for objs in obj_list:
-                    self.log.info("Step 6: Delete object")
-                    assert s3_misc.delete_object(
+                self.log.info("Step 6: Delete object")
+                assert s3_misc.delete_object(
                        objs, self.bucket, self.akey, self.skey), "Failed to delete object."
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -330,8 +330,8 @@ class TestCapacityQuota():
                                      self.bucket)
         assert not res, err_msg
         for objs in obj_list:
-             self.log.info("Step 3: Delete object")
-             assert s3_misc.delete_object(
+            self.log.info("Step 3: Delete object")
+            assert s3_misc.delete_object(
                     objs, self.bucket, self.akey, self.skey), "Failed to delete object."
         self.log.info("Step 5: Perform max objects verification")
         res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey,
@@ -390,8 +390,8 @@ class TestCapacityQuota():
                                      bucket)
             assert result, err_msg
             for objs in obj_list:
-                 self.log.info("Step 3: Delete object")
-                 assert s3_misc.delete_object(
+                self.log.info("Step 3: Delete object")
+                assert s3_misc.delete_object(
                        objs, bucket, akey, skey), "Failed to delete object."
             self.log.info("Step 6: Perform max object verification")
             res = self.csm_obj.verify_max_objects(max_size, max_objects, akey, skey,
@@ -641,7 +641,8 @@ class TestCapacityQuota():
         assert_utils.assert_in(obj_name, res[1], res[1])
         self.log.info("Multipart upload completed")
         self.log.info("Step 4: Perform max size verification")
-        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
+        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey,
+                                  bucket)
         assert res[0], res[1]
         self.log.info("Step 5: Abort Multipart upload S3 operations")
         res = self.s3_mp_test_obj.abort_multipart_upload(
@@ -655,10 +656,12 @@ class TestCapacityQuota():
         self.log.info(
             "Aborted multipart upload with upload ID: %s", mpu_id)
         self.log.info("Step 6: Perform max size verification")
-        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey)
+        res = self.csm_obj.verify_max_size(max_size, self.akey, self.skey,
+                               bucket)
         assert res[0], res[1]
         self.log.info("Step 7: Perform max objects verification")
-        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey)
+        res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey,
+                                   bucket)
         assert res[0], res[1]
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -703,7 +706,7 @@ class TestCapacityQuota():
         t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
         t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
         m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
- 
+
         assert_utils.assert_equals(self.uid, uid, "id is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
         assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
@@ -758,7 +761,7 @@ class TestCapacityQuota():
         m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
         self.log.info("Step 5: Delete object")
         for objs in obj_list:
-             assert s3_misc.delete_object(
+            assert s3_misc.delete_object(
                     objs, self.bucket, self.akey, self.skey), "Failed to delete object."
         assert_utils.assert_equals(self.uid, uid, "id is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
@@ -1177,7 +1180,7 @@ class TestCapacityQuota():
             self.log.info("Step 3: Get capacity count from AWS")
             total_objects, total_size = s3_misc.get_objects_size_bucket(bucket, akey, skey)
             self.log.info("total objects and size %s and %s ", total_objects, total_size)
-            self.log.info("Data size is %s ", data_size) 
+            self.log.info("Data size is %s ", data_size)
             self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
             resp = self.csm_obj.get_user_capacity_usage("user", user_id)
             assert resp.status_code == HTTPStatus.OK, \
@@ -1270,8 +1273,8 @@ class TestCapacityQuota():
         t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
         m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
         for objs in obj_list:
-             self.log.info("Step 3: Delete object")
-             assert s3_misc.delete_object(
+            self.log.info("Step 3: Delete object")
+            assert s3_misc.delete_object(
                     objs, bucket, self.akey, self.skey), "Failed to delete object."
         assert_utils.assert_equals(self.uid, uid, "uid is not equal")
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
@@ -1487,7 +1490,7 @@ class TestCapacityQuota():
                                       check_on_raw=True)
         resp = self.csm_obj.set_user_quota(self.user_id, payload)
         self.log.info("Set quota API response: %s", resp.json())
-        assert resp.status_code == HTTPStatus.OK, "Status code check failed" 
+        assert resp.status_code == HTTPStatus.OK, "Status code check failed"
         res = self.csm_obj.get_user_quota(self.user_id)
         assert res.status_code == HTTPStatus.OK, "Status code check failed"
         self.log.info("Step 3: Perform max_objects upload of random size")
@@ -1582,7 +1585,6 @@ class TestCapacityQuota():
             self.log.info("buckets deleted %s ", buckets_deleted)
         else:
             self.log.error("Bucket deletion failed for %s ", bucket_name)
-        
         self.log.info("Step 4: Update Suspended True for same IAM User")
         payload = {}
         payload.update({"suspended": True})
