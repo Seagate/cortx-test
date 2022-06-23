@@ -1992,7 +1992,6 @@ class ProvDeployK8sCortxLib:
         file: solution.yaml file
         returns access key and secrets key
         """
-        
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
