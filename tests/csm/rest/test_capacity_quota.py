@@ -95,7 +95,7 @@ class TestCapacityQuota():
                                  "IAM user creation failed")
         self.uid = payload["uid"]
         self.user_id = resp.json()['tenant'] + "$" + self.uid
-        self.created_iam_users.update({self.user_id)
+        self.created_iam_users.add(self.user_id)
         resp1 = self.csm_obj.compare_iam_payload_response(resp, payload)
         self.log.info("Printing response %s", resp1)
         assert_utils.assert_true(resp1[0], resp1[1])
@@ -435,7 +435,7 @@ class TestCapacityQuota():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Feature not ready")
+    #@pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops

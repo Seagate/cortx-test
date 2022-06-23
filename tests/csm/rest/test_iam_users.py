@@ -4907,6 +4907,7 @@ class TestIamUserRGW():
         assert_utils.assert_equals(len(resp.json()["users"]), 0, "Users list is not empty")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4937,12 +4938,13 @@ class TestIamUserRGW():
         resp = self.csm_obj.list_iam_users_rgw(
                                 max_entries=self.csm_conf["test_42284"]["max_entries"])
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
-        resp_dict = resp.json()
+        resp_dict = resp1.json()
         get_user_list = resp_dict["users"]
+        last_cnt = get_user_list[:5:-1]
         count = resp_dict["count"]
         assert_utils.assert_equals(count, self.csm_conf["test_42284"]["max_entries"],
                                  "Entries not returned as expected")
-        user_index = self.csm_obj.random_gen.randrange(1, count)
+        user_index = self.csm_obj.random_gen.randrange(0, count -1)
         marker = get_user_list[user_index]
         self.log.info("User index is %s ", user_index)
         self.log.info("Step 3: Send GET request with max_entries as 15 and "
