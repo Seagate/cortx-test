@@ -21,28 +21,28 @@
 """
 import ast
 import logging
-from string import Template
 import math
 import os
 import time
 from http import HTTPStatus
+from string import Template
 
 import pytest
-
 from botocore.exceptions import ClientError
+
 from commons import configmanager
 from commons import cortxlogging
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config.s3 import S3_CFG
+from commons.utils.system_utils import path_exists, make_dirs
 from config import CSM_REST_CFG
+from config.s3 import S3_CFG
 from libs.csm.csm_interface import csm_api_factory
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.s3 import s3_misc
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
-from commons.utils.system_utils import path_exists, make_dirs
 
 # pylint: disable-msg=too-many-public-methods
 # pylint: disable=too-many-instance-attributes
@@ -95,8 +95,7 @@ class TestCapacityQuota():
                                  "IAM user creation failed")
         self.uid = payload["uid"]
         self.user_id = resp.json()['tenant'] + "$" + self.uid
-        usr_val = resp.json()["keys"][0]
-        self.created_iam_users.update({usr_val['user']:usr_val})
+        self.created_iam_users.update({self.user_id)
         resp1 = self.csm_obj.compare_iam_payload_response(resp, payload)
         self.log.info("Printing response %s", resp1)
         assert_utils.assert_true(resp1[0], resp1[1])
@@ -205,8 +204,8 @@ class TestCapacityQuota():
                                      self.bucket)
         assert res, err_msg
         for objs in obj_list:
-             self.log.info("Step 3: Delete object")
-             assert s3_misc.delete_object(
+              self.log.info("Step 3: Delete object")
+              assert s3_misc.delete_object(
                     objs, self.bucket, self.akey, self.skey), "Failed to delete object."
         self.log.info("Step 4: Perform max objects verification")
         res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey,
@@ -246,8 +245,8 @@ class TestCapacityQuota():
                                      self.bucket)
         assert res, err_msg
         for objs in obj_list:
-             self.log.info("Step 3: Delete object")
-             assert s3_misc.delete_object(
+              self.log.info("Step 3: Delete object")
+              assert s3_misc.delete_object(
                     objs, self.bucket, self.akey, self.skey), "Failed to delete object."
         self.log.info("Step 5: Perform max object verification")
         res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey,
@@ -342,7 +341,6 @@ class TestCapacityQuota():
 
 
     # pylint: disable-msg=too-many-locals
-    #@pytest.mark.skip(reason="CORTX-32043")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -821,7 +819,6 @@ class TestCapacityQuota():
         assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    #@pytest.mark.skip(reason="CORTX-32043")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1070,7 +1067,7 @@ class TestCapacityQuota():
         self.log.info("Number of objects to be created are: %s", num_objects)
         self.log.info("Step 1: Create N objects of Random size totals to S bytes")
         for num in range(0, num_objects):
-            obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}' 
+            obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Creating object number %s", num)
             resp = s3_misc.create_put_objects(obj_name, self.bucket,
                                               self.akey, self.skey, object_size=random_size,
@@ -1089,14 +1086,14 @@ class TestCapacityQuota():
             total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
                          self.akey, self.skey)
             if num_objects == 1:
-               assert total_size == 0, "Total size remains same even after object deletion"
-               assert total_objects == 0, "Object count did not reduce"
+                assert total_size == 0, "Total size remains same even after object deletion"
+                assert total_objects == 0, "Object count did not reduce"
             else:
-               self.log.info("AVailable size %s, total_size %s, random_size %s ",
+                self.log.info("AVailable size %s, total_size %s, random_size %s ",
                                                available_size, total_size, random_size)
-               assert_utils.assert_greater_equal(size_before_deletion, total_size,
+                assert_utils.assert_greater_equal(size_before_deletion, total_size,
                        "Total size remains same even after object deletion")
-               assert_utils.assert_greater_equal(obj_before_deletion, total_objects,
+                assert_utils.assert_greater_equal(obj_before_deletion, total_objects,
                                                 "Object count did not reduce" )
             self.log.info("Step 6: Perform GET API to get capacity usage")
             resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
@@ -1122,7 +1119,6 @@ class TestCapacityQuota():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    #@pytest.mark.skip
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1207,7 +1203,6 @@ class TestCapacityQuota():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
-    #@pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1290,7 +1285,6 @@ class TestCapacityQuota():
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    #@pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1336,7 +1330,7 @@ class TestCapacityQuota():
             random_size = self.csm_obj.random_gen.randrange(1, available_size)
             num_objects = math.floor(available_size/random_size)
             data_size = num_objects * random_size
-            obj_list = [] 
+            obj_list = []
             self.log.info("Step 3: Create %s objects of Random size totals to %s bytes",
                           num_objects, data_size)
             for obj in range(0, num_objects):

@@ -4947,12 +4947,14 @@ class TestIamUserRGW():
         self.log.info("User index is %s ", user_index)
         self.log.info("Step 3: Send GET request with max_entries as 15 and "
                       "marker as in between user")
-        resp = self.csm_obj.list_iam_users_rgw(max_entries=15, marker=marker)
+        resp = self.csm_obj.list_iam_users_rgw(max_entries= \
+                self.csm_conf["test_42284"]["max_entries_2"],marker=marker)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
         count_new = resp.json()["count"]
         get_user_list = resp.json()["users"]
-        if len(resp1.json()["users"]) > 11:
-            assert_utils.assert_equals(count_new, 15, "Entries not returned as expected")
+        if len(resp1.json()["users"]) > (self.csm_conf["common"]["num_users"]+1):
+            assert_utils.assert_equals(count_new, self.csm_conf["test_42284"]["max_entries_2"],
+                                       "Entries not returned as expected")
         else:
             actual_entries = len(resp1.json()["users"]) - user_index
             assert_utils.assert_equals(count_new, actual_entries, "Entries not returned as expected")

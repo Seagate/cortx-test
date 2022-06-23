@@ -71,7 +71,7 @@ class GetSetQuota(RestTestLib):
         :param enabled: True or False to enable or disable quota check
         :param max_size: max allowed size(specified in bytes)
         :param max_objects: maximum number of objects that can be uploaded
-        :param check_on_raw: True or False to enable or disable comparison 
+        :param check_on_raw: True or False to enable or disable comparison
          with raw object size
         """
         payload = {}
