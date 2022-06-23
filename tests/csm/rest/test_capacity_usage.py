@@ -343,8 +343,8 @@ class TestSystemCapacity():
             self.log.info("[End] Sleep %s", self.update_seconds)
 
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
-            result = self.csm_obj.verify_degraded_capacity(resp, healthy=0, degraded=total_written,
-            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+            result = self.csm_obj.verify_degraded_capacity(resp, healthy=0, degraded=None,
+            critical=None, damaged=None, err_margin=test_cfg["err_margin"], total=total_written)
             assert result[0], result[1]
 
             new_write = self.aligned_size * failure_cnt
