@@ -267,9 +267,9 @@ test_28512:
 test_28515:
     password: "7uY5HlnrQgqcNMg1dG2AdUcU/344qPhx70zTTytHqPc="
     status_code: 401
-    error_code: 4113
-    message_id: "HttpError"
-    message_index: 0
+    error_code: 4111
+    message_id: "UnauthorizedError"
+    message_index: 1
 test_28514:
     username: "123"
     status_code: 401

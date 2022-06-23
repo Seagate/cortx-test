@@ -3483,7 +3483,7 @@ class TestCsmUser():
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
-                                       Template(msg).substitute(A="csm_user_monitor",
+                                       Template(msg).substitute(A="csm_user_manage",
                                                                 B=CSM_REST_CFG["csm_admin_user"][
                                                                 "username"]))
 
@@ -3526,7 +3526,7 @@ class TestCsmUser():
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
-                                       Template(msg).substitute(A="csm_user_monitor",
+                                       Template(msg).substitute(A="csm_user_manage",
                                                                 B=CSM_REST_CFG["csm_admin_user"][
                                                                 "username"]))
 
@@ -3584,7 +3584,8 @@ class TestCsmUser():
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
-                                       Template(msg).substitute(A="admin"))
+                                       Template(msg).substitute(A="admin",
+                                       B="admin"))
 
         self.log.info("Step 2: Verify if last admin user"
                       "is not able to edit the self role to monitor")
@@ -3595,7 +3596,8 @@ class TestCsmUser():
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
-                                       Template(msg).substitute(A="admin"))
+                                       Template(msg).substitute(A="admin", 
+                                       B="admin"))
 
         self.log.info("Creating csm user")
         password = CSM_REST_CFG["csm_admin_user"]["password"]
@@ -4220,7 +4222,9 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg)
+            assert_utils.assert_equals(response.json()["message"],
+                                      Template(msg).substitute(A="Password", 
+                                      B=msg))
 
         self.log.info(
             "Verified that Login API returns error Response Code 400 "
@@ -4266,7 +4270,9 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg)
+            assert_utils.assert_equals(response.json()["message"], 
+                                       Template(msg).substitute(A="Username", 
+                                       B=msg))
 
         self.log.info(
             "Verified that Login API returns error Response Code 400 "

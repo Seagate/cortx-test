@@ -24,7 +24,7 @@
   Cannot create other users:
     - "Only $A user can create other $B users"
   PermissionDenied:
-    - 'Access to the requested resource is forbidden.'
+    - 'Access to the requested resource is forbidden'
     - 'Only admin user can create other admin users'
 4099:
   invalid body msg_id:
@@ -70,19 +70,19 @@
     - "Insufficient information in request body"
     - "_schema: Empty value for access_key"
     - "_schema: Empty value for secret_key"
-    - "Uid: Field may not be null."
-    - "Key_type: Must be one of: s3."
-    - "Key_type: Field may not be null."
-    - "max_buckets: not a valid integer."
-    - "max_buckets: field may not be null."
-    - "suspended: not a valid boolean."
-    - "suspended: field may not be null."
-    - "User_caps: Unknown field."
-    - "max_entries: must be greater than or equal to 1."
+    - "$A: Field may not be null."
+    - "$A: Must be one of: s3."
+    - "$A: Field may not be null."
+    - "$A: not a valid integer."
+    - "$A: field may not be null."
+    - "$A: not a valid boolean."
+    - "$A: field may not be null."
+    - "$A: Unknown field."
+    - "$A: must be greater than or equal to 1."
     - "_schema: Empty value for password"
     - "_schema: Empty value for username"
-    - "Password: Missing data for required field."
-    - "Username: Missing data for required field."
+    - "$A: Missing data for required field."
+    - "$A: Missing data for required field."
     - "$str_part: Must be greater than or equal to 1."
     - "$key: Unknown field."
     - "error(22): Invalid compatibility rules $rule"
