@@ -29,11 +29,13 @@ from commons import constants as common_const
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from config import PROV_CFG
 from config import PROV_TEST_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.s3.s3_test_lib import S3TestLib
 
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
 
@@ -52,6 +54,7 @@ class TestProvK8Cortx:
         LOGGER.info("STARTED: Setup Module operations")
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        cls.s3t_obj = S3TestLib()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.ha_obj = HAK8s()
         cls.dir_path = common_const.K8S_SCRIPTS_PATH
@@ -59,6 +62,7 @@ class TestProvK8Cortx:
         cls.worker_node_list = []
         cls.master_node_list = []
         cls.host_list = []
+        cls.local_sol_path = common_const.LOCAL_SOLUTION_PATH
         for node in range(cls.num_nodes):
             node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                    username=CMN_CFG["nodes"][node]["username"],
@@ -436,3 +440,32 @@ class TestProvK8Cortx:
                                            data_disk_per_cvg=config['data_disk_per_cvg'],
                                            master_node_list=self.master_node_list,
                                            worker_node_list=self.master_node_list)
+
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-41569")
+    def test_41569(self):
+        """
+        S3 IO Operations
+        """
+        access_key, secret_key = self.deploy_lc_obj.get_default_access_secret_key(self.local_sol_path)
+        LOGGER.debug("access key and secret key are %s , %s",access_key, secret_key)
+        client_config_res = self.deploy_lc_obj.client_config(self.master_node_list, common_const.NAMESPACE, access_key=access_key, secret_key=secret_key, flag="component")
+        LOGGER.info(client_config_res)
+        LOGGER.info("Step to Perform basic IO operations")
+        bucket_name = "bucket-" + str(int(time.time()))
+        # ext_port_ip = client_config_res[2][2]
+        s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                    endpoint_url=client_config_res[2][2])
+        create_bucket_resp = s3t_obj.create_bucket(bucket_name)
+        LOGGER.info("Created bucket name %s", bucket_name)
+        assert_utils.assert_true(create_bucket_resp[0], create_bucket_resp[1])
+        bucket_resp = s3t_obj.bucket_list()
+        LOGGER.debug("bucket_list %s", bucket_resp[1])
+        cmd = commands.CMD_AWSCLI_HEAD_BUCKET.format(bucket_name) + " --endpoint-url " + client_config_res[2][2]
+        resp = system_utils.run_local_cmd(cmd=cmd, chk_stderr=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp=s3t_obj.delete_bucket(bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Uploading the bucket")
+        self.deploy_lc_obj.basic_io_write_read_validate(s3t_obj, bucket_name)
+       
