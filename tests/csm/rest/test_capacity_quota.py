@@ -204,8 +204,8 @@ class TestCapacityQuota():
                                      self.bucket)
         assert res, err_msg
         for objs in obj_list:
-               self.log.info("Step 3: Delete object")
-               assert s3_misc.delete_object(
+                self.log.info("Step 3: Delete object")
+                assert s3_misc.delete_object(
                     objs, self.bucket, self.akey, self.skey), "Failed to delete object."
         self.log.info("Step 4: Perform max objects verification")
         res = self.csm_obj.verify_max_objects(max_size, max_objects, self.akey, self.skey,
@@ -296,8 +296,8 @@ class TestCapacityQuota():
             assert res, err_msg
 
             for objs in obj_list:
-                  self.log.info("Step 6: Delete object")
-                  assert s3_misc.delete_object(
+                    self.log.info("Step 6: Delete object")
+                    assert s3_misc.delete_object(
                        objs, self.bucket, self.akey, self.skey), "Failed to delete object."
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
