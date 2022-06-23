@@ -442,4 +442,3 @@ class TestK8CortxUpgrade:
         LOGGER.info("Upgraded to version %s", installed_version)
         self.collect_sb = False
         LOGGER.info("--------- Test Completed ---------")
-
