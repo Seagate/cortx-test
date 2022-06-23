@@ -1849,7 +1849,6 @@ class HAK8s:
                             failed.append(user)
                     else:
                         created_users.append(user)
-                        LOGGER.debug("Created %s user successfully", i_i)
                 except CTException as error:
                     LOGGER.exception("Error: %s", error)
                     if event.is_set():
