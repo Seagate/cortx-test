@@ -1985,13 +1985,14 @@ class ProvDeployK8sCortxLib:
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
         return True, filepath
-    
+
     def get_default_access_secret_key(self, filepath):
         """
-        This is used to access access key and secret key.
+        This is used to access access key and secret key
         file: solution.yaml file
         returns access key and secrets key
         """
+        
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
