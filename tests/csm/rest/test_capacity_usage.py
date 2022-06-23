@@ -210,7 +210,7 @@ class TestSystemCapacity():
                                                             K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp_cls[0], resp_cls[1])
             self.log.info("Cleanup: Cluster deployment successfully")
-        
+
             self.log.info("Cleanup: Check cluster status")
             resp = self.ha_obj.poll_cluster_status(self.master)
             assert_utils.assert_true(resp[0], resp[1])
