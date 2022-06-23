@@ -2385,7 +2385,9 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.CREATED, \
             "User could not be created"
         usr_val = resp.json()["keys"][0]
+        self.log.info("Printing usr_val %s ",usr_val)
         self.created_iam_users.update({usr_val['user']:usr_val})
+        self.log.info("iam users set is %s ", self.created_iam_users)
         self.log.info("Step 2: Create bucket and perform IO")
         bucket_name = "iam-user-bucket-" + str(int(time.time()))
         s3_obj = S3TestLib(access_key=usr_val["access_key"],
@@ -4876,7 +4878,6 @@ class TestIamUserRGW():
             assert_utils.assert_equals(len(resp.json()["users"]), 0, "Users list is not empty")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip("reason=CORTX-32043")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4893,7 +4894,6 @@ class TestIamUserRGW():
         resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True)
         assert resp[0], resp[1]
         usr_val = resp[1]["keys"][0]
-        self.created_iam_users.update({usr_val['user']:usr_val})
         users_list.append(resp[1]["user_id"])
         self.log.info("Step 2: Delete IAM User")
         resp = self.csm_obj.delete_iam_user(usr_val['user'])
@@ -5074,7 +5074,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         assert resp.status_code == HTTPStatus.CONFLICT, "Status code check failed"
         if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")  # TODO
+            self.log.info("Verifying error response...")
             assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(resp.json()["message"], msg)
@@ -5105,7 +5105,7 @@ class TestIamUserRGW():
                                                 "Status code check failed")
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
-            assert_utils.assert_equals(resp.json()["error_code"], str(resp_error_code))
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(resp.json()["message"], msg)
         self.log.info("##### Test completed -  %s #####", test_case_name)
