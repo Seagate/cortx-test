@@ -151,7 +151,7 @@ def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr: bool = False) 
     LOGGER.debug("Command: %s", cmd)
     proc = None
     try:
-        proc = Popen(cmd, shell=False, stdout=PIPE, stderr=PIPE)  # nosec (B603)
+        proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)  # nosec (B603)
         output, error = proc.communicate()
         LOGGER.debug("output = %s", str(output))
         LOGGER.debug("error = %s", str(error))
@@ -591,7 +591,7 @@ def create_file(fpath: str, count: int, dev: str = "/dev/zero", b_size: str = "1
     try:
         cmd = commands.CREATE_FILE.format(dev, fpath, b_size, count)
         LOGGER.debug(cmd)
-        proc = Popen(cmd, shell=False, stderr=PIPE, stdout=PIPE, encoding="utf-8")  # nosec (B603)
+        proc = Popen(cmd, shell=True, stderr=PIPE, stdout=PIPE, encoding="utf-8")  # nosec (B603)
         output, error = proc.communicate()
         LOGGER.debug("output = %s", str(output))
         LOGGER.debug("error = %s", str(error))
