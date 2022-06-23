@@ -218,6 +218,7 @@ class TestSystemCapacity():
 
         self.log.info("[END] Teardown Method")
 
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
