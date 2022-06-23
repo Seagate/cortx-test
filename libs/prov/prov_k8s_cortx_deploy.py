@@ -1985,9 +1985,9 @@ class ProvDeployK8sCortxLib:
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
         return True, filepath
-        
+
     @staticmethod
-    def get_default_access_secret_key(self, filepath):
+    def get_default_access_secret_key(filepath):
         """
         This is used to access access key and secret key
         file: solution.yaml file
