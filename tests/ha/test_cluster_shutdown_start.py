@@ -196,7 +196,8 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 5: Check DI for IOs run before restart.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True)
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Verified DI for IOs run before restart.")
 
@@ -205,7 +206,8 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29301-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: IOs completed successfully with new S3 account.")
 
@@ -341,7 +343,6 @@ class TestClusterShutdownStart:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="F-20C not completely supported with RGW.")
     @pytest.mark.tags("TEST-29472")
     @CTFailOn(error_handler)
     def test_mpu_with_cluster_restart_29472(self):
@@ -435,7 +436,6 @@ class TestClusterShutdownStart:
     # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="F-20C not completely supported for RGW.")
     @pytest.mark.tags("TEST-29474")
     @CTFailOn(error_handler)
     def test_partial_mpu_bfr_aftr_clstr_rstrt_29474(self):
@@ -593,7 +593,8 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 4: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipwrite=True, skipcleanup=True)
+                                                    skipwrite=True, skipcleanup=True,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed READs and verified DI on the written data")
 
@@ -632,7 +633,8 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29470-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs with variable sizes objects."
                     "Verified READs and verified DI on the written data.")
@@ -1036,7 +1038,8 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29479-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: IOs running successfully with new S3 account.")
 
@@ -1107,7 +1110,8 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 6: Check DI for IOs run before restart.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True)
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Verified DI for IOs run before restart.")
 
@@ -1116,7 +1120,8 @@ class TestClusterShutdownStart:
         self.test_prefix = 'test-29480-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: IOs running successfully with new S3 account.")
 
@@ -1136,7 +1141,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Started: Test to check DELETEs after cluster restart.")
 
         wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
-        del_bucket = wr_bucket - 10
+        del_bucket = wr_bucket - 100
         event = threading.Event()
         wr_output = Queue()
         del_output = Queue()
