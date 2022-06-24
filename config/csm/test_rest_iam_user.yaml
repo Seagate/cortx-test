@@ -99,7 +99,8 @@ test_42273:
   message_index_1: 14
   message_index_2: 2
 test_42284:
-  max_entries: 5  
+  max_entries: 5
+  max_entries_2: 15
 test_42274:
   ran_int: 10
 test_42287:

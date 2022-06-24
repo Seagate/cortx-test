@@ -230,20 +230,19 @@ def delete_object(obj_name, bucket_name, access_key: str, secret_key: str, **kwa
                         region_name=region,
                         **kwargs)
     LOGGER.debug("S3 boto resource created")
-
     LOGGER.debug("Delete object : %s in bucket: %s", obj_name, bucket_name)
     s3_resource.Object(bucket_name, obj_name).delete()
-    result = False
-    for my_bucket_object in s3_resource.Bucket(bucket_name).objects.all():
-        if my_bucket_object.key != obj_name:
-            result = True
+    result = True
+    for obj in s3_resource.Bucket(bucket_name).objects.all():
+        if obj.key == obj_name:
+            result = False
             break
     if result is True:
         LOGGER.debug("Verified that Object: %s is deleted", obj_name)
     else:
         LOGGER.debug("Object %s is not deleted", obj_name)
     del s3_resource
-    return True
+    return result
 
 def get_object_size(bucket_name, access_key: str, secret_key: str, **kwargs):
     """

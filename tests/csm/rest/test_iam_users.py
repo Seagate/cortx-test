@@ -203,6 +203,7 @@ class TestIamUserRGW():
             self.log.debug("File path not exists, create a directory")
             system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(TEST_DATA_FOLDER))
         self.log.info("Done: Setup operations.")
+        self.created_iam_users = {}
 
     def teardown_method(self):
         """Teardown method which run after each function.
@@ -2384,7 +2385,9 @@ class TestIamUserRGW():
         assert resp.status_code == HTTPStatus.CREATED, \
             "User could not be created"
         usr_val = resp.json()["keys"][0]
+        self.log.info("Printing usr_val %s ",usr_val)
         self.created_iam_users.update({usr_val['user']:usr_val})
+        self.log.info("iam users set is %s ", self.created_iam_users)
         self.log.info("Step 2: Create bucket and perform IO")
         bucket_name = "iam-user-bucket-" + str(int(time.time()))
         s3_obj = S3TestLib(access_key=usr_val["access_key"],
@@ -4875,7 +4878,6 @@ class TestIamUserRGW():
             assert_utils.assert_equals(len(resp.json()["users"]), 0, "Users list is not empty")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip("reason=CORTX-32043")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4892,7 +4894,6 @@ class TestIamUserRGW():
         resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True)
         assert resp[0], resp[1]
         usr_val = resp[1]["keys"][0]
-        self.created_iam_users.update({usr_val['user']:usr_val})
         users_list.append(resp[1]["user_id"])
         self.log.info("Step 2: Delete IAM User")
         resp = self.csm_obj.delete_iam_user(usr_val['user'])
@@ -4906,6 +4907,7 @@ class TestIamUserRGW():
         assert_utils.assert_equals(len(resp.json()["users"]), 0, "Users list is not empty")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4928,26 +4930,36 @@ class TestIamUserRGW():
             self.log.info("%s IAM user created", count + 1)
         self.log.info("Created users: %s", users_list)
 
+        resp1 = self.csm_obj.list_iam_users_rgw()
+        self.log.info("getting existing users list %s ", resp1.json()["users"])
+        self.log.info("getting existing users count %s", len(resp1.json()["users"]))
+
         self.log.info("Step 2: Send GET request with max_entries as 5")
         resp = self.csm_obj.list_iam_users_rgw(
                                 max_entries=self.csm_conf["test_42284"]["max_entries"])
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
-        resp_dict = resp.json()
+        resp_dict = resp1.json()
         get_user_list = resp_dict["users"]
+        last_cnt = get_user_list[:5:-1]
         count = resp_dict["count"]
         assert_utils.assert_equals(count, self.csm_conf["test_42284"]["max_entries"],
                                  "Entries not returned as expected")
-        user_index = self.csm_obj.random_gen.randrange(1, count)
+        user_index = self.csm_obj.random_gen.randrange(0, count -1)
         marker = get_user_list[user_index]
-
+        self.log.info("User index is %s ", user_index)
         self.log.info("Step 3: Send GET request with max_entries as 15 and "
                       "marker as in between user")
-        resp = self.csm_obj.list_iam_users_rgw(max_entries=15, marker=marker)
+        resp = self.csm_obj.list_iam_users_rgw(max_entries= \
+                self.csm_conf["test_42284"]["max_entries_2"],marker=marker)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
         count_new = resp.json()["count"]
         get_user_list = resp.json()["users"]
-        actual_entries = self.csm_conf["common"]["num_users"] - user_index + 1
-        assert_utils.assert_equals(count_new, actual_entries, "Entries not returned as expected")
+        if len(resp1.json()["users"]) > (self.csm_conf["common"]["num_users"]+1):
+            assert_utils.assert_equals(count_new, self.csm_conf["test_42284"]["max_entries_2"],
+                                       "Entries not returned as expected")
+        else:
+            actual_entries = len(resp1.json()["users"]) - user_index
+            assert_utils.assert_equals(count_new, actual_entries, "Entries not returned as expected")
         self.log.info("Printing first user of list %s", get_user_list[0])
         assert_utils.assert_equals(get_user_list[0], marker, "Marker not set"
                                                              "to in between user")
@@ -5066,7 +5078,7 @@ class TestIamUserRGW():
         resp = self.csm_obj.create_iam_user_rgw(payload)
         assert resp.status_code == HTTPStatus.CONFLICT, "Status code check failed"
         if CSM_REST_CFG["msg_check"] == "enable":
-            self.log.info("Verifying error response...")  # TODO
+            self.log.info("Verifying error response...")
             assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(resp.json()["message"], msg)
@@ -5097,7 +5109,7 @@ class TestIamUserRGW():
                                                 "Status code check failed")
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
-            assert_utils.assert_equals(resp.json()["error_code"], str(resp_error_code))
+            assert_utils.assert_equals(resp.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(resp.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(resp.json()["message"], msg)
         self.log.info("##### Test completed -  %s #####", test_case_name)
