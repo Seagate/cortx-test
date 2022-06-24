@@ -64,14 +64,21 @@ class GetSetQuota(RestTestLib):
 
     #pylint disable=no-self-use
     def iam_user_quota_payload(self,enabled: str,
-                        max_size: int, max_objects: int):
+                        max_size: int, max_objects: int,
+                        check_on_raw: str):
         """
         Create IAM user quota payload
+        :param enabled: True or False to enable or disable quota check
+        :param max_size: max allowed size(specified in bytes)
+        :param max_objects: maximum number of objects that can be uploaded
+        :param check_on_raw: True or False to enable or disable comparison
+         with raw object size
         """
         payload = {}
         payload.update({"enabled": enabled})
         payload.update({"max_size": max_size})
         payload.update({"max_objects" : max_objects})
+        payload.update({"check_on_raw": check_on_raw})
         self.log.info("Payload: %s", payload)
         return payload
 
@@ -122,7 +129,9 @@ class GetSetQuota(RestTestLib):
                     if key in ("enabled","max_size","max_objects","check_on_raw"):
                         continue
                     if key == "max_size_kb":
-                        payload.update({"max_size_kb":round(get_response["max_size"]/1024)})
+                        self.log.info("Printing actual max isze kb %s ",
+                                                 get_response["max_size"]/1024)
+                        payload.update({"max_size_kb":math.ceil(get_response["max_size"]/1024)})
                     self.log.info("Actual response for %s: %s", key, payload[key])
                     if value != payload[key]:
                         self.log.error("Actual and expected response for %s didnt match", key)
@@ -137,11 +146,13 @@ class GetSetQuota(RestTestLib):
 	Verify put object of random size fails after exceeding max size limit
         """
         err_msg = ""
+        obj_list = []
         obj_name_prefix="created_obj"
         obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
         self.log.info("Perform Put operation for 1 object of max size")
         res = s3_misc.create_put_objects(obj_name, bucket,
                        akey, skey, object_size=int(max_size/(1024*1024)))
+        obj_list.append(obj_name)
         if res:
             obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Perform Put operation of Random size and 1 object")
@@ -158,7 +169,7 @@ class GetSetQuota(RestTestLib):
                 err_msg = "Message check verification failed for object size above max size"
         else:
             err_msg = "Put operation failed for less than max size"
-        return res, err_msg
+        return res, err_msg, obj_list
  
     # pylint: disable=too-many-arguments
     def verify_max_objects(self, max_size: int, max_objects: int, akey: str, skey: str,
@@ -168,16 +179,18 @@ class GetSetQuota(RestTestLib):
         """
         self.log.info("Perform Put operation of small size and N object")
         small_size = math.floor(max_size / max_objects)
-        small_size = int((small_size/(1024*1024)*100))
+        small_size = int(small_size/1024)
         self.log.info("Perform Put operation of small size %s and N objects %s ",
                         small_size, max_objects)
         err_msg = ""
+        obj_list = []
         obj_name_prefix="created_obj"
         for _ in range(0, max_objects):
             obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
             res = s3_misc.create_put_objects(obj_name, bucket,
                                               akey, skey, object_size=small_size,
                                               block_size="1K")
+            obj_list.append(obj_name)
         if res:
             obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Perform Put operation of Random size and 1 object")
@@ -194,7 +207,7 @@ class GetSetQuota(RestTestLib):
                 err_msg = "Message check verification failed for objects more than max objects"
         else:
             err_msg = "Put operation failed for less than max objects"
-        return res, err_msg
+        return res, err_msg, obj_list
 
     @RestTestLib.authenticate_and_login
     def get_user_capacity_usage(self, resource, uid,

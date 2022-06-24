@@ -132,6 +132,7 @@ class S3MultipartTestLib(Multipart):
         :return: (Boolean, List of uploaded parts).
         """
         try:
+            b_size = kwargs.get("block_size", "1M")
             total_parts = kwargs.get("total_parts", None)
             multipart_obj_path = kwargs.get("multipart_obj_path", None)
             parts = []
@@ -140,7 +141,7 @@ class S3MultipartTestLib(Multipart):
             if kwargs.get('create_file', True):
                 if os.path.exists(multipart_obj_path):
                     os.remove(multipart_obj_path)
-                create_file(multipart_obj_path, multipart_obj_size)
+                create_file(multipart_obj_path, multipart_obj_size, b_size=b_size)
             with open(multipart_obj_path, "rb") as file_pointer:
                 i = 1
                 while True:
