@@ -26,10 +26,12 @@ import time
 
 import pytest
 
+from commons.constants import S3_ENGINE_RGW
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils as sysutils
 from commons import error_messages as err_msg
+from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_test_lib import S3TestLib
@@ -471,61 +473,72 @@ class TestObjectTaggingVerLimits:
         latest_ver = self.versions[self.object_name]["version_history"][-1]
         LOGGER.info("Step 2: Successfully uploaded object %s to versioned bucket %s with "
                     "version ID %s", self.object_name, self.bucket_name, latest_ver)
-        tag_or = list()
-        for char in S3_CFG["object_tagging_special_char"]:
+        if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            list_special_char = S3_CFG["object_tagging_special_char_rgw"]
+        else:
+            list_special_char = S3_CFG["object_tagging_special_char_cortx"]
+        for char in list_special_char:
+            tag_or = list()
             tag_key = f"tag{char}key"
             tag_or.append({"Key": tag_key, "Value": "tag1value"})
-        LOGGER.info("Step 3: Perform PUT Object Tagging for %s with tag set as %s with tag key "
-                    "containing allowed special characters", self.object_name, tag_or)
-        resp = s3_cmn_lib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
-                                             s3_ver_test_obj=self.s3_ver_obj,
-                                             bucket_name=self.bucket_name,
-                                             object_name=self.object_name, version_tag=self.ver_tag,
-                                             versions_dict=self.versions, tag_overrides=tag_or,
-                                             version_id=latest_ver)
-        assert_utils.assert_true(resp[0], resp)
-        put_tag = self.ver_tag[self.object_name][latest_ver]
-        LOGGER.info("Step 3: Performed PUT Object Tagging for %s with tag set as %s with tag key "
-                    "containing allowed special characters", self.object_name, tag_or)
-        LOGGER.info("Step 4: Perform GET Object Tagging for %s with versionId=%s",
-                    self.object_name, latest_ver)
-        resp = s3_cmn_lib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
-                                             s3_ver_test_obj=self.s3_ver_obj,
-                                             bucket_name=self.bucket_name,
-                                             object_name=self.object_name, version_id=latest_ver)
-        assert_utils.assert_true(resp[0], resp)
-        get_tag = resp[1]
-        for pair in put_tag:
-            assert_utils.assert_in(pair, get_tag, "Mismatch in tag Key-Value pair."
-                                                  f"Expected: {put_tag} \n Actual: {get_tag}")
-        LOGGER.info("Step 4: Performed GET Object Tagging for %s with versionId=%s is %s",
-                    self.object_name, latest_ver, get_tag)
-        tag_or = [{"Key": "tag*key", "Value": "tag1value"},
-                  {"Key": "tag,key", "Value": "tag1value"}]
-        LOGGER.info("Step 5: Perform PUT Object Tagging for %s with tag set as %s with tag key "
-                    "containing other than allowed special characters", self.object_name, tag_or)
-        resp = s3_cmn_lib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
-                                             s3_ver_test_obj=self.s3_ver_obj,
-                                             bucket_name=self.bucket_name,
-                                             object_name=self.object_name, version_tag=self.ver_tag,
-                                             versions_dict=self.versions, tag_overrides=tag_or,
-                                             version_id=latest_ver)
-        assert_utils.assert_false(resp[0], resp)
-        assert_utils.assert_in(err_msg.S3_RGW_BKT_INVALID_TAG_ERR, resp[1].message)
-        LOGGER.info("Step 5: PUT Object Tagging for %s with tag set as %s with tag key containing "
-                    "other than allowed special characters failed as expected", self.object_name,
-                    tag_or)
-        LOGGER.info("Step 6: Perform GET Object Tagging for %s with versionId=%s",
-                    self.object_name, latest_ver)
-        resp = s3_cmn_lib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
-                                             s3_ver_test_obj=self.s3_ver_obj,
-                                             bucket_name=self.bucket_name,
-                                             object_name=self.object_name, version_id=latest_ver)
-        assert_utils.assert_true(resp[0], resp)
-        get_tag1 = resp[1]
-        for pair in put_tag:
-            assert_utils.assert_in(pair, get_tag1, "Mismatch in tag Key-Value pair."
-                                                  f"Expected: {put_tag} \n Actual: {get_tag1}")
-        LOGGER.info("Step 6: Performed GET Object Tagging for %s with versionId=%s is %s",
-                    self.object_name, latest_ver, get_tag)
+            LOGGER.info("Step 3: Perform PUT Object Tagging for %s with tag set as %s with tag key "
+                        "containing allowed special characters", self.object_name, tag_or)
+            resp = s3_cmn_lib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                                s3_ver_test_obj=self.s3_ver_obj,
+                                                bucket_name=self.bucket_name,
+                                                object_name=self.object_name,
+                                                version_tag=self.ver_tag,
+                                                versions_dict=self.versions,
+                                                tag_overrides=tag_or,
+                                                version_id=latest_ver)
+            assert_utils.assert_true(resp[0], resp)
+            put_tag = self.ver_tag[self.object_name][latest_ver]
+            LOGGER.info("Step 3: Performed PUT Object Tagging for %s with tag set as %s with tag "
+                        "key containing allowed special characters", self.object_name, tag_or)
+            LOGGER.info("Step 4: Perform GET Object Tagging for %s with versionId=%s",
+                        self.object_name, latest_ver)
+            resp = s3_cmn_lib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                                s3_ver_test_obj=self.s3_ver_obj,
+                                                bucket_name=self.bucket_name,
+                                                object_name=self.object_name, version_id=latest_ver)
+            assert_utils.assert_true(resp[0], resp)
+            get_tag = resp[1]
+            for pair in put_tag:
+                assert_utils.assert_in(pair, get_tag, "Mismatch in tag Key-Value pair."
+                                                    f"Expected: {put_tag} \n Actual: {get_tag}")
+            LOGGER.info("Step 4: Performed GET Object Tagging for %s with versionId=%s is %s",
+                        self.object_name, latest_ver, get_tag)
+        #Since all sprcial characters are allowed in RGW, following part of code is invalid
+        if S3_ENGINE_RGW != CMN_CFG["s3_engine"]:
+            tag_or = [{"Key": "tag*key", "Value": "tag1value"},
+                    {"Key": "tag,key", "Value": "tag1value"}]
+            LOGGER.info("Step 5: Perform PUT Object Tagging for %s with tag set as %s with tag "
+                        "key containing other than allowed special characters", self.object_name,
+                        tag_or)
+            resp = s3_cmn_lib.put_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                                s3_ver_test_obj=self.s3_ver_obj,
+                                                bucket_name=self.bucket_name,
+                                                object_name=self.object_name,
+                                                version_tag=self.ver_tag,
+                                                versions_dict=self.versions,
+                                                tag_overrides=tag_or,
+                                                version_id=latest_ver)
+            assert_utils.assert_false(resp[0], resp)
+            assert_utils.assert_in(err_msg.S3_RGW_BKT_INVALID_TAG_ERR, resp[1].message)
+            LOGGER.info("Step 5: PUT Object Tagging for %s with tag set as %s with tag key "
+                        "containing other than allowed special characters failed as expected",
+                        self.object_name, tag_or)
+            LOGGER.info("Step 6: Perform GET Object Tagging for %s with versionId=%s",
+                        self.object_name, latest_ver)
+            resp = s3_cmn_lib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                                s3_ver_test_obj=self.s3_ver_obj,
+                                                bucket_name=self.bucket_name,
+                                                object_name=self.object_name, version_id=latest_ver)
+            assert_utils.assert_true(resp[0], resp)
+            get_tag1 = resp[1]
+            for pair in put_tag:
+                assert_utils.assert_in(pair, get_tag1, "Mismatch in tag Key-Value pair."
+                                                    f"Expected: {put_tag} \n Actual: {get_tag1}")
+            LOGGER.info("Step 6: Performed GET Object Tagging for %s with versionId=%s is %s",
+                        self.object_name, latest_ver, get_tag)
         LOGGER.info("Completed: Test allowed special characters in tag key for a versioned object")
