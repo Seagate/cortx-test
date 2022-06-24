@@ -1,5 +1,5 @@
 # pylint: disable=too-many-lines
-#!/usr/bin/python
+# !/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -108,8 +108,8 @@ class ProvDeployK8sCortxLib:
         if len(master_node_list) > 0:
             # TODO : handle multiple master node case.
             input_str = f'hostname={master_node_list[0].hostname},' \
-                        f'user={master_node_list[0].username},' \
-                        f'pass={master_node_list[0].password}'
+                f'user={master_node_list[0].username},' \
+                f'pass={master_node_list[0].password}'
             hosts_input_str.append(input_str)
         else:
             return False, "Master Node List is empty"
@@ -117,8 +117,8 @@ class ProvDeployK8sCortxLib:
         if len(worker_node_list) > 0:
             for each in worker_node_list:
                 input_str = f'hostname={each.hostname},' \
-                            f'user={each.username},' \
-                            f'pass={each.password}'
+                    f'user={each.username},' \
+                    f'pass={each.password}'
                 hosts_input_str.append(input_str)
         else:
             return False, "Worker Node List is empty"
@@ -188,7 +188,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("No. of disks : %s", count[0])
         if int(count[0]) < self.deploy_cfg["prereq"]["min_disks"]:
             return False, f"Need at least " \
-                          f"{self.deploy_cfg['prereq']['min_disks']} disks for deployment"
+                f"{self.deploy_cfg['prereq']['min_disks']} disks for deployment"
 
         LOGGER.info("Checking OS release version")
         resp = node_obj.execute_cmd(cmd=
@@ -252,7 +252,7 @@ class ProvDeployK8sCortxLib:
             resp1 = node_obj.execute_cmd(list_mnt_dir, read_lines=True)
             if node_obj.path_exists(self.deploy_cfg["mnt_path"]):
                 resp = node_obj.execute_cmd(
-                        common_cmd.CMD_REMOVE_DIR.format(self.deploy_cfg["mnt_path"]))
+                    common_cmd.CMD_REMOVE_DIR.format(self.deploy_cfg["mnt_path"]))
                 LOGGER.debug(resp)
             LOGGER.info("\n %s", resp1)
         if node_obj.path_exists(self.deploy_cfg['3rd_party_dir']):
@@ -402,6 +402,7 @@ class ProvDeployK8sCortxLib:
                     with open(local_path, 'r') as file:
                         lines = file.read()
                         LOGGER.debug(lines)
+
         _operation_on_worker_node()
         self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["k8s_dir"])
@@ -651,7 +652,7 @@ class ProvDeployK8sCortxLib:
         :Param: size_data_disk: size of data disk
         :returns the status ,filepath
         """
-        cvg_type = kwargs.get("cvg_type",)
+        cvg_type = kwargs.get("cvg_type", )
         cvg_count = kwargs.get("cvg_count")
         sns_data = kwargs.get("sns_data")
         sns_parity = kwargs.get("sns_parity")
@@ -756,6 +757,7 @@ class ProvDeployK8sCortxLib:
                 yaml.dump(conf, soln, default_flow_style=False,
                           sort_keys=False, Dumper=noalias_dumper)
                 soln.close()
+
         _update_file(cortx_im)
         return True, filepath
 
@@ -831,8 +833,8 @@ class ProvDeployK8sCortxLib:
         jen_parameter = {}
         if len(master_node_list) > 0:
             input_str = f'hostname={master_node_list[0].hostname},' \
-                        f'user={master_node_list[0].username},' \
-                        f'pass={master_node_list[0].password}'
+                f'user={master_node_list[0].username},' \
+                f'pass={master_node_list[0].password}'
             hosts_input_str.append(input_str)
         else:
             return False, "Master Node List is empty"
@@ -840,8 +842,8 @@ class ProvDeployK8sCortxLib:
         if len(worker_node_list) > 0:
             for each in worker_node_list:
                 input_str = f'hostname={each.hostname},' \
-                            f'user={each.username},' \
-                            f'pass={each.password}'
+                    f'user={each.username},' \
+                    f'pass={each.password}'
                 hosts_input_str.append(input_str)
         hosts = "\n".join(each for each in hosts_input_str)
         jen_parameter["hosts"] = hosts
@@ -850,7 +852,7 @@ class ProvDeployK8sCortxLib:
         output = Provisioner.build_job(
             k8s_deploy_cfg["cortx_job_name"], jen_parameter, k8s_deploy_cfg["auth_token"],
             k8s_deploy_cfg["jenkins_url"])
-        LOGGER.info("Jenkins Build URL: %s",output['url'])
+        LOGGER.info("Jenkins Build URL: %s", output['url'])
         if output['result'] == "SUCCESS":
             LOGGER.info("k8s Cluster Deployment successful")
             return True, output['result']
@@ -979,21 +981,23 @@ class ProvDeployK8sCortxLib:
         return True
 
     @staticmethod
-    def post_deployment_steps_lc(s3_engine, endpoint):
+    def post_deployment_steps_lc(s3_engine, endpoint, **kwargs):
         """
         Perform CSM login, S3 account creation and AWS configuration on client
         returns status boolean
         """
+        access_key = kwargs.get("access_key", None)
+        secret_key = kwargs.get("secret_key", None)
         LOGGER.info("Post Deployment Steps")
-        csm_s3 = RestS3user()
-
-        LOGGER.info("Create S3 account")
-        csm_s3.create_custom_s3_payload("valid")
-        resp = csm_s3.create_s3_account()
-        LOGGER.info("Response for account creation: %s", resp.json())
-        details = resp.json()
-        access_key = details['access_key']
-        secret_key = details["secret_key"]
+        if not secret_key and not access_key:
+            LOGGER.info("Create S3 account")
+            csm_s3 = RestS3user()
+            csm_s3.create_custom_s3_payload("valid")
+            resp = csm_s3.create_s3_account()
+            LOGGER.info("Response for account creation: %s", resp.json())
+            details = resp.json()
+            access_key = details['access_key']
+            secret_key = details["secret_key"]
 
         try:
             LOGGER.info("Configure AWS on Client")
@@ -1146,7 +1150,7 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("json_resp %s\n Log Path %s", resp[0], resp[1])
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
-                f"Please read log file {resp[1]}"
+                    f"Please read log file {resp[1]}"
             LOGGER.info("ENDED: S3 bench workload test")
 
     @staticmethod
@@ -1241,13 +1245,16 @@ class ProvDeployK8sCortxLib:
                         assert_utils.assert_true(resp[0], resp[1])
         return True, service_status[-1]
 
-    def client_config(self, master_node_list, namespace):
+    def client_config(self, master_node_list, namespace, **kwargs):
         """
         This method is used to setup the client
         param: master_node_list: master_node_obj
         param: namespace: custom namespace
-        returns True, s3t_obj, list of access,secret ksy with ext_port_ip
+        returns True, s3t_obj, list of access,secret key with ext_port_ip
         """
+        access_key = kwargs.get("access_key", None)
+        secret_key = kwargs.get("secret_key", None)
+        flag = kwargs.get("flag", None)
         LOGGER.info("Setting the current namespace")
         resp_ns = master_node_list[0].execute_cmd(
             cmd=common_cmd.KUBECTL_SET_CONTEXT.format(namespace),
@@ -1263,9 +1270,14 @@ class ProvDeployK8sCortxLib:
                 LOGGER.debug("Did not get expected response: %s", resp)
             ext_ip = resp[1]
             port = resp[2]
+            http_port = resp[3]
             ext_port_ip = Template(self.deploy_cfg['https_protocol']
                                    + ":$port").substitute(ip=ext_ip, port=port)
             LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
+            if flag == "component":
+                ext_port_ip = Template(self.deploy_cfg['http_protocol']
+                                       + ":$port").substitute(ip=ext_ip, port=http_port)
+                LOGGER.debug("External LB value, ip and port will be: %s", ext_port_ip)
         else:
             LOGGER.info("Configure HAproxy on client")
             ext_lbconfig_utils.configure_haproxy_rgwlb(master_node_list[0].hostname,
@@ -1277,12 +1289,20 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Step to Create S3 account and configure credentials")
         if self.s3_engine == 2:  # "s3_engine flag is used for picking up the configuration
             # for legacy s3 and rgw, `1` - legacy s3 and `2` - rgw"
-            resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
-            assert_utils.assert_true(resp[0], resp[1])
-            access_key, secret_key = S3H_OBJ.get_local_keys()
+            if flag == "component":
+                LOGGER.debug("Access_key and Secret_key %s %s ", access_key, secret_key)
+                resp = self.post_deployment_steps_lc(self.s3_engine,
+                                                     ext_port_ip, access_key=access_key,
+                                                     secret_key=secret_key)
+                assert_utils.assert_true(resp[0], resp[1])
+            else:
+                resp = self.post_deployment_steps_lc(self.s3_engine, ext_port_ip)
+                assert_utils.assert_true(resp[0], resp[1])
+                access_key, secret_key = S3H_OBJ.get_local_keys()
             if self.service_type == "NodePort":
                 s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                     endpoint_url=ext_port_ip)
+
             else:
                 s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
             response = [access_key, secret_key, ext_port_ip]
@@ -1489,7 +1509,7 @@ class ProvDeployK8sCortxLib:
         if len(data_pod_list) > self.deploy_cfg["node_count"]:
             sleep_val = self.deploy_cfg["service_delay_scale"]
         start_time = int(time.time())
-        end_time = start_time + sleep_val * (pod_count*2)  # max 32 mins timeout
+        end_time = start_time + sleep_val * (pod_count * 2)  # max 32 mins timeout
         response = list()
         hctl_status = dict()
         while int(time.time()) < end_time:
@@ -1694,7 +1714,7 @@ class ProvDeployK8sCortxLib:
         taint_cmd = common_cmd.KUBECTL_GET_TAINT_NODES.format(self.deploy_cfg["pre_check_log"])
         all_resource = common_cmd.KUBECTL_GET_ALL.format(self.deploy_cfg["pre_check_log"])
         get_secret = common_cmd.KUBECTL_GET_SCT.format("secret",
-                                                          self.deploy_cfg["pre_check_log"])
+                                                       self.deploy_cfg["pre_check_log"])
         get_pv = common_cmd.KUBECTL_GET_PV.format(self.deploy_cfg["pre_check_log"])
         get_pvc = common_cmd.KUBECTL_GET_PVC.format(self.deploy_cfg["pre_check_log"])
         list_pre_check = [taint_cmd, all_resource, get_secret, get_pvc, get_pv]
@@ -1770,7 +1790,7 @@ class ProvDeployK8sCortxLib:
             return True, installing_version
         return False, installing_version, "Installing version is not lower than installed version"
 
-    def update_sol_for_granular_deploy(self, file_path: str, host_list: list,master_node_list,
+    def update_sol_for_granular_deploy(self, file_path: str, host_list: list, master_node_list,
                                        image: str, deployment_type: str, **kwargs):
         """
         Helper function to update image in solution.yaml.
@@ -1803,7 +1823,7 @@ class ProvDeployK8sCortxLib:
             if cvg == "cvg1":
                 cvg_key = storage_key[cvg]["devices"]["data"]
                 device_list = master_node_list.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
-                                               read_lines=True)[0].split(",")
+                                                           read_lines=True)[0].split(",")
                 device_list[-1] = device_list[-1].replace("\n", "")
                 if data_disk_per_cvg == 0:
                     data_disk_per_cvg = int(len(device_list[cvg_count + 1:]) / cvg_count)
@@ -1811,9 +1831,9 @@ class ProvDeployK8sCortxLib:
                 LOGGER.debug("Data disk per cvg : %s", data_disk_per_cvg)
                 LOGGER.info(len(cvg_key))
                 cvg_len = len(cvg_key)
-                for data_disk in range(len(cvg_key)-data_disk_per_cvg):
-                    cvg_key.pop("d"+str(cvg_len))
-                    cvg_len = cvg_len -1
+                for data_disk in range(len(cvg_key) - data_disk_per_cvg):
+                    cvg_key.pop("d" + str(cvg_len))
+                    cvg_len = cvg_len - 1
                     LOGGER.info(data_disk)
             else:
                 storage_key.pop(cvg)
@@ -1945,13 +1965,13 @@ class ProvDeployK8sCortxLib:
                 server_res[res_type]['cpu'] = cortx_resource['rgw'][res_type]['cpu']
                 control_res[res_type]['memory'] = cortx_resource['agent'][res_type]['mem']
                 control_res[res_type]['cpu'] = cortx_resource['agent'][res_type]['cpu']
-            # updating the motr /confd requests and limits resources
+                # updating the motr /confd requests and limits resources
                 for elem in data_list:
                     data_res[elem]['resources'][res_type]['memory'] = \
                         cortx_resource[elem][res_type]['mem']
                     data_res[elem]['resources'][res_type]['cpu'] = \
                         cortx_resource[elem][res_type]['cpu']
-            # updating the ha component resources
+                # updating the ha component resources
                 for ha_elem in ha_list:
                     ha_res[ha_elem]['resources'][res_type]['memory'] = \
                         cortx_resource[ha_elem][res_type]['mem']
@@ -1965,3 +1985,20 @@ class ProvDeployK8sCortxLib:
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
         return True, filepath
+
+    @staticmethod
+    def get_default_access_secret_key(filepath):
+        """
+        This is used to access access key and secret key
+        file: solution.yaml file
+        returns access key and secrets key
+        """
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']  # Parent key
+            common = parent_key['common']
+            access_key = common["s3"]["default_iam_users"]["auth_admin"]
+            secrets = parent_key['secrets']
+            secret_key = secrets["content"]["s3_auth_admin_secret"]
+            LOGGER.info("Getting access and secret key")
+        return access_key, secret_key
