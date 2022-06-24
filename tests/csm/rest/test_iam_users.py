@@ -4920,7 +4920,9 @@ class TestIamUserRGW():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Creating %s IAM users.", self.csm_conf["common"]["num_users"])
+        
         users_list = []
+
         for count in range(self.csm_conf["common"]["num_users"]):
             resp = self.csm_obj.verify_create_iam_user_rgw(verify_response=True)
             assert_utils.assert_true(resp[0], resp[1])
@@ -4928,38 +4930,24 @@ class TestIamUserRGW():
             self.created_iam_users.update({usr_val['user']:usr_val})
             users_list.append(resp[1]["user_id"])
             self.log.info("%s IAM user created", count + 1)
+
         self.log.info("Created users: %s", users_list)
 
-        resp1 = self.csm_obj.list_iam_users_rgw()
-        self.log.info("getting existing users list %s ", resp1.json()["users"])
-        self.log.info("getting existing users count %s", len(resp1.json()["users"]))
+        user_index = self.csm_conf["test_42284"]["max_entries"]
+        self.log.info("Step 2: Send GET request to get last %s entries", user_index)
+        marker = self.csm_obj.list_iam_users_rgw().json()["users"][-user_index]
+        max_entr = self.csm_obj.random_gen.randint(1, 10)
 
-        self.log.info("Step 2: Send GET request with max_entries as 5")
-        resp = self.csm_obj.list_iam_users_rgw(
-                                max_entries=self.csm_conf["test_42284"]["max_entries"])
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
-        resp_dict = resp1.json()
-        get_user_list = resp_dict["users"]
-        last_cnt = get_user_list[:5:-1]
-        count = resp_dict["count"]
-        assert_utils.assert_equals(count, self.csm_conf["test_42284"]["max_entries"],
-                                 "Entries not returned as expected")
-        user_index = self.csm_obj.random_gen.randrange(0, count -1)
-        marker = get_user_list[user_index]
-        self.log.info("User index is %s ", user_index)
-        self.log.info("Step 3: Send GET request with max_entries as 15 and "
-                      "marker as in between user")
-        resp = self.csm_obj.list_iam_users_rgw(max_entries= \
-                self.csm_conf["test_42284"]["max_entries_2"],marker=marker)
+        self.log.info("Step 3: Send GET request with max_entries as %s and "
+                      "marker: %s", max_entr, marker)
+
+        resp = self.csm_obj.list_iam_users_rgw(max_entries=max_entr, marker=marker)
         assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
         count_new = resp.json()["count"]
         get_user_list = resp.json()["users"]
-        if len(resp1.json()["users"]) > (self.csm_conf["common"]["num_users"]+1):
-            assert_utils.assert_equals(count_new, self.csm_conf["test_42284"]["max_entries_2"],
-                                       "Entries not returned as expected")
-        else:
-            actual_entries = len(resp1.json()["users"]) - user_index
-            assert_utils.assert_equals(count_new, actual_entries, "Entries not returned as expected")
+        actual_entries = self.csm_conf["common"]["num_users"] - user_index
+        assert_utils.assert_equals(count_new, actual_entries, "Entries not returned as expected")
+
         self.log.info("Printing first user of list %s", get_user_list[0])
         assert_utils.assert_equals(get_user_list[0], marker, "Marker not set"
                                                              "to in between user")
