@@ -512,7 +512,8 @@ class TestVersioningDeleteObject:
                        versions_dict=versions)
         self.log.info("Step 3: Upload new version for object1")
         upload_version(self.s3_test_obj, bucket_name=self.bucket_name, versions_dict=versions,
-                       object_name=self.object_name1, file_path=self.file_path1, chk_null_version=True)
+                       object_name=self.object_name1, file_path=self.file_path1,
+                       chk_null_version=True)
         self.log.info("Step 4: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
