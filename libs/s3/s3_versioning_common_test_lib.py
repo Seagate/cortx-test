@@ -756,8 +756,7 @@ def initiate_upload_list_mpu(s3_mp_test_obj: S3MultipartTestLib, bucket_name, ob
     mpu_id = res[1]["UploadId"]
     parts_details = []
     LOG.info("Uploading parts")
-    resp = s3_mp_test_obj.upload_parts_parallel(mpu_id, bucket_name,
-                                                      object_name, parts=parts_)
+    resp = s3_mp_test_obj.upload_parts_parallel(mpu_id, bucket_name, object_name, parts=parts_)
     assert_utils.assert_not_in("VersionId", resp[1])
     for i in resp[1]['Parts']:
         parts_details.append({"PartNumber": i['PartNumber'], "ETag": i["ETag"]})
