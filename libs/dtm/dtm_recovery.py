@@ -264,7 +264,9 @@ class DTMRecoveryTestLib:
         resp = master_node.get_all_cluster_processes(pod_name=pod_name,
                                                      container_name=container_name)
         self.log.info("Extract list of processes having IDs %s", process_ids)
-        process_list = [(ele, p_id) for ele in resp for p_id in process_ids if p_id in ele]
+        compile_exp = re.compile('/(.*?):{"state"')
+        process_list = [(ele, p_id) for ele in resp for p_id in process_ids
+                        if p_id == compile_exp.findall(ele)[0]]
         if len(process_ids) != len(process_list):
             return False, f"All process IDs {process_ids} are not found. " \
                           f"All processes running in container are: {resp}"
