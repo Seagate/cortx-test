@@ -116,7 +116,6 @@ class TestObjectTagging:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5549")
-    @CTFailOn(error_handler)
     def test_verify_putobj_tagging_2457(self):
         """Verify PUT object tagging."""
         self.log.info("Verify PUT object tagging")
@@ -212,7 +211,6 @@ class TestObjectTagging:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5547")
-    @CTFailOn(error_handler)
     def test_putobj_taggingsupport_2460(self):
         """Verify put object with tagging support."""
         self.log.info("Verify put object with tagging support")
