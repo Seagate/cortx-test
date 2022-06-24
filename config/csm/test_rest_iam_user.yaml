@@ -39,8 +39,8 @@ test_39028:
 test_37778:
   error_code: 4099
   message_id: "MalformedRequest"
-  message_index_1: 19
-  message_index_2: 20
+  message_index_1: 24
+  message_index_2: 25
 test_37777:
   error_code: 12288
   message_id: "KeyExists"
@@ -56,22 +56,22 @@ test_37783:
 test_37779:
   error_code: 4099
   message_id: "MalformedRequest"
-  message_index: 21
+  message_index: 1
 test_38093:
   error_code: 4099
   message_id: "MalformedRequest"
-  message_index_1: 23
-  message_index_2: 22
+  message_index_1: 1
+  message_index_2: 27
 test_38095:
   error_code: 4099
   message_id: "MalformedRequest"
-  message_index_1: 25
-  message_index_2: 24
+  message_index_1: 26
+  message_index_2: 28
 test_38097:
   error_code: 4099
   message_id: "MalformedRequest"
-  message_index_1: 27
-  message_index_2: 26
+  message_index_1: 26
+  message_index_2: 29
 test_38103:
   error_code: 4099
   message_id: "MalformedRequest"
@@ -84,11 +84,11 @@ test_38107:
 test_38091:
   error_code: 4099
   message_id: "MalformedRequest"
-  message_index: 28
+  message_index: 30
 test_38094:
   error_code: 4099
   message_id: "MalformedRequest"
-  message_index: 20
+  message_index: 25
 test_39401:
   error_code: 12288
   message_id: "UserAlreadyExists"
@@ -96,7 +96,7 @@ test_39401:
 test_42273:
   error_code: 4099
   message_id: "MalformedRequest"
-  message_index_1: 29
+  message_index_1: 31
   message_index_2: 2
 test_42284:
   max_entries: 5  

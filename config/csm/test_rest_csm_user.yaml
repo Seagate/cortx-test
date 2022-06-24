@@ -3,12 +3,12 @@ test_5001:
   response_msg:
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index : 15 
+    message_index : 20 
 test_5004:
   invalid_sortdir: "abc"
   error_code: 4099
   message_id: "MalformedRequest"
-  message_index: 16
+  message_index: 21
 test_5000:
   valid_sortby: 
     - "username"
@@ -88,7 +88,7 @@ test_7408:
   response_mesg:
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 17
+    message_index: 22
 test_6220:
   response_duplicate_csm_manage_user:
     error_code: 4103
@@ -111,17 +111,17 @@ test_5005:
   response_msg:
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 16
+    message_index: 21
 test_5002:
   response_msg:
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 15
+    message_index: 20
 test_5020:
   response_msg:
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 18
+    message_index: 23
 test_5017:
   invalid_user_id: "invaliduser123"
   payload:
@@ -247,7 +247,7 @@ test_28505:
     reset_password: True
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 14
+    message_index: 19
 test_28517:
     new_password: "+ZfWaNAnxT4p39QOZ1A2QG+OWYJmgI4dEk9WcG6wS04="
     reset_password: True
@@ -280,22 +280,22 @@ test_28511:
     status_code: 400
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 30
+    message_index: 32
 test_28510:
     status_code: 400
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 31
+    message_index: 33
 test_28509:
     status_code: 400
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 32
+    message_index: 34
 test_28508:
     status_code: 400
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 33
+    message_index: 34
 test_32171:
     error_code: 4104
     message_id: "update_not_allowed"
