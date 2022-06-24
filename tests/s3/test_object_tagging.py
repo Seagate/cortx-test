@@ -1388,6 +1388,7 @@ class TestObjectTagging:
         self.log.info(
             "Verify get object with tagging support to non-existing object")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-42780")
@@ -1418,6 +1419,7 @@ class TestObjectTagging:
         assert_utils.assert_equal(len(resp[1]), S3_OBJ_TST["test_9415"]["tag_length"], resp[1])
         self.log.info("Verify already deleted tag using DELETE object tagging")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-42781")
@@ -1441,6 +1443,7 @@ class TestObjectTagging:
         self.log.info("Object is Retrieved using GET object")
         self.log.info("verify Get object tags count using GET object on non tagged object")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-42782")
@@ -1509,6 +1512,7 @@ class TestObjectTagging:
         self.log.info("Retrieved tag of an object")
         self.log.info("Verify Multipart Upload with max no.of tags for an Object")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-42775")
@@ -1557,6 +1561,7 @@ class TestObjectTagging:
         self.log.info("Retrieved tag of an object")
         self.log.info("Verify Multipart Upload with tag key having valid special characters")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-42776")
@@ -1605,6 +1610,7 @@ class TestObjectTagging:
         self.log.info("Verify Multipart Upload with tag having "
                       "tag values up to 256 Unicode characters in length")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-42777")
@@ -1652,6 +1658,7 @@ class TestObjectTagging:
         self.log.info("Verify Multipart Upload with tag having "
                       "tag key up to 128 Unicode characters in length")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-42778")
@@ -1697,6 +1704,7 @@ class TestObjectTagging:
         self.log.info("Retrieved tag of an object")
         self.log.info("Verify Multipart Upload with tag Keys & value having case sensitive labels")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-42852")
