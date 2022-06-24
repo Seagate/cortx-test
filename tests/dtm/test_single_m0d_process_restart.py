@@ -79,7 +79,7 @@ class TestSingleProcessRestart:
         cls.health_obj = Health(cls.master_node_list[0].hostname,
                                 cls.master_node_list[0].username,
                                 cls.master_node_list[0].password)
-        cls.test_cfg = configmanager.get_config_wrapper(fpath="config/test_dtm_config.yaml")
+        cls.test_cfg = configmanager.get_config_wrapper(fpath="config/dtm/test_dtm_config.yaml")
         cls.m0d_process = 'm0d'
         cls.rgw_process = 'radosgw'
         cls.log.info("Setup S3bench")
