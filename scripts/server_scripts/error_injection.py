@@ -25,8 +25,8 @@ import argparse
 import time
 import logging
 
-time_str = time.strftime("%Y%m%d-%H%M%S")
-log_filename = "hole_creation_" + time_str + ".log"
+timestr = time.strftime("%Y%m%d-%H%M%S")
+log_filename = "hole_creation_" + timestr + ".log"
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -58,7 +58,7 @@ parser.add_argument(
     action="store",
     default=0,
     type=int,
-    dest="no_of_err",
+    dest="noOfErr",
     help="How Many number of error do you want to induce in Metadata",
 )
 parser.add_argument(
@@ -125,9 +125,7 @@ parser.add_argument(
     action="store",
     dest="corrupt_emap",
     help="Induce Error in Emap specified by Cob Id (can be retrieved from list_emap command)"
-    " e.g. error_injection.py -corrupt_emap 0x200000200000017:0x15 -e 1 "
-    "-m /var/motr/m0d-0x7200000000000001:0xc/db/o/100000000000000:2a "
-    "-parse_size 10485760"
+    " e.g. error_injection.py -corrupt_emap 0x200000200000017:0x15 -e 1 -m /var/motr/m0d-0x7200000000000001:0xc/db/o/100000000000000:2a -parse_size 10485760"
     " **NOTE** : Restart m0d after corruption. e.g. systemctl restart m0d@0x7200000000000001:0xc.service",
 )
 parser.add_argument(
@@ -136,8 +134,7 @@ parser.add_argument(
     default=False,
     dest="list_emap",
     help="Display all Emap keys with device id"
-    "e.g. error_injection.py -list_emap -m /var/motr/m0d-0x7200000000000001:0xc/db/o/100000000000000:2a "
-    "-parse_size 10485760",
+    "e.g. error_injection.py -list_emap -m /var/motr/m0d-0x7200000000000001:0xc/db/o/100000000000000:2a -parse_size 10485760",
 )
 parser.add_argument(
     "-parse_size",
@@ -305,18 +302,18 @@ btreeType = {
 BeBnodeTypeKeys = {}
 
 
-def record_offset(record, i, size):
+def RecordOffset(record, i, size):
     if record in recordDict.keys():
         recordDict[record].append(i)
         if record == "BE_BNODE":
-            bli_type = i + 16  # bli_type offet
-            bt_num_active_key = i + 56  # active key count offset
-            BeBnodeTypeKeys[i] = [bli_type, bt_num_active_key]
+            bliType = i + 16  # bli_type offet
+            btNumActiveKey = i + 56  # active key count offset
+            BeBnodeTypeKeys[i] = [bliType, btNumActiveKey]
     else:
         recordDict["EXTRA"].append(i)
 
 
-def read_type_size(byte):  # Ex: 0001(ver) 0009(type) 00003dd8(size)
+def ReadTypeSize(byte):  # Ex: 0001(ver) 0009(type) 00003dd8(size)
     # ver = byte[:4]   # .ot_version = src->hd_bits >> 48,
     rtype = byte[6:8]  # .ot_type    = src->hd_bits >> 32 & 0x0000ffff,
     size = byte[8:16]  # .ot_size    = src->hd_bits & 0xffffffff
@@ -324,22 +321,22 @@ def read_type_size(byte):  # Ex: 0001(ver) 0009(type) 00003dd8(size)
     return rtype, size
 
 
-def edit_metadata(offset):
+def EditMetadata(offset):
     """Edit metadata with the fixed pattern of 0x1111222244443333."""
-    with open(filename, "r+b") as wbuffer:
+    with open(filename, "r+b") as wbfr:
         logger.info(
             "** Corrupting 8byte of Metadata at offset {}"
             " with b'1111222244443333' **".format(offset)
         )
-        wbuffer.seek(offset)
-        wbuffer.flush()
-        wbuffer.write(b"\x33\x33\x44\x44\x22\x22\x11\x11")
-        wbuffer.flush()
-        wbuffer.seek(offset)
-        wbuffer.flush()
+        wbfr.seek(offset)
+        wbfr.flush()
+        wbfr.write(b"\x33\x33\x44\x44\x22\x22\x11\x11")
+        wbfr.flush()
+        wbfr.seek(offset)
+        wbfr.flush()
 
 
-def edit_emap_metadata(emap_rec_full, offset, crc_offset):
+def EditEmapMetadata(emap_rec_full, offset, crc_offset):
     """Edit emap metadata with the fixed pattern of 0x1111222244443333."""
     with open(filename, "r+b") as wbfr:
         logger.info(
@@ -350,7 +347,7 @@ def edit_emap_metadata(emap_rec_full, offset, crc_offset):
         wbfr.flush()
         wbfr.write(b"\x33\x33\x44\x44\x22\x22\x11\x11")
         emap_rec_full[7] = "1111222244443333"
-        val = compute_crc(emap_rec_full, len(emap_rec_full) - 2)
+        val = ComputeCRC(emap_rec_full, len(emap_rec_full) - 2)
         print(
             "Newly computed CRC : ",
             hex(val),
@@ -368,7 +365,7 @@ def edit_emap_metadata(emap_rec_full, offset, crc_offset):
         wbfr.flush()
 
 
-def read_metadata(offset):
+def ReadMetadata(offset):
     """Verifies that meta-data contains the valid footer at the given offset."""
     with open(filename, "rb") as mdata:
         mdata.seek(offset)
@@ -378,12 +375,12 @@ def read_metadata(offset):
         return False, data
 
 
-def read_complete_record(offset):
+def ReadCompleteRecord(offset):
     """Function read complete record starting after header and until footer for record."""
     curr_record = []
     while 1:
-        footer_found, data = read_metadata(offset)
-        if footer_found:
+        footerFound, data = ReadMetadata(offset)
+        if footerFound:
             break
         curr_record.append(data.decode("utf-8"))
         offset = offset + 8  # check next 8 bytes
@@ -393,15 +390,15 @@ def read_complete_record(offset):
     return curr_record, offset  # Return record data and footer offset
 
 
-def read_complete_record_inc_crc(offset):
+def ReadCompleteRecordIncCRC(offset):
     """Function read complete record starting after header and until footer for record."""
     curr_record = []
     while 1:
-        footer_found, data = read_metadata(offset)
+        footerFound, data = ReadMetadata(offset)
         curr_record.append(data.decode("utf-8"))
         offset = offset + 8  # check next 8 bytes
-        if footer_found:
-            _, data = read_metadata(offset)
+        if footerFound:
+            _, data = ReadMetadata(offset)
             curr_record.append(data.decode("utf-8"))
             offset = offset + 8
             break
@@ -411,13 +408,13 @@ def read_complete_record_inc_crc(offset):
     return curr_record, offset  # Return record data and footer offset
 
 
-def m0_hash_fnc_fnv1(buffer, length):
+def m0_hash_fnc_fnv1(buffer, len):
     ptr = buffer
     val = 14695981039346656037
     mask = (1 << 64) - 1
-    if buffer is None or length == 0:
+    if buffer == None or len == 0:
         return 0
-    for i in range(round(length / 8)):
+    for i in range(round(len / 8)):
         for j in reversed(range(7 + 1)):
             val = (val * 1099511628211) & mask
             val = val ^ ptr[(i * 8) + j]
@@ -425,7 +422,7 @@ def m0_hash_fnc_fnv1(buffer, length):
     return val
 
 
-def compute_crc(string_list, list_len):
+def ComputeCRC(string_list, list_len):
     result = []
     for i in range(list_len):
         byte_array = bytes.fromhex(string_list[i])
@@ -435,7 +432,7 @@ def compute_crc(string_list, list_len):
     return val
 
 
-def read_be_b_node(offset):
+def ReadBeBNode(offset):
     """Reads BeNode data."""
     llist = BeBnodeTypeKeys[offset]
     with open(filename, "rb") as mdata:
@@ -450,18 +447,18 @@ def read_be_b_node(offset):
         logger.info("Active key count of BE_BNODE is: {}".format(int(data, 16)))
 
 
-def induce_corruption(record_type, no_of_err):
+def InduceCorruption(recordType, noOfErr):
     """Induces Corruption in a record with number of error."""
     count = 0
     read_metadata_file()
-    logger.info(record_type)
-    logger.info("Number of Error want to induce: {}".format(no_of_err))
-    lookup_list = recordDict[record_type]
-    if (len(lookup_list) and no_of_err) == 0:
+    logger.info(recordType)
+    logger.info("Number of Error want to induce: {}".format(noOfErr))
+    lookupList = recordDict[recordType]
+    if (len(lookupList) and noOfErr) == 0:
         logger.error("Record List is empty. Please choose another Record")
         count = 0
         return count
-    elif len(lookup_list) < no_of_err:
+    elif len(lookupList) < noOfErr:
         logger.error(
             " Record List contains Less number of entries than input."
             " Please reduce the number of Error Injection"
@@ -469,90 +466,90 @@ def induce_corruption(record_type, no_of_err):
         count = 0
         return count
     else:
-        logger.info(lookup_list)
+        logger.info(lookupList)
         logger.info(
-            "**** Inducing {} Error in Record: {} ****".format(no_of_err, record_type)
+            "**** Inducing {} Error in Record: {} ****".format(noOfErr, recordType)
         )
-        for i in range(no_of_err):
-            offset = lookup_list[
+        for i in range(noOfErr):
+            offset = lookupList[
                 i
             ]  # Please add offset here for starting from middle of offset list
-            read_metadata(offset + 8)
-            edit_metadata(offset + 8)
-            if record_type == "BE_BNODE":
-                read_be_b_node(offset)
+            ReadMetadata(offset + 8)
+            EditMetadata(offset + 8)
+            if recordType == "BE_BNODE":
+                ReadBeBNode(offset)
             count = count + 1
     return count
 
 
-def induce_random_corruption(no_of_err):
-    """Induces corruption in metadata at random offset."""
+def InduceRandomCorruption(noOfErr):
+    """Induces corruption in meta data at random offset."""
     count = 0
     read_metadata_file()
     while 1:
-        rec_type = random_system.choice(list(recordDict))
+        recType = random_system.choice(list(recordDict))
         logger.info(
             "+++ Picked a Random Record from Dictionary Record type:{}+++".format(
-                rec_type
+                recType
             )
         )
-        logger.info("Number of Error want to induce: {}".format(no_of_err))
-        lookup_list = recordDict[rec_type]
-        logger.info(lookup_list)
-        if (len(lookup_list) == 0) or (len(lookup_list) < no_of_err):
+        logger.info("Number of Error want to induce: {}".format(noOfErr))
+        lookupList = recordDict[recType]
+        logger.info(lookupList)
+        if (len(lookupList) == 0) or (len(lookupList) < noOfErr):
             logger.info(
                 "Record List is empty OR contains Less number of entries than input."
                 " Going to next Record"
             )
         else:
-            lookup_list = random_system.sample(lookup_list, no_of_err)
-            logger.info(lookup_list)
-            for i in range(no_of_err):
-                offset = lookup_list[i]
+            lookupList = random_system.sample(lookupList, noOfErr)
+            logger.info(lookupList)
+            for i in range(noOfErr):
+                offset = lookupList[i]
                 logger.info(
                     "**** Inducing RANDOM Error in Record at offsets: {}****".format(
                         hex(offset + 8)
                     )
                 )
-                read_metadata(offset + 8)  # Read original
-                edit_metadata(offset + 8)  # Modify
-                read_metadata(offset + 8)  # Verify
+                ReadMetadata(offset + 8)  # Read original
+                EditMetadata(offset + 8)  # Modify
+                ReadMetadata(offset + 8)  # Verify
                 count = count + 1
             break
     return count
 
 
-def induce_err_in_records(rec_list):
+def InduceErrInRecords(recList):
     """Function which induces error in a particular type of record."""
     count = 0
     read_metadata_file()
     logger.info("++++ Induce Random number of errors in All Records ++++")
-    for recType in rec_list:
+    for recType in recList:
         logger.info("Record Name: {}".format(recType))
-        lookup_list = recordDict[recType]
-        length = len(lookup_list)
+        lookupList = recordDict[recType]
+        length = len(lookupList)
         if length == 0:
             logger.info("Record List is empty. Moving to Next Record")
         else:
-            lookup_list = random_system.sample(
-                lookup_list, random_system.randint(1, length)
+            lookupList = random_system.sample(
+                lookupList, random_system.randint(1, length)
             )
-            logger.info("Inducing {} Error at these offsets".format(len(lookup_list)))
-            logger.info(lookup_list)
-            for offset in lookup_list:
+            logger.info("Inducing {} Error at these offsets".format(len(lookupList)))
+            logger.info(lookupList)
+            for offset in lookupList:
                 logger.info(
                     "**** Inducing Error in Record at offsets {}****".format(
                         hex(offset + 8)
                     )
                 )
-                read_metadata(offset + 8)  # Read original
-                edit_metadata(offset + 8)  # Modify
-                read_metadata(offset + 8)  # Verify
+                ReadMetadata(offset + 8)  # Read original
+                EditMetadata(offset + 8)  # Modify
+                ReadMetadata(offset + 8)  # Verify
                 count = count + 1
     return count
 
 
-def induce_huge_error():
+def InduceHugeError():
     """Corrupt Metadata file from random location till end of metadata file."""
     count = 0
     with open(filename, "r+b") as wbfr:
@@ -560,8 +557,8 @@ def induce_huge_error():
             "** Corrupting 8byte of Metadata with b'1111222244443333' all place"
         )
         wbfr.seek(-1, os.SEEK_END)
-        end_offset = wbfr.tell()
-        offset = random_system.randint(1, end_offset)
+        endOffset = wbfr.tell()
+        offset = random_system.randint(1, endOffset)
         logger.info("Start offset is {}".format(offset))
         while 1:
             offset = offset + 8
@@ -570,19 +567,19 @@ def induce_huge_error():
             if not byte:
                 break
             else:
-                edit_metadata(offset + 8)
+                EditMetadata(offset + 8)
                 count = count + 1
     return count
 
 
-def induce512kb_error():
+def Induce512kbError():
     """Corrupt 512k Metadata in Metadata file from random location."""
     count = 0
     j = 0
     with open(filename, "r+b") as wbfr:
         wbfr.seek(-524400, os.SEEK_END)  # Took a bigger number than 512k
-        end_offset = wbfr.tell()
-        offset = random_system.randint(1, end_offset)
+        endOffset = wbfr.tell()
+        offset = random_system.randint(1, endOffset)
         logger.info("Start offset is {}".format(offset))
         while 1:
             offset = offset + 8
@@ -595,51 +592,53 @@ def induce512kb_error():
                 if j > 524288:
                     break
                 else:
-                    edit_metadata(offset)
+                    EditMetadata(offset)
                     count = count + 1
     return count
 
 
-def convert_adstob2_cob(stob_f_container, stob_f_key):
+def ConvertAdstob2Cob(stob_f_container, stob_f_key):
     """Method to extract cob related data."""
-    m0_fid_device_id_offset = 32
-    m0_fid_device_id_mask = 72057589742960640
-    m0_fid_type_mask = 72057594037927935
+    M0_FID_DEVICE_ID_OFFSET = 32
+    M0_FID_DEVICE_ID_MASK = 72057589742960640
+    M0_FID_TYPE_MASK = 72057594037927935
 
+    # m0_fid_tassume()
     tid = int(67)  # Char 'C' Ascii Value
-    cob_f_container = (tid << (64 - 8)) | (int(stob_f_container, 16) & m0_fid_type_mask)
+    cob_f_container = (tid << (64 - 8)) | (int(stob_f_container, 16) & M0_FID_TYPE_MASK)
     cob_f_key = int(stob_f_key, 16)
     device_id = (
-        int(cob_f_container) & m0_fid_device_id_mask
-    ) >> m0_fid_device_id_offset
+        int(cob_f_container) & M0_FID_DEVICE_ID_MASK
+    ) >> M0_FID_DEVICE_ID_OFFSET
 
     return cob_f_container, cob_f_key, device_id
 
 
-def convert_cob_adstob(cob_f_container, cob_f_key):
+def ConvertCobAdstob(cob_f_container, cob_f_key):
     """Method take cob_f_cotainer, cob_f_key and returns stob_f_container, stob_f_key."""
-    m0_fid_type_mask = 72057594037927935
+    M0_FID_TYPE_MASK = 72057594037927935
 
+    # m0_fid_tassume()
     tid = 2  # STOB_TYPE_AD = 0x02
-    stob_f_container = (tid << (64 - 8)) | (int(cob_f_container, 16) & m0_fid_type_mask)
+    stob_f_container = (tid << (64 - 8)) | (int(cob_f_container, 16) & M0_FID_TYPE_MASK)
     stob_f_key = int(cob_f_key, 16)
 
     return stob_f_container, stob_f_key
 
 
-def corrupt_emap(record_type, stob_f_container, stob_f_key):
+def CorruptEmap(recordType, stob_f_container, stob_f_key):
     """Method corrupts EMAP record specified by Cob ID."""
     count = 0
     read_metadata_file()
-    lookup_list = recordDict[record_type]
+    lookupList = recordDict[recordType]
     print()
-    # logger.info("Offset List of {} = {} ".format(record_type, lookup_list))
+    # logger.info("Offset List of {} = {} ".format(recordType, lookupList))
     logger.info(
         "*****Corrupting BE_EMAP_KEY for Cob ID {}*****".format(args.corrupt_emap)
     )
 
-    for offset in lookup_list:
-        emap_key_data, offset = read_complete_record(offset)
+    for offset in lookupList:
+        emap_key_data, offset = ReadCompleteRecord(offset)
         if (
             (hex(stob_f_container) in emap_key_data)
             and (hex(stob_f_key) in emap_key_data)
@@ -649,10 +648,10 @@ def corrupt_emap(record_type, stob_f_container, stob_f_key):
             # gives offset of corresponding BE_EMAP_REC
             rec_offset = offset + 32
             saved_rec_offset = rec_offset
-            emap_rec_data, rec_offset = read_complete_record(rec_offset)
+            emap_rec_data, rec_offset = ReadCompleteRecord(rec_offset)
             # Skip key CRC
             rec_hdr_offset = offset + 16
-            emap_rec_data_full, _ = read_complete_record_inc_crc(rec_hdr_offset)
+            emap_rec_data_full, _ = ReadCompleteRecordIncCRC(rec_hdr_offset)
 
             # Check er_cs_nob and if it is not 0 then go and corrupt last checksum 8 bytes
             if emap_rec_data[3] != "0x0":
@@ -702,7 +701,7 @@ def corrupt_emap(record_type, stob_f_container, stob_f_key):
                         emap_rec_data_full[11],
                     )
                 )
-                edit_emap_metadata(
+                EditEmapMetadata(
                     emap_rec_data_full,
                     saved_rec_offset + 40,
                     rec_hdr_offset + 84 + round(int(emap_rec_data_full[5], 16) / 8),
@@ -729,34 +728,34 @@ def corrupt_emap(record_type, stob_f_container, stob_f_key):
                         emap_rec_data_full[11],
                     )
                 )
-                # emap_rec_data, rec_offset = read_complete_record(saved_rec_offset)
+                emap_rec_data, rec_offset = ReadCompleteRecord(saved_rec_offset)
                 count = count + 1
                 print()
     return count
 
 
-def list_all_emap_per_device():
+def ListAllEmapPerDevice():
     logger.info("*****Listing all emap keys and emap records with device id*****")
-    record_type = "BE_EMAP_KEY"
+    recordType = "BE_EMAP_KEY"
     read_metadata_file()
-    lookup_list = recordDict[record_type]
-    # logger.info(lookup_list)
+    lookupList = recordDict[recordType]
+    # logger.info(lookupList)
 
     count = 0
-    for offset in lookup_list:
+    for offset in lookupList:
         print()
-        emap_key_data, offset = read_complete_record(offset)
+        emap_key_data, offset = ReadCompleteRecord(offset)
         stob_f_container_hex = emap_key_data[0]
         stob_f_key_hex = emap_key_data[1]
-        _, _, device_id = convert_adstob2_cob(stob_f_container_hex, stob_f_key_hex)
+        _, _, device_id = ConvertAdstob2Cob(stob_f_container_hex, stob_f_key_hex)
         # 16 bytes of BE_EMAP_KEY (footer) + 16 bytes of BE_EMAP_REC(header)
         # gives offset of Corresponding BE_EMAP_REC
-        # emap_rec_offset = offset + 32
+        emap_rec_offset = offset + 32
         # emap_rec_data, _ = ReadCompleteRecord(emap_rec_offset)
 
         # Skip key CRC
         rec_hdr_offset = offset + 16
-        emap_rec_data_full, _ = read_complete_record_inc_crc(rec_hdr_offset)
+        emap_rec_data_full, _ = ReadCompleteRecordIncCRC(rec_hdr_offset)
         if emap_rec_data_full[4] != "0000000000000000":
             print(
                 "=============[ Count :",
@@ -790,7 +789,7 @@ def list_all_emap_per_device():
                 print("Checksum : ", end=" ")
                 for i in range(cksum_count):
                     print("0x{}".format(emap_rec_data_full[6 + i]), end=" ")
-                comp_crc = compute_crc(emap_rec_data_full, len(emap_rec_data_full) - 2)
+                comp_crc = ComputeCRC(emap_rec_data_full, len(emap_rec_data_full) - 2)
                 logger.info(
                     "** Additional Record Data"
                     " BE_EMAP_REC hd_magic = 0x{},"
@@ -809,11 +808,11 @@ def list_all_emap_per_device():
             count = count + 1
 
 
-def verify_length_of_record(record_dict):
+def VerifyLengthOfRecord(recordDict):
     count = 0
     read_metadata_file()
     logger.info("***********Record list will be print here************")
-    for record, items in record_dict.items():
+    for record, items in recordDict.items():
         logger.info(" {} :  {}".format(record, len(items)))
         count = count + 1
     return count
@@ -833,18 +832,18 @@ def read_metadata_file():
                 byte = binascii.hexlify(
                     (metadata.read(8))[::-1]
                 )  # Read the Type Size Version
-                rtype, size = read_type_size(byte)
+                rtype, size = ReadTypeSize(byte)
                 if rtype not in typeDict.keys():
                     continue
                 record = typeDict[rtype]
                 i = i + 8
                 if size > b"00000000":
-                    record_offset(record, i, size)
+                    RecordOffset(record, i, size)
                 i = int(size, 16) + i - 16
                 metadata.seek(i)
             # Not parsing the whole file for few test
             # as It will take many hours, depending on metadata size
-            if (args.verify is True) or (args.list_emap is True):
+            if (args.verify == True) or (args.list_emap == True):
                 if args.parse_size:
                     if (
                         i > args.parse_size
@@ -862,38 +861,38 @@ def read_metadata_file():
 noOfErrs = 0
 
 if args.err512k:
-    noOfErrs = induce512kb_error()
+    noOfErrs = Induce512kbError()
 
 elif args.hugeCorruption:
-    noOfErrs = induce_huge_error()
+    noOfErrs = InduceHugeError()
 
 elif args.random:
-    noOfErrs = induce_random_corruption(noOfErr)
+    noOfErrs = InduceRandomCorruption(noOfErr)
 
 elif recordType:
-    noOfErrs = induce_corruption(recordType, noOfErr)
+    noOfErrs = InduceCorruption(recordType, noOfErr)
 
 elif args.verify:
-    noOfErrs = verify_length_of_record(recordDict)
+    noOfErrs = VerifyLengthOfRecord(recordDict)
 
 elif args.allErr:
-    noOfErrs = induce_err_in_records(AllRecordList)  # InduceErrInAllRecord()
+    noOfErrs = InduceErrInRecords(AllRecordList)  # InduceErrInAllRecord()
 
 elif args.allGMD:
-    noOfErrs = induce_err_in_records(GMDList)  # InduceErrInGMDRecords()
+    noOfErrs = InduceErrInRecords(GMDList)  # InduceErrInGMDRecords()
 
 elif args.allDMD:
-    noOfErrs = induce_err_in_records(DMDList)  # InduceErrInDMDRecords()
+    noOfErrs = InduceErrInRecords(DMDList)  # InduceErrInDMDRecords()
 
 elif args.corrupt_emap:
     _f_container, _f_key = args.corrupt_emap.split(":")
     cob_f_container = hex(int(_f_container, 16))
     cob_f_key = hex(int(_f_key, 16))
-    stob_f_container, stob_f_key = convert_cob_adstob(cob_f_container, cob_f_key)
-    noOfErrs = corrupt_emap("BE_EMAP_KEY", stob_f_container, stob_f_key)
+    stob_f_container, stob_f_key = ConvertCobAdstob(cob_f_container, cob_f_key)
+    noOfErrs = CorruptEmap("BE_EMAP_KEY", stob_f_container, stob_f_key)
 
 elif args.list_emap:
-    list_all_emap_per_device()
+    ListAllEmapPerDevice()
 
 print()
 if not args.verify:
