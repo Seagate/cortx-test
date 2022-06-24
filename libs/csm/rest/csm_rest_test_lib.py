@@ -22,11 +22,13 @@ import logging
 import time
 from random import Random
 from string import Template
-
+from commons.helpers.health_helper import Health
+from commons.helpers.pods_helper import LogicalNode
 import commons.errorcodes as err
 from commons.constants import Rest as const
 from commons.exceptions import CTException
 from config import CSM_REST_CFG
+from config import CMN_CFG
 from libs.csm.rest.csm_rest_core_lib import RestClient
 
 
@@ -44,6 +46,24 @@ class RestTestLib:
         self.seed = int(time.time())
         self.random_gen = Random(self.seed)
         self.log.info("Seed : %s", self.seed)
+        self.worker_list = []
+        self.workers = []
+        for node in CMN_CFG["nodes"]:
+            if node["node_type"] == "master":
+                self.log.debug("Master node : %s", node["hostname"])
+                self.master = LogicalNode(hostname=node["hostname"],
+                                         username=node["username"],
+                                         password=node["password"])
+                self.hlth_master = Health(hostname=node["hostname"],
+                                         username=node["username"],
+                                         password=node["password"])
+            else:
+                self.log.debug("Worker node : %s", node["hostname"])
+                self.workers.append(LogicalNode(hostname=node["hostname"],
+                                                 username=node["username"],
+                                                 password=node["password"]))
+                host = node["hostname"]
+                self.worker_list.append(host)
 
     def rest_login(self, login_as):
         """

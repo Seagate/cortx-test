@@ -120,7 +120,7 @@ class TestSystemCapacity():
         Setup method for creating s3 user
         """
         self.log.info("[START] Setup Method")
-
+        self.failed_pod = []
         self.log.info("Cleanup: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.master)
         assert_utils.assert_true(resp[0], resp[1])
@@ -179,7 +179,6 @@ class TestSystemCapacity():
                 self.log.info("Successfully restored pod by %s way", self.restore_method)
                 self.log.info("[End] Restore deleted pods : %s", deploy_name)
 
-        self.failed_pod = []
         if self.s3_cleanup:
             self.log.info("Deleting bucket %s & associated objects", self.bucket)
             resp = s3_misc.delete_all_buckets(self.akey,self.skey)
@@ -210,6 +209,10 @@ class TestSystemCapacity():
                                                             K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp_cls[0], resp_cls[1])
             self.log.info("Cleanup: Cluster deployment successfully")
+
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+            time.sleep(self.update_seconds)
+            self.log.info("[Start] Sleep %s", self.update_seconds)
 
             self.log.info("Cleanup: Check cluster status")
             resp = self.ha_obj.poll_cluster_status(self.master)
@@ -644,8 +647,8 @@ class TestSystemCapacity():
 
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
 
-            result = self.csm_obj.verify_degraded_capacity(resp, healthy=0, degraded=total_written,
-            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+            result = self.csm_obj.verify_degraded_capacity(resp, healthy=0, degraded=None,
+            critical=None, damaged=None, err_margin=test_cfg["err_margin"], total=total_written)
             assert result[0], result[1]
 
             new_write = self.aligned_size * failure_cnt
