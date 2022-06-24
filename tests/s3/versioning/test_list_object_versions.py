@@ -37,6 +37,7 @@ from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 from libs.s3.s3_versioning_common_test_lib import check_list_object_versions
+from libs.s3.s3_versioning_common_test_lib import empty_versioned_bucket
 from libs.s3.s3_versioning_common_test_lib import upload_versions
 
 
@@ -90,16 +91,15 @@ class TestListObjectVersions:
         if path_exists(self.test_dir_path):
             remove_dirs(self.test_dir_path)
         self.log.info("Cleanup test directory: %s", self.test_dir_path)
-        # DELETE Object with VersionId is WIP, uncomment once feature is available
-        # res = self.s3_test_obj.bucket_list()
-        # pref_list = []
-        # for bucket_name in res[1]:
-        #     if bucket_name.startswith("ver-bkt"):
-        #         empty_versioned_bucket(self.s3_ver_test_obj, bucket_name)
-        #         pref_list.append(bucket_name)
-        # if pref_list:
-        #     res = self.s3_test_obj.delete_multiple_buckets(pref_list)
-        #     assert_utils.assert_true(res[0], res[1])
+        res = self.s3_test_obj.bucket_list()
+        pref_list = []
+        for bucket_name in res[1]:
+            if bucket_name.startswith("ver-bkt"):
+                empty_versioned_bucket(self.s3_ver_test_obj, bucket_name)
+                pref_list.append(bucket_name)
+        if pref_list:
+            res = self.s3_test_obj.delete_multiple_buckets(pref_list)
+            assert_utils.assert_true(res[0], res[1])
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-34290")

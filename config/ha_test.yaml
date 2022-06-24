@@ -24,7 +24,8 @@ s3_operation_data:
   no_csm_users: 10
   no_buckets_per_users: 50
   obj_per_bucket: 200
-  iam_users: 300
+  iam_users: 150
+  no_bkt_del_ctrl_pod: 500
 
 5gb_mpu_data:
   file_size: 4800
