@@ -88,16 +88,15 @@ class TestTaggingDeleteObject:
         if sysutils.path_exists(self.test_dir_path):
             sysutils.remove_dirs(self.test_dir_path)
         LOGGER.info("Cleanup test directory: %s", self.test_dir_path)
-        # DELETE Object with VersionId is WIP, uncomment once feature is available
-        # res = self.s3_test_obj.bucket_list()
-        # pref_list = []
-        # for bucket_name in res[1]:
-        #     if bucket_name.startswith("tag-bkt"):
-        #         empty_versioned_bucket(self.s3_ver_obj, bucket_name)
-        #         pref_list.append(bucket_name)
-        # if pref_list:
-        #     res = self.s3_test_obj.delete_multiple_buckets(pref_list)
-        #     assert_utils.assert_true(res[0], res[1])
+        res = self.s3_test_obj.bucket_list()
+        pref_list = []
+        for bucket_name in res[1]:
+            if bucket_name.startswith("tag-bkt"):
+                s3_ver_tlib.empty_versioned_bucket(self.s3_ver_obj, bucket_name)
+                pref_list.append(bucket_name)
+        if pref_list:
+            res = self.s3_test_obj.delete_multiple_buckets(pref_list)
+            assert_utils.assert_true(res[0], res[1])
         LOGGER.info("ENDED: Teardown operations")
 
     @pytest.mark.s3_ops
