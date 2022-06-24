@@ -352,7 +352,6 @@ class TestObjectTagging:
             self.bucket_name)
         self.log.info("Verify Multipart Upload with tagging support")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
     @pytest.mark.regression
