@@ -2091,7 +2091,7 @@ class TestCapacityQuota():
         #assert_utils.assert_greater_equal(used_data_size, m_size)
 
         self.log.info("Step 5: Delete all object: %s", obj_name)
-        assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Put object Failed"
+        assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
 
         self.log.info("Step 6: Perform PUT API to set user level quota")
         payload = self.csm_obj.iam_user_quota_payload(True, used_data_size, even_multiplier,
@@ -2196,7 +2196,7 @@ class TestCapacityQuota():
         #assert_utils.assert_greater_equal(used_data_size, m_size)
 
         self.log.info("Step 5: Delete all object: %s", obj_name)
-        assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Put object Failed"
+        assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
 
         self.log.info("Step 6: Perform PUT API to set user level quota")
         payload = self.csm_obj.iam_user_quota_payload(True, used_data_size, odd_multiplier,

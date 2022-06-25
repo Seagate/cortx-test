@@ -235,7 +235,7 @@ def assert_greater_equal(actual, matcher, reason=""):
 
 
 def assert_greater(actual, matcher, reason=""):
-    """AssertGreaterEqual Implementation"""
+    """AssertGreater Implementation"""
     assert actual > matcher, reason if reason else matcher
 
 
