@@ -164,3 +164,11 @@ test_40605:
   max_size: -1
   max_objects: -1
   enabled: False
+test_43857:
+  max_size: 1048576
+  max_objects: 1
+  enabled: True
+test_43862:
+  max_size: 1572864
+  max_objects: 2
+  enabled: True
