@@ -140,19 +140,16 @@ do
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
 			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --validate_certs False)
+		    if [ -e "log/latest/failed_tests.log" ] ; then echo "Exists\n" >> stage_fail.log ; fi
 		fi
 done < $INPUT
 IFS=$OLDIFS
 deactivate
 ''' )
 				    }
-				    if ( fileExists('log/latest/failed_tests.log') ) {
-                        def failures = readFile 'log/latest/failed_tests.log'
-                        def rlines = failures.readLines()
-                        if (rlines) {
-                            echo "Regression Test Failed"
-                            env.Regression_Failed = true
-                        }
+				    if ( fileExists('stage_fail.log') || fileExists('log/latest/failed_tests.log') ) {
+                        echo "Regression Test Failed"
+                        env.Regression_Failed = true
                     }
                     if ( status != 0 ) {
                         currentBuild.result = 'FAILURE'
@@ -274,26 +271,55 @@ deactivate
         		   withCredentials([usernamePassword(credentialsId: 'nightly_sanity', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					sh label: '', script: '''source venv/bin/activate
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
-python3 scripts/jenkins_job/get_tests_count.py -tp=${new_TP} -ji=${JIRA_ID} -jp=${JIRA_PASSWORD}
+python3 scripts/jenkins_job/get_tests_count.py -ji=${JIRA_ID} -jp=${JIRA_PASSWORD}
+python3 scripts/jenkins_job/job_duration.py -bl=$BUILD_URL
 deactivate
 '''
 }
-                  if ( fileExists('total_count.csv')) {
-                      def testcount = readCSV file: 'total_count.csv'
+                  if ( fileExists('te_tests_count.csv')) {
+                      def testcount = readCSV file: 'te_tests_count.csv'
                       testcount.with {
-                          env.totalcount = testcount[0][0]
-                          env.passcount = testcount[0][1]
-                          env.failcount = testcount[0][2]
-                          env.skipcount = testcount[0][3]
-                          env.todocount = testcount[0][4]
-                          env.abortcount = testcount[0][5]
+                          env.santotalcount = testcount[0][1]
+                          env.sanpasscount = testcount[0][2]
+                          env.sanfailcount = testcount[0][3]
+                          env.sanskipcount = testcount[0][4]
+                          env.santodocount = testcount[0][5]
+                          env.sanabortcount = testcount[0][6]
+                          env.itotalcount = testcount[1][1]
+                          env.ipasscount = testcount[1][2]
+                          env.ifailcount = testcount[1][3]
+                          env.iskipcount = testcount[1][4]
+                          env.itodocount = testcount[1][5]
+                          env.iabortcount = testcount[1][6]
+                          env.ftotalcount = testcount[2][1]
+                          env.fpasscount = testcount[2][2]
+                          env.ffailcount = testcount[2][3]
+                          env.fskipcount = testcount[2][4]
+                          env.ftodocount = testcount[2][5]
+                          env.fabortcount = testcount[2][6]
+                          env.rtotalcount = testcount[3][1]
+                          env.rpasscount = testcount[3][2]
+                          env.rfailcount = testcount[3][3]
+                          env.rskipcount = testcount[3][4]
+                          env.rtodocount = testcount[3][5]
+                          env.rabortcount = testcount[3][6]
+                          env.totalcount = testcount[4][1]
+                          env.passcount = testcount[4][2]
+                          env.failcount = testcount[4][3]
+                          env.skipcount = testcount[4][4]
+                          env.todocount = testcount[4][5]
+                          env.abortcount = testcount[4][6]
                       }
-                      echo "Total : ${totalcount}"
-                      echo "Pass : ${passcount}"
-                      echo "Fail : ${failcount}"
-                      echo "Skip : ${skipcount}"
-                      echo "Todo : ${todocount}"
-                      echo "Aborted : ${abortcount}"
+ }
+                  if ( fileExists('stages_duration.csv')) {
+                      def duration = readCSV file: 'stages_duration.csv'
+                      duration.with {
+                          env.sanitytime = duration[0][1]
+                          env.regrtime = duration[1][1]
+                          env.iotime = duration[2][1]
+                          env.fdtime = duration[3][1]
+                          env.totaltime = duration[4][1]
+                      }
  }
         		  if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
         		  try {
@@ -316,7 +342,7 @@ deactivate
 		     }
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5_v2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5_v2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com,akshay.s.mankar@seagate.com'
 			}
 		}
 	}

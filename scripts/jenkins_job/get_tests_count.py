@@ -32,37 +32,40 @@ TOTAL_COUNT_CSV = 'total_count.csv'
 CLONED_TE_CSV = 'cloned_tp_info.csv'
 TESTS_TE_CSV = 'te_tests_count.csv'
 
-
+# pylint:disable=too-many-locals
 def get_te_test_count(te_dict, jobject):
     """
     Get test count from TE
-
     :param te_dict: Dictionary of TE
     :param jobject: Jira Object
     """
     with open(os.path.join(os.getcwd(), TESTS_TE_CSV), 'w', newline='', encoding="utf8") as te_csv:
         writer = csv.writer(te_csv)
+        total_count = ['Total', 0, 0, 0, 0, 0, 0]
         for key, val in te_dict.items():
             total = todo = passed = fail = skip = exe = 0
             for test_exe_id in val:
                 res = jobject.get_test_details(test_exe_id)
                 for test in res:
                     res = test
-                print(res)
                 total += len(res)
                 todo += len([test for test in res if test["status"] == 'TODO'])
                 passed += len([test for test in res if test["status"] == 'PASS'])
                 fail += len([test for test in res if test["status"] == 'FAIL'])
                 skip += len([test for test in res if test["status"] in ['SKIPPED', 'BLOCKED']])
                 exe += len([test for test in res if test["status"] == 'EXECUTING'])
-
+            total_count[1] += total
+            total_count[2] += passed
+            total_count[3] += fail
+            total_count[4] += skip
+            total_count[5] += todo
+            total_count[6] += exe
             writer.writerow([key, total, passed, fail, skip, todo, exe])
-
+        writer.writerow(total_count)
 
 def get_tp_test_count(test_plan, jira_id, jira_pass):
     """
     Get test count from TP
-
     :param test_plan: TP ID
     :param jira_id: Jira ID
     :param jira_pass: Jira Password
@@ -92,13 +95,11 @@ def main():
     jira_password = args.jp
     jira_id = args.ji
     if test_plan_id:
-        print("Inside TP")
         get_tp_test_count(test_plan_id, jira_id, jira_password)
     else:
-        print("Inside TE")
         jobject = jira_utils.JiraTask(jira_id, jira_password)
-        # original_te = {"TEST-37458": "Sanity_TE", "TEST-39283": "Data_Path_TE", "TEST-40061": "Failure_TE"}
-        original_te = {"TEST-29156": "Sanity_TE", "TEST-40938": "Data_Path_TE", "TEST-41594": "Failure_TE"}
+        original_te = {"TEST-37458": "Sanity_TE", "TEST-39283": "Data_Path_TE",
+                       "TEST-40061": "Failure_TE"}
         dict_te = {"Sanity_TE": [], "Data_Path_TE": [], "Failure_TE": [], "Regre_TE": []}
         with open(os.path.join(os.getcwd(), CLONED_TE_CSV), 'r', encoding="utf8") as file:
             csvreader = csv.reader(file)
@@ -108,9 +109,7 @@ def main():
                     dict_te[k].append(row[1])
                 else:
                     dict_te["Regre_TE"].append(row[1])
-        print("Dict is:", dict_te)
         get_te_test_count(dict_te, jobject)
-
 
 if __name__ == "__main__":
     main()
