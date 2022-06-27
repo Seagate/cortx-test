@@ -42,7 +42,6 @@ class TestRgwPolicyCrud:
         cls.user_name_prefix = "user"
         cls.access_key_prefix = "access_key"
         cls.secret_key_prefix = "secret_key"
-        cls.email_id = "{}@seagate.com"
         cls.created_users = []
         cls.tenant = 'Group1'
 
@@ -57,42 +56,57 @@ class TestRgwPolicyCrud:
         self.log.debug("created_users list : %s",self.created_users)
         for usr in self.created_users:
             self.log.info("Sending request to delete user %s", usr)
-            try:
-                loop = asyncio.get_event_loop()
-                status = loop.run_until_complete(self.obj.delete_user(usr))
-                if status[0] != HTTPStatus.OK:
-                    delete_failed.append(usr)
-                else:
-                    delete_success.append(usr)
-            # pylint: disable=broad-except
-            except BaseException as err:
-                self.log.warning("Ignoring %s while deleting user: %s", err, usr)
+            loop = asyncio.get_event_loop()
+            status = loop.run_until_complete(self.obj.delete_user(usr))
+            if status != HTTPStatus.OK:
+                delete_failed.append(usr)
+            else:
+                delete_success.append(usr)
         for usr in delete_success:
             self.created_users.remove(usr)
         self.log.info("User delete success list %s", delete_success)
         self.log.info("User delete failed list %s", delete_failed)
 
+    def create_user(self,user_params):
+        """ Create user function. """
+        loop = asyncio.get_event_loop()
+        status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
+        return status, user_info
+
+    def put_policy(self,user_params):
+        """ Apply Policy to the user function. """
+        loop = asyncio.get_event_loop()
+        status = loop.run_until_complete(self.obj.put_user_policy(user_params))
+        return status
+
+    def delete_policy(self,user_params):
+        """ Delete Policy to the user function. """
+        loop = asyncio.get_event_loop()
+        status = loop.run_until_complete(self.obj.delete_user_policy(user_params))
+        return status
+
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-41407')
     def test_41407(self):
-        """ Test to DeleteUserPolicy to the Valid user. """
+        """ Test to DeleteUserPolicy to the Valid user.
+        Steps:
+        - Create user
+        - Apply Policy
+        - Verify Delete Policy
+        """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Test to DeleteUserPolicy to the user.")
         self.log.info("Step1 : Creating IAM user.")
         user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
-        email=f"{user_name}@seagate.com"
         user_params1 = {
             'display-name': user_name,
-            'email' : email,
             'uid' : user_name
         }
         self.log.info("Step 2: Creating a new IAM user with name %s", str(user_name))
-        loop = asyncio.get_event_loop()
-        status, user_info = loop.run_until_complete(self.obj.create_user(user_params1))
-        self.log.info(user_info)
+        status = self.create_user(user_params1)
         self.log.info("Step 3: Verifying that new IAM user is created successfully")
-        assert status == HTTPStatus.OK, "Not able to create user. Test Failed"
+        assert status[0] == HTTPStatus.OK, "Not able to create user. Test Failed"
         self.log.info("Step 4: IAM user is created successfully")
         policy = {
             "Version": "2012-10-17",
@@ -114,8 +128,7 @@ class TestRgwPolicyCrud:
             'Action' : 'PutUserPolicy',
             'format' : 'json'
         }
-        loop = asyncio.get_event_loop()
-        status = loop.run_until_complete(self.obj.put_user_policy(user_params2))
+        status = self.put_policy(user_params2)
         self.log.info("Step 6: verifying Applied user policy to the user")
         assert status[0] == HTTPStatus.OK, "Not able to apply policy"
         self.log.info("Step 7:  Applied user policy Successfully")
@@ -125,8 +138,7 @@ class TestRgwPolicyCrud:
             'Action' : 'DeleteUserPolicy',
             'format' : 'json'
         }
-        loop = asyncio.get_event_loop()
-        status = loop.run_until_complete(self.obj.delete_user_policy(user_params3))
+        status = self.delete_policy(user_params3)
         assert status[0] == HTTPStatus.OK, "Not able to delete policy"
         user_params4 = {
             'UserName' : user_name,
@@ -138,14 +150,15 @@ class TestRgwPolicyCrud:
         status = loop.run_until_complete(self.obj.get_user_policy(user_params4))
         assert status[0] == HTTPStatus.NOT_FOUND
         self.log.info("Step 8: IAM policy deleted successfully")
-        self.log.info("Step 9: Deleting created IAM user")
         self.created_users.append(user_params1)
         self.log.info("END: %s",test_case_name)
 
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-41408')
     def test_41408(self):
-        """ Test to DeleteUserPolicy to the InValid user. """
+        """ Test to DeleteUserPolicy to the InValid user.
+        - Verify delete policy where user is not Created
+        """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Test to DeleteUserPolicy for invalid user.")
@@ -168,8 +181,7 @@ class TestRgwPolicyCrud:
             'Action' : 'DeleteUserPolicy',
             'format' : 'json'
         }
-        loop = asyncio.get_event_loop()
-        status = loop.run_until_complete(self.obj.delete_user_policy(user_params2))
+        status = self.delete_policy(user_params2)
         self.log.info("Step 2: verifying delete user policy to invalid user")
         assert status[0] == HTTPStatus.NOT_FOUND, "User policy applied"
         self.log.info("END: Test to verify delete policy for invalid user")
@@ -177,24 +189,25 @@ class TestRgwPolicyCrud:
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-41409')
     def test_41409(self):
-        """Test to delete policy for a tenant user"""
+        """Test to delete policy for a tenant user
+        Steps:
+        - Create Tenant user
+        - Apply Policy
+        - Verify Delete policy for tenant user
+        """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Create tenant user")
         user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
-        email=f"{user_name}@seagate.com"
         user_params = {
             'tenant' : self.tenant,
             'display-name': user_name,
-            'email' : email,
             'uid' : user_name
         }
         self.log.info("Step 2: Started creating tenant user.")
-        loop = asyncio.get_event_loop()
-        status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
-        self.log.info(user_info)
+        status = self.create_user(user_params)
         self.log.info("Step 3: Verifying that tenant IAM user is created successfully")
-        assert status == HTTPStatus.OK, "Not able to create user. Test Failed"
+        assert status[0] == HTTPStatus.OK, "Not able to create user. Test Failed"
         self.log.info("Step 4: Tenant IAM user is created successfully")
         policy = {
             "Version": "2012-10-17",
@@ -217,8 +230,7 @@ class TestRgwPolicyCrud:
             'Action' : 'PutUserPolicy',
             'format' : 'json'
         }
-        loop = asyncio.get_event_loop()
-        status = loop.run_until_complete(self.obj.put_user_policy(user_params2))
+        status = self.put_policy(user_params2)
         self.log.info("Step 6: verifying Applied user policy to the tenant user")
         assert status[0] == HTTPStatus.OK, "Not able to put user policy"
         self.log.info("Step 7:  Applied user policy Successfully")
@@ -229,8 +241,7 @@ class TestRgwPolicyCrud:
             'Action' : 'DeleteUserPolicy',
             'format' : 'json'
         }
-        loop = asyncio.get_event_loop()
-        status = loop.run_until_complete(self.obj.delete_user_policy(user_params3))
+        status = self.delete_policy(user_params3)
         self.log.info(status)
         assert status[0] == HTTPStatus.OK, "Not able to delete policy"
         user_params4 = {
@@ -249,23 +260,23 @@ class TestRgwPolicyCrud:
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-41411')
     def test_41411(self):
-        """Test to delete policy which does not exist"""
+        """Test to delete policy which does not exist
+        Steps:
+        - Create User
+        - Verify Delete policy which is not applied
+        """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Create IAM user")
         user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
-        email=f"{user_name}@seagate.com"
         user_params = {
             'display-name': user_name,
-            'email' : email,
             'uid' : user_name
         }
         self.log.info("Step 2: Started creating IAM user.")
-        loop = asyncio.get_event_loop()
-        status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
-        self.log.info(user_info)
+        status = self.create_user(user_params)
         self.log.info("Step 3: Verifying that IAM user is created successfully")
-        assert status == HTTPStatus.OK, "Not able to create user. Test Failed"
+        assert status[0] == HTTPStatus.OK, "Not able to create user. Test Failed"
         self.log.info("Step 4: IAM user is created successfully")
         self.log.info("Step 5:  Deleting user policy for with invalid policy name")
         user_params2 = {
@@ -275,8 +286,7 @@ class TestRgwPolicyCrud:
             'format' : 'json'
         }
         self.log.info("Step 6:  Deleting user policy for with invalid policy name")
-        loop = asyncio.get_event_loop()
-        status = loop.run_until_complete(self.obj.delete_user_policy(user_params2))
+        status = self.delete_policy(user_params2)
         assert status[0] == HTTPStatus.NOT_FOUND, "User policy deleted"
         self.log.info("Step 7: Verified test to remove invalid policy name")
         self.log.info("END : test to validate delete invalid policy")
@@ -286,21 +296,23 @@ class TestRgwPolicyCrud:
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-41414')
     def test_41414(self):
-        """Test to delete policy by using user Access key and secret key"""
+        """Test to delete policy by using user Access key and secret key
+        Steps:
+        - Create user
+        - Apply policy
+        - Using user access key and secret key to delete policy
+        - Verify delete policy
+        """
         self.log.info("Step 1: Create IAM user")
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
-        email=f"{user_name}@seagate.com"
         user_params = {
             'display-name': user_name,
-            'email' : email,
             'uid' : user_name
         }
         self.log.info("Step 2: Started creating IAM user.")
-        loop = asyncio.get_event_loop()
-        status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
-        self.log.info(user_info)
+        status, user_info = self.create_user(user_params)
         access_key = user_info['keys'][0]['access_key']
         secret_key = user_info['keys'][0]['secret_key']
         self.log.info("Step 3: IAM user is created successfully")
@@ -330,8 +342,7 @@ class TestRgwPolicyCrud:
             'Action' : 'PutUserPolicy',
             'format' : 'json'
         }
-        loop = asyncio.get_event_loop()
-        status = loop.run_until_complete(self.obj.put_user_policy(user_params2))
+        status = self.put_policy(user_params2)
         self.log.info("Step 5: Successfully applied policy to the user")
         self.log.info("Step 6: Deleting Policy by using user Access key and Secret key")
         loop = asyncio.get_event_loop()
@@ -354,21 +365,23 @@ class TestRgwPolicyCrud:
     @pytest.mark.api_user_ops
     @pytest.mark.tags('TEST-41564')
     def test_41564(self):
-        """Test to delete policy by the user without having caps"""
+        """Test to delete policy by the user without having caps
+        STeps:
+        - Create User
+        - Apply policy
+        - Delete policy by using user Access key and Secret key
+        - Verify delete policy
+        """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Create IAM user")
         user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
-        email=f"{user_name}@seagate.com"
         user_params = {
             'display-name': user_name,
-            'email' : email,
             'uid' : user_name
         }
         self.log.info("Step 2: Started creating IAM user.")
-        loop = asyncio.get_event_loop()
-        status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
-        self.log.info(user_info)
+        status, user_info = self.create_user(user_params)
         access_key = user_info['keys'][0]['access_key']
         secret_key = user_info['keys'][0]['secret_key']
         self.log.info(
@@ -393,8 +406,7 @@ class TestRgwPolicyCrud:
             'Action' : 'PutUserPolicy',
             'format' : 'json'
         }
-        loop = asyncio.get_event_loop()
-        status = loop.run_until_complete(self.obj.put_user_policy(user_params2))
+        status = self.put_policy(user_params2)
         self.log.info("Step 5: Successfully Applied user policy")
         loop = asyncio.get_event_loop()
         user_params3 = {
