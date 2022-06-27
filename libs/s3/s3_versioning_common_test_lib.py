@@ -575,7 +575,7 @@ def update_versions_dict_dmo(versions_dict: dict, delete_result: list, is_versio
 
             versions_dict[obj]["version_history"].remove(ver)
             if ver == versions_dict[obj]["is_latest"]:
-                if len(versions_dict[obj]["version_history"]) != 0:
+                if len(versions_dict[obj]["version_history"]):
                     versions_dict[obj]["is_latest"] = versions_dict[obj]["version_history"][-1]
                 else:
                     versions_dict[obj]["is_latest"] = None
