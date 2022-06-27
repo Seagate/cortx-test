@@ -1750,8 +1750,9 @@ class TestCapacityQuota():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         num_objects = 1
-        odd_multiplier = self.csm_obj.random_gen.randrange(1, 20, 2)
-        self.log.info("Number of objects to be created are: %s", num_objects)
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, odd_multiplier)
         data_size = self.aligned_size + odd_multiplier
 
         self.log.info("Step 1: Create one objects of aligned size %s", data_size)
@@ -1800,7 +1801,8 @@ class TestCapacityQuota():
         self.log.info("##### Test started -  %s #####", test_case_name)
         num_objects = 1
         even_multiplier = self.csm_obj.random_gen.randrange(2, 20, 2)
-        self.log.info("Number of objects to be created are: %s", num_objects)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, even_multiplier)
         data_size = self.aligned_size * even_multiplier * 1024
 
         self.log.info("Step 1: Perform PUT API to set user level quota")
@@ -1834,8 +1836,7 @@ class TestCapacityQuota():
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
         assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
         assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
-        #assert_utils.assert_equal(m_size, t_size, "used_rounded and used mismatch found ")
-
+        #assert_utils.assert_equal(m_size, t_size) Revisit after CORTX-32486
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
@@ -1909,8 +1910,9 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         num_objects = 1
-        odd_multiplier = self.csm_obj.random_gen.randrange(1, 20, 2)
-        self.log.info("Number of objects to be created are: %s", num_objects)
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, odd_multiplier)
         data_size = self.aligned_size * odd_multiplier * 1024
 
         self.log.info("Step 1: Perform PUT API to set user level quota")
@@ -1918,8 +1920,7 @@ class TestCapacityQuota():
                                  check_on_raw=False)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=False)
-        assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
+        assert result, resp
 
         self.log.info("Step 2: Perform max size verification")
         res = self.csm_obj.verify_max_size(data_size, self.akey, self.skey,self.bucket)
@@ -1961,7 +1962,7 @@ class TestCapacityQuota():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        odd_multiplier = self.csm_obj.random_gen.randrange(1, 20, 2)
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
         num_objects = odd_multiplier
         self.log.info("Number of objects to be created are: %s", num_objects)
         data_size = self.aligned_size * odd_multiplier * 1024
@@ -1971,8 +1972,7 @@ class TestCapacityQuota():
                                  check_on_raw=False)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=False)
-        assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
+        assert result, resp
 
         self.log.info("Step 2: Perform max objects verification")
         res = self.csm_obj.verify_max_objects(data_size, num_objects, self.akey, self.skey,
@@ -2019,8 +2019,9 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         num_objects = 1
-        odd_multiplier = self.csm_obj.random_gen.randrange(1, 20, 2)
-        self.log.info("Number of objects to be created are: %s", num_objects)
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, odd_multiplier)
         data_size = self.aligned_size + odd_multiplier
 
         self.log.info("Step 1.1: Create one objects of aligned size %s", data_size)
@@ -2052,7 +2053,8 @@ class TestCapacityQuota():
 
         num_objects = 1
         even_multiplier = self.csm_obj.random_gen.randrange(2, 20, 2)
-        self.log.info("Number of objects to be created are: %s", num_objects)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, even_multiplier)
         used_data_size = used_data_size * even_multiplier
         data_size = data_size * even_multiplier * 1024
 
@@ -2061,8 +2063,7 @@ class TestCapacityQuota():
                                  check_on_raw=False)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=False)
-        assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
+        assert result, resp
 
         self.log.info("Step 2: Perform max size verification")
         res = self.csm_obj.verify_max_size(data_size, self.akey, self.skey,self.bucket)
@@ -2088,7 +2089,7 @@ class TestCapacityQuota():
         assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
         assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
         assert_utils.assert_greater_equal(m_size, t_size, "used_rounded and used mismatch found ")
-        #assert_utils.assert_greater_equal(used_data_size, m_size)
+        #assert_utils.assert_greater_equal(used_data_size, m_size) Revisit after CORTX-32486
 
         self.log.info("Step 5: Delete all object: %s", obj_name)
         assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
@@ -2098,8 +2099,7 @@ class TestCapacityQuota():
                                  check_on_raw=False)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=False)
-        assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
+        assert result, resp
 
         self.log.info("Step 7: Perform max objects verification")
         res = self.csm_obj.verify_max_objects(data_size, even_multiplier, self.akey, self.skey,
@@ -2124,8 +2124,9 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         num_objects = 1
-        odd_multiplier = self.csm_obj.random_gen.randrange(1, 20, 2)
-        self.log.info("Number of objects to be created are: %s", num_objects)
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, odd_multiplier)
         data_size = self.aligned_size + odd_multiplier
 
         self.log.info("Step 1.1: Create one objects of aligned size %s", data_size)
@@ -2156,8 +2157,9 @@ class TestCapacityQuota():
         used_data_size = m_size
 
         num_objects = 1
-        odd_multiplier = self.csm_obj.random_gen.randrange(1, 20, 2)
-        self.log.info("Number of objects to be created are: %s", num_objects)
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, odd_multiplier)
         used_data_size = used_data_size * odd_multiplier
         data_size = data_size * odd_multiplier * 1024
 
@@ -2166,8 +2168,7 @@ class TestCapacityQuota():
                                  check_on_raw=False)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=False)
-        assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
+        assert result, resp
 
         self.log.info("Step 2: Perform max size verification")
         res = self.csm_obj.verify_max_size(data_size, self.akey, self.skey,self.bucket)
@@ -2193,7 +2194,7 @@ class TestCapacityQuota():
         assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
         assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
         assert_utils.assert_greater_equal(m_size, t_size, "used_rounded and used mismatch found ")
-        #assert_utils.assert_greater_equal(used_data_size, m_size)
+        #assert_utils.assert_greater_equal(used_data_size, m_size) Revisit after CORTX-32486
 
         self.log.info("Step 5: Delete all object: %s", obj_name)
         assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
@@ -2203,8 +2204,7 @@ class TestCapacityQuota():
                                  check_on_raw=False)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=False)
-        assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
+        assert result, resp
 
         self.log.info("Step 7: Perform max objects verification")
         res = self.csm_obj.verify_max_objects(data_size, odd_multiplier, self.akey, self.skey,
@@ -2229,8 +2229,9 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         num_objects = 1
-        odd_multiplier = self.csm_obj.random_gen.randrange(1, 20, 2)
-        self.log.info("Number of objects to be created are: %s", num_objects)
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, odd_multiplier)
         data_size = (self.aligned_size + odd_multiplier)
 
         self.log.info("Step 1.1: Create one objects of aligned size %s", data_size)
@@ -2267,8 +2268,7 @@ class TestCapacityQuota():
                                  check_on_raw=False)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=False)
-        assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
+        assert result, resp
 
         self.log.info("Step 4: Create one objects of unaligned size %s", data_size)
         obj_name_prefix = "created_obj"
@@ -2283,7 +2283,7 @@ class TestCapacityQuota():
         obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
 
         try:
-            resp = s3_misc.create_put_objects(obj_name, self.bucket, self.akey, self.skey, 
+            resp = s3_misc.create_put_objects(obj_name, self.bucket, self.akey, self.skey,
                                                 object_size=int((used_data_size/1024) - data_size),
                                                 block_size="1K")
             self.log.info("Response of Put another object is %s", resp)
