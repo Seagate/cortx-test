@@ -197,9 +197,11 @@ class TestCorruptDataDetection:
         str_client = ""
         exec_count = 0
         node_pod_dict = self.motr_k8s_obj.get_node_pod_dict()
+        node_data_pod_dict = self.motr_k8s_obj.get_node_data_pod_dict()
         motr_client_num = self.motr_k8s_obj.get_number_of_motr_clients()
-        LOGGER.info(f'Node_Pod_Dict = {node_pod_dict}')
-        LOGGER.info(f'motr_client_num = {motr_client_num}')
+        LOGGER.debug(f'Node_Pod_Dict = {node_pod_dict}')
+        LOGGER.debug(f'Node_Data_Pod_Dict = {node_data_pod_dict}')
+        LOGGER.debug(f'motr_client_num = {motr_client_num}')
 
         # Collect emap params
         # Login to the node from the dict (Client Node) and execute the emap script with params
@@ -225,7 +227,6 @@ class TestCorruptDataDetection:
                         bsize, count, object_id, layout_id, outfile, node, client_num
                     )
                     LOGGER.debug(f'Debug: ~~~~~~~~~~~ m0cat command done ~~~~~')
-
 
                     # Copy EMAP script to the Node
                     # kubectl cp ~/error_injection.py
@@ -349,7 +350,7 @@ class TestCorruptDataDetection:
         offsets = [0]
         # Check for deployment status using kubectl commands - Taken care in setup stage
         # Check for hctl status - taken care in setup
-        # Todo: Exract the parameters
+        # Todo: Extract the parameters
         # Get parameters from hctl
         # Format command for m0cp
 

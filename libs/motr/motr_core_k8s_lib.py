@@ -121,6 +121,21 @@ class MotrCoreK8s:
             node_pod_dict[node_name] = pod_name
         return node_pod_dict
 
+    def get_node_data_pod_dict(self):
+        """
+        Returns all the node and motr client pod names in dict format
+        """
+        node_pod_dict = {}
+        cmd = "| grep \"{}\" |awk '{{print $1}}'".format(common_const.MOTR_CONTAINER_PREFIX)
+        response = self.node_obj.send_k8s_cmd(
+            operation="get", pod="pods", namespace=common_const.NAMESPACE,
+            command_suffix=f"{cmd}", decode=True)
+        pod_list = [node.strip() for node in response.split('\n')]
+        for pod_name in pod_list:
+            node_name = self.get_node_name_from_pod_name(pod_name)
+            node_pod_dict[node_name] = pod_name
+        return node_pod_dict
+
     def get_primary_cortx_node(self):
         """
         To get the primary cortx node name
