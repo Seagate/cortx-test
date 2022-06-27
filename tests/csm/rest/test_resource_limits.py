@@ -28,8 +28,9 @@ import pytest
 from commons import configmanager
 from commons import cortxlogging
 from commons.constants import Rest as const  # noqa: N813
-
+from commons import pswdmanager
 from libs.csm.csm_interface import csm_api_factory
+from config import CSM_REST_CFG
 
 
 class TestResourceLimits():
@@ -81,32 +82,33 @@ class TestResourceLimits():
 
         active_users_quota = self.csm_conf["test_43149"]["active_users_quota"]
         tmp_users_password = self.csm_conf["test_43149"]["tmp_users_password"]
+        decypted_pswd = pswdmanager.decrypt(tmp_users_password)
 
         msg = f"Step 1: Create and login {active_users_quota - 1} CSM users"
         self.log.info(msg)
         for _ in range(active_users_quota - 1):
             response = self.csm_obj.create_csm_user(
                 user_type="valid", user_role="manage",
-                user_password=tmp_users_password)
+                user_password=decypted_pswd)
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST
             username = response.json()["username"]
             user_id = response.json()["id"]
             self.created_users.append(user_id)
             response = self.csm_obj.rest_login(
-                login_as={"username": username, "password": tmp_users_password})
+                login_as={"username": username, "password": decypted_pswd})
             assert response.status_code == const.SUCCESS_STATUS
 
         msg = "Step 2: Create and login CSM user above active users quota"
         self.log.info(msg)
         response = self.csm_obj.create_csm_user(
             user_type="valid", user_role="manage",
-            user_password=tmp_users_password)
+            user_password=decypted_pswd)
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         user_id = response.json()["id"]
         self.created_users.append(user_id)
         response = self.csm_obj.rest_login(
-            login_as={"username": username, "password": tmp_users_password})
+            login_as={"username": username, "password": decypted_pswd})
         assert response.status_code == const.UNAUTHORIZED
 
         self.log.info("################Test Passed##################")
@@ -119,12 +121,13 @@ class TestResourceLimits():
         self.log.info("##### Test started - %s #####", test_case_name)
 
         tmp_user_password = self.csm_conf["test_43150"]["tmp_user_password"]
+        decypted_pswd = pswdmanager.decrypt(tmp_user_password)
 
         msg = "Step 1: Create CSM user."
         self.log.info(msg)
         response = self.csm_obj.create_csm_user(
             user_type="valid", user_role="manage",
-            user_password=tmp_user_password)
+            user_password=decypted_pswd)
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         user_id = response.json()["id"]
@@ -132,17 +135,17 @@ class TestResourceLimits():
         msg = "Step 2: Fulfil the sessions quota by multiple login."
         self.log.info(msg)
         response = self.csm_obj.rest_login(
-            login_as={"username": username, "password": tmp_user_password})
+            login_as={"username": username, "password": decypted_pswd})
         assert response.status_code == const.SUCCESS_STATUS
 
         response = self.csm_obj.rest_login(
-            login_as={"username": username, "password": tmp_user_password})
+            login_as={"username": username, "password": decypted_pswd})
         assert response.status_code == const.SUCCESS_STATUS
         self.log.debug("response is : %s", response.headers['Authorization'])
         first_token = response.headers['Authorization']
 
         response = self.csm_obj.rest_login(
-            login_as={"username": username, "password": tmp_user_password})
+            login_as={"username": username, "password": decypted_pswd})
         assert response.status_code == const.SUCCESS_STATUS
         self.log.debug("response is : %s", response.headers['Authorization'])
         second_token = response.headers['Authorization']
@@ -158,7 +161,7 @@ class TestResourceLimits():
         self.log.info("##### Test started - %s #####", test_case_name)
 
         requests_rate = self.csm_conf["test_43151"]["requests_rate"]
-        api_endpoint = self.csm_conf["test_43151"]["api_endpoint"]
+        api_endpoint = CSM_REST_CFG["csmuser_endpoint"]
 
         msg = f"Step 1: overflow {api_endpoint} with {requests_rate} requests"
         self.log.info(msg)

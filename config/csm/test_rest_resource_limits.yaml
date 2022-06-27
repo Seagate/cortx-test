@@ -1,8 +1,7 @@
 test_43149:
   active_users_quota: 50
-  tmp_users_password: "Seagate@123"
+  tmp_users_password: "I2jk3zKs+k9PCR125b0PVR8DyoSd9umZDmNbTMO7KzU="
 test_43150:
-  tmp_user_password: "Seagate@123"
+  tmp_user_password: "I2jk3zKs+k9PCR125b0PVR8DyoSd9umZDmNbTMO7KzU="
 test_43151:
   requests_rate: 200
-  api_endpoint: "/api/v2/system/users"
