@@ -111,7 +111,7 @@ class TestResourceLimits():
             login_as={"username": username, "password": decypted_pswd})
         assert response.status_code == const.UNAUTHORIZED
 
-        self.log.info("################Test Passed##################")
+        self.log.info("##### Test ended - %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-43150")
@@ -151,7 +151,7 @@ class TestResourceLimits():
         second_token = response.headers['Authorization']
 
         assert first_token == second_token
-        self.log.info("################Test Passed##################")
+        self.log.info("##### Test ended - %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-43151")
@@ -168,4 +168,4 @@ class TestResourceLimits():
         is_overflow = self.csm_obj.flood(api_endpoint, requests_rate)
         self.log.info(is_overflow)
         assert is_overflow
-        self.log.info("################Test Passed##################")
+        self.log.info("##### Test ended - %s #####", test_case_name)
