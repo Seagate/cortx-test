@@ -137,10 +137,13 @@ class MotrCoreK8s:
         pod_list = [node.strip() for node in response.split('\n')]
 
         logging.debug(f"Debug: pod_list = {pod_list}")
-        for pod_name in pod_list:
-            node_name = self.get_node_name_from_pod_name(pod_name)
-            node_pod_dict[node_name] = pod_name
-        return node_pod_dict
+        if pod_list:
+            for pod_name in pod_list:
+                node_name = self.get_node_name_from_pod_name(pod_name)
+                node_pod_dict[node_name] = pod_name
+            return node_pod_dict
+        else:
+            return None
 
     def get_primary_cortx_node(self):
         """
