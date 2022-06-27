@@ -859,7 +859,7 @@ class TestRGWProcessRestart:
         self.log.info("Step 2: Created buckets for IOs")
 
         self.log.info("Step 3: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user['s3_acc'],
                                                     log_prefix=test_prefix,
                                                     nclients=self.test_cfg['clients'],
                                                     nsamples=self.test_cfg['test_42256']['samples'])
