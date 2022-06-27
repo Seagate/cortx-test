@@ -894,6 +894,7 @@ class TestRGWProcessRestart:
         self.log.info("Step 1: Started multipart upload of 5GB object in background")
 
         time.sleep(self.delay * 2)
+        event.set()
         self.log.info("Step 2: Perform Single rgw Process Restart")
         resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
                                             health_obj=self.health_obj,
@@ -902,6 +903,7 @@ class TestRGWProcessRestart:
                                             process=self.rgw_process, check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 2: rgw restarted and recovered successfully")
+        event.clear()
 
         self.log.info("Step 3: Wait for all parts to upload.")
         thread.join()
@@ -921,9 +923,13 @@ class TestRGWProcessRestart:
                        failed_parts, parts_etag, mpu_id)
         if len(exp_failed_parts) == 0 and len(failed_parts) == 0:
             self.log.info("All the parts are uploaded successfully")
-        else:
-            assert_utils.assert_true(False, f"Failed to upload parts when during rgw restart."
+        elif exp_failed_parts:
+            assert_utils.assert_true(False, f"Failed to upload parts during rgw restart."
+                                            f"Exp Failed parts: {exp_failed_parts}")
+        elif failed_parts:
+            assert_utils.assert_true(False, f"Failed to upload parts before/after rgw restart."
                                             f"Failed parts: {failed_parts}")
+
         self.log.info("Calculating checksum of file %s", multipart_obj_path)
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[multipart_obj_path],
                                                            compare=False)[0]
