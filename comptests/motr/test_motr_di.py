@@ -59,6 +59,7 @@ from libs.ha.ha_comp_libs import HAK8SCompLib
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.motr import motr_test_lib
+from commons import constants as common_const
 
 LOGGER = logging.getLogger(__name__)
 
@@ -107,7 +108,7 @@ class TestCorruptDataDetection:
         cls.motr_test_obj = motr_test_lib.MotrTestLib()
         cls.ha_obj = HAK8s()
         cls.ha_comp_obj = HAK8SCompLib()
-        cls.motr_obj = MotrCoreK8s()
+        cls.motr_k8s_obj = MotrCoreK8s()
         cls.m0kv_cfg = config_utils.read_yaml("config/motr/m0kv_test.yaml")
         LOGGER.info("ENDED: Setup Operation")
 
@@ -117,10 +118,11 @@ class TestCorruptDataDetection:
         """
         LOGGER.info("STARTED: Setup Operations")
         LOGGER.info("Check the overall status of the cluster.")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        if not resp[0]:
-            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
+        # Todo:
+        # resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        # if not resp[0]:
+        #     resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        #     assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
         # LOGGER.info("Checking if all the ha services are up and running")
         # resp = self.ha_comp_obj.check_ha_services(self.node_master_list[0])
@@ -129,9 +131,9 @@ class TestCorruptDataDetection:
 
     def teardown_class(self):
         """Teardown Node object"""
-        for con in self.connections:
-            con.disconnect()
-        del self.motr_obj
+        # for con in self.connections:
+        #     con.disconnect()
+        del self.motr_k8s_obj
 
     # pylint: disable=R0914
     def m0cp_corrupt_data_m0cat(self, layout_ids, bsize_list, count_list, offsets):
@@ -142,27 +144,26 @@ class TestCorruptDataDetection:
         LOGGER.info("STARTED: m0cp, corrupt and m0cat workflow")
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
-        node_pod_dict = self.motr_obj.get_node_pod_dict()
-        motr_client_num = self.motr_obj.get_number_of_motr_clients()
+        node_pod_dict = self.motr_k8s_obj.get_node_pod_dict()
+        motr_client_num = self.motr_k8s_obj.get_number_of_motr_clients()
         for client_num in range(motr_client_num):
             for node in node_pod_dict:
-
                 for b_size, (cnt_c, cnt_u), layout in zip(
-                    bsize_list, count_list, layout_ids, offsets
+                        bsize_list, count_list, layout_ids, offsets
                 ):
                     object_id = (
-                        str(self.system_random.randint(1, 1024 * 1024))
-                        + ":"
-                        + str(self.system_random.randint(1, 1024 * 1024))
+                            str(self.system_random.randint(1, 1024 * 1024))
+                            + ":"
+                            + str(self.system_random.randint(1, 1024 * 1024))
                     )
-                    self.motr_obj.dd_cmd(b_size, cnt_c, infile, node)
-                    self.motr_obj.cp_cmd(
+                    self.motr_k8s_obj.dd_cmd(b_size, cnt_c, infile, node)
+                    self.motr_k8s_obj.cp_cmd(
                         b_size, cnt_c, object_id, layout, infile, node, client_num
                     )
-                    self.motr_obj.cat_cmd(
+                    self.motr_k8s_obj.cat_cmd(
                         b_size, cnt_c, object_id, layout, outfile, node, client_num
                     )
-                    self.motr_obj.cp_update_cmd(
+                    self.motr_k8s_obj.cp_update_cmd(
                         b_size=b_size,
                         count=cnt_u,
                         object_id=object_id,
@@ -171,58 +172,60 @@ class TestCorruptDataDetection:
                         node=node,
                         client_num=client_num,
                     )
-                    self.motr_obj.cat_cmd(
+                    self.motr_k8s_obj.cat_cmd(
                         b_size, cnt_c, object_id, layout, outfile, node, client_num
                     )
-                    self.motr_obj.md5sum_cmd(infile, outfile, node)
-                    self.motr_obj.unlink_cmd(object_id, layout, node, client_num)
+                    self.motr_k8s_obj.md5sum_cmd(infile, outfile, node)
+                    self.motr_k8s_obj.unlink_cmd(object_id, layout, node, client_num)
 
             LOGGER.info("Stop: Verify multiple m0cp/cat operation")
 
     # pylint: disable=R0914
-    def corrupt_checksum_emap(self, layout_ids, bsize_list, count_list, offsets):
+    def corrupt_checksum_emap(self, layout_ids, bsize, count, offsets):
         """
         Create an object with M0CP, corrupt with M0CP and
-        validate the corruption with md5sum after M0CAT.
+        validate the corruption with emap.
         """
         LOGGER.info("STARTED: corrupt_checksum_emap workflow")
-        infile = TEMP_PATH + "input"
-        outfile = TEMP_PATH + "output"
-        # node_pod_dict = self.motr_obj.get_node_pod_dict()
-        # motr_client_num = self.motr_obj.get_number_of_motr_clients()
-        # for client_num in range(motr_client_num):
-        #     for node in node_pod_dict:
-        #
-        #         for b_size, (cnt_c, cnt_u), layout in zip(
-        #             bsize_list, count_list, layout_ids, offsets
-        #         ):
-        #             object_id = (
-        #                 str(self.system_random.randint(1, 1024 * 1024))
-        #                 + ":"
-        #                 + str(self.system_random.randint(1, 1024 * 1024))
-        #             )
-        #             self.motr_obj.dd_cmd(b_size, cnt_c, infile, node)
-        #             self.motr_obj.cp_cmd(
-        #                 b_size, cnt_c, object_id, layout, infile, node, client_num
-        #             )
-        #             self.motr_obj.cat_cmd(
-        #                 b_size, cnt_c, object_id, layout, outfile, node, client_num
-        #             )
-        #             self.motr_obj.cp_update_cmd(
-        #                 b_size=b_size,
-        #                 count=cnt_u,
-        #                 object_id=object_id,
-        #                 layout=layout,
-        #                 infile=infile,
-        #                 node=node,
-        #                 client_num=client_num,
-        #             )
-        #             self.motr_obj.cat_cmd(
-        #                 b_size, cnt_c, object_id, layout, outfile, node, client_num
-        #             )
-        #             self.motr_obj.md5sum_cmd(infile, outfile, node)
-        #             self.motr_obj.unlink_cmd(object_id, layout, node, client_num)
+        local_file_path = "scripts/server_scripts/error_injection.py"
+        infile = TEMP_PATH + "infile"
+        outfile = TEMP_PATH + "outfile"
+        str_client = ""
+        exec_count = 0
+        node_pod_dict = self.motr_k8s_obj.get_node_pod_dict()
+        motr_client_num = self.motr_k8s_obj.get_number_of_motr_clients()
+        LOGGER.info(f'Node_Pod_Dict = {node_pod_dict}')
+        LOGGER.info(f'motr_client_num = {motr_client_num}')
 
+        # Collect emap params
+        # Login to the node from the dict (Client Node) and execute the emap script with params
+        for client_num in range(motr_client_num):
+            for node in node_pod_dict:
+                # if(node contains word 'client') select that as first node for emap exec
+                if str_client in node and exec_count == 0:
+                    # Step 0 - Check if dd cmd is running
+                    self.motr_k8s_obj.dd_cmd(bsize, count, infile, node)
+                    LOGGER.info(f'~~~~~~~~~~~ dd command done ~~~~~')
+
+                    # Copy EMAP script to the Node
+                    # kubectl cp ~/error_injection.py
+                    # cortx/cortx-data-ssc-vm-rhev4-2740-78bff7b54c-pf584:/root/error_injection.py -c cortx-motr-io-001
+                    # ########## Step 1
+                    # pod_name = ""
+                    # container_path = "cortx/cortx-data-ssc-vm-rhev4-2740-78bff7b54c-pf584"
+                    # # copy_file_to_container(self, local_file_path, pod_name, container_path, container_name):
+                    # result = self.motr_k8s_obj.node_obj.copy_file_to_container(local_file_path, pod_name,
+                    #                                                            container_path,
+                    #                                                            common_const.HAX_CONTAINER_NAME)
+                    # logging.info(result)
+                    # if not result[0]:
+                    #     raise Exception("Copy from {} to {} failed with error: \
+                    #                              {}".format(local_file_path, common_const.HAX_CONTAINER_NAME,
+                    #                                         result[1]))
+                    ##########
+                    # m0cat outfile
+                    # self.motr_k8s_obj.cat_cmd(bsize, count, obj=obj, )
+                    exec_count = exec_count + 1
         LOGGER.info("Stop: Test corrupt_checksum_emap operation")
 
     @pytest.mark.skip(reason="Feature Unavailable")
@@ -307,7 +310,7 @@ class TestCorruptDataDetection:
         offsets = [4096]
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
-    @pytest.mark.skip(reason="Feature Unavailable")
+    # @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.tags("TEST-41742")
     @pytest.mark.motr_di
     def test_corrupt_checksum_emap_aligned(self):
@@ -320,14 +323,16 @@ class TestCorruptDataDetection:
         -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
         -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
         """
-        count_list = [["10", "10"]]
+        count_list = ["4"]
         bsize_list = ["1M"]
         layout_ids = ["9"]
         offsets = [0]
-        # Check for deployment status using kubectl commands
-        # Check for hctl status
+        # Check for deployment status using kubectl commands - Taken care in setup stage
+        # Check for hctl status - taken care in setup
+        # Todo: Exract the parameters
         # Get parameters from hctl
         # Format command for m0cp
+
         # Execute command
         # Format command for corrupt_checksum
         # Execute command
@@ -335,4 +340,4 @@ class TestCorruptDataDetection:
         # Execute command
         # Validate error
 
-        self.corrupt_checksum_emap(layout_ids, bsize_list, count_list, offsets)
+        self.corrupt_checksum_emap(layout_ids, "1M", "4", offsets)

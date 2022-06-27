@@ -40,8 +40,9 @@ from commons import constants as common_const
 
 log = logging.getLogger(__name__)
 
+
 # pylint: disable=too-many-public-methods
-class MotrCoreK8s():
+class MotrCoreK8s:
     """ Motr Kubernetes environment test library """
 
     # pylint: disable=too-many-instance-attributes
@@ -314,7 +315,7 @@ class MotrCoreK8s():
         :obj: Object ID
         :layout: Layout ID
         :file: Output file name
-        :node: on which node m0cp cmd need to perform
+        :node: on which node m0cat cmd need to perform
         :client_num: perform operation on motr_client
         """
         if client_num is None:
