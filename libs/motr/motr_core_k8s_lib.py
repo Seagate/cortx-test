@@ -60,6 +60,7 @@ class MotrCoreK8s:
                 self.node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                             username=CMN_CFG["nodes"][node]["username"],
                                             password=CMN_CFG["nodes"][node]["password"])
+                logging.debug(f"Debug: ~~~~~~~~~~ Node Obj = {self.node_obj}")
                 self.health_obj = Health(hostname=CMN_CFG["nodes"][node]["hostname"],
                                             username=CMN_CFG["nodes"][node]["username"],
                                             password=CMN_CFG["nodes"][node]["password"])
@@ -69,6 +70,8 @@ class MotrCoreK8s:
                                             hostname=CMN_CFG["nodes"][node]["hostname"],
                                             username=CMN_CFG["nodes"][node]["username"],
                                             password=CMN_CFG["nodes"][node]["password"]))
+                logging.debug(f"Debug: ~~~~Else~~~~~~ Node Obj = {self.node_obj}")
+
         self.node_dict = self._get_cluster_info
         self.node_pod_dict = self.get_node_pod_dict()
         self.ha_obj = HAK8s()

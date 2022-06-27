@@ -189,6 +189,15 @@ class TestCorruptDataDetection:
         """
         Create an object with M0CP, corrupt with M0CP and
         validate the corruption with emap.
+        # Get parameters from hctl
+        # Format command for m0cp
+
+        # Execute command
+        # Format command for corrupt_checksum
+        # Execute command
+        # Format m0cat command
+        # Execute command
+        # Validate error
         """
         LOGGER.info("STARTED: corrupt_checksum_emap workflow")
         local_file_path = "scripts/server_scripts/error_injection.py"
@@ -223,11 +232,6 @@ class TestCorruptDataDetection:
                     )
                     LOGGER.debug(f'Debug: ~~~~~~~~~~~ m0cp command done ~~~~~')
 
-                    self.motr_k8s_obj.cat_cmd(
-                        bsize, count, object_id, layout_id, outfile, node, client_num
-                    )
-                    LOGGER.debug(f'Debug: ~~~~~~~~~~~ m0cat command done ~~~~~')
-
                     # Copy EMAP script to the Node
                     # kubectl cp ~/error_injection.py
                     # cortx/cortx-data-ssc-vm-rhev4-2740-78bff7b54c-pf584:/root/error_injection.py -c cortx-motr-io-001
@@ -243,8 +247,12 @@ class TestCorruptDataDetection:
                     #     raise Exception("Copy from {} to {} failed with error: \
                     #                              {}".format(local_file_path, common_const.HAX_CONTAINER_NAME,
                     #                                         result[1]))
-                    ##########
+                    # ######### Step 2
                     # m0cat outfile
+                    self.motr_k8s_obj.cat_cmd(
+                        bsize, count, object_id, layout_id, outfile, node, client_num
+                    )
+                    LOGGER.debug(f'Debug: ~~~~~~~~~~~ m0cat command done ~~~~~')
                     # self.motr_k8s_obj.cat_cmd(bsize, count, obj=obj, )
                     exec_count = exec_count + 1
         LOGGER.info("Stop: Test corrupt_checksum_emap operation")
@@ -351,16 +359,8 @@ class TestCorruptDataDetection:
         # Check for deployment status using kubectl commands - Taken care in setup stage
         # Check for hctl status - taken care in setup
         # Todo: Extract the parameters
-        # Get parameters from hctl
-        # Format command for m0cp
 
-        # Execute command
-        # Format command for corrupt_checksum
-        # Execute command
-        # Format m0cat command
-        # Execute command
-        # Validate error
 
-        # Todo: Add in for loop
+        # Todo: Add in for loop to iterate over count list and block size parameters
         self.corrupt_checksum_emap("9", "1M", "4", "0")  # Todo: Remove hard coding
 
