@@ -52,6 +52,7 @@ class MotrCoreK8s:
         self.worker_node_list = []
         self.worker_node_objs = []
         for node in range(len(CMN_CFG["nodes"])):
+            logging.debug(f"All Nodes: {node}")
             if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
                 self.master_node = CMN_CFG["nodes"][node]["hostname"]
                 self.master_uname = CMN_CFG["nodes"][node]["username"]
@@ -125,7 +126,7 @@ class MotrCoreK8s:
         """
         Returns all the node and motr client pod names in dict format
         """
-        node_pod_dict = {}
+        node_data_pod_dict = {}
         cmd = "| grep \"{}\" |awk '{{print $1}}'".format(common_const.MOTR_CONTAINER_PREFIX)
         logging.debug(f"Debug: cmd = {cmd}")
 
@@ -140,8 +141,8 @@ class MotrCoreK8s:
         if pod_list:
             for pod_name in pod_list:
                 node_name = self.get_node_name_from_pod_name(pod_name)
-                node_pod_dict[node_name] = pod_name
-            return node_pod_dict
+                node_data_pod_dict[node_name] = pod_name
+            return node_data_pod_dict
         else:
             return None
 
