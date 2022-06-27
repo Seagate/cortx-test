@@ -61,7 +61,7 @@ from libs.ha.ha_comp_libs import HAK8SCompLib
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.motr import motr_test_lib
-# from commons import constants as common_const
+from commons import constants as common_const
 
 LOGGER = logging.getLogger(__name__)
 
@@ -200,7 +200,9 @@ class TestCorruptDataDetection:
         # Validate error
         """
         LOGGER.info("STARTED: corrupt_checksum_emap workflow")
+        # Todo: Move to constants
         local_file_path = "scripts/server_scripts/error_injection.py"
+
         infile = os.path.join(TEMP_PATH, "infile")
         outfile = os.path.join(TEMP_PATH, "outfile")
         str_client = ""
@@ -236,17 +238,18 @@ class TestCorruptDataDetection:
                     # kubectl cp ~/error_injection.py
                     # cortx/cortx-data-ssc-vm-rhev4-2740-78bff7b54c-pf584:/root/error_injection.py -c cortx-motr-io-001
                     # ########## Step 1
-                    # pod_name = ""
-                    # container_path = "cortx/cortx-data-ssc-vm-rhev4-2740-78bff7b54c-pf584"
-                    # # copy_file_to_container(self, local_file_path, pod_name, container_path, container_name):
-                    # result = self.motr_k8s_obj.node_obj.copy_file_to_container(local_file_path, pod_name,
-                    #                                                            container_path,
-                    #                                                            common_const.HAX_CONTAINER_NAME)
-                    # logging.info(result)
-                    # if not result[0]:
-                    #     raise Exception("Copy from {} to {} failed with error: \
-                    #                              {}".format(local_file_path, common_const.HAX_CONTAINER_NAME,
-                    #                                         result[1]))
+                    pod_name = ""
+                    container_path = "cortx/cortx-data-ssc-vm-rhev4-2740-78bff7b54c-pf584"
+                    # copy_file_to_container(self, local_file_path, pod_name, container_path, container_name):
+                    result = self.motr_k8s_obj.node_obj.copy_file_to_container(local_file_path,
+                                                                               pod_name,
+                                                                               container_path,
+                                                                               common_const.HAX_CONTAINER_NAME)
+                    logging.info(result)
+                    if not result[0]:
+                        raise Exception("Copy from {} to {} failed with error: \
+                                                 {}".format(local_file_path, common_const.HAX_CONTAINER_NAME,
+                                                            result[1]))
                     # ######### Step 2
                     # m0cat outfile
                     self.motr_k8s_obj.cat_cmd(
