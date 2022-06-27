@@ -2990,7 +2990,9 @@ class TestIamUserRGW():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(add_resp.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(add_resp.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(add_resp.json()["message"], msg_1)
+            assert_utils.assert_equals(add_resp.json()["message"], 
+                                       Template(msg_1).substitute(A="_schema", 
+                                       B="access_key"))
 
         add_resp = self.csm_obj.add_key_to_iam_user(uid=uid, secret_key="")
         assert_utils.assert_true(add_resp.status_code == HTTPStatus.BAD_REQUEST, "Response failed")
@@ -2998,7 +3000,9 @@ class TestIamUserRGW():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(add_resp.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(add_resp.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(add_resp.json()["message"], msg_2)
+            assert_utils.assert_equals(add_resp.json()["message"],
+                                       Template(msg_1).substitute(A="_schema",
+                                       B="secret_key"))
 
         get_resp = self.csm_obj.get_iam_user(user=uid)
         assert_utils.assert_true(get_resp.status_code == HTTPStatus.OK, "Get IAM user failed")

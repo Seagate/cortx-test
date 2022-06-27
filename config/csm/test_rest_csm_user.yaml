@@ -280,22 +280,22 @@ test_28511:
     status_code: 400
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 32
+    message_index: 4
 test_28510:
     status_code: 400
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 33
+    message_index: 4
 test_28509:
     status_code: 400
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 34
+    message_index: 30
 test_28508:
     status_code: 400
     error_code: 4099
     message_id: "MalformedRequest"
-    message_index: 34
+    message_index: 30
 test_32171:
     error_code: 4104
     message_id: "update_not_allowed"

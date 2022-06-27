@@ -4130,7 +4130,9 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg)
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="_schema", 
+                                       B="password"))
 
         self.log.info(
             "Verified that Login API returns error Response Code 400 "
@@ -4177,7 +4179,9 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg)
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="_schema", 
+                                       B="username"))
 
         self.log.info(
             "Verified that Login API returns error Response Code 400 "

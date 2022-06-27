@@ -73,16 +73,12 @@
     - "{'dir': ['Must be one of: desc, asc.']}"
     - "username cannot be modified"
     - "Insufficient information in request body"
-    - "_schema: Empty value for access_key"
-    - "_schema: Empty value for secret_key"
     - "$A: field may not be null."
     - "$A: Must be one of: s3."
     - "$A: not a valid integer."
     - "$A: not a valid boolean."
     - "$A: Unknown field."
     - "$A: must be greater than or equal to 1."
-    - "_schema: Empty value for password"
-    - "_schema: Empty value for username"
     - "$A: Missing data for required field."
 4103:
   users_already_exists:
