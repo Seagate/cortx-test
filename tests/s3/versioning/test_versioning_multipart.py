@@ -28,12 +28,16 @@ import pytest
 
 from commons import error_messages as err_msg
 from commons.params import TEST_DATA_FOLDER
-from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils import assert_utils
+from commons.utils.s3_utils import get_precalculated_parts
+
 from libs.s3 import s3_versioning_common_test_lib as s3ver_cmn_lib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
+
+from config.s3 import MPART_CFG
 
 
 class TestVersioningMultipart:
@@ -115,6 +119,7 @@ class TestVersioningMultipart:
     def test_mpu_ver_enabled_bkt_41285(self):
         """Test multipart upload in a versioning enabled bucket."""
         self.log.info("STARTED: Test multipart upload in a versioning enabled bucket.")
+        mp_config = MPART_CFG["test_40265"]
         self.log.info("Step 2: PUT Bucket versioning with status as Enabled")
         res = self.s3ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
@@ -124,6 +129,12 @@ class TestVersioningMultipart:
                                      self.object_name, self.test_file_path,
                                      versions_dict=versions, is_multipart=True,
                                      total_parts=2, file_size=10, is_unversioned=False)
+        parts = get_precalculated_parts(self.test_file_path, mp_config["part_sizes"],
+                                        chunk_size=mp_config["chunk_size"])
+        s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name, self.object_name,
+                                     self.test_file_path, versions_dict=versions, parts=parts,
+                                     is_mpu_with_lst_mpu=True)
+        self.log.info("Verions has etag and version id %s", versions)
         self.log.info("Step 8: List Object Versions")
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
                                                  expected_versions=versions)
@@ -145,16 +156,18 @@ class TestVersioningMultipart:
     def test_mpu_versioning_suspended_bkt_41286(self):
         """Test multipart upload in a versioning suspended bucket."""
         self.log.info("STARTED: Test multipart upload in a versioning suspended bucket.")
+        mp_config = MPART_CFG["test_40265"]
         self.log.info("Step 2: PUT Bucket versioning with status as Suspended")
         res = self.s3ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                         status="Suspended")
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 3-7: Upload multipart object to a bucket")
         versions = {}
+        parts = get_precalculated_parts(self.test_file_path, mp_config["part_sizes"],
+                                        chunk_size=mp_config["chunk_size"])
         s3ver_cmn_lib.upload_version(self.s3mp_test_obj, self.bucket_name,
-                                     self.object_name, self.test_file_path,
-                                     versions_dict=versions, is_multipart=True,
-                                     total_parts=2, file_size=10,
+                                     self.object_name, self.test_file_path, parts=parts,
+                                     versions_dict=versions, is_mpu_with_lst_mpu=True,
                                      chk_null_version=True)
         self.log.info("Step 8: List Object Versions")
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
@@ -186,8 +199,9 @@ class TestVersioningMultipart:
                                      total_parts=2, file_size=10)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 4: Perform DELETE Object for uploaded object ")
-        s3ver_cmn_lib.delete_version(self.s3ver_test_obj, self.bucket_name, self.object_name,
-                                     versions_dict=versions)
+        s3ver_cmn_lib.delete_version(self.s3test_obj, self.s3ver_test_obj, self.bucket_name,
+                                     self.object_name, versions_dict=versions,
+                                     check_deletemarker=True)
         self.log.info("Step 5: Check GET/HEAD Object")
         v_id = versions[self.object_name]["version_history"][0]
         etag = versions[self.object_name]["versions"][v_id]
@@ -198,10 +212,9 @@ class TestVersioningMultipart:
                                                     head_error_msg=err_msg.NOT_FOUND_ERR, etag=etag)
         self.log.info("Step 6: List Object Versions")
         s3ver_cmn_lib.check_list_object_versions(self.s3ver_test_obj, bucket_name=self.bucket_name,
-                                                 expected_versions=versions,)
+                                                 expected_versions=versions)
         self.log.info("Step 7: List Objects")
-        s3ver_cmn_lib.check_list_objects(self.s3test_obj, self.bucket_name,
-                                         expected_objects=[])
+        s3ver_cmn_lib.check_list_objects(self.s3test_obj, self.bucket_name, expected_objects=[])
         self.log.info("ENDED: Test deletion of multipart upload in a versioning enabled bucket")
 
     @pytest.mark.s3_ops
