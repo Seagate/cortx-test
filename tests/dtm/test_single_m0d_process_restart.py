@@ -449,7 +449,7 @@ class TestSingleProcessRestart:
 
         self.log.info("Step 1: Create %s buckets for write operation during m0d restart",
                       self.test_cfg['loop_count'])
-        for each in self.test_cfg['loop_count']:
+        for each in range(self.test_cfg['loop_count']):
             bucket = f'{self.bucket_name}-{each}'
             self.s3_test_obj.create_bucket(bucket)
             bucket_list.append(bucket)
