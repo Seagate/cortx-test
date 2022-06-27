@@ -1410,12 +1410,12 @@ class TestControlPodRestart:
         LOGGER.debug("Responses received from background process:\nexp_failed_parts: "
                      "%s\nfailed_parts: %s\nparts_etag: %s\nmpu_id: %s", exp_failed_parts,
                      failed_parts, parts_etag, mpu_id)
-        assert_utils.assert_true(len(failed_parts) != 0, "Failed to upload parts before or after "
-                                                         "control pod failover/restart "
-                                                         f"Failed parts: {failed_parts}")
-        assert_utils.assert_true(len(exp_failed_parts) != 0, "Failed to upload parts during"
-                                                             "control pod failover. Failed"
-                                                             f"parts {exp_failed_parts}")
+        assert_utils.assert_false(len(failed_parts), "Failed to upload parts before or after "
+                                                     "control pod failover/restart "
+                                                     f"Failed parts: {failed_parts}")
+        assert_utils.assert_false(len(exp_failed_parts), "Failed to upload parts during"
+                                                         "control pod failover. Failed"
+                                                         f"parts {exp_failed_parts}")
         LOGGER.info("All the parts are uploaded successfully")
         LOGGER.info("Step 4: Successfully checked background process responses")
 
@@ -1651,8 +1651,6 @@ class TestControlPodRestart:
         self.test_prefix = 'test-40386'
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
-        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                endpoint_url=S3_CFG["s3_url"])
         uids = [self.s3acc_name]
         args = {'s3_data': self.s3_clean, 'bucket_name': self.bucket_name,
                 'file_size': file_size, 'chunk_obj_path': chunk_obj_path, 'output': output}
@@ -1707,7 +1705,10 @@ class TestControlPodRestart:
                                                            compare=False)[0]
 
         LOGGER.info("Step 6: Download object and verify checksum")
-        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        resp = self.ha_obj.object_download_jclient(s3_data=self.s3_clean,
+                                                   bucket_name=self.bucket_name,
+                                                   object_name=self.object_name,
+                                                   obj_download_path=download_path)
         LOGGER.info("Download object response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
