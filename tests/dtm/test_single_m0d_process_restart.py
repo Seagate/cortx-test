@@ -297,7 +297,7 @@ class TestSingleProcessRestart:
         args = {'s3userinfo': self.iam_user, 'log_prefix': test_prefix,
                 'nclients': self.test_cfg['clients'],
                 'nsamples': self.test_cfg['test_41234']['nsamples'],
-                'skipcleanup': True, 'output': output}
+                'skipcleanup': True, 'output': output, 'setup_s3bench': False}
 
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
@@ -336,6 +336,7 @@ class TestSingleProcessRestart:
         event.clear()
         thread.join()
         self.log.info("Thread has joined.")
+
         self.log.info("Step 3: Verify responses from background process")
         responses = dict()
         while len(responses) != 2:
