@@ -127,10 +127,16 @@ class MotrCoreK8s:
         """
         node_pod_dict = {}
         cmd = "| grep \"{}\" |awk '{{print $1}}'".format(common_const.MOTR_CONTAINER_PREFIX)
+        logging.debug(f"Debug: cmd = {cmd}")
+
         response = self.node_obj.send_k8s_cmd(
             operation="get", pod="pods", namespace=common_const.NAMESPACE,
             command_suffix=f"{cmd}", decode=True)
+        logging.debug(f"Debug: resp = {response}")
+
         pod_list = [node.strip() for node in response.split('\n')]
+
+        logging.debug(f"Debug: pod_list = {pod_list}")
         for pod_name in pod_list:
             node_name = self.get_node_name_from_pod_name(pod_name)
             node_pod_dict[node_name] = pod_name
