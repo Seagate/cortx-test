@@ -38,6 +38,7 @@ from libs.s3.s3_versioning_common_test_lib import check_get_head_object_version
 from libs.s3.s3_versioning_common_test_lib import check_list_object_versions
 from libs.s3.s3_versioning_common_test_lib import check_list_objects
 from libs.s3.s3_versioning_common_test_lib import delete_objects
+from libs.s3.s3_versioning_common_test_lib import empty_versioned_bucket
 from libs.s3.s3_versioning_common_test_lib import upload_version
 from libs.s3.s3_versioning_common_test_lib import upload_versions
 
@@ -91,16 +92,15 @@ class TestVersioningDeleteObjects:
         if path_exists(self.test_dir_path):
             remove_dirs(self.test_dir_path)
         self.log.info("Cleanup test directory: %s", self.test_dir_path)
-        # DELETE Object with VersionId is WIP, uncomment once feature is available
-        # res = self.s3_test_obj.bucket_list()
-        # pref_list = []
-        # for bucket_name in res[1]:
-        #     if bucket_name.startswith("ver-bkt"):
-        #         empty_versioned_bucket(self.s3_ver_test_obj, bucket_name)
-        #         pref_list.append(bucket_name)
-        # if pref_list:
-        #     res = self.s3_test_obj.delete_multiple_buckets(pref_list)
-        #     assert_utils.assert_true(res[0], res[1])
+        res = self.s3_test_obj.bucket_list()
+        pref_list = []
+        for bucket_name in res[1]:
+            if bucket_name.startswith("ver-bkt"):
+                empty_versioned_bucket(self.s3_ver_test_obj, bucket_name)
+                pref_list.append(bucket_name)
+        if pref_list:
+            res = self.s3_test_obj.delete_multiple_buckets(pref_list)
+            assert_utils.assert_true(res[0], res[1])
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-43187")
@@ -127,10 +127,6 @@ class TestVersioningDeleteObjects:
         obj_list = [(self.object_name2, "null")]
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
                        versions_dict=versions, obj_ver_list=obj_list)
-        self.log.info("Step 3: DeleteObjects with Key=object2 and VersionId=null")
-        obj_list = [(self.object_name2, "null")]
-        delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
-                       versions_dict=versions, obj_ver_list=obj_list)
         self.log.info("Step 4: Set bucket versioning to Suspended")
         res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                          status="Suspended")
@@ -138,11 +134,11 @@ class TestVersioningDeleteObjects:
         self.log.info("Step 5: DeleteObjects with Key=object3")
         obj_list = [(self.object_name3, None)]
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
-                       versions_dict=versions, obj_ver_list=obj_list)
+                       versions_dict=versions, obj_ver_list=obj_list, is_versioned=False)
         self.log.info("Step 6: DeleteObjects with Key=object4 and VersionId=null")
         obj_list = [(self.object_name4, "null")]
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
-                       versions_dict=versions, obj_ver_list=obj_list)
+                       versions_dict=versions, obj_ver_list=obj_list, is_versioned=False)
         self.log.info("Step 7: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
@@ -190,7 +186,7 @@ class TestVersioningDeleteObjects:
         self.log.info("Step 4: DeleteObjects with two entries for Key=object4, "
                       "with and without version id")
         version_id = versions[self.object_name4]["version_history"][0]
-        obj_list = [(self.object_name4, None), (self.object_name3, version_id)]
+        obj_list = [(self.object_name4, None), (self.object_name4, version_id)]
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
                        versions_dict=versions, obj_ver_list=obj_list)
         self.log.info("Step 5: Verify List Object Versions response")
@@ -227,20 +223,20 @@ class TestVersioningDeleteObjects:
         self.log.info("Step 1: DeleteObjects with Key=object1")
         obj_list = [(self.object_name1, None)]
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
-                       versions_dict=versions, obj_ver_list=obj_list)
+                       versions_dict=versions, obj_ver_list=obj_list, is_versioned=False)
         self.log.info("Step 2: DeleteObjects with Key=object2 and VersionId")
         version_id = versions[self.object_name2]["version_history"][-1]
         obj_list = [(self.object_name2, version_id)]
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
-                       versions_dict=versions, obj_ver_list=obj_list)
+                       versions_dict=versions, obj_ver_list=obj_list, is_versioned=False)
         self.log.info("Step 3: DeleteObjects with Key=object3")
         obj_list = [(self.object_name3, None)]
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
-                       versions_dict=versions, obj_ver_list=obj_list)
+                       versions_dict=versions, obj_ver_list=obj_list, is_versioned=False)
         self.log.info("Step 4: DeleteObjects with Key=object4 and VersionId=null")
         obj_list = [(self.object_name4, "null")]
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
-                       versions_dict=versions, obj_ver_list=obj_list)
+                       versions_dict=versions, obj_ver_list=obj_list, is_versioned=False)
         self.log.info("Step 5: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
@@ -346,18 +342,20 @@ class TestVersioningDeleteObjects:
                                    s3_ver_test_obj=self.s3_ver_test_obj,
                                    bucket_name=self.bucket_name,
                                    file_paths=self.upload_file_paths,
-                                   obj_list=("Enabled", self.object_name1, 1))
+                                   obj_list=[("Enabled", self.object_name1, 1)])
         self.log.info("Step 1: DeleteObjects with no keys/versions specified")
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
                        versions_dict=versions, obj_ver_list=[])
         self.log.info("Step 2: DeleteObjects with incorrect key name")
         version_id = versions[self.object_name1]["is_latest"]
         obj_list = [(self.object_name2, version_id)]
+        delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
+                       versions_dict=versions, obj_ver_list=obj_list, skip_ver_dict_update=True)
         self.log.info("Step 3: DeleteObjects with incorrect version id")
         incorrect_vid = version_id[1:] + version_id[0]
         obj_list = [(self.object_name1, incorrect_vid)]
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
-                       versions_dict=versions, obj_ver_list=obj_list)
+                       versions_dict=versions, obj_ver_list=obj_list, skip_ver_dict_update=True)
         self.log.info("Step 4: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
@@ -383,19 +381,22 @@ class TestVersioningDeleteObjects:
         self.log.info("Step 1: Upload multipart objects")
         for obj_name in obj_names:
             upload_version(self.s3mp_test_obj, self.bucket_name, obj_name,
-                           self.mp_file_path, versions_dict=versions,
+                           self.mp_file_path, versions_dict=versions, is_unversioned=True,
                            is_multipart=True, total_parts=2, file_size=20)
-        self.log.info("Step 2: Perform DeleteObjects")
+        self.log.info("Step 2: Enable bucket versioning")
+        res = self.s3_ver_test_obj.put_bucket_versioning(bucket_name=self.bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        self.log.info("Step 3: Perform DeleteObjects")
         version_id = versions[self.object_name2]["is_latest"]
         obj_list = [(self.object_name1, None), (self.object_name2, version_id)]
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
                        versions_dict=versions, obj_ver_list=obj_list)
-        self.log.info("Step 3: Verify List Object Versions response")
+        self.log.info("Step 4: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
-        self.log.info("Step 4: Verify List Objects does not contain multipart uploads")
+        self.log.info("Step 5: Verify List Objects does not contain multipart uploads")
         check_list_objects(self.s3_test_obj, bucket_name=self.bucket_name, expected_objects=[])
-        self.log.info("Step 5: Perform GET/HEAD Object for object1")
+        self.log.info("Step 6: Perform GET/HEAD Object for object1")
         for obj in obj_names:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_test_obj,
                                           bucket_name=self.bucket_name, object_name=obj,
@@ -442,7 +443,7 @@ class TestVersioningDeleteObjects:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-43185")
-    def test_delete_objects_multipart_versioned_43185(self):
+    def test_delete_objects_multipart_suspended_43185(self):
         """
         Test Delete Objects for multipart uploads in a versioning suspended bucket.
         """
@@ -462,12 +463,13 @@ class TestVersioningDeleteObjects:
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 1: Upload multipart object object2")
         upload_version(self.s3mp_test_obj, self.bucket_name, self.object_name2, self.mp_file_path,
-                       versions_dict=versions, is_multipart=True, total_parts=2, file_size=20)
+                       versions_dict=versions, is_multipart=True, total_parts=2, file_size=20,
+                       chk_null_version=True)
         self.log.info("Step 2: Perform DeleteObjects")
         version_id = versions[self.object_name2]["is_latest"]
         obj_list = [(self.object_name1, None), (self.object_name2, version_id)]
         delete_objects(s3_test_obj=self.s3_test_obj, bucket_name=self.bucket_name,
-                       versions_dict=versions, obj_ver_list=obj_list)
+                       versions_dict=versions, obj_ver_list=obj_list, is_versioned=False)
         self.log.info("Step 3: Verify List Object Versions response")
         check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                    expected_versions=versions)
