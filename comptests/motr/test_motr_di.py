@@ -45,12 +45,11 @@ m0cp  -s 4096 -c 4 -o 1048587 /root/myfile -L 3 -u -O 4096
 m0cat -o 1048587 -s 4096 -c 10 -L 3 /root/dest_myfile
 
 """
-import configparser
 import os
 import csv
 import logging
 import secrets
-from uu import test
+# from uu import test
 
 import pytest
 from commons.utils import config_utils
@@ -113,13 +112,6 @@ class TestCorruptDataDetection:
         cls.ha_comp_obj = HAK8SCompLib()
         cls.motr_k8s_obj = MotrCoreK8s()
         cls.m0kv_cfg = config_utils.read_yaml("config/motr/m0kv_test.yaml")
-        ###########
-        CONF_FILE = 'config/common_config.yaml'
-        config = configparser.ConfigParser()
-        testconfig = config.read(CONF_FILE)
-
-        LOGGER.info(f"cmn_config test = {testconfig}")
-        ###########
         LOGGER.info("ENDED: Setup Operation")
 
     def setup_method(self):
