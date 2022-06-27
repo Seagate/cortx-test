@@ -455,13 +455,12 @@ class TestSingleProcessRestart:
             bucket_list.append(bucket)
 
         self.log.info("Step 2: Start write Operations in loop in background:")
-        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
-                                                args=(self.bucket_name, self.object_name,
-                                                      self.test_cfg['clients'],
-                                                      self.test_cfg['samples'],
-                                                      log_file_prefix,
-                                                      que, self.test_cfg['loop_count'],
-                                                      bucket_list))
+
+        args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
+                'no_of_clients': self.test_cfg['clients'],
+                'no_of_samples': self.test_cfg['samples'], 'log_file_prefix': log_file_prefix,
+                'queue': que, 'loop': self.test_cfg['loop_count'], 'created_bucket': bucket_list}
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
         proc_write_op.start()
 
         time.sleep(self.delay)
