@@ -110,6 +110,7 @@ class TestResourceLimits():
         response = self.csm_obj.rest_login(
             login_as={"username": username, "password": decypted_pswd})
         assert response.status_code == const.UNAUTHORIZED
+        # TODO: add message and message id check, Once it is finalized
 
         self.log.info("##### Test ended - %s #####", test_case_name)
 
