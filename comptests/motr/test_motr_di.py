@@ -238,7 +238,7 @@ class TestCorruptDataDetection:
                     # cortx/cortx-data-ssc-vm-rhev4-2740-78bff7b54c-pf584:/root/error_injection.py -c cortx-motr-io-001
                     # ########## Step 1
                     pod_name = ""
-                    container_path = "cortx/cortx-data-ssc-vm-rhev4-2740-78bff7b54c-pf584"
+                    container_path = "cortx/cortx-data-ssc-vm-rhev4-2740-78bff7b54c-pf584:/root/error_injection.py"
                     # copy_file_to_container(self, local_file_path, pod_name, container_path, container_name):
                     result = self.motr_k8s_obj.node_obj.copy_file_to_container(local_file_path,
                                                                                pod_name,
