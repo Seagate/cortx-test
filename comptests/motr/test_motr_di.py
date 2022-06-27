@@ -114,7 +114,7 @@ class TestCorruptDataDetection:
         cls.motr_k8s_obj = MotrCoreK8s()
         cls.m0kv_cfg = config_utils.read_yaml("config/motr/m0kv_test.yaml")
         ###########
-        CONF_FILE = 'config\common_config.yaml'
+        CONF_FILE = 'config/common_config.yaml'
         config = configparser.ConfigParser()
         testconfig = config.read(CONF_FILE)
 
@@ -198,8 +198,8 @@ class TestCorruptDataDetection:
         """
         LOGGER.info("STARTED: corrupt_checksum_emap workflow")
         local_file_path = "scripts/server_scripts/error_injection.py"
-        infile = TEMP_PATH + "infile"
-        outfile = TEMP_PATH + "outfile"
+        infile = os.path.join(TEMP_PATH, "infile")
+        outfile = os.path.join(TEMP_PATH, "outfile")
         str_client = ""
         exec_count = 0
         node_pod_dict = self.motr_k8s_obj.get_node_pod_dict()
