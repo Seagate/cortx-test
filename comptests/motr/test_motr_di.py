@@ -45,23 +45,31 @@ m0cp  -s 4096 -c 4 -o 1048587 /root/myfile -L 3 -u -O 4096
 m0cat -o 1048587 -s 4096 -c 10 -L 3 /root/dest_myfile
 
 """
-
+import configparser
 import os
 import csv
 import logging
 import secrets
+from uu import test
+
 import pytest
 from commons.utils import config_utils
-from commons.utils import assert_utils
+# from commons.utils import assert_utils
 from config import CMN_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.ha.ha_comp_libs import HAK8SCompLib
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.motr import motr_test_lib
-from commons import constants as common_const
+# from commons import constants as common_const
 
 LOGGER = logging.getLogger(__name__)
+
+CONF_FILE = 'config\common_config.yaml'
+config = configparser.ConfigParser()
+testconfig = config.read(CONF_FILE)
+
+LOGGER.info(f"cmn_config test = {testconfig}")
 
 
 @pytest.fixture(scope="class", autouse=False)
