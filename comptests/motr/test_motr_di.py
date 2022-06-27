@@ -65,11 +65,6 @@ from libs.motr import motr_test_lib
 
 LOGGER = logging.getLogger(__name__)
 
-CONF_FILE = 'config\common_config.yaml'
-config = configparser.ConfigParser()
-testconfig = config.read(CONF_FILE)
-
-LOGGER.info(f"cmn_config test = {testconfig}")
 
 
 @pytest.fixture(scope="class", autouse=False)
@@ -118,6 +113,13 @@ class TestCorruptDataDetection:
         cls.ha_comp_obj = HAK8SCompLib()
         cls.motr_k8s_obj = MotrCoreK8s()
         cls.m0kv_cfg = config_utils.read_yaml("config/motr/m0kv_test.yaml")
+        ###########
+        CONF_FILE = 'config\common_config.yaml'
+        config = configparser.ConfigParser()
+        testconfig = config.read(CONF_FILE)
+
+        LOGGER.info(f"cmn_config test = {testconfig}")
+        ###########
         LOGGER.info("ENDED: Setup Operation")
 
     def setup_method(self):
