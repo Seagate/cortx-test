@@ -10,10 +10,10 @@ size_list: [1, 2, 3, 4, 5, 6, 7]
 rgw_restart_cnt: 5
 
 test_41234:
-  nsamples: 30
+  samples: 30
 
 test_41235:
-  nsamples: 10
+  samples: 10
 
 #overwrite object test
 test_41230:
@@ -21,13 +21,12 @@ test_41230:
   overwrite_cnt: 200
 
 test_42246:
-  samples: 10
   num_loop: 300
-  nclients: 2
-  nsamples: 2
+  clients: 2
+  samples: 2
 
 test_42247:
-  nsamples: 50
+  samples: 50
 
 test_41245:
   #Before and after m0d restart
@@ -35,7 +34,7 @@ test_41245:
   num_loop: 500
 
 test_42255:
-  nsamples: 70
+  samples: 70
   num_loop: 10
 
 #overwrite object test-rgw
@@ -44,7 +43,7 @@ test_42251:
   overwrite_cnt: 200
 
 test_42252:
-  nsamples: 50
+  samples: 50
 
 test_42256:
-  nsamples: 50
+  samples: 50
