@@ -53,6 +53,7 @@ import secrets
 
 import pytest
 from commons.utils import config_utils
+from random import SystemRandom
 # from commons.utils import assert_utils
 from config import CMN_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
@@ -103,6 +104,7 @@ class TestCorruptDataDetection:
     def setup_class(cls):
         """Setup class for running Motr tests"""
         LOGGER.info("STARTED: Setup Operation")
+        cls.system_random = SystemRandom()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.node_worker_list = []
         cls.node_master_list = []
