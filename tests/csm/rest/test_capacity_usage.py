@@ -33,12 +33,14 @@ from commons.utils import assert_utils
 from commons.constants import RESTORE_SCALE_REPLICAS, K8S_SCRIPTS_PATH, K8S_PRE_DISK
 from config import CMN_CFG
 from config.s3 import S3_CFG
+from commons.params import LOG_DIR
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import s3_misc
 from libs.csm.csm_interface import csm_api_factory
 from libs.s3 import s3_test_lib
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from scripts.s3_bench.s3bench import s3bench
+from commons.utils import support_bundle_utils as sb
 
 class TestSystemCapacity():
     """System Capacity Testsuite"""
@@ -186,6 +188,12 @@ class TestSystemCapacity():
             self.log.info("Deleting S3 account %s created in setup", self.s3_user)
             resp = self.csm_obj.delete_s3_account_user(self.s3_user)
             assert resp.status_code == HTTPStatus.OK, "Failed to delete S3 user"
+
+        if not self.deploy:
+            bundle_dir = os.path.join(LOG_DIR, "latest", "support_bundle")
+            self.log.info("Support bundle dir : %s", bundle_dir)
+            resp = sb.collect_support_bundle_k8s(local_dir_path=bundle_dir,
+                                                scripts_path=K8S_SCRIPTS_PATH)
 
         self.deploy = True
         if self.deploy:
