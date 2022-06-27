@@ -2804,7 +2804,10 @@ class TestDataPodFailure:
                                                            compare=False)[0]
 
         LOGGER.info("Step 6: Download object and verify checksum")
-        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        resp = self.ha_obj.object_download_jclient(s3_data=self.s3_clean,
+                                                   bucket_name=self.bucket_name,
+                                                   object_name=self.object_name,
+                                                   obj_download_path=download_path)
         LOGGER.info("Download object response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
@@ -2824,7 +2827,7 @@ class TestDataPodFailure:
                                                         nsamples=2, nclients=2)
         else:
             LOGGER.info("Perform IOs with variable object sizes on degraded cluster")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.s3_clean,
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.s3_clean["s3_acc"],
                                                         log_prefix=self.test_prefix,
                                                         nsamples=2, nclients=2, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
