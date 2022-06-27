@@ -189,8 +189,6 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
         expected_deletemarker_count = 0
 
         resp_dict = parse_list_object_versions_response(list_response)
-        LOG.info("expected_versions is %s and keys is %s",expected_versions,
-                 expected_versions.keys())
         LOG.debug("Expected versions: %s", expected_versions)
         LOG.debug("Actual versions in list reponse: %s", resp_dict)
         for key in expected_versions.keys():
@@ -502,7 +500,7 @@ def delete_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
 # pylint: disable=too-many-branches
 # pylint: disable-msg=too-many-statements
 def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict,
-                   obj_ver_list: list, quiet: bool = False,
+                   obj_ver_list: list, quiet: bool = False, skip_ver_dict_update: bool = False,
                    is_versioned: bool = True, expected_error: str = None) -> None:
     """
     Delete multiple objects with versioning support and check response.
@@ -532,9 +530,12 @@ def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict
         # If error is expected, check the error message and skip the further validation
         return
     assert_utils.assert_true(resp[0], resp[1])
-    delete_result = sorted(resp[1]["Deleted"])
+    if len(dmo_list) == 0:
+        return
+    delete_result = sorted(resp[1]["Deleted"], key=lambda x: x["Key"])
     if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-        assert_utils.assert_equal(sorted(dmo_list), delete_result,
+        sorted_dmo_list = sorted(dmo_list, key=lambda x: x["Key"])
+        assert_utils.assert_equal(sorted_dmo_list, delete_result,
                                   "DeleteObjects returned unexpected DeleteResult response")
     else:
         trimmed_delete_result = []
@@ -545,9 +546,14 @@ def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict
                 trimmed_delete_result.append({"Key": obj})
             else:
                 trimmed_delete_result.append({"Key": obj, "VersionId": v_id})
-        assert_utils.assert_equal(sorted(dmo_list), trimmed_delete_result,
+        sorted_dmo_list = sorted(dmo_list, key=lambda x: x["Key"])
+        assert_utils.assert_equal(sorted_dmo_list, trimmed_delete_result,
                                   "DeleteObjects returned unexpected DeleteResult response")
-    update_versions_dict_dmo(versions_dict, delete_result, is_versioned)
+    if not skip_ver_dict_update:
+        # Skip updating version dictionary for negative scenarios, as DeleteResult will always
+        # return Key, VersionId specified for DeleteObjects response even for non-existing keys
+        # or versions
+        update_versions_dict_dmo(versions_dict, delete_result, is_versioned)
 
 
 def update_versions_dict_dmo(versions_dict: dict, delete_result: list, is_versioned: bool = True):
@@ -560,7 +566,7 @@ def update_versions_dict_dmo(versions_dict: dict, delete_result: list, is_versio
     """
     for delete_entry in delete_result:
         obj = delete_entry["Key"]
-        ver = delete_entry("VersionId", None)
+        ver = delete_entry.get("VersionId", None)
         if ver is not None:
             if ver in versions_dict[obj]["versions"].keys():
                 versions_dict[obj]["versions"].pop(ver)
@@ -569,7 +575,10 @@ def update_versions_dict_dmo(versions_dict: dict, delete_result: list, is_versio
 
             versions_dict[obj]["version_history"].remove(ver)
             if ver == versions_dict[obj]["is_latest"]:
-                versions_dict[obj]["is_latest"] =  versions_dict[obj]["version_history"][-1]
+                if len(versions_dict[obj]["version_history"]):
+                    versions_dict[obj]["is_latest"] = versions_dict[obj]["version_history"][-1]
+                else:
+                    versions_dict[obj]["is_latest"] = None
         else:
             if is_versioned:
                 if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
