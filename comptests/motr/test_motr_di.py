@@ -211,7 +211,6 @@ class TestCorruptDataDetection:
         # node_data_pod_dict = self.motr_k8s_obj.get_node_data_pod_dict()
         motr_client_num = self.motr_k8s_obj.get_number_of_motr_clients()
         LOGGER.debug(f'Node_Pod_Dict = {node_pod_dict}')
-        LOGGER.debug(f'Node_Data_Pod_Dict = {node_data_pod_dict}')
         LOGGER.debug(f'motr_client_num = {motr_client_num}')
 
         # Collect emap params

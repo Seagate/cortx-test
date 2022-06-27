@@ -74,7 +74,6 @@ class MotrCoreK8s:
 
         self.node_dict = self._get_cluster_info
         self.node_pod_dict = self.get_node_pod_dict()
-        self.node_data_pod_dict = self.get_node_data_pod_dict()
         self.ha_obj = HAK8s()
 
     @property
