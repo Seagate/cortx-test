@@ -878,7 +878,7 @@ class TestMultipartUploadGetPut:
         uploaded_parts, keys, s3_background_io = start_ios_get_precalc_parts(
             mp_config, self.mp_obj_path, log_prefix="TEST-40993_s3bench_ios", duration="0h1m",
             s3_test_lib_obj=self.s3_test_obj)
-        object_put = self.mp_obj_path.join("_putobj")
+        object_put = os.path.join(self.test_dir_path, "_putobj")
         create_file(object_put, 170)
         random.shuffle(keys)
         process_mpu = multiprocessing.Process(target=self.initiate_upload_list_complete_mpu,
@@ -886,7 +886,6 @@ class TestMultipartUploadGetPut:
                                               kwargs={"parts": uploaded_parts,
                                                       "is_part_upload": True,
                                                       "is_lst_complete_mpu": True})
-
         process_put = multiprocessing.Process(target=self.s3_test_obj.put_object,
                                               args=(self.bucket_name, self.object_name,
                                                     object_put))
