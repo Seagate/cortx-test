@@ -4907,7 +4907,6 @@ class TestIamUserRGW():
         assert_utils.assert_equals(len(resp.json()["users"]), 0, "Users list is not empty")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
