@@ -2015,8 +2015,8 @@ class TestCapacityQuota():
         obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
         self.log.info("Step 4: Try uploading one more object with different name and size")
         resp = s3_misc.create_put_objects(obj_name, self.bucket,
-                                          self.akey, self.skey, object_size=int(remaining_size/1024),
-                                          block_size="1K")
+                                          self.akey, self.skey,
+                                   object_size=int(remaining_size/1024), block_size="1K")
         assert resp, "Put Object Failed"
         obj_list.append(obj_name)
         self.log.info("Step 5: Try overwriting above object")
