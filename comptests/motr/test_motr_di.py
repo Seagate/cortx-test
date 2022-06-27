@@ -183,7 +183,7 @@ class TestCorruptDataDetection:
             LOGGER.info("Stop: Verify multiple m0cp/cat operation")
 
     # pylint: disable=R0914
-    def corrupt_checksum_emap(self, layout_ids, bsize, count, offsets):
+    def corrupt_checksum_emap(self, layout_id, bsize, count, offsets):
         """
         Create an object with M0CP, corrupt with M0CP and
         validate the corruption with emap.
@@ -204,10 +204,26 @@ class TestCorruptDataDetection:
         for client_num in range(motr_client_num):
             for node in node_pod_dict:
                 # if(node contains word 'client') select that as first node for emap exec
+                # Todo: Remove exec_count = 0 and use client_num itself - first client only is sufficient
                 if str_client in node and exec_count == 0:
                     # Step 0 - Check if dd cmd is running
                     self.motr_k8s_obj.dd_cmd(bsize, count, infile, node)
-                    LOGGER.info(f'~~~~~~~~~~~ dd command done ~~~~~')
+                    LOGGER.debug(f'Debug: ~~~~~~~~~~~ dd command done ~~~~~')
+                    object_id = (
+                            str(self.system_random.randint(1, 1024 * 1024))
+                            + ":"
+                            + str(self.system_random.randint(1, 1024 * 1024))
+                    )
+                    self.motr_k8s_obj.cp_cmd(
+                        bsize, count, object_id, layout_id, infile, node, client_num
+                    )
+                    LOGGER.debug(f'Debug: ~~~~~~~~~~~ m0cp command done ~~~~~')
+
+                    self.motr_k8s_obj.cat_cmd(
+                        bsize, count, object_id, layout_id, outfile, node, client_num
+                    )
+                    LOGGER.debug(f'Debug: ~~~~~~~~~~~ m0cat command done ~~~~~')
+
 
                     # Copy EMAP script to the Node
                     # kubectl cp ~/error_injection.py
@@ -342,4 +358,6 @@ class TestCorruptDataDetection:
         # Execute command
         # Validate error
 
-        self.corrupt_checksum_emap(layout_ids, "1M", "4", offsets)
+        # Todo: Add in for loop
+        self.corrupt_checksum_emap("9", "1M", "4", "0")  # Todo: Remove hard coding
+
