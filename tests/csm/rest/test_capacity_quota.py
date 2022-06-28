@@ -1755,7 +1755,7 @@ class TestCapacityQuota():
                       num_objects, odd_multiplier)
         data_size = self.aligned_size + odd_multiplier
 
-        self.log.info("Step 1: Create one objects of aligned size %s", data_size)
+        self.log.info("Step 1: Create one objects of unaligned size %s", data_size)
         obj_name_prefix = "created_obj"
 
         obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
@@ -2001,7 +2001,7 @@ class TestCapacityQuota():
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
         assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
         assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
-        assert_utils.assert_greater_equal(m_size, t_size, "used_rounded and used mismatch found ")
+        assert_utils.assert_equal(m_size, t_size, "used_rounded and used mismatch found ")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -2065,17 +2065,17 @@ class TestCapacityQuota():
                                                               verify_response=False)
         assert result, resp
 
-        self.log.info("Step 2: Perform max size verification")
+        self.log.info("Step 3: Perform max size verification")
         res = self.csm_obj.verify_max_size(data_size, self.akey, self.skey,self.bucket)
         assert res[0], res[1]
 
-        self.log.info("Step 3: Get capacity count from AWS")
+        self.log.info("Step 4: Get capacity count from AWS")
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
                             self.akey, self.skey)
         self.log.info("total objects and size %s and %s ", total_objects, total_size)
         self.log.info("Data size is %s ", data_size)
 
-        self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
+        self.log.info("Step 5: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
@@ -2091,17 +2091,17 @@ class TestCapacityQuota():
         assert_utils.assert_greater_equal(m_size, t_size, "used_rounded and used mismatch found ")
         #assert_utils.assert_greater_equal(used_data_size, m_size) Revisit after CORTX-32486
 
-        self.log.info("Step 5: Delete all object: %s", obj_name)
+        self.log.info("Step 6: Delete all object: %s", obj_name)
         assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
 
-        self.log.info("Step 6: Perform PUT API to set user level quota")
+        self.log.info("Step 7: Perform PUT API to set user level quota")
         payload = self.csm_obj.iam_user_quota_payload(True, used_data_size, even_multiplier,
                                  check_on_raw=False)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=False)
         assert result, resp
 
-        self.log.info("Step 7: Perform max objects verification")
+        self.log.info("Step 8: Perform max objects verification")
         res = self.csm_obj.verify_max_objects(data_size, even_multiplier, self.akey, self.skey,
                                               self.bucket)
         assert res[0], res[1]
@@ -2170,17 +2170,17 @@ class TestCapacityQuota():
                                                               verify_response=False)
         assert result, resp
 
-        self.log.info("Step 2: Perform max size verification")
+        self.log.info("Step 3: Perform max size verification")
         res = self.csm_obj.verify_max_size(data_size, self.akey, self.skey,self.bucket)
         assert res[0], res[1]
 
-        self.log.info("Step 3: Get capacity count from AWS")
+        self.log.info("Step 4: Get capacity count from AWS")
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
                             self.akey, self.skey)
         self.log.info("total objects and size %s and %s ", total_objects, total_size)
         self.log.info("Data size is %s ", data_size)
 
-        self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
+        self.log.info("Step 5: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
                 "Status code check failed for get capacity"
@@ -2196,17 +2196,17 @@ class TestCapacityQuota():
         assert_utils.assert_greater_equal(m_size, t_size, "used_rounded and used mismatch found ")
         #assert_utils.assert_greater_equal(used_data_size, m_size) Revisit after CORTX-32486
 
-        self.log.info("Step 5: Delete all object: %s", obj_name)
+        self.log.info("Step 6: Delete all object: %s", obj_name)
         assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
 
-        self.log.info("Step 6: Perform PUT API to set user level quota")
+        self.log.info("Step 7: Perform PUT API to set user level quota")
         payload = self.csm_obj.iam_user_quota_payload(True, used_data_size, odd_multiplier,
                                  check_on_raw=False)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=False)
         assert result, resp
 
-        self.log.info("Step 7: Perform max objects verification")
+        self.log.info("Step 8: Perform max objects verification")
         res = self.csm_obj.verify_max_objects(data_size, odd_multiplier, self.akey, self.skey,
                                               self.bucket)
         assert res[0], res[1]
@@ -2260,7 +2260,6 @@ class TestCapacityQuota():
             obj_name, self.bucket, self.akey, self.skey), "Failed to delete object."
 
         used_data_size = m_size
-
         num_objects = 2
 
         self.log.info("Step 3: Perform PUT API to set user level quota with used_rounded ")
