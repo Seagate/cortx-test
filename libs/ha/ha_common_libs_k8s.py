@@ -1907,3 +1907,23 @@ class HAK8s:
 
         result = (exp_fail, failed)
         output.put(result)
+
+    @staticmethod
+    def object_download_jclient(s3_data, bucket_name, object_name, obj_download_path):
+        """
+        Function to download object using jclient tool
+        :param s3_data: s3 account details
+        :param bucket_name: Name of the bucket
+        :param object_name: Name of the object
+        :param obj_download_path: Path of the file to which object is to be downloaded
+        :return: response
+        """
+        jclient_prop = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"]
+        access_key = s3_data["s3_acc"]["accesskey"]
+        secret_key = s3_data["s3_acc"]["secretkey"]
+        java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
+        get_cmd = f"{java_cmd} -c {jclient_prop} get s3://{bucket_name}/{object_name} " \
+                  f"--access_key {access_key} --secret_key {secret_key} {obj_download_path}"
+        LOGGER.info("Running command %s", get_cmd)
+        resp = system_utils.execute_cmd(get_cmd)
+        return resp

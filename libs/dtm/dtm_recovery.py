@@ -33,9 +33,9 @@ from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
 from config import CMN_CFG
+from config import DTM_CFG
 from config import HA_CFG
 from config import S3_CFG
-from config import DTM_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
@@ -47,17 +47,18 @@ class DTMRecoveryTestLib:
         This class contains common utility methods for DTM related operations.
     """
 
-    def __init__(self, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+    def __init__(self, access_key=ACCESS_KEY, secret_key=SECRET_KEY, max_attempts=6):
         """
         Init method
         :param access_key: Access key for S3bench operations.
         :param secret_key: Secret key for S3bench operations.
         """
         self.log = logging.getLogger(__name__)
+        self.ha_obj = HAK8s()
         self.access_key = access_key
         self.secret_key = secret_key
-        self.ha_obj = HAK8s()
-        self.s3t_obj = S3TestLib(access_key=self.access_key, secret_key=self.secret_key)
+        self.s3t_obj = S3TestLib(access_key=self.access_key, secret_key=self.secret_key,
+                                 max_attempts=max_attempts)
         self.setup_type = CMN_CFG["setup_type"]
         self.system_random = secrets.SystemRandom()
 

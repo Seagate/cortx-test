@@ -157,7 +157,6 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
     :keyword "expected_error": Error message string to verify in case, error is expected
     :keyword "list_params": Dictionary of query parameters to pass List Object Versions call
     """
-    LOG.info("Fetching bucket object versions list")
     expected_flags = kwargs.get("expected_flags", None)
     expected_error = kwargs.get("expected_error", None)
     list_params = kwargs.get("list_params", None)
@@ -189,8 +188,6 @@ def check_list_object_versions(s3_ver_test_obj: S3VersioningTestLib,
         expected_deletemarker_count = 0
 
         resp_dict = parse_list_object_versions_response(list_response)
-        LOG.info("expected_versions is %s and keys is %s",expected_versions,
-                 expected_versions.keys())
         LOG.debug("Expected versions: %s", expected_versions)
         LOG.debug("Actual versions in list reponse: %s", resp_dict)
         for key in expected_versions.keys():
@@ -410,11 +407,17 @@ def upload_version(s3_test_obj: Union[S3TestLib, S3MultipartTestLib], bucket_nam
     chk_null_version = kwargs.get("chk_null_version", False)
     is_unversioned = kwargs.get("is_unversioned", False)
     is_multipart = kwargs.get("is_multipart", False)
+    is_mpu_with_list_mpu = kwargs.get("is_mpu_with_lst_mpu", False)
     total_parts = kwargs.get("total_parts", 2)
     file_size = kwargs.get("file_size", 10)
+    calc_parts = kwargs.get("parts", "None")
     if is_multipart:
         res = s3_test_obj.complete_multipart_upload_with_di(
             bucket_name, object_name, file_path, total_parts=total_parts, file_size=file_size)
+    elif is_mpu_with_list_mpu:
+        mpu_id, _, parts = initiate_upload_list_mpu(s3_test_obj, bucket_name, object_name,
+                                                    calc_parts)
+        res = s3_test_obj.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
     else:
         if not system_utils.path_exists(file_path):
             system_utils.create_file(file_path, file_size)
@@ -465,7 +468,6 @@ def delete_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
                                                     version_id=version_id)
     else:
         res = s3_test_obj.delete_object(bucket_name=bucket_name, obj_name=object_name)
-
     assert_utils.assert_true(res[0], res[1])
     if check_deletemarker:
         assert_utils.assert_true(res[1]["DeleteMarker"], res[1])
@@ -502,7 +504,7 @@ def delete_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3VersioningTestLib,
 # pylint: disable=too-many-branches
 # pylint: disable-msg=too-many-statements
 def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict,
-                   obj_ver_list: list, quiet: bool = False,
+                   obj_ver_list: list, quiet: bool = False, skip_ver_dict_update: bool = False,
                    is_versioned: bool = True, expected_error: str = None) -> None:
     """
     Delete multiple objects with versioning support and check response.
@@ -532,9 +534,12 @@ def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict
         # If error is expected, check the error message and skip the further validation
         return
     assert_utils.assert_true(resp[0], resp[1])
-    delete_result = sorted(resp[1]["Deleted"])
+    if len(dmo_list) == 0:
+        return
+    delete_result = sorted(resp[1]["Deleted"], key=lambda x: x["Key"])
     if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-        assert_utils.assert_equal(sorted(dmo_list), delete_result,
+        sorted_dmo_list = sorted(dmo_list, key=lambda x: x["Key"])
+        assert_utils.assert_equal(sorted_dmo_list, delete_result,
                                   "DeleteObjects returned unexpected DeleteResult response")
     else:
         trimmed_delete_result = []
@@ -545,9 +550,14 @@ def delete_objects(s3_test_obj: S3TestLib, bucket_name: str, versions_dict: dict
                 trimmed_delete_result.append({"Key": obj})
             else:
                 trimmed_delete_result.append({"Key": obj, "VersionId": v_id})
-        assert_utils.assert_equal(sorted(dmo_list), trimmed_delete_result,
+        sorted_dmo_list = sorted(dmo_list, key=lambda x: x["Key"])
+        assert_utils.assert_equal(sorted_dmo_list, trimmed_delete_result,
                                   "DeleteObjects returned unexpected DeleteResult response")
-    update_versions_dict_dmo(versions_dict, delete_result, is_versioned)
+    if not skip_ver_dict_update:
+        # Skip updating version dictionary for negative scenarios, as DeleteResult will always
+        # return Key, VersionId specified for DeleteObjects response even for non-existing keys
+        # or versions
+        update_versions_dict_dmo(versions_dict, delete_result, is_versioned)
 
 
 def update_versions_dict_dmo(versions_dict: dict, delete_result: list, is_versioned: bool = True):
@@ -560,7 +570,7 @@ def update_versions_dict_dmo(versions_dict: dict, delete_result: list, is_versio
     """
     for delete_entry in delete_result:
         obj = delete_entry["Key"]
-        ver = delete_entry("VersionId", None)
+        ver = delete_entry.get("VersionId", None)
         if ver is not None:
             if ver in versions_dict[obj]["versions"].keys():
                 versions_dict[obj]["versions"].pop(ver)
@@ -569,7 +579,10 @@ def update_versions_dict_dmo(versions_dict: dict, delete_result: list, is_versio
 
             versions_dict[obj]["version_history"].remove(ver)
             if ver == versions_dict[obj]["is_latest"]:
-                versions_dict[obj]["is_latest"] =  versions_dict[obj]["version_history"][-1]
+                if len(versions_dict[obj]["version_history"]):
+                    versions_dict[obj]["is_latest"] = versions_dict[obj]["version_history"][-1]
+                else:
+                    versions_dict[obj]["is_latest"] = None
         else:
             if is_versioned:
                 if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
@@ -733,29 +746,25 @@ def delete_object_tagging(s3_tag_test_obj: S3TaggingTestLib, s3_ver_test_obj: S3
         return False, error
     return resp
 
-def initiate_upload_list_mpu(self, bucket_name, object_name, **kwargs):
+def initiate_upload_list_mpu(s3_mp_test_obj: S3MultipartTestLib, bucket_name, object_name,
+                             parts_: dict):
     """
-    This initialises multipart, upload parts, list parts, complete mpu and return the
-    response and mpu id
+    This initialises multipart, upload parts, list parts, list mpu and return the
+    response and mpu id, and sorted parts list
     """
-    is_part_upload = kwargs.get("is_part_upload", False)
-    is_lst_mpu = kwargs.get("is_lst_mpu", False)
-    parts = kwargs.get("parts", None)
-    res = self.s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+    res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
     mpu_id = res[1]["UploadId"]
     parts_details = []
-    if is_part_upload and is_lst_mpu:
-        self.log.info("Uploading parts")
-        resp = self.s3_mp_test_obj.upload_parts_parallel(mpu_id, bucket_name,
-                                                          object_name, parts=parts)
-        assert_utils.assert_not_in("VersionId", resp[1])
-        for i in resp[1]['Parts']:
-            parts_details.append({"PartNumber": i['PartNumber'],
-                                  "ETag": i["ETag"]})
-        sorted_lst = sorted(parts_details, key=lambda x: x['PartNumber'])
-        res = self.s3_mp_test_obj.list_parts(mpu_id, bucket_name, object_name)
-        assert_utils.assert_true(res[0], res[1])
-        assert_utils.assert_not_in("VersionId", resp[1])
-        self.log.info("List Multipart uploads")
-        return mpu_id, resp, sorted_lst
-    return mpu_id
+    LOG.info("Uploading parts")
+    resp = s3_mp_test_obj.upload_parts_parallel(mpu_id, bucket_name, object_name, parts=parts_)
+    assert_utils.assert_not_in("VersionId", resp[1])
+    for i in resp[1]['Parts']:
+        parts_details.append({"PartNumber": i['PartNumber'], "ETag": i["ETag"]})
+    sorted_lst = sorted(parts_details, key=lambda x: x['PartNumber'])
+    res = s3_mp_test_obj.list_parts(mpu_id, bucket_name, object_name)
+    assert_utils.assert_true(res[0], res[1])
+    assert_utils.assert_not_in("VersionId", resp[1])
+    LOG.info("List Multipart uploads")
+    res = s3_mp_test_obj.list_multipart_uploads(bucket_name)
+    assert_utils.assert_not_in("VersionId", res[1])
+    return mpu_id, resp, sorted_lst
