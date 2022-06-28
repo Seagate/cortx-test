@@ -30,6 +30,7 @@ from commons.utils import config_utils
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from config import CMN_CFG
 
+
 class SystemHealth(RestTestLib):
     """RestCsmUser contains all the Rest API calls for system health related
     operations"""

@@ -51,6 +51,7 @@ def read_yaml(fpath: str) -> tuple:
     :param str fpath: Path of yaml file to be read
     :return: Boolean, Data
     """
+
     if os.path.isfile(fpath):
         with open(fpath) as fin:
             try:

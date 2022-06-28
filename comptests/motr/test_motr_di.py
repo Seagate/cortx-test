@@ -49,11 +49,13 @@ import os
 import csv
 import logging
 import secrets
+
 # from uu import test
 
 import pytest
 from commons.utils import config_utils
 from random import SystemRandom
+
 # from commons.utils import assert_utils
 from config import CMN_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
@@ -64,7 +66,6 @@ from libs.motr import motr_test_lib
 from commons import constants as common_const
 
 LOGGER = logging.getLogger(__name__)
-
 
 
 @pytest.fixture(scope="class", autouse=False)
@@ -78,12 +79,8 @@ def setup_teardown_fixture(request):
     request.cls.log.info("STARTED: Setup test operations.")
     request.cls.secure_range = secrets.SystemRandom()
     request.cls.nodes = CMN_CFG["nodes"]
-    request.cls.m0crate_workload_yaml = os.path.join(
-        os.getcwd(), "config/motr/sample_m0crate.yaml"
-    )
-    request.cls.m0crate_test_csv = os.path.join(
-        os.getcwd(), "config/motr/m0crate_tests.csv"
-    )
+    request.cls.m0crate_workload_yaml = os.path.join(os.getcwd(), "config/motr/sample_m0crate.yaml")
+    request.cls.m0crate_test_csv = os.path.join(os.getcwd(), "config/motr/m0crate_tests.csv")
     with open(request.cls.m0crate_test_csv) as csv_fh:
         request.cls.csv_data = [row for row in csv.DictReader(csv_fh)]
     request.cls.log.info("ENDED: Setup test suite operations.")
@@ -153,12 +150,12 @@ class TestCorruptDataDetection:
         for client_num in range(motr_client_num):
             for node in node_pod_dict:
                 for b_size, (cnt_c, cnt_u), layout in zip(
-                        bsize_list, count_list, layout_ids, offsets
+                    bsize_list, count_list, layout_ids, offsets
                 ):
                     object_id = (
-                            str(self.system_random.randint(1, 1024 * 1024))
-                            + ":"
-                            + str(self.system_random.randint(1, 1024 * 1024))
+                        str(self.system_random.randint(1, 1024 * 1024))
+                        + ":"
+                        + str(self.system_random.randint(1, 1024 * 1024))
                     )
                     self.motr_k8s_obj.dd_cmd(b_size, cnt_c, infile, node)
                     self.motr_k8s_obj.cp_cmd(
@@ -210,8 +207,8 @@ class TestCorruptDataDetection:
         node_pod_dict = self.motr_k8s_obj.get_node_pod_dict()
         # node_data_pod_dict = self.motr_k8s_obj.get_node_data_pod_dict()
         motr_client_num = self.motr_k8s_obj.get_number_of_motr_clients()
-        LOGGER.debug(f'Node_Pod_Dict = {node_pod_dict}')
-        LOGGER.debug(f'motr_client_num = {motr_client_num}')
+        LOGGER.debug(f"Node_Pod_Dict = {node_pod_dict}")
+        LOGGER.debug(f"motr_client_num = {motr_client_num}")
 
         # Collect emap params
         # Login to the node from the dict (Client Node) and execute the emap script with params
@@ -222,16 +219,16 @@ class TestCorruptDataDetection:
                 if str_client in node and exec_count == 0:
                     # Step 0 - Check if dd cmd is running
                     self.motr_k8s_obj.dd_cmd(bsize, count, infile, node)
-                    LOGGER.debug(f'Debug: ~~~~~~~~~~~ dd command done ~~~~~')
+                    LOGGER.debug(f"Debug: ~~~~~~~~~~~ dd command done ~~~~~")
                     object_id = (
-                            str(self.system_random.randint(1, 1024 * 1024))
-                            + ":"
-                            + str(self.system_random.randint(1, 1024 * 1024))
+                        str(self.system_random.randint(1, 1024 * 1024))
+                        + ":"
+                        + str(self.system_random.randint(1, 1024 * 1024))
                     )
                     self.motr_k8s_obj.cp_cmd(
                         bsize, count, object_id, layout_id, infile, node, client_num
                     )
-                    LOGGER.debug(f'Debug: ~~~~~~~~~~~ m0cp command done ~~~~~')
+                    LOGGER.debug(f"Debug: ~~~~~~~~~~~ m0cp command done ~~~~~")
 
                     # Copy EMAP script to the Node
                     # kubectl cp ~/error_injection.py
@@ -240,21 +237,23 @@ class TestCorruptDataDetection:
                     pod_name = ""
                     container_path = "cortx/cortx-data-ssc-vm-rhev4-2740-78bff7b54c-pf584:/root/error_injection.py"
                     # copy_file_to_container(self, local_file_path, pod_name, container_path, container_name):
-                    result = self.motr_k8s_obj.node_obj.copy_file_to_container(local_file_path,
-                                                                               pod_name,
-                                                                               container_path,
-                                                                               common_const.HAX_CONTAINER_NAME)
+                    result = self.motr_k8s_obj.node_obj.copy_file_to_container(
+                        local_file_path, pod_name, container_path, common_const.HAX_CONTAINER_NAME
+                    )
                     logging.info(result)
                     if not result[0]:
-                        raise Exception("Copy from {} to {} failed with error: \
-                                                 {}".format(local_file_path, common_const.HAX_CONTAINER_NAME,
-                                                            result[1]))
+                        raise Exception(
+                            "Copy from {} to {} failed with error: \
+                                                 {}".format(
+                                local_file_path, common_const.HAX_CONTAINER_NAME, result[1]
+                            )
+                        )
                     # ######### Step 2
                     # m0cat outfile
                     self.motr_k8s_obj.cat_cmd(
                         bsize, count, object_id, layout_id, outfile, node, client_num
                     )
-                    LOGGER.debug(f'Debug: ~~~~~~~~~~~ m0cat command done ~~~~~')
+                    LOGGER.debug(f"Debug: ~~~~~~~~~~~ m0cat command done ~~~~~")
                     # self.motr_k8s_obj.cat_cmd(bsize, count, obj=obj, )
                     exec_count = exec_count + 1
         LOGGER.info("Stop: Test corrupt_checksum_emap operation")
@@ -341,7 +340,7 @@ class TestCorruptDataDetection:
         offsets = [4096]
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
-    # @pytest.mark.skip(reason="Feature Unavailable")
+    @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.tags("TEST-41742")
     @pytest.mark.motr_di
     def test_corrupt_checksum_emap_aligned(self):
@@ -354,7 +353,35 @@ class TestCorruptDataDetection:
         -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
         -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
         """
-        count_list = ["4"]
+        count_list = ["4", "8"]
+        bsize_list = ["1M"]
+        layout_ids = ["9"]
+        offsets = [0]
+        # Check for deployment status using kubectl commands - Taken care in setup stage
+        # Check for hctl status - taken care in setup
+
+        # Todo: Add in for loop to iterate over count list and block size parameters
+        # corrupt_checksum_emap(self, layout_id, bsize, count, offsets):
+        for b_size, (cnt_c, cnt_u), layout, offset in zip(
+            bsize_list, count_list, layout_ids, offsets
+        ):
+            self.corrupt_checksum_emap(layout, b_size, cnt_c, offset)
+
+    @pytest.mark.skip(reason="Feature Unavailable")
+    @pytest.mark.tags("TEST-41768")
+    @pytest.mark.motr_di
+    def test_corrupt_parity_degraded_aligned(self):
+        """
+        Degraded Mode: Parity corruption and detection with M0cp and M0cat
+        Bring the setup in degraded mode and then follow next steps:
+        Copy motr block with m0cp and corrupt/update with m0cp and then
+        Corrupt checksum block using m0cp+error_injection.py script
+        Read from object with m0cat should throw an error.
+        -s 4096 -c 10 -o 1048583 /root/infile -L 3
+        -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
+        -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
+        """
+        count_list = ["4", "8"]
         bsize_list = ["1M"]
         layout_ids = ["9"]
         offsets = [0]
@@ -362,7 +389,10 @@ class TestCorruptDataDetection:
         # Check for hctl status - taken care in setup
         # Todo: Extract the parameters
 
-
         # Todo: Add in for loop to iterate over count list and block size parameters
-        self.corrupt_checksum_emap("9", "1M", "4", "0")  # Todo: Remove hard coding
-
+        for b_size, (cnt_c, cnt_u), layout, offset in zip(
+            bsize_list, count_list, layout_ids, offsets
+        ):
+            self.corrupt_parity_degraded_aligned(
+                layout, b_size, cnt_c, offset
+            )  # Todo: Remove hard coding

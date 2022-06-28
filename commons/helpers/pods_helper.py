@@ -433,13 +433,13 @@ class LogicalNode(Host):
         :param: container_name: Name of the container where the file will be copied
         """
         try:
-            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name, \
-                container_path, container_name)
+            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name,
+                                                          container_path, container_name)
             output = self.execute_cmd(cmd=cmd, exc=False)
             return True, output
         except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
-                    LogicalNode.copy_file_to_container.__name__, error)
+                      LogicalNode.copy_file_to_container.__name__, error)
             return False, error
 
     def get_machine_id_for_pod(self, pod_name: str):
@@ -485,8 +485,8 @@ class LogicalNode(Host):
         Get deployment name from the master node
         """
         resp_node = self.execute_cmd(cmd=commands.KUBECTL_GET_DEPLOYMENT,
-                                            read_lines=True,
-                                            exc=False)
+                                     read_lines=True,
+                                     exc=False)
         deploy_list = []
         for i in range(0, num_nodes):
             resp = resp_node[i + const.NODE_INDEX].split(' ')
