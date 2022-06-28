@@ -355,7 +355,7 @@ class TestSingleProcessRestart:
         self.log.info("Step 3: Successfully completed WRITEs/READs in background")
 
         self.log.info("Step 4: Perform READs-Verify on already written data in Step 1")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user['s3_acc'],
                                                     log_prefix=test_prefix, skipwrite=True,
                                                     skipcleanup=True,
                                                     nclients=self.test_cfg['clients'],
@@ -384,7 +384,7 @@ class TestSingleProcessRestart:
         self.log.info("Step 1: m0d restarted and recovered successfully")
 
         self.log.info("Step 2: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user['s3_acc'],
                                                     log_prefix=test_prefix,
                                                     nclients=self.test_cfg['clients'],
                                                     nsamples=self.test_cfg['test_41235']['samples'])
