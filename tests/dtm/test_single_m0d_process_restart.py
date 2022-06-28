@@ -296,8 +296,8 @@ class TestSingleProcessRestart:
         self.log.info("Perform WRITEs/READs-Verify with variable object sizes in background")
         args = {'s3userinfo': self.iam_user, 'log_prefix': test_prefix,
                 'nclients': self.test_cfg['clients'],
-                'nsamples': self.test_cfg['test_41234']['nsamples'],
-                'skipcleanup': True, 'output': output}
+                'nsamples': self.test_cfg['test_41234']['samples'],
+                'skipcleanup': True, 'output': output, 'setup_s3bench': False}
 
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
@@ -336,6 +336,7 @@ class TestSingleProcessRestart:
         event.clear()
         thread.join()
         self.log.info("Thread has joined.")
+
         self.log.info("Step 3: Verify responses from background process")
         responses = dict()
         while len(responses) != 2:
@@ -358,8 +359,7 @@ class TestSingleProcessRestart:
                                                     log_prefix=test_prefix, skipwrite=True,
                                                     skipcleanup=True,
                                                     nclients=self.test_cfg['clients'],
-                                                    nsamples=self.test_cfg['test_41234'][
-                                                        'nsamples'])
+                                                    nsamples=self.test_cfg['test_41234']['samples'])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Successfully performed READs-Verify on already written data in "
                       "Step 1")
@@ -387,8 +387,7 @@ class TestSingleProcessRestart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix,
                                                     nclients=self.test_cfg['clients'],
-                                                    nsamples=self.test_cfg['test_41235'][
-                                                        'nsamples'])
+                                                    nsamples=self.test_cfg['test_41235']['samples'])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")

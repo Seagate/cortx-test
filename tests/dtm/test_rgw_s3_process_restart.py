@@ -138,6 +138,11 @@ class TestRGWProcessRestart:
             self.log.info("Cleanup: Cleaning created IAM users and buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.iam_user)
             assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Cleanup: Checking cortx cluster state")
+        resp = self.ha_obj.poll_cluster_status(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Cleanup: Cluster status checked successfully")
+
         if os.path.exists(self.test_dir_path):
             system_utils.remove_dirs(self.test_dir_path)
 
@@ -426,8 +431,9 @@ class TestRGWProcessRestart:
         self.dtm_obj.perform_write_op(bucket_prefix=self.bucket_name,
                                       object_prefix=self.object_name,
                                       no_of_clients=self.test_cfg['clients'],
-                                      no_of_samples=self.test_cfg['test_42247']['nsamples'],
-                                      log_file_prefix=log_file_prefix, queue=que)
+                                      no_of_samples=self.test_cfg['test_42247']['samples'],
+                                      log_file_prefix=log_file_prefix, queue=que,
+                                      loop=self.test_cfg['loop_count'])
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
@@ -477,7 +483,7 @@ class TestRGWProcessRestart:
         self.log.info("Step 1: Start WRITE operation in background")
         args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
                 'no_of_clients': self.test_cfg['clients'],
-                'no_of_samples': self.test_cfg['test_42248']['samples'],
+                'no_of_samples': self.test_cfg['samples'],
                 'log_file_prefix': log_file_prefix, 'queue': que,
                 'retry': DTM_CFG["io_retry_count"], 'loop': self.test_cfg['loop_count']}
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
@@ -528,8 +534,8 @@ class TestRGWProcessRestart:
         self.log.info("Step 1: Perform WRITEs-READs-Validate Operations")
         self.dtm_obj.perform_write_op(bucket_prefix=f"bucket-{test_prefix}",
                                       object_prefix=f"object-{test_prefix}",
-                                      no_of_clients=self.test_cfg['clients'],
-                                      no_of_samples=self.test_cfg['samples'],
+                                      no_of_clients=self.test_cfg['test_42246']['clients'],
+                                      no_of_samples=self.test_cfg['test_42246']['samples'],
                                       log_file_prefix=test_prefix, queue=wr_output,
                                       loop=self.test_cfg['test_42246']['num_loop'], skip_read=False,
                                       validate=True)
@@ -611,7 +617,7 @@ class TestRGWProcessRestart:
                       "background")
         args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
                 'no_of_clients': self.test_cfg['clients'],
-                'no_of_samples': self.test_cfg['test_42255']['nsamples'],
+                'no_of_samples': self.test_cfg['test_42255']['samples'],
                 'log_file_prefix': test_prefix, 'queue': output,
                 'loop': self.test_cfg['test_42255']['num_loop'],
                 'retry': DTM_CFG["io_retry_count"], 'skip_read': False, 'skip_cleanup': False,
@@ -801,8 +807,7 @@ class TestRGWProcessRestart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix,
                                                     nclients=self.test_cfg['clients'],
-                                                    nsamples=self.test_cfg['test_42255'][
-                                                        'nsamples'])
+                                                    nsamples=self.test_cfg['test_42255']['samples'])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
@@ -821,8 +826,7 @@ class TestRGWProcessRestart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix,
                                                     nclients=self.test_cfg['clients'],
-                                                    nsamples=self.test_cfg['test_42255'][
-                                                        'nsamples'])
+                                                    nsamples=self.test_cfg['test_42255']['samples'])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
@@ -858,8 +862,7 @@ class TestRGWProcessRestart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
                                                     log_prefix=test_prefix,
                                                     nclients=self.test_cfg['clients'],
-                                                    nsamples=self.test_cfg['test_42256'][
-                                                        'nsamples'])
+                                                    nsamples=self.test_cfg['test_42256']['samples'])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
