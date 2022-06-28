@@ -2012,7 +2012,6 @@ class TestCapacityQuota():
                                           self.akey, self.skey,
                                    object_size=int(remaining_size/1024), block_size="1K")
         assert resp, f'Put Object Failed for {obj_name}.'
-        obj_list.append(obj_name)
         self.log.info("Step 5: Try overwriting above object")
         try:
             resp = s3_misc.create_put_objects(obj_name, self.bucket,
