@@ -1943,17 +1943,16 @@ class TestCapacityQuota():
         max_size = test_cfg["max_size"]
         max_objects = test_cfg["max_objects"]
         self.log.info("Step 1: Set max_size and max_objects quota for user")
-        payload = self.csm_obj.iam_user_quota_payload(enabled,max_size,max_objects,
+        payload = self.csm_obj.iam_user_quota_payload(enabled, max_size, max_objects,
                                                        check_on_raw=True)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=True)
-        assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
-        self.log.info("Step 2: Try uploading 1 object(obj-1) of max_size")
+        assert result, resp
+        self.log.info("Step 2: Try uploading 1 object(obj-1) of max_size: %s ", max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           self.akey, self.skey, object_size=int(max_size/1024),
                                           block_size="1K")
-        assert resp, "Put object Failed"
+        assert resp, f'Put object Failed for {self.obj_name}.'
         self.log.info("Step 3: Try uploading one more object(obj-1) with same name but "
                       "of different size")
         try:
@@ -1964,9 +1963,6 @@ class TestCapacityQuota():
             self.log.info("Expected exception received %s", error)
             assert error.response['Error']['Code'] == "QuotaExceeded", \
                                       "Put operation passed after max size"
-        self.log.info("Step 4: Delete object")
-        assert s3_misc.delete_object(
-            self.obj_name, self.bucket, self.akey, self.skey), "Failed to delete bucket."
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -1988,12 +1984,10 @@ class TestCapacityQuota():
                                                       check_on_raw=True)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=True)
-        assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
+        assert result, resp
         random_size = self.csm_obj.random_gen.randrange(1, max_size)
         remaining_size = max_size - random_size
         size_list = [random_size, remaining_size]
-        obj_list = []
         self.log.info("Step 2: Try uploading 1 object(obj-1) of less than max_size"
                       "and remaining size")
         for size in size_list:
@@ -2001,9 +1995,8 @@ class TestCapacityQuota():
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           self.akey, self.skey, object_size=int(size/1024),
                                           block_size="1K")
-            assert resp, "Put object Failed"
-            obj_list.append(self.obj_name)
-        self.log.info("Step 3: Repeat above step")
+            assert resp, f'Put object Failed for {self.obj_name}.'
+        self.log.info("Step 3: Try uploading 1 object(obj-1) of remaining size")
         try:
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           self.akey, self.skey,
@@ -2013,11 +2006,12 @@ class TestCapacityQuota():
             assert error.response['Error']['Code'] == "QuotaExceeded", \
                                       "Overwriting object passed"
         obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
-        self.log.info("Step 4: Try uploading one more object with different name and size")
+        self.log.info("Step 4: Try uploading one more object with different name %s and"
+                              "size %s", obj_name, remaining_size)
         resp = s3_misc.create_put_objects(obj_name, self.bucket,
                                           self.akey, self.skey,
                                    object_size=int(remaining_size/1024), block_size="1K")
-        assert resp, "Put Object Failed"
+        assert resp, f'Put Object Failed for {obj_name}.'
         obj_list.append(obj_name)
         self.log.info("Step 5: Try overwriting above object")
         try:
@@ -2038,8 +2032,4 @@ class TestCapacityQuota():
             self.log.info("Expected exception received %s", error)
             assert error.response['Error']['Code'] == "QuotaExceeded", \
                                       "Second overwrite passed"
-        self.log.info("Step 7: Delete object")
-        for objs in obj_list:
-            assert s3_misc.delete_object(
-              objs, self.bucket, self.akey, self.skey), "Failed to delete bucket."
         self.log.info("##### Test ended -  %s #####", test_case_name)
