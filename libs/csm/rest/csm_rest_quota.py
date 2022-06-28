@@ -21,7 +21,7 @@ import math
 import os
 import time
 from http import HTTPStatus
-from random import SystemRandom
+from random import Random
 from string import Template
 
 from botocore.exceptions import ClientError
@@ -37,7 +37,8 @@ class GetSetQuota(RestTestLib):
         super(GetSetQuota, self).__init__()
         self.template_payload = Template(const.IAM_USER_DATA_PAYLOAD)
         self.iam_user = None
-        self.cryptogen = SystemRandom()
+        self.seed = int(time.time())
+        self.random_gen = Random(self.seed)
         self.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
         self.obj_name_prefix = "created_obj"
         self.obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
@@ -151,15 +152,17 @@ class GetSetQuota(RestTestLib):
         obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
         self.log.info("Perform Put operation for 1 object of max size")
         res = s3_misc.create_put_objects(obj_name, bucket,
-                       akey, skey, object_size=int(max_size/(1024*1024)))
+                                         akey, skey, object_size=int(max_size/1024),
+                                         block_size="1K")
         obj_list.append(obj_name)
         if res:
             obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Perform Put operation of Random size and 1 object")
-            random_size = self.cryptogen.randrange(1, max_size)
+            random_size = self.random_gen.randrange(1, 128)
             try:
                 resp = s3_misc.create_put_objects(obj_name, bucket,
-                      akey, skey, object_size=int(random_size/1024))
+                                                  akey, skey, object_size=int(random_size),
+                                                  block_size="1K")
                 self.log.info("Response of max size is %s", resp)
                 res = False
                 err_msg = "Put operation passed for object size above max size"
@@ -170,7 +173,7 @@ class GetSetQuota(RestTestLib):
         else:
             err_msg = "Put operation failed for less than max size"
         return res, err_msg, obj_list
- 
+
     # pylint: disable=too-many-arguments
     def verify_max_objects(self, max_size: int, max_objects: int, akey: str, skey: str,
                            bucket: str):
@@ -194,11 +197,12 @@ class GetSetQuota(RestTestLib):
         if res:
             obj_name=f'{obj_name_prefix}{time.perf_counter_ns()}'
             self.log.info("Perform Put operation of Random size and 1 object")
-            random_size = self.cryptogen.randrange(1, max_size)
+            random_size = self.random_gen.randrange(small_size, max_size/1024)
             try:
                 resp = s3_misc.create_put_objects(obj_name, bucket,
-                                          akey, skey, object_size=int(random_size/1024),
+                                          akey, skey, object_size=int(random_size),
                                                   block_size="1K")
+                self.log.info("Response of another object is %s", resp)
                 res = False
                 err_msg = "Put operation passed for object size above random size"
             except ClientError as error:
