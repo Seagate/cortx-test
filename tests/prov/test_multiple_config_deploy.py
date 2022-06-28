@@ -905,6 +905,16 @@ class TestMultipleConfDeploy:
         self.multiple_node_deployment(25, 1)
 
     @pytest.mark.lc
+    @pytest.mark.twentyseven_node_deployment
+    @pytest.mark.cluster_deployment
+    @pytest.mark.tags("TEST-43784")
+    def test_43784(self):
+        """
+        Deployment- 27node config_1
+        """
+        self.multiple_node_deployment(27, 1)
+
+    @pytest.mark.lc
     @pytest.mark.thirtysix_node_deployment
     @pytest.mark.cluster_deployment
     @pytest.mark.tags("TEST-40502")
