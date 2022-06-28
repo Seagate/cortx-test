@@ -115,20 +115,25 @@ class TestCorruptDataDetection:
         outfile = TEMP_PATH + 'output'
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
+        object_id = str(self.system_random.randint(1, 1024 * 1024)) + ":" + \
+                    str(self.system_random.randint(1, 1024 * 1024))
         for client_num in range(motr_client_num):
             for node in node_pod_dict:
 
-                for b_size, (cnt_c, cnt_u), layout in zip(bsize_list, count_list,
-                                                          layout_ids, offsets):
-                    object_id = str(self.system_random.randint(1, 1024 * 1024)) + ":" + \
-                                str(self.system_random.randint(1, 1024 * 1024))
-                    self.motr_obj.dd_cmd(b_size, cnt_c, infile, node)
-                    self.motr_obj.cp_cmd(b_size, cnt_c, object_id, layout, infile, node, client_num)
-                    self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout, outfile, node,
-                                          client_num)
-                    self.motr_obj.cp_update_cmd(b_size=b_size, count=cnt_u,
-                                                object_id=object_id, layout=layout,
-                                                infile=infile, node=node, client_num=client_num)
+                for b_size, (cnt_c, cnt_u), layout, offset in zip(bsize_list, count_list,
+                                                                  layout_ids, offsets):
+                    self.motr_obj.dd_cmd(
+                        b_size, cnt_c, infile, node)
+                    self.motr_obj.cp_cmd(
+                        b_size, cnt_c, object_id,
+                        layout, infile, node, client_num)
+                    self.motr_obj.cat_cmd(
+                        b_size, cnt_c, object_id,
+                        layout, outfile, node, client_num)
+                    self.motr_obj.cp_update_cmd(
+                        b_size=b_size, count=cnt_u,
+                        object_id=object_id, layout=layout,
+                        infile=infile, node=node, client_num=client_num, offset=offset)
                     self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout, outfile, node,
                                           client_num)
                     self.motr_obj.md5sum_cmd(infile, outfile, node)
