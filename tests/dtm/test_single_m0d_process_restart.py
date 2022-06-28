@@ -355,7 +355,7 @@ class TestSingleProcessRestart:
         self.log.info("Step 3: Successfully completed WRITEs/READs in background")
 
         self.log.info("Step 4: Perform READs-Verify on already written data in Step 1")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user['s3_acc'],
                                                     log_prefix=test_prefix, skipwrite=True,
                                                     skipcleanup=True,
                                                     nclients=self.test_cfg['clients'],
@@ -384,7 +384,7 @@ class TestSingleProcessRestart:
         self.log.info("Step 1: m0d restarted and recovered successfully")
 
         self.log.info("Step 2: Perform WRITEs/READs-Verify/DELETEs with variable sizes objects.")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user,
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=self.iam_user['s3_acc'],
                                                     log_prefix=test_prefix,
                                                     nclients=self.test_cfg['clients'],
                                                     nsamples=self.test_cfg['test_41235']['samples'])
@@ -449,19 +449,18 @@ class TestSingleProcessRestart:
 
         self.log.info("Step 1: Create %s buckets for write operation during m0d restart",
                       self.test_cfg['loop_count'])
-        for each in self.test_cfg['loop_count']:
+        for each in range(self.test_cfg['loop_count']):
             bucket = f'{self.bucket_name}-{each}'
             self.s3_test_obj.create_bucket(bucket)
             bucket_list.append(bucket)
 
         self.log.info("Step 2: Start write Operations in loop in background:")
-        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
-                                                args=(self.bucket_name, self.object_name,
-                                                      self.test_cfg['clients'],
-                                                      self.test_cfg['samples'],
-                                                      log_file_prefix,
-                                                      que, self.test_cfg['loop_count'],
-                                                      bucket_list))
+
+        args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
+                'no_of_clients': self.test_cfg['clients'],
+                'no_of_samples': self.test_cfg['samples'], 'log_file_prefix': log_file_prefix,
+                'queue': que, 'loop': self.test_cfg['loop_count'], 'created_bucket': bucket_list}
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
         proc_write_op.start()
 
         time.sleep(self.delay)

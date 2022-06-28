@@ -213,7 +213,7 @@ class TestIOWorkloadDegradedPath:
                 skipread=False,
                 validate=True,
                 skipcleanup=True)
-            self.log.info("%s interation is done", loop)
+            self.log.info("%s iteration is done", loop)
             assert_utils.assert_true(read_ret[0], read_ret[1])
         # To Do delete operation, will be enabled after support from cortx
         self.test_completed = True
