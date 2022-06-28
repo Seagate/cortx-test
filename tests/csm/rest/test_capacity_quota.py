@@ -1836,7 +1836,8 @@ class TestCapacityQuota():
         assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
         assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
         assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
-        #assert_utils.assert_equal(m_size, t_size) Revisit after CORTX-32486
+        assert_utils.assert_equal(m_size, t_size, "used_rounded and used mismatch found ")
+        # Revisit after CORTX-32486
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
@@ -2282,6 +2283,7 @@ class TestCapacityQuota():
         obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
 
         try:
+            self.log.info("object name %s", obj_name)
             resp = s3_misc.create_put_objects(obj_name, self.bucket, self.akey, self.skey,
                                                 object_size=int((used_data_size/1024) - data_size),
                                                 block_size="1K")
