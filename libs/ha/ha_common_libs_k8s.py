@@ -888,7 +888,8 @@ class HAK8s:
 
     def event_s3_operation(self, event, setup_s3bench=True, log_prefix=None, s3userinfo=None,
                            skipread=False, skipwrite=False, skipcleanup=False, nsamples=10,
-                           nclients=10, output=None, event_set_clr=None, httpclientimeout=300000):
+                           nclients=10, output=None, event_set_clr=None,
+                           httpclientimeout=HA_CFG["s3_operation_data"]["httpclientimeout"]):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
         :param event: Thread event to be sent in case of parallel IOs
