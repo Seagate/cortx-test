@@ -24,6 +24,7 @@ Python library contains methods which provides the services endpoints.
 import json
 import logging
 from random import SystemRandom
+from string import Template
 
 from libs.motr import TEMP_PATH
 from libs.motr import FILE_BLOCK_COUNT
@@ -235,7 +236,7 @@ class MotrCoreK8s():
                                    f'"{cmd}" Failed, Please check the log')
 
     # pylint: disable=too-many-arguments
-    def cp_cmd(self, b_size, count, obj, layout, file, node, client_num=None):
+    def cp_cmd(self, b_size, count, obj, layout, file, node, client_num=None, di_g=False):
         """
         M0CP command creation
 
@@ -246,15 +247,25 @@ class MotrCoreK8s():
         :file: Output file name
         :node: on which node m0cp cmd need to perform
         :client_num: perform operation on motr_client
+        :di_g: DI mode flag
         """
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0CP.format(node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
-                                     node_dict["hax_ep"],
-                                     node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-                                     self.profile_fid, b_size.lower(),
-                                     count, obj, layout, file)  # nosec
+        if di_g:
+            cmd = Template(common_cmd.M0CP_G).substitute(
+                ep=node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                hax_ep=node_dict["hax_ep"],
+                fid=node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                prof_fid=self.profile_fid, bsize=b_size.lower(),
+                count=count, obj=obj, layout=layout, file=file)
+        else:
+            cmd = common_cmd.M0CP.format(
+                node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                node_dict["hax_ep"],
+                node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                self.profile_fid, b_size.lower(),
+                count, obj, layout, file)  # nosec
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
@@ -267,7 +278,7 @@ class MotrCoreK8s():
 
     def cp_update_cmd(self, **kwargs):
         """
-        M0CP update command which introduces corruption.
+        M0CP update command with -G option which introduces corruption.
 
         :b_size: Block size
         :count: Block count
@@ -288,12 +299,12 @@ class MotrCoreK8s():
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0CP_U.format(
-            node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
-            node_dict["hax_ep"],
-            node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-            self.profile_fid, b_size.lower(),
-            count, obj, layout, offset, file)  # nosec
+        cmd = Template(common_cmd.M0CP_U).substitute(
+            ep=node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+            hax_ep=node_dict["hax_ep"],
+            fid=node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+            prof_fid=self.profile_fid, bsize=b_size.lower(),
+            count=count, obj=obj, layout=layout, offset=offset, file=file)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "

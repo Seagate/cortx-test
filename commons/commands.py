@@ -396,7 +396,13 @@ LDAP_PWD = ("s3cipher decrypt --data "  # nosec
 
 # Motr commands
 M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
-M0CP_U = "m0cp -G -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} -O {} -u {}"
+
+M0CP_G = "m0cp -G -l $ep -H $hax_ep -P $fid -p $prof_fid -s $bsize -c $count -o $obj -L" \
+         " $layout $file"
+
+M0CP_U = "m0cp -G -l $ep -H $hax_ep -P $fid -p $prof_fid -s $bsize -c $count -o $obj -L" \
+         " $layout -O $off -u $file" 
+
 # m0cp from data unit aligned offset 0
 # m0cp -G -l inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@21201
 # -H inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@22001 -p 0x7000000000000001:0x110
