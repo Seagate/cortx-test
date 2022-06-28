@@ -1787,6 +1787,8 @@ class TestCapacityQuota():
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+
+    # Revisit after CORTX-32486
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1898,6 +1900,7 @@ class TestCapacityQuota():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
+    # Revisit after CORTX-32486
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1947,6 +1950,7 @@ class TestCapacityQuota():
         assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
         assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
         assert_utils.assert_greater(m_size, t_size, "used_rounded and used mismatch found ")
+        # Revisit after CORTX-32486
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -2007,6 +2011,7 @@ class TestCapacityQuota():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
+    # Revisit after CORTX-32486
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -2112,6 +2117,8 @@ class TestCapacityQuota():
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+
+    # Revisit after CORTX-32486
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
