@@ -16,7 +16,6 @@
 #
 """Test library for user and bucket quota related operations."""
 
-import json
 import math
 import os
 import time
@@ -170,7 +169,7 @@ class GetSetQuota(RestTestLib):
         else:
             err_msg = "Put operation failed for less than max size"
         return res, err_msg, obj_list
- 
+
     # pylint: disable=too-many-arguments
     def verify_max_objects(self, max_size: int, max_objects: int, akey: str, skey: str,
                            bucket: str):
@@ -199,7 +198,7 @@ class GetSetQuota(RestTestLib):
                 resp = s3_misc.create_put_objects(obj_name, bucket,
                                           akey, skey, object_size=int(random_size/1024),
                                                   block_size="1K")
-                res = False
+                res = not resp
                 err_msg = "Put operation passed for object size above random size"
             except ClientError as error:
                 self.log.info("Expected exception received %s", error)
@@ -230,6 +229,57 @@ class GetSetQuota(RestTestLib):
                                           headers=header)
         self.log.info("Get user quota request successfully sent...")
         return response
+
+    def verify_user_capacity(self, user_id, used:int, used_rounded:int=None, obj_cnt:int=1,
+                            eresponse=HTTPStatus.OK, resource="user"):
+        """
+        Verify user capacity
+        """
+        if used_rounded is None:
+            used_rounded = used
+        resp = self.get_user_capacity_usage(resource, user_id)
+        result =  resp.status_code == eresponse
+        if not result:
+            self.log.error("Status code check failed for get capacity")
+        else:
+            user_details = resp.json()["capacity"]["s3"]["users"][0]
+            auser_id = user_details["id"]
+            self.log.info("Actual: %s", auser_id)
+            self.log.info("Expected: %s", user_id)
+
+            if user_id != auser_id:
+                self.log.info("User ID mismatch")
+                #result = False
+            else:
+                self.log.info("User ID check passed.")
+
+            t_obj = int(user_details["objects"])
+            self.log.info("Actual object count: %s", t_obj)
+            self.log.info("Expected object count: %s", obj_cnt)
+            if t_obj != obj_cnt:
+                self.log.error("Object count mismatch")
+                result = False
+            else:
+                self.log.info("Object count check passed.")
+
+            aused = int(user_details["used"])
+            self.log.info("Actual used capacity: %s", aused)
+            self.log.info("Expected used capacity: %s", used)
+            if used != aused:
+                self.log.error("Used capacity mismatch")
+                result = False
+            else:
+                self.log.info("Used capacity check passed.")
+
+            aused_rounded = int(user_details["used_rounded"])
+            self.log.info("Actual used rounded capacity: %s", aused_rounded)
+            self.log.info("Expected used rounded capacity: %s", used_rounded)
+            if used_rounded != aused_rounded:
+                self.log.error("Used rounded capacity mismatch.")
+                result = False
+            else:
+                self.log.info("Used rounded capacity check passed.")
+        return result, resp.json()
 
     @staticmethod
     def get_iam_user_payload():

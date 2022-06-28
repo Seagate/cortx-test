@@ -83,7 +83,6 @@ Restcall_LC:
   rest_logout_endpoint : "/api/v2/logout"
   s3accounts_endpoint : "/api/v2/s3_accounts"
   s3_bucket_endpoint : "/api/v2/s3/bucket"
-  IAM_users_endpoint : "/api/v2/iam_users"
   s3_iam_user_endpoint : "/api/v2/iam/users"
   s3_iam_keys_endpoint : "/api/v2/iam/keys"
   s3_iam_caps_endpoint : "/api/v2/iam/caps"
