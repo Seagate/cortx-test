@@ -22,7 +22,7 @@
 import logging
 import time
 from abc import ABC, abstractmethod
-
+from typing import AnyStr
 from commons.constants import POD_NAME_PREFIX
 from commons.constants import MOTR_CONTAINER_PREFIX
 from commons.constants import PROD_FAMILY_LC as LC
@@ -36,6 +36,89 @@ LOGGER = logging.getLogger(__name__)
 
 FT_CHKSUM = 1
 FT_PARITY = 2
+EMAP_CMD = 'python3 ~/error_injection.py'
+
+
+class EmapCommand:
+    """
+    It is expected that emap script will grow to complex script with multiple options.
+    """
+
+    def __init__(self):
+        self.parent_cmd = [EMAP_CMD]
+        self.cmd_options = list()
+        self.opts = dict()
+
+    def add_option(self, option: AnyStr) -> None:
+        self.cmd_options.append(option)
+
+    def build_options(self, **kwargs):
+        """ Options significant to emap are as shown below
+        -corrupt_emap 0x200000500000017:0x15' \
+        -e 1
+        -m /etc/cortx/motr/m0d-0x7200000000000001\:0x32/db/o/100000000000000:2a' \
+        -parse_size 10485760'
+        :returns options string
+        """
+        self.opts = kwargs
+        if self.opts.get('corrupt_emap'):
+            # Cob FID of object is specified for corrupt_emap
+            option = "-corrupt_emap " + str(self.opts.get('corrupt_emap'))
+            self.add_option(option)
+
+        if self.opts.get('emap_count'):
+            # number of checksum corruption instances for parity or data
+            option = "-e " + str(self.opts.get('emap_count'))
+            self.add_option(option)
+
+        if self.opts.get('metadata_db_path'):
+            # Metadata DB path within each motr fid dir as shown below.
+            # /etc/cortx/motr/m0d-0x7200000000000001\:0x32/db/o/100000000000000:2a'
+            option = "-m " + str(self.opts.get('metadata_db_path'))
+            self.add_option(option)
+
+        if self.opts.get('parse_size'):
+            # File Size to parse from start offset.
+            option = "-parse_size " + str(self.opts.get('parse_size'))
+            self.add_option(option)
+
+        return self.cmd_options
+
+    def __str__(self):
+        if len(self.current_options) == 0:
+            return self.parent_cmd
+        options_str = ' '.join(map(str, self.current_options))
+        return ' '.join((self.parent_cmd, options_str))
+
+
+class EmapCommandBuilder:
+    """
+    The Concrete Emap command Builder class provide
+    specific implementations of the emap script's command building steps.
+    """
+
+    def __init__(self) -> None:
+        """
+        A blank Emap Command object, which is
+        used to build options.
+        """
+        self._command = EmapCommand()
+        self.reset()
+
+    def reset(self) -> None:
+        """
+        You can make EmapCommandBuilder wait for an explicit reset call from the
+        client code before disposing of the previous command.
+        """
+        self._command = EmapCommand()
+
+    def build(self, **kwargs) -> EmapCommand:
+        """
+        Constructs the concrete command with provided options or arguments.
+        """
+        cmd = self._command
+        cmd.build_options(kwargs)
+        return cmd
 
 
 class InjectCorruption(ABC):
@@ -60,17 +143,15 @@ class InjectCorruption(ABC):
 class MotrCorruptionAdapter(InjectCorruption):
     """Implements InjectCorruption interface to perform corruption at Motr level."""
 
-    def __init__(self, cmn_cfg):
+    def __init__(self, cmn_cfg, oid):
         """Initialize connection to Nodes or Pods."""
         self.cmn_cfg = cmn_cfg
         self.nodes = cmn_cfg["nodes"]
         self.connections = list()
-        self.emap_script  # delegates task to emap script
-        self.ctg = None  # Common ThreadGroup connection
+        self.oid = oid  # deals with a single oid at a moment
         self.master_node_list = list()
         self.worker_node_list = list()
         self.motr_obj = MotrCoreK8s()
-        #node_enpts = self.motr_obj.get_cortx_node_endpoints(node)
         if self.cmn_cfg["product_family"] in (LC, LR) and \
                 self.cmn_cfg["product_type"] == K8S:
             for node in self.nodes:
@@ -93,10 +174,11 @@ class MotrCorruptionAdapter(InjectCorruption):
                 if isinstance(conn, LogicalNode):
                     conn.disconnect()
 
-    def get_object_cob_id(self, oid):
+    def get_object_cob_id(self, oid, dtype):
         """
         Fetch COB ID from the M0CP trace file.
         :param oid:
+        :param dtype:
         :return: COB ID in FID format to be corrupted
         """
         return ''
@@ -118,14 +200,11 @@ class MotrCorruptionAdapter(InjectCorruption):
         return False
 
     def build_emap_command(self, ftype=FT_PARITY):
-        if ftype == 1:
-            cmd = 'python3 ~/error_injection.py -corrupt_emap 0x200000500000017:0x15' \
-                  ' -e 1 -m /etc/cortx/motr/m0d-0x7200000000000001\:0x32/db/o/100000000000000:2a' \
-                  ' -parse_size 10485760'
-        elif ftype == 1:
-            cmd = 'python3 ~/error_injection.py -corrupt_emap 0x200000500000017:0x15' \
-                  ' -e 1 -m /etc/cortx/motr/m0d-0x7200000000000001\:0x32/db/o/100000000000000:2a' \
-                  ' -parse_size 10485760'
+        selected_shard = self.get_metadata_shard(self.oid)
+        cob_id = self.get_object_cob_id(self.oid, dtype=ftype)
+        kwargs = dict(corrupt_emap=cob_id, parse_size=10485760,
+                      emap_count=1, metadata_db_path=selected_shard)
+        cmd = EmapCommandBuilder.build(**kwargs)
         return cmd
 
     def inject_fault_k8s(self, fault_type: int):
@@ -181,5 +260,3 @@ class MotrCorruptionAdapter(InjectCorruption):
     def inject_metadata_corruption(self):
         """Not supported."""
         raise NotImplementedError('Not Implemented')
-
-
