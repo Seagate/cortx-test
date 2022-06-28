@@ -23,6 +23,7 @@
 import logging
 import os
 import time
+import random
 
 import pytest
 
@@ -474,11 +475,12 @@ class TestObjectTaggingVerLimits:
         LOGGER.info("Step 2: Successfully uploaded object %s to versioned bucket %s with "
                     "version ID %s", self.object_name, self.bucket_name, latest_ver)
         if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
-            list_special_char = S3_CFG["object_tagging_special_char_rgw"]
+            list_special_char = random.sample(S3_CFG["object_tagging_special_char_rgw"],10)
         else:
-            list_special_char = S3_CFG["object_tagging_special_char_cortx"]
+            list_special_char = random.sample(S3_CFG["object_tagging_special_char_cortx"],10)
         for char in list_special_char:
             tag_or = list()
+            put_tag = []
             tag_key = f"tag{char}key"
             tag_or.append({"Key": tag_key, "Value": "tag1value"})
             LOGGER.info("Step 3: Perform PUT Object Tagging for %s with tag set as %s with tag key "
@@ -503,9 +505,8 @@ class TestObjectTaggingVerLimits:
                                                 object_name=self.object_name, version_id=latest_ver)
             assert_utils.assert_true(resp[0], resp)
             get_tag = resp[1]
-            for pair in put_tag:
-                assert_utils.assert_in(pair, get_tag, "Mismatch in tag Key-Value pair."
-                                                    f"Expected: {put_tag} \n Actual: {get_tag}")
+            assert_utils.assert_equals(get_tag, put_tag, "Mismatch in tag Key-Value pair."
+                                                        f"Expected: {put_tag} \n Actual: {get_tag}")
             LOGGER.info("Step 4: Performed GET Object Tagging for %s with versionId=%s is %s",
                         self.object_name, latest_ver, get_tag)
         #Since all sprcial characters are allowed in RGW, following part of code is invalid
