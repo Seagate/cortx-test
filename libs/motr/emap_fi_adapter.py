@@ -85,9 +85,9 @@ class EmapCommand:
         return self.cmd_options
 
     def __str__(self):
-        if len(self.current_options) == 0:
+        if len(self.cmd_options) == 0:
             return self.parent_cmd
-        options_str = ' '.join(map(str, self.current_options))
+        options_str = ' '.join(map(str, self.cmd_options))
         return ' '.join((self.parent_cmd, options_str))
 
 
