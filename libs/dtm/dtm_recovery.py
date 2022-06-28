@@ -346,8 +346,13 @@ class DTMRecoveryTestLib:
             self.log.debug("File path not exists")
             system_utils.make_dirs(TEST_DATA_FOLDER)
 
+        self.log.info("Bucket Name : %s",bucket_name)
+        self.log.info("Object Name : %s", object_name)
+        self.log.info("Total Iteration : %s", iteration)
+        self.log.info("Max Object size : %sMB", object_size)
         ret_resp = True, "Overwrites successful."
-        for _ in iteration:
+        for i_i in range(iteration):
+            self.log.info("Iteration : %s", i_i+1)
             file_size = random.SystemRandom().randint(0, object_size)  # in mb
             file_path = os.path.join(TEST_DATA_FOLDER, object_name)
 
