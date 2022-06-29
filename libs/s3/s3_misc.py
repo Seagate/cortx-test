@@ -164,6 +164,43 @@ def delete_objects_bucket(bucket_name, access_key: str, secret_key: str, **kwarg
     LOGGER.debug("Verified bucket is deleted.")
     return not result
 
+def delete_objects(bucket_name, access_key: str, secret_key: str, **kwargs):
+    """
+    Delete all objects from the bucket.
+    """
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    LOGGER.debug("S3 Endpoint : %s", endpoint)
+
+    region = S3_CFG["region"]
+    LOGGER.debug("Region : %s", region)
+
+    s3_resource = boto3.resource('s3', verify=False,
+                        endpoint_url=endpoint,
+                        aws_access_key_id=access_key,
+                        aws_secret_access_key=secret_key,
+                        region_name=region,
+                        **kwargs)
+    LOGGER.debug("S3 boto resource created")
+
+    bucket = s3_resource.Bucket(bucket_name)
+
+    LOGGER.debug("Delete all associated objects.")
+    bucket.objects.all().delete()
+
+    result = True
+    obj_count = 0
+    for _ in bucket.objects.all():
+        obj_count = obj_count + 1
+
+    if obj_count != 0:
+        LOGGER.debug("all object not deleted")
+        result = False
+
+    del s3_resource
+    return result
+
 def create_put_objects(object_name: str, bucket_name: str,
                        access_key: str, secret_key: str, object_size:int=10, **kwargs):
     """
@@ -213,7 +250,7 @@ def create_put_objects(object_name: str, bucket_name: str,
 
 def delete_object(obj_name, bucket_name, access_key: str, secret_key: str, **kwargs):
     """
-    Delete object from give bucket, access key and secret key.
+    Delete specific object from give bucket, access key and secret key.
     """
     LOGGER.debug("Access Key : %s", access_key)
     LOGGER.debug("Secret Key : %s", secret_key)
