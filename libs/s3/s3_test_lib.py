@@ -426,7 +426,7 @@ class S3TestLib(S3Lib):
         """
         try:
             LOGGER.info("deleting multiple objects")
-            if prepared_obj_list:
+            if prepared_obj_list is not None:
                 objects = prepared_obj_list
             else:
                 objects = []

@@ -33,9 +33,9 @@ from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
 from config import CMN_CFG
+from config import DTM_CFG
 from config import HA_CFG
 from config import S3_CFG
-from config import DTM_CFG
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
@@ -47,17 +47,18 @@ class DTMRecoveryTestLib:
         This class contains common utility methods for DTM related operations.
     """
 
-    def __init__(self, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+    def __init__(self, access_key=ACCESS_KEY, secret_key=SECRET_KEY, max_attempts=6):
         """
         Init method
         :param access_key: Access key for S3bench operations.
         :param secret_key: Secret key for S3bench operations.
         """
         self.log = logging.getLogger(__name__)
+        self.ha_obj = HAK8s()
         self.access_key = access_key
         self.secret_key = secret_key
-        self.ha_obj = HAK8s()
-        self.s3t_obj = S3TestLib(access_key=self.access_key, secret_key=self.secret_key)
+        self.s3t_obj = S3TestLib(access_key=self.access_key, secret_key=self.secret_key,
+                                 max_attempts=max_attempts)
         self.setup_type = CMN_CFG["setup_type"]
         self.system_random = secrets.SystemRandom()
 
@@ -94,12 +95,11 @@ class DTMRecoveryTestLib:
             bucket_name = bucket_prefix + str(int(time.time()))
             if created_bucket:
                 bucket_name = created_bucket[iter_cnt]
-            if obj_size is None:
-                obj_size = self.system_random.choice(obj_size_list)
+            object_size = self.system_random.choice(obj_size_list) if obj_size is None else obj_size
             resp = s3bench.s3bench(self.access_key,
                                    self.secret_key, bucket=bucket_name,
                                    num_clients=no_of_clients, num_sample=no_of_samples,
-                                   obj_name_pref=object_prefix, obj_size=obj_size,
+                                   obj_name_pref=object_prefix, obj_size=object_size,
                                    skip_read=skip_read, validate=validate,
                                    skip_cleanup=skip_cleanup, duration=None,
                                    log_file_prefix=str(log_file_prefix).upper(),
@@ -107,7 +107,7 @@ class DTMRecoveryTestLib:
                                    validate_certs=S3_CFG["validate_certs"],
                                    max_retries=retry)
             self.log.info("Workload: %s objects of %s with %s parallel clients.",
-                          no_of_samples, obj_size, no_of_clients)
+                          no_of_samples, object_size, no_of_clients)
             self.log.info("Log Path %s", resp[1])
             log_path = resp[1]
             if s3bench.check_log_file_error(resp[1]):
@@ -116,7 +116,7 @@ class DTMRecoveryTestLib:
             else:
                 results.append(True)
                 workload.append({'bucket': bucket_name, 'obj_name_pref': object_prefix,
-                                 'num_clients': no_of_clients, 'obj_size': obj_size,
+                                 'num_clients': no_of_clients, 'obj_size': object_size,
                                  'num_sample': no_of_samples})
         if all(results):
             queue.put([True, workload])
@@ -153,7 +153,7 @@ class DTMRecoveryTestLib:
                                            skip_write=True,
                                            skip_read=skipread,
                                            validate=validate,
-                                           log_file_prefix=f"read_workload_{workload['obj_size']}b",
+                                           log_file_prefix=f"read_workload_{workload['obj_size']}",
                                            end_point=S3_CFG["s3_url"],
                                            validate_certs=S3_CFG["validate_certs"],
                                            max_retries=retry)
@@ -213,7 +213,7 @@ class DTMRecoveryTestLib:
         process_ids = resp[1]
         delay = resp[2]
         for i_i in range(restart_cnt):
-            self.log.info("Restarting %s process for %s time", process, i_i)
+            self.log.info("Restarting %s process for %s time", process, i_i + 1)
             pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
             pod_selected = pod_list[random.randint(0, len(pod_list) - 1)]
             self.log.info("Pod selected for %s process restart : %s", process, pod_selected)
@@ -261,16 +261,19 @@ class DTMRecoveryTestLib:
         process_state = dict()
         self.log.info("Get processes running inside container %s of pod %s", container_name,
                       pod_name)
-        resp = master_node.get_all_container_processes(pod_name=pod_name,
-                                                       container_name=container_name)
+        resp = master_node.get_all_cluster_processes(pod_name=pod_name,
+                                                     container_name=container_name)
         self.log.info("Extract list of processes having IDs %s", process_ids)
-        process_list = [(ele, p_id) for ele in resp for p_id in process_ids if p_id in ele]
+        compile_exp = re.compile('/(.*?):{"state"')
+        process_list = [(ele, p_id) for ele in resp for p_id in process_ids
+                        if p_id == compile_exp.findall(ele)[0]]
         if len(process_ids) != len(process_list):
             return False, f"All process IDs {process_ids} are not found. " \
                           f"All processes running in container are: {resp}"
         compile_exp = re.compile('"state": "(.*?)"')
         for i_i in process_list:
-            process_state[i_i[1]] = compile_exp.findall(i_i[0])[0]
+            stat = compile_exp.findall(i_i[0])[0]
+            process_state[i_i[1]] = stat.split('_')[-1]
 
         return True, process_state
 
@@ -287,6 +290,7 @@ class DTMRecoveryTestLib:
         :return: Bool
         """
         resp = False
+        process_state = None
         self.log.info("Polling process states")
         start_time = int(time.time())
         while timeout > int(time.time()) - start_time:
@@ -306,8 +310,7 @@ class DTMRecoveryTestLib:
                                int(time.time()) - start_time)
                 break
 
-        self.log.info("State of process with process ids %s is %s", process_ids,
-                      status)
+        self.log.info("State of process is : %s", process_state)
         return resp
 
     @staticmethod

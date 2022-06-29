@@ -2079,7 +2079,7 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39922")
-    @pytest.mark.skip(reason="Functionality not available in RGW yet")
+    @pytest.mark.skip(reason="VM issue in after Restart(LRL-3413). Need to be tested on HW")
     @CTFailOn(error_handler)
     def test_chunk_upload_during_server_pod_shutdown(self):
         """
@@ -2109,8 +2109,6 @@ class TestServerPodFailure:
         self.test_prefix = 'test-39922'
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
-        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                endpoint_url=S3_CFG["s3_url"])
 
         args = {'s3_data': self.s3_clean, 'bucket_name': self.bucket_name,
                 'file_size': file_size, 'chunk_obj_path': chunk_obj_path, 'output': upload_op}
@@ -2172,7 +2170,10 @@ class TestServerPodFailure:
         LOGGER.info("Calculating checksum of uploaded file %s", chunk_obj_path)
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[chunk_obj_path],
                                                            compare=False)[0]
-        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        resp = self.ha_obj.object_download_jclient(s3_data=self.s3_clean,
+                                                   bucket_name=self.bucket_name,
+                                                   object_name=self.object_name,
+                                                   obj_download_path=download_path)
         LOGGER.info("Download object response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],

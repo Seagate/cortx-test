@@ -28,6 +28,7 @@ import logging
 import json
 import argparse
 import ast
+import pymongo
 from pymongo import MongoClient
 from urllib.parse import quote_plus
 
@@ -94,7 +95,10 @@ def insert_new_setup():
     collection_obj = get_collection_obj()
     LOG.debug("Setup query : %s", setup_query)
     LOG.debug("Data to be updated : %s", data)
-    entry_exist = collection_obj.find(setup_query).count()
+    if pymongo.version_tuple[0] > 3:
+        entry_exist = collection_obj.count_documents(setup_query)
+    else:
+        entry_exist = collection_obj.find(setup_query).count()
     if new_entry_check and entry_exist:
         LOG.error("%s already exists", setup_query)
         print("Entry already exits")
@@ -123,7 +127,10 @@ def delete_target_entry():
     setupname = args.delete_target
     collection_obj = get_collection_obj()
     setup_query = {"setupname": setupname}
-    entry_exist = collection_obj.find(setup_query).count()
+    if pymongo.version_tuple[0] > 3:
+        entry_exist = collection_obj.count_documents(setup_query)
+    else:
+        entry_exist = collection_obj.find(setup_query).count()
     if entry_exist:
         resp1 = collection_obj.delete_many(setup_query)
         resp2 = collection_obj.find(setup_query)
