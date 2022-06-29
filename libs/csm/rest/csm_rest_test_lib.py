@@ -49,7 +49,7 @@ class RestTestLib:
         self.worker_list = []
         self.workers = []
         for node in CMN_CFG["nodes"]:
-            if node["node_type"] == "master":
+            if "node_type" in node and node["node_type"] == "master":
                 self.log.debug("Master node : %s", node["hostname"])
                 self.master = LogicalNode(hostname=node["hostname"],
                                          username=node["username"],
