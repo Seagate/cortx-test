@@ -2743,13 +2743,14 @@ class TestCapacityQuota():
         size_list.sort()
         self.log.info("Step 2: Upload Object 1 Name: %s and overwrite loop", self.obj_name)
         for size in size_list:
-            self.log.info("Uploading %s size object", size)
+            self.log.info("Uploading object %s of size %s where"
+                         "max size is %s", self.obj_name, size, max_size)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           self.akey, self.skey, object_size=int(size/1024),
                                           block_size="1K")
             assert resp, f'Put object Failed for {self.obj_name}.'
-        self.log.info("Step 3: Try to upload Object 1 Name : %s Size :%s" 
-                               "which is same as overwrite size", self.obj_name,
+        self.log.info("Step 3: Try to upload Object 1 Name : %s Size :%s"
+                        "which is same as overwrite size", self.obj_name,
                                  size_list[0])
         try:
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
