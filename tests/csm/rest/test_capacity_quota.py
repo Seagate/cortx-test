@@ -2741,40 +2741,46 @@ class TestCapacityQuota():
         size_list = [random_size, remaining_size]
         self.log.info("Get sorted list of random and remaining size")
         size_list.sort()
-        self.log.info("Step 2: Try uploading 1 object(obj-1) of less than max_size"
-                      "and remaining size")
+        self.log.info("Step 2: Upload Object 1 Name: %s and overwrite loop", self.obj_name)
         for size in size_list:
             self.log.info("Uploading %s size object", size)
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           self.akey, self.skey, object_size=int(size/1024),
                                           block_size="1K")
             assert resp, f'Put object Failed for {self.obj_name}.'
-        self.log.info("Step 3: Try uploading 1 object(obj-1) of remaining size")
+        self.log.info("Step 3: Try to upload Object 1 Name : %s Size :%s" 
+                               "which is same as overwrite size", self.obj_name,
+                                 size_list[0])
         try:
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           self.akey, self.skey,
                                  object_size=int(size_list[0]/1024), block_size="1K")
         except ClientError as error:
-            self.log.info("Expected exception received %s", error)
+            self.log.info("Expected failure when Object 1 Name : %s Size :%s"
+            "which is same as overwrite size is uploaded %s", self.obj_name, size_list[0],
+                                           error)
             assert error.response['Error']['Code'] == "QuotaExceeded", \
                                       "Overwriting object passed"
         obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
-        self.log.info("Step 4: Try uploading one more object with different name %s and"
-                              "size %s", obj_name, size_list[0])
+        self.log.info("Step 4: Upload Object 2 Name: %s and size : %s which is overwrite"
+                             "size within max object count : %s", obj_name, size_list[0],
+                              max_objects)
         resp = s3_misc.create_put_objects(obj_name, self.bucket,
                                           self.akey, self.skey,
                                    object_size=int(size_list[0]/1024), block_size="1K")
         assert resp, f'Put Object Failed for {obj_name}.'
         obj_name_1 = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
         obj_list = [obj_name, obj_name_1]
-        self.log.info("Step 5: Try overwriting above object and then upload one more object")
+        self.log.info("Step 5: Trying to overwriting Object 2 Name : %s and uploading"
+                 "one more object", obj_name)
         for objs in obj_list:
             try:
+                self.log.info("Trying to upload object : %s", objs)
                 resp = s3_misc.create_put_objects(objs, self.bucket,
                                           self.akey, self.skey,
                                  object_size=int(size_list[0]/1024), block_size="1K")
             except ClientError as error:
-                self.log.info("Expected exception received %s", error)
+                self.log.info("Expected failure as Quota has exhausted %s", error)
                 assert error.response['Error']['Code'] == "QuotaExceeded", \
                                       "Second overwrite passed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
