@@ -23,6 +23,7 @@ Python library contains methods which provides the services endpoints.
 
 import json
 import logging
+import secrets
 from random import SystemRandom
 from string import Template
 
@@ -40,6 +41,7 @@ from commons import commands as common_cmd
 from commons import constants as common_const
 
 log = logging.getLogger(__name__)
+
 
 # pylint: disable=too-many-public-methods
 class MotrCoreK8s():
@@ -60,14 +62,14 @@ class MotrCoreK8s():
                                             username=CMN_CFG["nodes"][node]["username"],
                                             password=CMN_CFG["nodes"][node]["password"])
                 self.health_obj = Health(hostname=CMN_CFG["nodes"][node]["hostname"],
-                                            username=CMN_CFG["nodes"][node]["username"],
-                                            password=CMN_CFG["nodes"][node]["password"])
+                                         username=CMN_CFG["nodes"][node]["username"],
+                                         password=CMN_CFG["nodes"][node]["password"])
             else:
                 self.worker_node_list.append(CMN_CFG["nodes"][node]["hostname"])
                 self.worker_node_objs.append(LogicalNode(
-                                            hostname=CMN_CFG["nodes"][node]["hostname"],
-                                            username=CMN_CFG["nodes"][node]["username"],
-                                            password=CMN_CFG["nodes"][node]["password"]))
+                    hostname=CMN_CFG["nodes"][node]["hostname"],
+                    username=CMN_CFG["nodes"][node]["username"],
+                    password=CMN_CFG["nodes"][node]["password"]))
         self.node_dict = self._get_cluster_info
         self.node_pod_dict = self.get_node_pod_dict()
         self.ha_obj = HAK8s()
@@ -110,10 +112,16 @@ class MotrCoreK8s():
         """
         Returns all the node and motr client pod names in dict format
         """
+        node_pod_dict = self.get_pods_by_node()
+        return node_pod_dict
+
+    def get_pods_by_node(self, prefix=common_const.CLIENT_POD_NAME_PREFIX,
+                         namespace=common_const.NAMESPACE):
+        """Retrieves all pods by nodes with given pod name prefix."""
         node_pod_dict = {}
-        cmd = "| grep \"{}\" |awk '{{print $1}}'".format(common_const.CLIENT_POD_NAME_PREFIX)
+        cmd = "| grep \"{}\" |awk '{{print $1}}'".format(prefix)
         response = self.node_obj.send_k8s_cmd(
-            operation="get", pod="pods", namespace=common_const.NAMESPACE,
+            operation="get", pod="pods", namespace=namespace,
             command_suffix=f"{cmd}", decode=True)
         pod_list = [node.strip() for node in response.split('\n')]
         for pod_name in pod_list:
@@ -546,6 +554,36 @@ class MotrCoreK8s():
         # Updating the node_pod dict after cluster shutdown
         self.node_pod_dict = self.get_node_pod_dict()
 
+    def switch_cluster_to_degraded_mode(self):
+        """
+        restart m0d container to reflect metadata change.
+        Method is generic enough to kick m0d restart.
+        :return:
+        """
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            self.node_obj,
+            self.health_obj)
+        assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
+        log.info("Deleted pod : %s", list(resp[1].keys())[0])
+
+    def restart_m0d_container(self, pod_prefix: str = common_const.POD_NAME_PREFIX,
+                              container_prefix: str = common_const.MOTR_CONTAINER_PREFIX):
+        """
+        restart m0d container to reflect metadata change.
+        Method is generic enough to kick m0d restart.
+        :return:
+        """
+        pod_list = self.node_obj.get_all_pods(pod_prefix=pod_prefix)
+        # prefer 0th pod and 0th container for running m0scripts
+        pod = pod_list[0]
+        containers = self.node_obj.get_container_of_pod(
+            pod_name=pod, container_prefix=container_prefix)
+        log.info("Perform restart of 0th M0d container")
+        container = containers[0]
+        resp = self.node_obj.restart_container_in_pod(
+            pod_name=pod, container_name=container)
+        self.log.debug("Container restarted with new PID: %s", resp)
+
     def update_m0crate_config(self, config_file, node):
         """
         This will modify the m0crate workload config yaml with the node details
@@ -592,16 +630,16 @@ class MotrCoreK8s():
             for count in block_count:
                 for b_size in bsize_layout_map.keys():
                     object_id = str(SystemRandom().randint(1, 9999)) + ":" + \
-                                    str(SystemRandom().randint(1, 9999))
-                    object_dict[object_id] = {'block_size' : b_size }
+                                str(SystemRandom().randint(1, 9999))
+                    object_dict[object_id] = {'block_size': b_size}
                     object_dict[object_id]['deleted'] = False
                     object_dict[object_id]['count'] = count
                     self.dd_cmd(b_size, str(count), infile, node)
                     self.cp_cmd(b_size, str(count), object_id, bsize_layout_map[b_size],
-                        infile, node)
+                                infile, node)
                     if run_m0cat:
                         self.cat_cmd(b_size, str(count), object_id,
-                            bsize_layout_map[b_size], outfile, node)
+                                     bsize_layout_map[b_size], outfile, node)
                         md5sum = self.get_md5sum(outfile, node)
                         object_dict[object_id]['md5sum'] = md5sum
                         self.md5sum_cmd(infile, outfile, node)
@@ -614,7 +652,8 @@ class MotrCoreK8s():
             raise exc
 
     def run_io_in_parallel(self, node, bsize_layout_map=BSIZE_LAYOUT_MAP,
-            block_count=FILE_BLOCK_COUNT, run_m0cat=True, delete_objs=True, return_dict=None):
+                           block_count=FILE_BLOCK_COUNT, run_m0cat=True, delete_objs=True,
+                           return_dict=None):
         """
         :param: str node: Cortx node on which utilities to be executed
         :param: dict bsize_layout_map: mapping of block size and layout for IOs to run

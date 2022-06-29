@@ -526,3 +526,8 @@ class LogicalNode(Host):
                                  decode=True)
         process_list = resp.splitlines()
         return process_list
+
+    def restart_container_in_pod(self, pod_name, container_name):
+        """Restarts a container within a pod. Prefer pod restart for single container pods."""
+        raise NotImplementedError()
+
