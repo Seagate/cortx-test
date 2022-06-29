@@ -188,7 +188,7 @@ class TestCapacityQuota():
             file_size,
             total_parts=total_parts,
             multipart_obj_path=self.mp_obj_path,
-            block_size="1048576",
+            block_size="1M",
             create_file=True)
         assert res[0], res[1]
         assert_utils.assert_equal(len(res[1]), total_parts, res[1])
