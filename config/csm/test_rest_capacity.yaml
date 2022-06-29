@@ -55,15 +55,19 @@ test_40637:
   max_objects: 5
   enabled: True
 test_40638:
-  max_size: 1048576
-  max_objects: 5
-  extra_bytes: 100
-  total_parts: 5
+  max_size: 1024
+  max_objects: 10
   enabled: True
+  total_parts: 4
+  file_size: 40
+  b_size: 1048576
 test_40639:
-  max_size: 1048576
-  max_objects: 5
+  max_size: 1024
+  max_objects: 10
   enabled: True
+  total_parts: 4
+  file_size: 40
+  b_size: 1048576
 test_40640:
   max_size: 1048576
   max_objects: 5

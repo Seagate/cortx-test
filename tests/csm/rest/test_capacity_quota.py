@@ -35,6 +35,8 @@ from commons import cortxlogging
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils.system_utils import cal_percent
+from commons.utils.system_utils import create_file
 from commons.utils.system_utils import path_exists, make_dirs
 from config import CSM_REST_CFG
 from config.s3 import S3_CFG
@@ -43,7 +45,9 @@ from libs.csm.csm_setup import CSMConfigsCheck
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import s3_misc
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_multipart import Multipart
 from libs.s3.s3_test_lib import S3TestLib
+
 
 # pylint: disable-msg=too-many-public-methods
 # pylint: disable=too-many-instance-attributes
@@ -81,8 +85,6 @@ class TestCapacityQuota():
         if resp[0]:
             cls.nvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['data'])
         cls.aligned_size = 4 * cls.nvalue
-        cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestMultipartUpload")
         cls.mp_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
@@ -108,7 +110,8 @@ class TestCapacityQuota():
         assert resp1[0], resp1[1]
         self.akey = resp.json()["keys"][0]["access_key"]
         self.skey = resp.json()["keys"][0]["secret_key"]
-        self.s3t_obj = S3TestLib(access_key=self.akey, secret_key=self.skey)
+        self.s3t_obj = S3TestLib(access_key=self.akey, secret_key=self.skey,
+                                 endpoint_url=S3_CFG["s3_url"])
         self.bucket = "iam-user-bucket-" + str(int(time.time_ns()))
         self.display_name = "iam-display-name-" + str(int(time.time_ns()))
         self.obj_name_prefix = "created_obj"
@@ -116,6 +119,8 @@ class TestCapacityQuota():
         self.log.info("Verify Create bucket: %s", self.bucket)
         assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
         self.buckets_created.append([self.bucket, self.akey, self.skey])
+        self.s3_mp_test_obj = S3MultipartTestLib(access_key=self.akey, secret_key=self.skey,
+                                                 endpoint_url=S3_CFG["s3_url"])
 
     def teardown_method(self):
         """
@@ -148,22 +153,30 @@ class TestCapacityQuota():
         assert_utils.assert_true(len(self.created_iam_users) == 0, "IAM deletion failed")
         self.log.info("[ENDED] ######### Teardown #########")
 
+
     def create_bucket_to_upload_parts(
             self,
             bucket_name,
             object_name,
             file_size,
             total_parts):
-        """Create bucket, initiate multipart upload and upload parts."""
+        """
+        Create bucket, initiate multipart upload and upload parts.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :param file_size: Size of object need to be uploaded.
+        :param total_parts: total parts
+        :return: mpu_id, parts
+        """
         self.log.info("Creating a bucket with name : %s", bucket_name)
-        res = self.s3_test_obj.create_bucket(bucket_name)
-        assert_utils.assert_true(res[0], res[1])
+        res = self.s3t_obj.create_bucket(bucket_name)
+        assert res[0], res[1]
         assert_utils.assert_equal(res[1], bucket_name, res[1])
         self.log.info("Created a bucket with name : %s", bucket_name)
         self.log.info("Initiating multipart upload")
         res = self.s3_mp_test_obj.create_multipart_upload(
             bucket_name, object_name)
-        assert_utils.assert_true(res[0], res[1])
+        assert res[0], res[1]
         mpu_id = res[1]["UploadId"]
         self.log.info(
             "Multipart Upload initiated with mpu_id %s", mpu_id)
@@ -175,13 +188,38 @@ class TestCapacityQuota():
             file_size,
             total_parts=total_parts,
             multipart_obj_path=self.mp_obj_path,
-            block_size="1K",
+            block_size="1M",
             create_file=True)
-        assert_utils.assert_true(res[0], res[1])
+        assert res[0], res[1]
         assert_utils.assert_equal(len(res[1]), total_parts, res[1])
         parts = res[1]
         self.log.info("Uploaded parts into bucket: %s", parts)
         return mpu_id, parts
+
+    def create_file_and_initiate_upload(
+            self,
+            bucket_name,
+            object_name,
+            file_size,
+            b_size="1048576"):
+        """
+        Create bucket, initiate multipart upload and upload parts.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :param file_size: Size of object need to be uploaded.
+        :param b_size: Block Size in bytes. By default, set to 1MB
+        :return: mpu_id
+        """
+        self.log.info("Initiating multipart upload")
+        if os.path.exists(self.mp_obj_path):
+            os.remove(self.mp_obj_path)
+        create_file(self.mp_obj_path, file_size, b_size=b_size)
+
+        res = self.s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+        assert res[0], res[1]
+        mpu_id = res[1]["UploadId"]
+        return mpu_id
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -436,7 +474,6 @@ class TestCapacityQuota():
         self.log.info("Response : %s", resp)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -450,69 +487,83 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_40638"]
-        enabled = test_cfg["enabled"]
-        max_size = test_cfg["max_size"]
-        max_objects = test_cfg["max_objects"]
-        self.log.info("Step 3: Start Multipart upload S3 operations of X Mb"
-                      "X=(max_size+x)")
+        user_quota = self.csm_obj.random_gen.randrange(test_cfg["file_size"], test_cfg["max_size"])
+        parts = []
         bucket = "iam-user-bucket-" + str(int(time.time_ns()))
         obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
-        res = self.create_bucket_to_upload_parts(
-            bucket,
-            obj_name,
-            int((max_size/1024)/2),
-            test_cfg["total_parts"])
-        mpu_id, parts = res
-        self.log.info("Listing parts of multipart upload")
-        res = self.s3_mp_test_obj.list_parts(
-            mpu_id,
-            bucket,
-            obj_name)
-        assert_utils.assert_true(res[0], res[1])
-        assert_utils.assert_equal(len(res[1]["Parts"]),
-                                  test_cfg["total_parts"], res[1])
-        self.log.info("Listed parts of multipart upload: %s", res[1])
-        self.log.info("Completing multipart upload")
-        res = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id,
-            parts,
-            bucket,
-            obj_name)
-        assert_utils.assert_true(res[0], res[1])
-        res = self.s3_test_obj.object_list(bucket)
-        assert_utils.assert_in(obj_name, res[1], res[1])
-        self.log.info("Multipart upload completed")
-        self.log.info("Step 4: Perform get and set user level quota of less size")
-        less_size = self.csm_obj.random_gen.randrange(1, max_size)
-        payload = self.csm_obj.iam_user_quota_payload(enabled, less_size, max_objects,
-                                                      check_on_raw=True)
+
+        self.log.info("Step 1: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
+                                                    login_as="csm_user_manage")
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+        assert_utils.assert_equals(0, t_obj, "Number of objects not equal")
+        assert_utils.assert_equal(0, t_size, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, 0, "Total Used Size mismatch found ")
+
+        self.log.info("Step 2: Perform PUT and GET API to set and get user level quota fields")
+        payload = self.csm_obj.iam_user_quota_payload(test_cfg["enabled"],
+                                                      int(user_quota * test_cfg["b_size"]),
+                                                      test_cfg["max_objects"], check_on_raw=True)
+
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=True)
         assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
+        self.log.debug("Response : %s", resp)
+        self.log.info("Step 3: Start Multipart upload S3 operations of %s Mb",
+                      test_cfg["file_size"])
+        res = self.create_bucket_to_upload_parts(bucket, obj_name,
+                                                 test_cfg["file_size"],
+                                                 test_cfg["total_parts"])
+        mpu_id, parts = res
+        self.log.debug("parts:%s", parts)
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
+                                                    login_as="csm_user_manage")
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(test_cfg["total_parts"], t_obj,
+                                   "Number of objects not equal")
+        assert_utils.assert_equals(test_cfg["file_size"]* test_cfg["b_size"], t_size,
+                                   "Total Size mismatch found")
+
         self.log.info("Step 5: Abort Multipart upload S3 operations")
-        res = self.s3_mp_test_obj.abort_multipart_upload(
-            bucket,
-            obj_name,
-            mpu_id)
-        assert_utils.assert_true(res[0], res[1])
-        res = self.s3_mp_test_obj.list_multipart_uploads(
-            bucket)
-        assert_utils.assert_not_in(mpu_id, res[1], res[1])
-        self.log.info(
-            "Aborted multipart upload with upload ID: %s", mpu_id)
-        self.log.info("Step 6: Perform PUT API to set user level quota "
-                      "less than used")
-        resp3 = self.csm_obj.set_user_quota(self.user_id, payload)
-        assert_utils.assert_true(resp3[0], resp3[1])
-        self.log.info("Step 7: Perform GET API to get user level quota")
-        resp4 = self.csm_obj.get_user_quota(self.user_id)
-        assert_utils.assert_true(resp4[0], resp4[1])
+        res = self.s3_mp_test_obj.abort_multipart_upload(bucket,
+                                                         obj_name,
+                                                         mpu_id)
+        assert res[0], res[1]
+        self.log.info("Step 5: Abort of multipart upload completed.")
+        self.log.info("Step 6: Verify object is not listed")
+        res = self.s3t_obj.object_list(self.bucket)
+        assert_utils.assert_not_in(self.obj_name, res[1], res[1])
+        self.log.info("Step 6: Verified object is not listed")
+        self.log.info("Step 7:Calculate User Capacity after multipart Upload")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
+                                                    login_as="csm_user_manage")
+        assert resp.status_code == HTTPStatus.OK, \
+            "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(0, t_obj, "Number of objects not equal")
+        assert_utils.assert_equals(0, t_size, "Total Size mismatch found")
+        assert_utils.assert_equals(0, m_size, "Total Used Size mismatch found")
+
+        self.log.info("Number of Objects after multipart Upload: %s", t_obj)
+        self.log.info("Capacity User after multipart Upload: %s", t_size)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-statements
-
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -525,65 +576,101 @@ class TestCapacityQuota():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_40635"]
-        enabled = test_cfg["enabled"]
-        max_size = test_cfg["max_size"]
-        max_objects = test_cfg["max_objects"]
-        self.log.info("Step 2: Start Multipart upload S3 operations of X Mb")
-        bucket = "iam-user-bucket-" + str(int(time.time_ns()))
-        obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
-        res = self.create_bucket_to_upload_parts(
-            bucket,
-            obj_name,
-            int(max_size/1024),
-            test_cfg["total_parts"])
-        mpu_id, parts = res
-        self.log.info("Listing parts of multipart upload")
-        res = self.s3_mp_test_obj.list_parts(
-            mpu_id,
-            bucket,
-            obj_name)
-        assert_utils.assert_true(res[0], res[1])
-        assert_utils.assert_equal(len(res[1]["Parts"]),
-                                  test_cfg["total_parts"], res[1])
-        self.log.info("Listed parts of multipart upload: %s", res[1])
-        self.log.info("Completing multipart upload")
-        res = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id,
-            parts,
-            bucket,
-            obj_name)
-        assert_utils.assert_true(res[0], res[1])
-        res = self.s3_test_obj.object_list(bucket)
-        assert_utils.assert_in(obj_name, res[1], res[1])
-        self.log.info("Multipart upload completed")
-        self.log.info("Step 3: Perform GET API to get user level quota")
-        resp = self.csm_obj.get_user_quota(self.user_id)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 4: Perform get and set user level quota of less size")
-        less_size = self.csm_obj.random_gen.randrange(1, max_size)
-        payload = self.csm_obj.iam_user_quota_payload(enabled, less_size, max_objects,
-                                                      check_on_raw=True)
+        test_cfg = self.csm_conf["test_40639"]
+        user_quota = self.csm_obj.random_gen.randrange(test_cfg["file_size"], test_cfg["max_size"])
+        parts = []
+        uploaded_bytes = 0
+        self.log.info("Step 1: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
+                                                    login_as="csm_user_manage")
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+        assert_utils.assert_equals(0, t_obj, "Number of objects not equal")
+        assert_utils.assert_equals(0, t_size, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, 0, "Total Used Size mismatch found")
+
+        self.log.info("Step 2: Perform PUT and GET API to set and get user level quota fields")
+        payload = self.csm_obj.iam_user_quota_payload(test_cfg["enabled"],
+                                                      int(user_quota * test_cfg["b_size"]),
+                                                      test_cfg["max_objects"], check_on_raw=True)
+
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=True)
         assert result, "Verification for get set user failed."
-        self.log.info("Response : %s", resp)
-        self.log.info("Step 5: Completing multipart upload")
-        res = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id,
-            parts,
-            bucket,
-            obj_name)
-        assert_utils.assert_true(res[0], res[1])
-        res = self.s3_test_obj.object_list(bucket)
-        assert_utils.assert_in(obj_name, res[1], res[1])
-        self.log.info("Multipart upload completed")
-        self.log.info("Step 6: Perform PUT API to set user level quota less than used")
-        resp = self.csm_obj.set_user_quota(self.user_id, payload)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 7: Perform GET API to get user level quota")
-        resp = self.csm_obj.get_user_quota(self.user_id)
-        assert_utils.assert_true(resp[0], resp[1])
+        self.log.debug("Response : %s", resp)
+        self.log.info("Step 3: Start Multipart upload S3 operations of %s Mb",
+                      test_cfg["file_size"])
+        mpu_id = self.create_file_and_initiate_upload(self.bucket, self.obj_name,
+                                                      test_cfg["file_size"], test_cfg["b_size"])
+        single_part_size = int(test_cfg["file_size"]) // int(test_cfg["total_parts"])
+        assert single_part_size >= 5, "Smaller part size f{single_part_size} MB"
+        self.log.info("Step 3.1: Multipart Upload initiated with mpu_id %s", mpu_id)
+
+        with open(self.mp_obj_path, "rb") as file_pointer:
+            i = 1
+            while True:
+                data = file_pointer.read(test_cfg["b_size"] * single_part_size)
+                self.log.info("data_len %s", str(len(data)))
+                if not data:
+                    break
+                resp = self.s3_mp_test_obj.upload_part(data, self.bucket, self.obj_name,
+                                                       upload_id=mpu_id, part_number=i)
+                part = resp[1]
+                self.log.debug("Part : %s", str(part))
+                parts.append({"PartNumber": i, "ETag": part["ETag"]})
+                self.log.info("Step: Uploaded part %s into bucket", i)
+                uploaded_bytes += len(data)
+                self.log.info("Step 4: Calculate user Capacity after %s part upload", i)
+                resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
+                                                            login_as="csm_user_manage")
+                assert resp.status_code == HTTPStatus.OK, \
+                        "Status code check failed for get capacity"
+                uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+                t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+                t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+                assert_utils.assert_equals(i, t_obj, "Number of objects not equal")
+                assert_utils.assert_equals(uploaded_bytes, t_size, "Total Size mismatch found")
+                self.log.info("Number Objects after %s part : %s", i, t_size)
+                self.log.info("Capacity after %s part : %s", i, t_size)
+                self.log.debug("%s of %s uploaded %.2f%%", uploaded_bytes,
+                               test_cfg["file_size"] *test_cfg["b_size"],
+                               cal_percent(uploaded_bytes, test_cfg["file_size"]* test_cfg["b_size"]))
+                i += 1
+        self.log.info(parts)
+
+        self.log.info("Step 5: Listing parts of multipart upload")
+        res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket, self.obj_name)
+        assert res[0], res[1]
+        assert_utils.assert_equal(len(res[1]["Parts"]), test_cfg["total_parts"], res[1])
+        self.log.info("Step 5: Listed parts of multipart upload: %s", res[1])
+        self.log.info("Step 6: Completing multipart upload")
+        res = self.s3_mp_test_obj.complete_multipart_upload(mpu_id, parts, self.bucket,
+                                                            self.obj_name)
+        assert res[0], res[1]
+        res = self.s3t_obj.object_list(self.bucket)
+        self.log.info("Step 7: List Object Response %s", res)
+        assert_utils.assert_in(self.obj_name, res[1], res[1])
+        self.log.info("Step 7:Multipart upload completed")
+        self.log.info("Step 8:Calculate User Capacity after multipart Upload")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
+                                                    login_as="csm_user_manage")
+        assert resp.status_code == HTTPStatus.OK, \
+            "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(1, t_obj, "Number of objects not equal")
+        assert_utils.assert_equals(test_cfg["file_size"]* test_cfg["b_size"], t_size,
+                                  "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, test_cfg["file_size"]* test_cfg["b_size"],
+                                          "Total Used Size mismatch found ")
+        self.log.info("Number of Objects after multipart Upload: %s", t_obj)
+        self.log.info("Capacity User after multipart Upload: %s", t_size)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-statements
@@ -627,7 +714,7 @@ class TestCapacityQuota():
             mpu_id,
             bucket,
             obj_name)
-        assert_utils.assert_true(res[0], res[1])
+        assert res[0], res[1]
         assert_utils.assert_equal(len(res[1]["Parts"]),
                                   test_cfg["total_parts"], res[1])
         self.log.info("Listed parts of multipart upload: %s", res[1])
@@ -637,8 +724,8 @@ class TestCapacityQuota():
             parts,
             bucket,
             obj_name)
-        assert_utils.assert_true(res[0], res[1])
-        res = self.s3_test_obj.object_list(bucket)
+        assert res[0], res[1]
+        res = self.s3t_obj.object_list(bucket)
         assert_utils.assert_in(obj_name, res[1], res[1])
         self.log.info("Multipart upload completed")
         self.log.info("Step 4: Perform max size verification")
@@ -650,7 +737,7 @@ class TestCapacityQuota():
             bucket,
             obj_name,
             mpu_id)
-        assert_utils.assert_true(res[0], res[1])
+        assert res[0], res[1]
         res = self.s3_mp_test_obj.list_multipart_uploads(
             bucket)
         assert_utils.assert_not_in(mpu_id, res[1], res[1])
