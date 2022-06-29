@@ -66,7 +66,7 @@ class RestIamUser(RestTestLib):
                 iampassword=password,
                 requireresetval=require_reset_val)
             iam_user_payload = payload
-            endpoint = self.config["IAM_users_endpoint"]
+            endpoint = self.config["iam_users_endpoint"]
             self.log.debug("Endpoint for iam user is %s", endpoint)
             self.headers.update(self.config["Login_headers"])
             # Fetching api response
@@ -99,7 +99,7 @@ class RestIamUser(RestTestLib):
             response = self.delete_iam_user_rgw(user, self.headers, purge_data)
         else:
             self.log.debug("iam user")
-            endpoint = '/'.join((self.config["IAM_users_endpoint"], user))
+            endpoint = '/'.join((self.config["iam_users_endpoint"], user))
             self.log.debug(
                 "Endpoint for delete iam user is %s", endpoint)
 
@@ -179,7 +179,7 @@ class RestIamUser(RestTestLib):
             response = self.list_iam_users_rgw(max_entries=max_entries, marker=marker)
         else:
             self.log.debug("Listing of iam users")
-            endpoint = self.config["IAM_users_endpoint"]
+            endpoint = self.config["iam_users_endpoint"]
             self.log.debug("Endpoint for iam user is %s", endpoint)
 
             self.headers.update(self.config["Login_headers"])
@@ -364,7 +364,7 @@ class RestIamUser(RestTestLib):
                 "password": iam_password,
                 "require_reset": False
             }
-            endpoint = self.config["IAM_users_endpoint"]
+            endpoint = self.config["iam_users_endpoint"]
             self.log.debug("Endpoint for iam user creation is %s", endpoint)
             self.log.info("self.headers = %s", self.headers)
             self.headers["Content-Type"] = "application/json"
@@ -394,7 +394,7 @@ class RestIamUser(RestTestLib):
             response._content = b'{"message":"bypassed"}'
         else:
             self.log.debug("Listing all iam users under S3 account %s", user)
-            endpoint = self.config["IAM_users_endpoint"]
+            endpoint = self.config["iam_users_endpoint"]
             self.log.debug("Endpoint for iam user listing is %s", endpoint)
             self.headers.update(self.config["Login_headers"])
             # Fetching api response
@@ -420,7 +420,7 @@ class RestIamUser(RestTestLib):
             response._content = b'{"message":"bypassed"}'
         else:
 
-            endpoint = '/'.join((self.config["IAM_users_endpoint"], iam_user))
+            endpoint = '/'.join((self.config["iam_users_endpoint"], iam_user))
             self.log.debug("Endpoint for iam user deletion is %s", endpoint)
             response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
             if response.status_code != const.SUCCESS_STATUS:

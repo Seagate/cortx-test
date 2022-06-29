@@ -1,4 +1,4 @@
-update_seconds: 720
+update_seconds: 900
 test_33899:
   err_margin: 0
 test_33919:
@@ -164,3 +164,7 @@ test_40605:
   max_size: -1
   max_objects: -1
   enabled: False
+test_43955:
+  max_objects: 20
+test_43957:
+  max_objects: 20

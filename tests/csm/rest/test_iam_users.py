@@ -4935,21 +4935,19 @@ class TestIamUserRGW():
         user_index = self.csm_conf["test_42284"]["max_entries"]
         self.log.info("Step 2: Send GET request to get last %s entries", user_index)
         marker = self.csm_obj.list_iam_users_rgw().json()["users"][-user_index]
-        max_entr = self.csm_obj.random_gen.randint(1, 10)
+        max_entr = self.csm_obj.random_gen.randint(user_index, 100)
 
         self.log.info("Step 3: Send GET request with max_entries as %s and "
                       "marker: %s", max_entr, marker)
 
         resp = self.csm_obj.list_iam_users_rgw(max_entries=max_entr, marker=marker)
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.OK, "Status check failed")
+        assert resp.status_code == HTTPStatus.OK, "Status check failed"
         count_new = resp.json()["count"]
         get_user_list = resp.json()["users"]
-        actual_entries = self.csm_conf["common"]["num_users"] - user_index
-        assert_utils.assert_equals(count_new, actual_entries, "Entries not returned as expected")
+        assert count_new==user_index, "Entries not returned as expected"
 
         self.log.info("Printing first user of list %s", get_user_list[0])
-        assert_utils.assert_equals(get_user_list[0], marker, "Marker not set"
-                                                             "to in between user")
+        assert get_user_list[0] == marker, "Marker not set to in between user"
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
