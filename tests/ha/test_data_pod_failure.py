@@ -2712,6 +2712,7 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35297")
+    @pytest.mark.skip(reason="VM issue in after Restart(LRL-3413). Need to be tested on HW")
     @CTFailOn(error_handler)
     def test_chunk_upload_during_pod_down(self):
         """
@@ -2741,8 +2742,6 @@ class TestDataPodFailure:
         self.test_prefix = 'test-35297'
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
-        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                endpoint_url=S3_CFG["s3_url"])
 
         args = {'s3_data': self.s3_clean, 'bucket_name': self.bucket_name,
                 'file_size': file_size, 'chunk_obj_path': chunk_obj_path, 'output': output}
