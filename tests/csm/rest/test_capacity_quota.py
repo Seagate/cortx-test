@@ -2707,12 +2707,12 @@ class TestCapacityQuota():
                                                               verify_response=True)
             assert result, resp
             try:
-               resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
+                resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           self.akey, self.skey,
                                  object_size=int(max_size/2/1024), block_size="1K")
             except ClientError as error:
-               self.log.info("Expected exception received %s", error)
-               assert error.response['Error']['Code'] == "QuotaExceeded", \
+                self.log.info("Expected exception received %s", error)
+                assert error.response['Error']['Code'] == "QuotaExceeded", \
                                       "Put operation passed after max size"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -2768,12 +2768,11 @@ class TestCapacityQuota():
         self.log.info("Step 5: Try overwriting above object and then upload one more object")
         for objs in obj_list:
             try:
-               resp = s3_misc.create_put_objects(objs, self.bucket,
+                resp = s3_misc.create_put_objects(objs, self.bucket,
                                           self.akey, self.skey,
                                  object_size=int(remaining_size/1024), block_size="1K")
             except ClientError as error:
-               self.log.info("Expected exception received %s", error)
-               assert error.response['Error']['Code'] == "QuotaExceeded", \
+                self.log.info("Expected exception received %s", error)
+                assert error.response['Error']['Code'] == "QuotaExceeded", \
                                       "Second overwrite passed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
-
