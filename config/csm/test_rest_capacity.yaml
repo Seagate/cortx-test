@@ -172,3 +172,12 @@ test_43955:
   max_objects: 20
 test_43957:
   max_objects: 20
+test_43857:
+  max_size: 1048576
+  max_objects_1: 1
+  max_objects_2: 2
+  enabled: True
+test_43862:
+  max_size: 1572864
+  max_objects: 2
+  enabled: True
