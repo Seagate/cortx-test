@@ -40,6 +40,7 @@ from config import CSM_REST_CFG
 from config.s3 import S3_CFG
 from libs.csm.csm_interface import csm_api_factory
 from libs.csm.csm_setup import CSMConfigsCheck
+from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import s3_misc
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
@@ -57,6 +58,7 @@ class TestCapacityQuota():
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
         cls.csm_obj = csm_api_factory("rest")
+        cls.ha_obj = HAK8s()
         cls.log.info("Initiating Rest Client ...")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
         cls.rest_resp_conf = configmanager.get_config_wrapper(
@@ -75,6 +77,10 @@ class TestCapacityQuota():
         cls.bucket = None
         cls.obj_name = None
         cls.obj_name_prefix = None
+        resp = cls.ha_obj.get_config_value(cls.csm_obj.master)
+        if resp[0]:
+            cls.nvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['data'])
+        cls.aligned_size = 4 * cls.nvalue
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "mp_obj"
@@ -1670,6 +1676,624 @@ class TestCapacityQuota():
             response = self.csm_obj.csm_user_logout(header)
             self.csm_obj.check_expected_response(response, HTTPStatus.OK)
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-43833')
+    def test_43833(self):
+        """
+        Verify used_rounded and used are same for aligned IO
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        num_objects = 1
+        self.log.info("Number of objects to be created are: %s", num_objects)
+        data_size = self.aligned_size
+
+        self.log.info("Step 1: Create one objects of aligned size %s", data_size)
+        obj_name_prefix = "created_obj"
+
+        obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
+        resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                            self.akey, self.skey, object_size=data_size,
+                                            block_size="1K")
+        assert resp, "Put object Failed"
+
+        self.log.info("Step 2: Get capacity count from AWS")
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                   self.akey, self.skey)
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Data size is %s ", data_size)
+
+        self.log.info("Step 3: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
+        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
+        assert_utils.assert_equal(m_size, t_size, "used_rounded and used mismatch found ")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-43834')
+    def test_43834(self):
+        """
+        Verify used_rounded and used are different for unaligned IO
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        num_objects = 1
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, odd_multiplier)
+        data_size = self.aligned_size + odd_multiplier
+
+        self.log.info("Step 1: Create one objects of unaligned size %s", data_size)
+        obj_name_prefix = "created_obj"
+
+        obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
+        resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                            self.akey, self.skey, object_size=data_size,
+                                            block_size="1K")
+        assert resp, "Put object Failed"
+
+        self.log.info("Step 2: Get capacity count from AWS")
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                   self.akey, self.skey)
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Data size is %s ", data_size)
+
+        self.log.info("Step 3: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
+        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
+        assert_utils.assert_greater(m_size, t_size, "used_rounded and used mismatch found ")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+
+    # Revisit after CORTX-32486
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-43835')
+    def test_43835(self):
+        """
+        Verify Max size user level quota for IAM user with check_on_raw=False
+        with even multiples of aligned size
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        num_objects = 1
+        even_multiplier = self.csm_obj.random_gen.randrange(2, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, even_multiplier)
+        data_size = self.aligned_size * even_multiplier * 1024
+
+        self.log.info("Step 1: Perform PUT API to set user level quota")
+        payload = self.csm_obj.iam_user_quota_payload(True, data_size, num_objects,
+                                 check_on_raw=False)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=False)
+        assert result, "Verification for get set user failed."
+        self.log.info("Response : %s", resp)
+
+        self.log.info("Step 2: Perform max size verification")
+        res = self.csm_obj.verify_max_size(data_size, self.akey, self.skey,self.bucket)
+        assert res[0], res[1]
+
+        self.log.info("Step 3: Get capacity count from AWS")
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                            self.akey, self.skey)
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Data size is %s ", data_size)
+
+        self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
+        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
+        assert_utils.assert_equal(m_size, t_size, "used_rounded and used mismatch found ")
+        # Revisit after CORTX-32486
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-43836')
+    def test_43836(self):
+        """
+        Verify Max objects user level quota for IAM user with check_on_raw=False
+        with even multiples of aligned size
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        even_multiplier = self.csm_obj.random_gen.randrange(2, 20, 2)
+        num_objects = even_multiplier
+        self.log.info("Number of objects to be created are: %s", num_objects)
+        data_size = self.aligned_size * num_objects * 1024
+
+        self.log.info("Step 1: Perform PUT API to set user level quota")
+        payload = self.csm_obj.iam_user_quota_payload(True, data_size, num_objects,
+                                 check_on_raw=False)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=False)
+        assert result, "Verification for get set user failed."
+        self.log.info("Response : %s", resp)
+
+        self.log.info("Step 2: Perform max objects verification")
+        res = self.csm_obj.verify_max_objects(data_size, num_objects, self.akey, self.skey,
+                                              self.bucket)
+        assert res[0], res[1]
+        object_list = s3_misc.get_objects_list(self.bucket,
+                    self.akey, self.skey)
+        self.log.info("Object list is %s ", object_list)
+
+        self.log.info("Step 3: Get capacity count from AWS")
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                            self.akey, self.skey)
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Data size is %s ", data_size)
+
+        self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
+        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
+        assert_utils.assert_equal(m_size, t_size, "used_rounded and used mismatch found ")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+
+    # Revisit after CORTX-32486
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-43837')
+    def test_43837(self):
+        """
+        Verify Max size User level quota & capacity for IAM user with check_on_raw=False
+        with odd multiples of aligned size
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        num_objects = 1
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, odd_multiplier)
+        data_size = self.aligned_size * odd_multiplier * 1024
+
+        self.log.info("Step 1: Perform PUT API to set user level quota")
+        payload = self.csm_obj.iam_user_quota_payload(True, data_size, num_objects,
+                                 check_on_raw=False)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=False)
+        assert result, resp
+
+        self.log.info("Step 2: Perform max size verification")
+        res = self.csm_obj.verify_max_size(data_size, self.akey, self.skey,self.bucket)
+        assert res[0], res[1]
+
+        self.log.info("Step 3: Get capacity count from AWS")
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                            self.akey, self.skey)
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Data size is %s ", data_size)
+
+        self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
+        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
+        assert_utils.assert_greater(m_size, t_size, "used_rounded and used mismatch found ")
+        # Revisit after CORTX-32486
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-43838')
+    def test_43838(self):
+        """
+        Verify Max object user level quota IAM user with check_on_raw=False
+        with odd multiples of aligned size
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        num_objects = odd_multiplier
+        self.log.info("Number of objects to be created are: %s", num_objects)
+        data_size = self.aligned_size * odd_multiplier * 1024
+
+        self.log.info("Step 1: Perform PUT API to set user level quota")
+        payload = self.csm_obj.iam_user_quota_payload(True, data_size, num_objects,
+                                 check_on_raw=False)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=False)
+        assert result, resp
+
+        self.log.info("Step 2: Perform max objects verification")
+        res = self.csm_obj.verify_max_objects(data_size, num_objects, self.akey, self.skey,
+                                              self.bucket)
+        assert res[0], res[1]
+        object_list = s3_misc.get_objects_list(self.bucket,
+                    self.akey, self.skey)
+        self.log.info("Object list is %s ", object_list)
+
+        self.log.info("Step 3: Get capacity count from AWS")
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                            self.akey, self.skey)
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Data size is %s ", data_size)
+
+        self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
+        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
+        assert_utils.assert_equal(m_size, t_size, "used_rounded and used mismatch found ")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+
+    # Revisit after CORTX-32486
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-43839')
+    def test_43839(self):
+        """
+        Test set & get API for User level quota & capacity for IAM user with check_on_raw=False
+        with even multiples of unaligned size
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        num_objects = 1
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, odd_multiplier)
+        data_size = self.aligned_size + odd_multiplier
+
+        self.log.info("Step 1.1: Create one objects of aligned size %s", data_size)
+        obj_name_prefix = "created_obj"
+        obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
+        resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                            self.akey, self.skey, object_size=data_size,
+                                            block_size="1K")
+        assert resp, "Put object Failed"
+
+        self.log.info("Step 1.2: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(1, t_obj, "Number of objects not equal")
+        assert_utils.assert_greater(m_size, t_size, "used_rounded and used mismatch found ")
+
+        self.log.info("Step 1.3: Delete object: %s", obj_name)
+        assert s3_misc.delete_object(
+            obj_name, self.bucket, self.akey, self.skey), "Failed to delete object."
+
+        used_data_size = m_size
+
+        num_objects = 1
+        even_multiplier = self.csm_obj.random_gen.randrange(2, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, even_multiplier)
+        used_data_size = used_data_size * even_multiplier
+        data_size = data_size * even_multiplier * 1024
+
+        self.log.info("Step 2: Perform PUT API to set user level quota with used_rounded ")
+        payload = self.csm_obj.iam_user_quota_payload(True, used_data_size, num_objects,
+                                 check_on_raw=False)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=False)
+        assert result, resp
+
+        self.log.info("Step 3: Perform max size verification")
+        res = self.csm_obj.verify_max_size(data_size, self.akey, self.skey,self.bucket)
+        assert res[0], res[1]
+
+        self.log.info("Step 4: Get capacity count from AWS")
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                            self.akey, self.skey)
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Data size is %s ", data_size)
+
+        self.log.info("Step 5: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
+        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
+        assert_utils.assert_greater_equal(m_size, t_size, "used_rounded and used mismatch found ")
+        #assert_utils.assert_greater_equal(used_data_size, m_size) Revisit after CORTX-32486
+
+        self.log.info("Step 6: Delete all object: %s", obj_name)
+        assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
+
+        self.log.info("Step 7: Perform PUT API to set user level quota")
+        payload = self.csm_obj.iam_user_quota_payload(True, used_data_size, even_multiplier,
+                                 check_on_raw=False)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=False)
+        assert result, resp
+
+        self.log.info("Step 8: Perform max objects verification")
+        res = self.csm_obj.verify_max_objects(data_size, even_multiplier, self.akey, self.skey,
+                                              self.bucket)
+        assert res[0], res[1]
+        object_list = s3_misc.get_objects_list(self.bucket,
+                    self.akey, self.skey)
+        self.log.info("Object list is %s ", object_list)
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+
+    # Revisit after CORTX-32486
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-43840')
+    def test_43840(self):
+        """
+        Test set & get API for User level quota & capacity for IAM user with check_on_raw=False
+        with odd multiples of unaligned size
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        num_objects = 1
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, odd_multiplier)
+        data_size = self.aligned_size + odd_multiplier
+
+        self.log.info("Step 1.1: Create one objects of aligned size %s", data_size)
+        obj_name_prefix = "created_obj"
+        obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
+        resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                            self.akey, self.skey, object_size=data_size,
+                                            block_size="1K")
+        assert resp, "Put object Failed"
+
+        self.log.info("Step 1.2: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(1, t_obj, "Number of objects not equal")
+        assert_utils.assert_greater(m_size, t_size, "used_rounded and used mismatch found ")
+
+        self.log.info("Step 1.3: Delete object: %s", obj_name)
+        assert s3_misc.delete_object(
+            obj_name, self.bucket, self.akey, self.skey), "Failed to delete object."
+
+        used_data_size = m_size
+
+        num_objects = 1
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, odd_multiplier)
+        used_data_size = used_data_size * odd_multiplier
+        data_size = data_size * odd_multiplier * 1024
+
+        self.log.info("Step 2: Perform PUT API to set user level quota with used_rounded ")
+        payload = self.csm_obj.iam_user_quota_payload(True, used_data_size, num_objects,
+                                 check_on_raw=False)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=False)
+        assert result, resp
+
+        self.log.info("Step 3: Perform max size verification")
+        res = self.csm_obj.verify_max_size(data_size, self.akey, self.skey,self.bucket)
+        assert res[0], res[1]
+
+        self.log.info("Step 4: Get capacity count from AWS")
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                            self.akey, self.skey)
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Data size is %s ", data_size)
+
+        self.log.info("Step 5: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
+        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
+        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
+        assert_utils.assert_greater_equal(m_size, t_size, "used_rounded and used mismatch found ")
+        #assert_utils.assert_greater_equal(used_data_size, m_size) Revisit after CORTX-32486
+
+        self.log.info("Step 6: Delete all object: %s", obj_name)
+        assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
+
+        self.log.info("Step 7: Perform PUT API to set user level quota")
+        payload = self.csm_obj.iam_user_quota_payload(True, used_data_size, odd_multiplier,
+                                 check_on_raw=False)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=False)
+        assert result, resp
+
+        self.log.info("Step 8: Perform max objects verification")
+        res = self.csm_obj.verify_max_objects(data_size, odd_multiplier, self.akey, self.skey,
+                                              self.bucket)
+        assert res[0], res[1]
+        object_list = s3_misc.get_objects_list(self.bucket,
+                    self.akey, self.skey)
+        self.log.info("Object list is %s ", object_list)
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-43841')
+    def test_43841(self):
+        """
+        Test set & get API for User level quota & capacity for IAM user with check_on_raw=False
+        with unaligned size
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        num_objects = 1
+        odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+        self.log.info('Number of objects to be created are: %s, multiplier %s',
+                      num_objects, odd_multiplier)
+        data_size = (self.aligned_size + odd_multiplier)
+
+        self.log.info("Step 1.1: Create one objects of aligned size %s", data_size)
+        obj_name_prefix = "created_obj"
+        obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
+        resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                            self.akey, self.skey, object_size=data_size,
+                                            block_size="1K")
+        assert resp, "Put object Failed"
+
+        self.log.info("Step 1.2: Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+
+        assert_utils.assert_equals(self.uid, uid, "id is not equal")
+        assert_utils.assert_equals(1, t_obj, "Number of objects not equal")
+        assert_utils.assert_greater(m_size, t_size, "used_rounded and used mismatch found ")
+
+        self.log.info("Step 2: Delete object: %s", obj_name)
+        assert s3_misc.delete_object(
+            obj_name, self.bucket, self.akey, self.skey), "Failed to delete object."
+
+        used_data_size = m_size
+        num_objects = 2
+
+        self.log.info("Step 3: Perform PUT API to set user level quota with used_rounded ")
+        payload = self.csm_obj.iam_user_quota_payload(True, used_data_size, num_objects,
+                                 check_on_raw=False)
+        result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
+                                                              verify_response=False)
+        assert result, resp
+
+        self.log.info("Step 4: Create one objects of unaligned size %s", data_size)
+        obj_name_prefix = "created_obj"
+        obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
+        resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                            self.akey, self.skey, object_size=data_size,
+                                            block_size="1K")
+        assert resp, "Put object Failed"
+
+        self.log.info("Step 5: Try to Create one more objects of unaligned size %s", data_size)
+        obj_name_prefix = "created_obj"
+        obj_name = f'{obj_name_prefix}{time.perf_counter_ns()}'
+
+        try:
+            self.log.info("object name %s", obj_name)
+            resp = s3_misc.create_put_objects(obj_name, self.bucket, self.akey, self.skey,
+                                                object_size=int((used_data_size/1024) - data_size),
+                                                block_size="1K")
+            self.log.info("Response of Put another object is %s", resp)
+            assert_utils.assert_false(resp, "Put object worked")
+        except ClientError as error:
+            self.log.info("Expected exception received %s", error)
+            assert_utils.assert_equal(error.response['Error']['Code'] , "QuotaExceeded")
+
+        object_list = s3_misc.get_objects_list(self.bucket,
+                    self.akey, self.skey)
+        self.log.info("Object list is %s ", object_list)
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.csmrest

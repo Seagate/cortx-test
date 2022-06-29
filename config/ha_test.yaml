@@ -26,6 +26,7 @@ s3_operation_data:
   obj_per_bucket: 200
   iam_users: 150
   no_bkt_del_ctrl_pod: 500
+  httpclientimeout: 300000
 
 5gb_mpu_data:
   file_size: 4800
