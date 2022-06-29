@@ -2692,7 +2692,7 @@ class TestCapacityQuota():
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=True)
         assert result, resp
-        self.log.info("Step 2: Try uploading 1 object(obj-1) of max_size: %s ", max_size)
+        self.log.info("Step 2: Uploading 1 object(obj-1) of max_size: %s ", max_size)
         resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           self.akey, self.skey, object_size=int(max_size/1024),
                                           block_size="1K")
@@ -2739,6 +2739,7 @@ class TestCapacityQuota():
         random_size = self.csm_obj.random_gen.randrange(1, max_size)
         remaining_size = max_size - random_size
         size_list = [random_size, remaining_size]
+        size_list.sort()
         self.log.info("Step 2: Try uploading 1 object(obj-1) of less than max_size"
                       "and remaining size")
         for size in size_list:
@@ -2761,7 +2762,7 @@ class TestCapacityQuota():
                               "size %s", obj_name, remaining_size)
         resp = s3_misc.create_put_objects(obj_name, self.bucket,
                                           self.akey, self.skey,
-                                   object_size=int(remaining_size/1024), block_size="1K")
+                                   object_size=int(size_list[0]/1024), block_size="1K")
         assert resp, f'Put Object Failed for {obj_name}.'
         obj_name_1 = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
         obj_list = [obj_name, obj_name_1]
