@@ -2739,6 +2739,7 @@ class TestCapacityQuota():
         random_size = self.csm_obj.random_gen.randrange(1, max_size)
         remaining_size = max_size - random_size
         size_list = [random_size, remaining_size]
+        self.log.info("Get sorted list of random and remaining size")
         size_list.sort()
         self.log.info("Step 2: Try uploading 1 object(obj-1) of less than max_size"
                       "and remaining size")
@@ -2752,14 +2753,14 @@ class TestCapacityQuota():
         try:
             resp = s3_misc.create_put_objects(self.obj_name, self.bucket,
                                           self.akey, self.skey,
-                                 object_size=int(remaining_size/1024), block_size="1K")
+                                 object_size=int(size_list[0]/1024), block_size="1K")
         except ClientError as error:
             self.log.info("Expected exception received %s", error)
             assert error.response['Error']['Code'] == "QuotaExceeded", \
                                       "Overwriting object passed"
         obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
         self.log.info("Step 4: Try uploading one more object with different name %s and"
-                              "size %s", obj_name, remaining_size)
+                              "size %s", obj_name, size_list[0])
         resp = s3_misc.create_put_objects(obj_name, self.bucket,
                                           self.akey, self.skey,
                                    object_size=int(size_list[0]/1024), block_size="1K")
@@ -2771,7 +2772,7 @@ class TestCapacityQuota():
             try:
                 resp = s3_misc.create_put_objects(objs, self.bucket,
                                           self.akey, self.skey,
-                                 object_size=int(remaining_size/1024), block_size="1K")
+                                 object_size=int(size_list[0]/1024), block_size="1K")
             except ClientError as error:
                 self.log.info("Expected exception received %s", error)
                 assert error.response['Error']['Code'] == "QuotaExceeded", \
