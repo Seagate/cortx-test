@@ -132,7 +132,7 @@ class S3MultipartTestLib(Multipart):
         :return: (Boolean, List of uploaded parts).
         """
         try:
-            b_size = kwargs.get("block_size", "1048576")
+            b_size = int(kwargs.get("block_size", "1048576"))
             total_parts = kwargs.get("total_parts", None)
             multipart_obj_path = kwargs.get("multipart_obj_path", None)
             parts = []
