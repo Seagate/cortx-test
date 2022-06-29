@@ -30,17 +30,18 @@ from commons import cortxlogging
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
+from commons.utils import support_bundle_utils as sb
 from commons.constants import RESTORE_SCALE_REPLICAS, K8S_SCRIPTS_PATH, K8S_PRE_DISK
+from commons.params import LOG_DIR
 from config import CMN_CFG
 from config.s3 import S3_CFG
-from commons.params import LOG_DIR
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import s3_misc
 from libs.csm.csm_interface import csm_api_factory
 from libs.s3 import s3_test_lib
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from scripts.s3_bench.s3bench import s3bench
-from commons.utils import support_bundle_utils as sb
+
 
 class TestSystemCapacity():
     """System Capacity Testsuite"""
