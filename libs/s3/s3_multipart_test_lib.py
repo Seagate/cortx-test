@@ -132,7 +132,7 @@ class S3MultipartTestLib(Multipart):
         :return: (Boolean, List of uploaded parts).
         """
         try:
-            b_size = int(kwargs.get("block_size", "1048576"))
+            b_size = kwargs.get("block_size", "1M")
             total_parts = kwargs.get("total_parts", None)
             multipart_obj_path = kwargs.get("multipart_obj_path", None)
             parts = []
@@ -145,7 +145,7 @@ class S3MultipartTestLib(Multipart):
             with open(multipart_obj_path, "rb") as file_pointer:
                 i = 1
                 while True:
-                    data = file_pointer.read(b_size * single_part_size)
+                    data = file_pointer.read(1048576 * single_part_size)
                     LOGGER.info("data_len %s", str(len(data)))
                     if not data:
                         break
@@ -155,7 +155,7 @@ class S3MultipartTestLib(Multipart):
                     parts.append({"PartNumber": i, "ETag": part["ETag"]})
                     uploaded_bytes += len(data)
                     LOGGER.debug("%s of %s uploaded %.2f%%", uploaded_bytes, multipart_obj_size *
-                                 b_size, cal_percent(uploaded_bytes, multipart_obj_size * b_size))
+                                 1048576, cal_percent(uploaded_bytes, multipart_obj_size * 1048576))
                     i += 1
             LOGGER.info(parts)
 
