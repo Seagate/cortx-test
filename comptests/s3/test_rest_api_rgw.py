@@ -100,7 +100,9 @@ class TestRestApiRgw:
             resp = self.io_obj.put_random_size_objects(bucket_name=self.bucket_name,
                                                        object_name=self.object_name,
                                                        min_size=1,
-                                                       max_size=10, delete_file=True, object_count=2,
+                                                       max_size=10,
+                                                       delete_file=True,
+                                                       object_count=2,
                                                        file_path=self.file_path)
             assert resp[0], resp[1]
             self.log.info("Successfully Put Object :%s", resp[1])
@@ -357,8 +359,54 @@ class TestRestApiRgw:
         self.log.info("Get user info output: %s", user_info)
         self.created_users.append(user_params)
         self.log.info(
-            "Step 3: Try creating buckets more than the specified max_buckets.")
-
+            "Step 3: Try creating buckets same as the specified max_buckets.")
+        self.user_info = json.loads(user_info)
+        self.access_key_io = self.user_info['keys'][0]['access_key']
+        self.secret_key_io = self.user_info['keys'][0]['secret_key']
+        self.log.info("Credentials : Access key = %s , secret key = %s",
+                      self.access_key_io, self.secret_key_io)
+        self.io_obj = S3TestLib(access_key=self.access_key_io,
+                                secret_key=self.secret_key_io)
+        self.bucket_list = []
+        try:
+            for i in range(max_buckets):
+                self.bucket_name = f"{self.bucket_name_prefix}" \
+                                   f"{str(time.perf_counter_ns()).replace('.', '_')}"
+                self.log.info("Started creating bucket")
+                resp = self.io_obj.create_bucket(bucket_name=self.bucket_name)
+                assert resp[0], resp[1]
+                self.log.info("Bucket got created :%s", resp[1])
+                self.bucket_list.append(resp[1])
+        # pylint: disable=broad-except
+        except BaseException as err:
+            self.log.warning("Got error while creating bucket: %s", err)
+            assert False
+        else:
+            self.log.info(
+                "Step 3: As expected able to create buckets till the "
+                "specified max_buckets:%s", max_buckets)
+        self.log.info(
+            "Step 4: Try creating buckets more then the specified max_buckets.")
+        try:
+            self.bucket_name = f"{self.bucket_name_prefix}" \
+                               f"{str(time.perf_counter_ns()).replace('.', '_')}"
+            self.log.info("Started creating bucket")
+            resp = self.io_obj.create_bucket(bucket_name=self.bucket_name)
+            if resp[0]:
+                self.log.info("Failed : Bucket got created :%s , but it should not get created "
+                              "as it exceeds max_bucket limit : %s", resp[1], max_buckets)
+                self.bucket_list.append(resp[1])
+                assert False, "Able to create buckets more then the max_buckets"
+        # pylint: disable=broad-except
+        except BaseException as err:
+            self.log.warning("Step 4: As expected bucket creation got failed when "
+                             "tried creating bucket more then max_buckets with error: %s", err)
+        finally:
+            for bucket in self.bucket_list:
+                self.log.info("Start deleting bucket: %s", bucket)
+                resp = self.io_obj.delete_bucket(bucket_name=bucket, force=True)
+                assert resp[0], resp[1]
+                self.log.info("Deleted bucket:%s", resp[1])
         self.log.info("END : %s", test_case_name)
 
     @pytest.mark.api_user_ops
@@ -388,7 +436,35 @@ class TestRestApiRgw:
         self.log.info("Get user info output: %s", user_info)
         self.created_users.append(user_params)
         self.log.info(
-            "Step 3: Try creating buckets more than the specified max_buckets.")
+            "Step 3: Try creating a bucket as max_buckets is set to negative value.")
+        self.user_info = json.loads(user_info)
+        self.access_key_io = self.user_info['keys'][0]['access_key']
+        self.secret_key_io = self.user_info['keys'][0]['secret_key']
+        self.log.info("Credentials : Access key = %s , secret key = %s",
+                      self.access_key_io, self.secret_key_io)
+        self.io_obj = S3TestLib(access_key=self.access_key_io,
+                                secret_key=self.secret_key_io)
+        self.bucket_list = []
+        try:
+            self.bucket_name = f"{self.bucket_name_prefix}" \
+                               f"{str(time.perf_counter_ns()).replace('.', '_')}"
+            self.log.info("Started creating bucket")
+            resp = self.io_obj.create_bucket(bucket_name=self.bucket_name)
+            if resp[0]:
+                self.log.info("Failed : Bucket got created :%s , but it should not get created "
+                              "as max_bucket is set to negative value : %s", resp[1], max_buckets)
+                self.bucket_list.append(resp[1])
+                assert False, "Able to create buckets even with negative value for max_buckets"
+        # pylint: disable=broad-except
+        except BaseException as err:
+            self.log.warning("Step 4: As expected bucket creation got failed when "
+                             "negative value is set for max_buckets, with error: %s", err)
+        finally:
+            for bucket in self.bucket_list:
+                self.log.info("Start deleting bucket: %s", bucket)
+                resp = self.io_obj.delete_bucket(bucket_name=bucket, force=True)
+                assert resp[0], resp[1]
+                self.log.info("Deleted bucket:%s", resp[1])
         self.log.info("END : %s", test_case_name)
 
     @pytest.mark.api_user_ops
@@ -542,15 +618,15 @@ class TestRestApiRgw:
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("START: Test create user with user defined access key.")
         user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
-        access_key = "ABCDEFGH"
+        a_key = "ABCDEFGH"
         user_params = {
             'display-name': user_name,
             'uid': user_name,
-            'access-key': access_key
+            'access-key': a_key
         }
         self.log.info(
             "Step 1: Creating a new IAM user with name %s and "
-            "user defined access key %s", str(user_name), str(access_key))
+            "user defined access key %s", str(user_name), str(a_key))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK, "Not able to create user. Test Failed"
@@ -575,20 +651,20 @@ class TestRestApiRgw:
                       "access key which is already in use.")
         user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
         user_name2 = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
-        access_key = "ABCDEFGH"
+        a_key = "ABCDEFGH"
         user_params = {
             'display-name': user_name,
             'uid': user_name,
-            'access-key': access_key
+            'access-key': a_key
         }
         user_params2 = {
             'display-name': user_name,
             'uid': user_name2,
-            'access-key': access_key
+            'access-key': a_key
         }
         self.log.info(
             "Step 1: Creating a new IAM user with name %s and "
-            "user defined access key %s", str(user_name), str(access_key))
+            "user defined access key %s", str(user_name), str(a_key))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK, "Not able to create user. Test Failed"
@@ -601,7 +677,7 @@ class TestRestApiRgw:
         self.created_users.append(user_params)
         self.log.info(
             "Step 3: Creating a new IAM user with same"
-            "user defined access key %s", str(access_key))
+            "user defined access key %s", str(a_key))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params2))
         assert status == HTTPStatus.CONFLICT, "Didnt get the required error status. Test Failed"
@@ -616,15 +692,15 @@ class TestRestApiRgw:
         self.log.info("START: Test create user with user defined "
                       "access key value with special characters .")
         user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
-        access_key = 'ABC#&@$%i?*DEFGH'
+        a_key = 'ABC#&@$%i?*DEFGH'
         user_params = {
             'display-name': user_name,
             'uid': user_name,
-            'access-key': access_key
+            'access-key': a_key
         }
         self.log.info(
             "Step 1: Creating a new IAM user with name :%s and "
-            "user defined access key with special character :%s", str(user_name), str(access_key))
+            "user defined access key with special character :%s", str(user_name), str(a_key))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK, "Not able to create user. Test Failed"
@@ -649,16 +725,15 @@ class TestRestApiRgw:
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("START: Test create user with user defined secret key.")
         user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
-        # pylint: disable=MESSAGE_ID_OR_KEY
-        secret_key = 'PQRST'
+        s_key = 'PQRST'
         user_params = {
             'display-name': user_name,
             'uid': user_name,
-            'secret-key': secret_key
+            'secret-key': s_key
         }
         self.log.info(
             "Step 1: Creating a new IAM user with name :%s and "
-            "user defined secret key :%s", str(user_name), str(secret_key))
+            "user defined secret key :%s", str(user_name), str(s_key))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK, "Not able to create user. Test Failed"
@@ -685,20 +760,20 @@ class TestRestApiRgw:
                       "secret key which is already in use. ")
         user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
         user_name2 = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
-        secret_key = 'PQRST'
+        s_key = 'PQRST'
         user_params = {
             'display-name': user_name,
             'uid': user_name,
-            'secret-key': secret_key
+            'secret-key': s_key
         }
         user_params2 = {
             'display-name': user_name,
             'uid': user_name2,
-            'secret-key': secret_key
+            'secret-key': s_key
         }
         self.log.info(
             "Step 1: Creating a new IAM user with name :%s and "
-            "user defined secret key :%s", str(user_name), str(secret_key))
+            "user defined secret key :%s", str(user_name), str(s_key))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK, "Not able to create user. Test Failed"
@@ -711,7 +786,7 @@ class TestRestApiRgw:
         self.created_users.append(user_params)
         self.log.info(
             "Step 3: Creating a new IAM user with name :%s and "
-            "same user defined secret key :%s", str(user_name2), str(secret_key))
+            "same user defined secret key :%s", str(user_name2), str(s_key))
         loop = asyncio.get_event_loop()
         status, user_info2 = loop.run_until_complete(self.obj.create_user(user_params2))
         assert status == HTTPStatus.OK, "Not able to create user. Test Failed"
@@ -740,18 +815,18 @@ class TestRestApiRgw:
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("START: Test create user with user defined access key and secret key.")
         user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
-        access_key = 'ABCDE'
-        secret_key = 'PQRST'
+        a_key = 'ABCDE'
+        s_key = 'PQRST'
         user_params = {
             'display-name': user_name,
             'uid': user_name,
-            'access-key': access_key,
-            'secret-key': secret_key
+            'access-key': a_key,
+            'secret-key': s_key
         }
         self.log.info(
             "Step 1: Creating a new IAM user with name :%s and "
             "user defined access key :%s and secret key : %s",
-            str(user_name), str(access_key), str(secret_key))
+            str(user_name), str(a_key), str(s_key))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK, "Not able to create user. Test Failed"
@@ -812,22 +887,22 @@ class TestRestApiRgw:
         user_name = f"{self.user_name_prefix}{str(time.perf_counter_ns()).replace('.', '_')}"
         tenant1 = "newtnt15"
         tenant2 = "newtnt015"
-        access_key = 'ABCDEF'
+        a_key = 'ABCDEF'
         user_params = {
             'display-name': user_name,
             'uid': user_name,
             'tenant': tenant1,
-            'access-key': access_key
+            'access-key': a_key
         }
         user_params2 = {
             'display-name': user_name,
             'uid': user_name,
             'tenant': tenant2,
-            'access-key': access_key
+            'access-key': a_key
         }
         self.log.info(
             "Step 1: Creating a new IAM user :%s with access key :%s and "
-            "tenant as :%s", str(user_name), str(access_key), str(tenant1))
+            "tenant as :%s", str(user_name), str(a_key), str(tenant1))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK, "Not able to create user. Test Failed"
@@ -840,7 +915,7 @@ class TestRestApiRgw:
         self.created_users.append(user_params)
         self.log.info(
             "Step 3: Creating IAM user with the same name : %s with same access key : %s and "
-            "different tenant as : %s", str(user_name), str(access_key), str(tenant2))
+            "different tenant as : %s", str(user_name), str(a_key), str(tenant2))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params2))
         assert status == HTTPStatus.CONFLICT, "User got created with " \
@@ -892,5 +967,6 @@ class TestRestApiRgw:
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params2))
         assert status == HTTPStatus.CONFLICT, "Able to create user " \
                                               "with same email in different tenant. Test Failed"
-        self.log.info("Step 3: PASSED : User creation got failed as expected with error message as : %s", user_info)
+        self.log.info("Step 3: PASSED : User creation got failed "
+                      "as expected with error message as : %s", user_info)
         self.log.info("END : %s", test_case_name)
