@@ -57,6 +57,8 @@ class TestRestApiRgw:
         self.log.info("Deleting all users created as part of test")
         delete_failed = []
         delete_success = []
+        delete_bucket_success = []
+        delete_bucket_failed = []
         self.log.debug("created_users list : %s", self.created_users)
         for usr in self.created_users:
             self.log.info("Sending request to delete user %s", usr)
@@ -74,6 +76,17 @@ class TestRestApiRgw:
             self.created_users.remove(usr)
         self.log.info("User delete success list %s", delete_success)
         self.log.info("User delete failed list %s", delete_failed)
+        for bucket in self.bucket_list:
+            self.log.info("Start deleting bucket: %s", bucket)
+            resp = self.io_obj.delete_bucket(bucket_name=bucket, force=True)
+            if resp[0]:
+                self.log.info("Deleted bucket:%s", resp[1])
+                delete_bucket_success.append(bucket)
+            else:
+                self.log.info("Failed Deleting bucket:%s", resp[1])
+                delete_bucket_failed.append(bucket)
+        self.log.info("Bucket delete success list %s", delete_bucket_success)
+        self.log.info("Bucket delete failed list %s", delete_bucket_failed)
 
     def run_io_using_newuserscredentials(self, user_info):
         """
@@ -369,7 +382,7 @@ class TestRestApiRgw:
                                 secret_key=self.secret_key_io)
         self.bucket_list = []
         try:
-            for i in range(max_buckets):
+            for _ in range(max_buckets):
                 self.bucket_name = f"{self.bucket_name_prefix}" \
                                    f"{str(time.perf_counter_ns()).replace('.', '_')}"
                 self.log.info("Started creating bucket")
@@ -401,12 +414,6 @@ class TestRestApiRgw:
         except BaseException as err:
             self.log.warning("Step 4: As expected bucket creation got failed when "
                              "tried creating bucket more then max_buckets with error: %s", err)
-        finally:
-            for bucket in self.bucket_list:
-                self.log.info("Start deleting bucket: %s", bucket)
-                resp = self.io_obj.delete_bucket(bucket_name=bucket, force=True)
-                assert resp[0], resp[1]
-                self.log.info("Deleted bucket:%s", resp[1])
         self.log.info("END : %s", test_case_name)
 
     @pytest.mark.api_user_ops
@@ -459,12 +466,6 @@ class TestRestApiRgw:
         except BaseException as err:
             self.log.warning("Step 4: As expected bucket creation got failed when "
                              "negative value is set for max_buckets, with error: %s", err)
-        finally:
-            for bucket in self.bucket_list:
-                self.log.info("Start deleting bucket: %s", bucket)
-                resp = self.io_obj.delete_bucket(bucket_name=bucket, force=True)
-                assert resp[0], resp[1]
-                self.log.info("Deleted bucket:%s", resp[1])
         self.log.info("END : %s", test_case_name)
 
     @pytest.mark.api_user_ops
