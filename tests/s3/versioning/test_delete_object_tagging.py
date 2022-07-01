@@ -519,7 +519,6 @@ class TestTaggingDeleteObject:
                                    bucket_name=self.bucket_name, object_name=self.object_name,
                                    versions_dict=self.versions, check_deletemarker=True)
         dm_id = self.versions[self.object_name]["delete_markers"][0]
-        assert_utils.assert_in("No Content", resp[1].message)
         LOGGER.info("Step 5: Performed DELETE Object  %s and created versionId(delete market id)="
                     "%s", self.object_name, str(dm_id))
         LOGGER.info("Step 6: Perform DELETE Object tagging  %s with versionId %s",
@@ -591,10 +590,10 @@ class TestTaggingDeleteObject:
         LOGGER.info("Step 4: Perform GET Object Tagging for %s with versionId=%s",
                     self.object_name, latest_v)
         put_tag = self.ver_tag[self.object_name][latest_v][-1]
-        resp = s3_ver_tlib.delete_object_tagging(bucket_name=self.bucket_name,
-                                                 s3_ver_test_obj=self.s3_ver_obj,
-                                                 s3_tag_test_obj=self.s3_tag_obj,
-                                                 object_name=self.object_name, version_id=latest_v)
+        resp = s3_ver_tlib.get_object_tagging(s3_tag_test_obj=self.s3_tag_obj,
+                                              s3_ver_test_obj=self.s3_ver_obj,
+                                              bucket_name=self.bucket_name,
+                                              object_name=self.object_name, version_id=latest_v)
         assert_utils.assert_true(resp[0], resp)
         get_tag = resp[1][0]
         assert_utils.assert_equal(get_tag, put_tag, "Mismatch in tag Key-Value pair."

@@ -1,24 +1,19 @@
-clients: 1
+clients: 10
 samples: 500
 size: '128Mb'
 loop_count: 10
+delay: 30 #Before service restart
+
 #sizes in size_list are in Mb
 size_list: [1, 2, 3, 4, 5, 6, 7]
 # count to restart the rgw process
 rgw_restart_cnt: 5
-# count to retry IOs from client side
-io_retry_count: 5
-# delay between restarts
-m0d_delay_restarts: 0
-rgw_delay_restarts: 30
 
 test_41234:
-  nclients: 10
-  nsamples: 30
+  samples: 30
 
 test_41235:
-  nclients: 10
-  nsamples: 10
+  samples: 10
 
 #overwrite object test
 test_41230:
@@ -27,24 +22,20 @@ test_41230:
 
 test_42246:
   num_loop: 300
+  clients: 2
+  samples: 2
 
 test_42247:
-  nclients: 10
-  nsamples: 50
+  samples: 50
+
 test_41245:
   #Before and after m0d restart
   rgw_restarts: 5
   num_loop: 500
 
 test_42255:
-  nclients: 10
-  nsamples: 70
+  samples: 70
   num_loop: 10
-
-test_41245:
-  #Before and after m0d restart
-  rgw_restarts: 5
-  num_loop: 500
 
 #overwrite object test-rgw
 test_42251:
@@ -52,9 +43,7 @@ test_42251:
   overwrite_cnt: 200
 
 test_42252:
-  nclients: 10
-  nsamples: 50
+  samples: 50
 
 test_42256:
-  nclients: 10
-  nsamples: 50
+  samples: 50

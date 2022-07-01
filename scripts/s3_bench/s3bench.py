@@ -199,10 +199,12 @@ def s3bench(
     :param validate_certs: Validate SSL certificates
     :keyword int max_retries: maximum retry for any request
     :keyword int response_header_timeout: Response header Timeout in ms
+    :keyword int httpclientimeout: Time limit in ms for requests made by this Client.
     :return: tuple with json response and log path
     """
     max_retries = kwargs.get("max_retries", None)
     response_header_timeout = kwargs.get("response_header_timeout", None)
+    httpclientimeout = kwargs.get("httpclientimeout", None)
     result = []
     # Creating log file
     log_path = create_log(result, log_file_prefix, num_clients, num_sample, obj_size)
@@ -216,6 +218,8 @@ def s3bench(
         cmd = cmd + f"-s3MaxRetries={max_retries} "
     if response_header_timeout:
         cmd = cmd + f"-responseHeaderTimeout={response_header_timeout} "
+    if httpclientimeout:
+        cmd = cmd + f"-httpClientTimeout={httpclientimeout} "
     if region:
         cmd = cmd + f"-region {region} "
     if skip_write:

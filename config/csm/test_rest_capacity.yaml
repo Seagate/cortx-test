@@ -1,4 +1,4 @@
-update_seconds: 720
+update_seconds: 900
 test_33899:
   err_margin: 0
 test_33919:
@@ -55,15 +55,19 @@ test_40637:
   max_objects: 5
   enabled: True
 test_40638:
-  max_size: 1048576
-  max_objects: 5
-  extra_bytes: 100
-  total_parts: 5
+  max_size: 1024
+  max_objects: 10
   enabled: True
+  total_parts: 4
+  file_size: 40
+  b_size: 1048576
 test_40639:
-  max_size: 1048576
-  max_objects: 5
+  max_size: 1024
+  max_objects: 10
   enabled: True
+  total_parts: 4
+  file_size: 40
+  b_size: 1048576
 test_40640:
   max_size: 1048576
   max_objects: 5
@@ -164,3 +168,16 @@ test_40605:
   max_size: -1
   max_objects: -1
   enabled: False
+test_43955:
+  max_objects: 20
+test_43957:
+  max_objects: 20
+test_43857:
+  max_size: 1048576
+  max_objects_1: 1
+  max_objects_2: 2
+  enabled: True
+test_43862:
+  max_size: 1572864
+  max_objects: 2
+  enabled: True
