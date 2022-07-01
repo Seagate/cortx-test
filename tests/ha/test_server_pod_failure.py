@@ -2079,7 +2079,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39922")
-    @pytest.mark.skip(reason="VM issue in after Restart(LRL-3413). Need to be tested on HW")
     @CTFailOn(error_handler)
     def test_chunk_upload_during_server_pod_shutdown(self):
         """
