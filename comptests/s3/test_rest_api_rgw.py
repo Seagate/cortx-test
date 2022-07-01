@@ -76,17 +76,20 @@ class TestRestApiRgw:
             self.created_users.remove(usr)
         self.log.info("User delete success list %s", delete_success)
         self.log.info("User delete failed list %s", delete_failed)
-        for bucket in self.bucket_list:
-            self.log.info("Start deleting bucket: %s", bucket)
-            resp = self.io_obj.delete_bucket(bucket_name=bucket, force=True)
-            if resp[0]:
-                self.log.info("Deleted bucket:%s", resp[1])
-                delete_bucket_success.append(bucket)
-            else:
-                self.log.info("Failed Deleting bucket:%s", resp[1])
-                delete_bucket_failed.append(bucket)
-        self.log.info("Bucket delete success list %s", delete_bucket_success)
-        self.log.info("Bucket delete failed list %s", delete_bucket_failed)
+        try:
+            for bucket in self.bucket_list:
+                self.log.info("Start deleting bucket: %s", bucket)
+                resp = self.io_obj.delete_bucket(bucket_name=bucket, force=True)
+                if resp[0]:
+                    self.log.info("Deleted bucket:%s", resp[1])
+                    delete_bucket_success.append(bucket)
+                else:
+                    self.log.info("Failed Deleting bucket:%s", resp[1])
+                    delete_bucket_failed.append(bucket)
+            self.log.info("Bucket delete success list %s", delete_bucket_success)
+            self.log.info("Bucket delete failed list %s", delete_bucket_failed)
+        except AttributeError :
+            self.log.info("No bucket to delete")
 
     def run_io_using_newuserscredentials(self, user_info):
         """
