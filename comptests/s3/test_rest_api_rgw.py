@@ -60,6 +60,7 @@ class TestRestApiRgw:
         delete_bucket_success = []
         delete_bucket_failed = []
         try:
+            self.log.debug("Created buckets list : %s", self.bucket_list)
             for bucket in self.bucket_list:
                 self.log.info("Start deleting bucket: %s", bucket)
                 resp = self.io_obj.delete_bucket(bucket_name=bucket, force=True)
@@ -73,7 +74,7 @@ class TestRestApiRgw:
             self.log.info("Bucket delete failed list %s", delete_bucket_failed)
         except AttributeError :
             self.log.info("No bucket to delete")
-        self.log.debug("created_users list : %s", self.created_users)
+        self.log.debug("Created Users list : %s", self.created_users)
         for usr in self.created_users:
             self.log.info("Sending request to delete user %s", usr)
             try:
