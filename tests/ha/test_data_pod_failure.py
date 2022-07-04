@@ -1718,7 +1718,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.skip(reason="Functionality not Available")
-    @pytest.mark.skip(reason="VM issue in after Restart(LRL-3413). Need to be tested on HW")
     @pytest.mark.tags("TEST-32460")
     @CTFailOn(error_handler)
     def test_ha_pod_failover(self):
