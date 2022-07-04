@@ -1718,6 +1718,7 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.skip(reason="Functionality not Available")
+    @pytest.mark.skip(reason="VM issue in after Restart(LRL-3413). Need to be tested on HW")
     @pytest.mark.tags("TEST-32460")
     @CTFailOn(error_handler)
     def test_ha_pod_failover(self):
@@ -2278,6 +2279,7 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32458")
+    @pytest.mark.skip(reason="VM issue in after Restart(LRL-3413). Need to be tested on HW")
     @CTFailOn(error_handler)
     def test_pod_fail_node_down(self):
         """
@@ -2712,7 +2714,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35297")
-    @pytest.mark.skip(reason="VM issue in after Restart(LRL-3413). Need to be tested on HW")
     @CTFailOn(error_handler)
     def test_chunk_upload_during_pod_down(self):
         """
