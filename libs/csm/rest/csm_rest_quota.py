@@ -253,7 +253,7 @@ class GetSetQuota(RestTestLib):
 
             if user_id != auser_id:
                 self.log.error("User ID mismatch")
-                #result = False
+                result = False
             else:
                 self.log.info("User ID check passed.")
 

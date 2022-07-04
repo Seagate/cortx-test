@@ -394,8 +394,8 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Creating 2 IAM user with same uid but different tenant")
-        uid = "iam_user_1_" + str(int(time.time()))
         for cnt in range(2):
+            uid = "iam_user_1_" + str(int(time.time()))
             tenant = "tenant_" + system_utils.random_string_generator()
             self.log.info("Creating new iam user with tenant %s", tenant)
             payload = self.csm_obj.iam_user_payload_rgw("random")
@@ -679,7 +679,7 @@ class TestCapacityQuota():
 
     # pylint: disable-msg=too-many-statements
 
-    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.skip("Reason=CORTX-32487")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1950,8 +1950,7 @@ class TestCapacityQuota():
         resp = s3_misc.create_put_objects(obj_name, self.bucket,
                                             self.akey, self.skey, object_size=data_size,
                                             block_size="1K")
-        assert resp, "Put object Failed"        
-
+        assert resp, "Put object Failed"
         self.log.info("Step 1.2: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
