@@ -1605,7 +1605,6 @@ class TestCapacityQuota():
             self.log.error("Bucket deletion failed for %s ", bucket_name)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1695,7 +1694,7 @@ class TestCapacityQuota():
 
         self.log.info("Step 3: Perform & Verify GET API to get capacity usage stats")
         res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
-                                total_size, total_objects)
+                                total_size, total_objects, aligned=True)
         assert res, "Verify User capacity failed"
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1736,7 +1735,7 @@ class TestCapacityQuota():
 
         self.log.info("Step 3: Perform & Verify GET API to get capacity usage stats")
         res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
-                                total_size, total_objects)
+                                total_size, total_objects, aligned=False)
         assert res, "Verify User capacity failed"
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1781,7 +1780,7 @@ class TestCapacityQuota():
 
         self.log.info("Step 3: Perform & Verify GET API to get capacity usage stats")
         res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
-                                total_size, total_objects)
+                                total_size, total_objects, aligned=True)
         assert res, "Verify User capacity failed"
         # Revisit after CORTX-32486
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1828,7 +1827,7 @@ class TestCapacityQuota():
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
-                                total_size, total_objects)
+                                total_size, total_objects, aligned=True)
         assert res, "Verify User capacity failed"
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1872,7 +1871,7 @@ class TestCapacityQuota():
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
-                                total_size, total_objects)
+                                total_size, total_objects, aligned=False)
         assert res, "Verify User capacity failed"
         # Revisit after CORTX-32486
 
@@ -1919,7 +1918,7 @@ class TestCapacityQuota():
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
         res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
-                                total_size, total_objects)
+                                total_size, total_objects, aligned=True)
         assert res, "Verify User capacity failed"
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -1996,7 +1995,7 @@ class TestCapacityQuota():
 
         self.log.info("Step 5: Perform & Verify GET API to get capacity usage stats")
         res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
-                                total_size, total_objects)
+                                total_size, total_objects, aligned=None) # Revisit after CORTX-32486
         assert res, "Verify User capacity failed"
         self.log.info("Step 6: Delete all object: %s", obj_name)
         assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
@@ -2091,7 +2090,7 @@ class TestCapacityQuota():
 
         self.log.info("Step 5: Perform & Verify GET API to get capacity usage stats")
         res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
-                                total_size, total_objects)
+                                total_size, total_objects, aligned=None) # Revisit after CORTX-32486
         assert res, "Verify User capacity failed"
 
         self.log.info("Step 6: Delete all object: %s", obj_name)

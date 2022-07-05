@@ -235,7 +235,7 @@ class GetSetQuota(RestTestLib):
         return response
 
     def verify_user_capacity(self, user_id, used:int, used_rounded:int=None, obj_cnt:int=1,
-                            eresponse=HTTPStatus.OK, resource="user"):
+                            eresponse=HTTPStatus.OK, resource="user", aligned:str=None):
         """
         Verify user capacity
         """
@@ -281,8 +281,25 @@ class GetSetQuota(RestTestLib):
             if aused_rounded >= used_rounded:
                 self.log.info("Used rounded capacity check passed.")
             else:
-                self.log.info("Used rounded capacity cmismatch.")
+                self.log.error("Used rounded capacity mismatch.")
                 result = False
+            
+            if aligned is None:
+                if aused_rounded>=aused:
+                    self.log.info("Used rounded is greater equal to used")
+                else:
+                    result = False
+            if aligned is True:
+                if aused_rounded==aused:
+                    self.log.info("Used rounded is equal to used")
+                else:
+                    result = False
+            else:
+                if aused_rounded>aused:
+                    self.log.info("Used rounded is greater than used")
+                else:
+                    result = False
+
         return result, resp.json()
 
     @staticmethod
