@@ -283,7 +283,6 @@ class GetSetQuota(RestTestLib):
             else:
                 self.log.error("Used rounded capacity mismatch.")
                 result = False
- 
             if aligned is None:
                 if aused_rounded>=aused:
                     self.log.info("Used rounded is greater equal to used")
