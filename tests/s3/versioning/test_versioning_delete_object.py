@@ -191,6 +191,7 @@ class TestVersioningDeleteObject:
                                       head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test DELETE Object with pre-existing objects in a versioned bucket")
 
+    @pytest.mark.sanity
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-32717")
     @CTFailOn(error_handler)
