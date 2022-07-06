@@ -266,6 +266,7 @@ def check_get_head_object_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3Ver
                                                   skip_polling=True)
         assert_utils.assert_true(get_response[0], get_response[1])
         if version_id:
+            assert_utils.assert_in("VersionId", get_response[1].keys())
             assert_utils.assert_equal(get_response[1]["VersionId"], version_id)
         if etag:
             assert_utils.assert_equal(get_response[1]["ETag"], etag)
@@ -285,6 +286,7 @@ def check_get_head_object_version(s3_test_obj: S3TestLib, s3_ver_test_obj: S3Ver
             head_response = s3_test_obj.object_info(bucket_name=bucket_name, key=object_name)
         assert_utils.assert_true(head_response[0], head_response[1])
         if version_id:
+            assert_utils.assert_in("VersionId", head_response[1].keys())
             assert_utils.assert_equal(head_response[1]["VersionId"], version_id)
         if etag:
             assert_utils.assert_equal(head_response[1]["ETag"], etag)
