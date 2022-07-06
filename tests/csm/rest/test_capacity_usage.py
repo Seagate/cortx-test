@@ -114,7 +114,6 @@ class TestSystemCapacity():
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.err_margin = (cls.nvalue/(cls.nvalue+cls.kvalue))*100 + 1
         cls.s3_cleanup = False
-        cls.deploy = False
         cls.restore_pod = True
         cls.log.info("[END] Setup Class")
 

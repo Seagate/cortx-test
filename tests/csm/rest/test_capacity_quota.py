@@ -1451,6 +1451,7 @@ class TestCapacityQuota():
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
+    @pytest.mark.sanity
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-41966')
     def test_41966(self):
@@ -2361,6 +2362,7 @@ class TestCapacityQuota():
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
+    @pytest.mark.sanity
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-40604')
     def test_40604(self):

@@ -799,6 +799,7 @@ class TestIamUserRGW():
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
+    @pytest.mark.sanity
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-36171')
     def test_36171(self):
@@ -2337,6 +2338,7 @@ class TestIamUserRGW():
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
+    @pytest.mark.sanity
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-35935')
     def test_35935(self):
@@ -2957,6 +2959,7 @@ class TestIamUserRGW():
     @pytest.mark.csmrest
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
+    @pytest.mark.sanity
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-37778')
     def test_37778(self):
@@ -3328,6 +3331,7 @@ class TestIamUserRGW():
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
+    @pytest.mark.sanity
     @pytest.mark.tags('TEST-38089')
     def test_38089(self):
         """
@@ -4639,6 +4643,7 @@ class TestIamUserRGW():
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
+    @pytest.mark.sanity
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-39405')
     def test_39405(self):
@@ -4752,6 +4757,7 @@ class TestIamUserRGW():
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
+    @pytest.mark.sanity
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-42271')
     def test_42271(self):
