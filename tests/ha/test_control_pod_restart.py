@@ -227,7 +227,7 @@ class TestControlPodRestart:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32459")
     @CTFailOn(error_handler)
-    @pytest.mark.skip(reason="VM issue in after Restart(LRL-3413). Need to be tested on HW")
+    @pytest.mark.skip(reason="VM issue in after Restart(CORTX-32933). Need to be tested on HW")
     def test_restart_control_node(self):
         """
         Verify IOs before and after control pod fails over after restarting node hosting control

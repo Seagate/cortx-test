@@ -114,7 +114,7 @@ class TestSystemCapacity():
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.err_margin = (cls.nvalue/(cls.nvalue+cls.kvalue))*100 + 1
         cls.s3_cleanup = False
-        cls.deploy = True
+        cls.deploy = False
         cls.restore_pod = True
         cls.log.info("[END] Setup Class")
 
@@ -124,6 +124,7 @@ class TestSystemCapacity():
         """
         self.log.info("[START] Setup Method")
         self.failed_pod = []
+        self.deploy = False
         self.log.info("Cleanup: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.master)
         assert_utils.assert_true(resp[0], resp[1])
