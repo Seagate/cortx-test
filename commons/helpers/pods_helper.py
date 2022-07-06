@@ -480,19 +480,6 @@ class LogicalNode(Host):
         hostname = output[0].strip()
         return hostname
 
-    def get_deployment_name(self, num_nodes):
-        """
-        Get deployment name from the master node
-        """
-        resp_node = self.execute_cmd(cmd=commands.KUBECTL_GET_DEPLOYMENT,
-                                            read_lines=True,
-                                            exc=False)
-        deploy_list = []
-        for i in range(0, num_nodes):
-            resp = resp_node[i + const.NODE_INDEX].split(' ')
-            deploy_list.append(resp[0])
-        return deploy_list
-
     def kill_process_in_container(self, pod_name, container_name, process_name):
         """
         Kill specific process in container
@@ -526,6 +513,34 @@ class LogicalNode(Host):
                                  decode=True)
         process_list = resp.splitlines()
         return process_list
+
+    def get_deployment_name(self, pod_prefix=None):
+        """
+        Get deployment name using kubectl get deployment
+        :param pod_prefix: Pod prefix(optional)
+        return: list
+        """
+        resp_node = self.execute_cmd(cmd=commands.KUBECTL_GET_DEPLOYMENT, read_lines=True,
+                                    exc=False)
+
+        resp = [each.split()[0] for each in resp_node]
+        deploy_list = resp
+        if pod_prefix is not None:
+            deploy_list = [each for each in resp if pod_prefix in each]
+        return deploy_list
+
+    def apply_k8s_deployment(self, file_path: str):
+        """
+        Apply the modified deployment file for pods, containers.
+        :param file_path: Changed deployment file path from master node
+        return Tuple
+        """
+        if not self.path_exists(file_path):
+            return False, f"{file_path} does not exist on node {self.hostname}"
+        log.info("Applying deployment from %s",file_path)
+        resp = self.execute_cmd(cmd=commands.K8S_APPLY_DEPLOYMENT,read_lines=True,exc=False)
+        return True, resp
+
 
     def restart_container_in_pod(self, pod_name, container_name):
         """Restarts a container within a pod. Prefer pod restart for single container pods."""

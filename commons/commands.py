@@ -524,6 +524,7 @@ K8S_GET_SVC_JSON = "kubectl get svc -o json"
 K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
+K8S_APPLY_DEPLOYMENT = 'kubectl apply -f {}'
 GET_STATS = "consul kv get -recurse stats"
 GET_BYTECOUNT = "consul kv get -recurse bytecount"
 

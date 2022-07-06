@@ -34,6 +34,7 @@ import pytest
 
 from commons import configmanager
 from commons import constants as const
+from commons.constants import POD_NAME_PREFIX, M0D_SVC
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
@@ -98,6 +99,7 @@ class TestSingleProcessRestart:
         resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Cluster status is online.")
+
         self.random_time = int(perf_counter_ns())
         self.s3acc_name = f"dps_s3acc_{self.random_time}"
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
@@ -120,6 +122,18 @@ class TestSingleProcessRestart:
         self.log.info("Created IAM user with name %s", self.s3acc_name)
         if not os.path.exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
+
+        self.log.info("Edit deployment file to add sleep(0) to m0d setup command of all data pods.")
+        resp = self.master_node_list[0].get_deployment_name(POD_NAME_PREFIX)
+        for each in resp:
+            resp = self.dtm_obj.edit_deployments_for_delay(self.master_node_list[0],each,M0D_SVC)
+            assert_utils.assert_true(resp[0],resp[1])
+        self.log.info("Edit deployment done for all data pods")
+
+        self.log.info("Check the overall status of the cluster.")
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Cluster status is online.")
 
     def teardown_method(self):
         """Teardown class method."""
