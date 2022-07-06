@@ -34,6 +34,7 @@ import pytest
 
 from commons import configmanager
 from commons import constants as const
+from commons.constants import SERVER_POD_NAME_PREFIX
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
@@ -125,6 +126,17 @@ class TestRGWProcessRestart:
         self.log.info("Created IAM user with name %s", self.s3acc_name)
         if not os.path.exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
+        self.log.info("Edit deployment file to add sleep(0) to rgw setup command of all data pods.")
+        resp = self.master_node_list[0].get_deployment_name(SERVER_POD_NAME_PREFIX)
+        for each in resp:
+            resp = self.dtm_obj.edit_deployments_for_delay(self.master_node_list[0], each, 'rgw')
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Edit deployment done for all data pods")
+
+        self.log.info("Check the overall status of the cluster.")
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Cluster status is online.")
 
     def teardown_method(self):
         """Teardown class method."""
