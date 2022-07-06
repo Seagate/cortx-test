@@ -1,32 +1,16 @@
-test_dummy:
-  object_size:
-    start_range: 10
-    stop_range: 100
+update_seconds: 900
 test_33899:
   err_margin: 0
-  object_size:
-    start_range: 10
-    stop_range: 100
 test_33919:
-  err_margin: 10
-  object_size:
-    start_range: 10
-    stop_range: 100
+  err_margin: 0
 test_33920:
   err_margin: 0
-  object_size:
-    start_range: 10
-    stop_range: 100
 test_33928:
-  err_margin: 0
-  object_size:
-    start_range: 10
-    stop_range: 100
+  err_margin: 70
+  start_range: 1
+  stop_range: 1000
 test_33929:
   err_margin: 0
-  object_size:
-    start_range: 10
-    stop_range: 100
 test_33925:
   err_margin: 0
   object_size: 16
@@ -37,62 +21,56 @@ test_33926:
     start_range: 10
     stop_range: 100
 test_33927:
-  err_margin: 0
-  object_size:
-    start_range: 10
-    stop_range: 100
+  err_margin: 99.99
+  start_range: 10
+  stop_range: 1000
 test_34698:
   err_margin: 0
   object_size:
     start_range: 10
     stop_range: 100
 test_40632:
-  max_size: 5G
-  max_objects: 10
-  quota_type: "user"
+  max_size: 1048576
+  max_objects: 5
   enabled: True
 test_40633:
-  max_size: 5G
-  max_objects: 10
-  quota_type: "user"
+  max_size: 1048576
+  max_objects: 5
   enabled: True
 test_40634:
-  max_size: 5G
-  max_objects: 10
-  quota_type: "user"
+  max_size: 1048576
+  max_objects: 5
   enabled: True
-  num_iterations: 5
+  num_iterations: 2
 test_40635:
-  max_size: 5G
-  max_objects: 10
-  quota_type: "user"
-  enabled: True
+  max_size: 1048576
+  max_objects: 5
+  enabled: False
 test_40636:
-  max_size: 5G
-  max_objects: 10
-  quota_type: "user"
+  max_size: 1048576
+  max_objects: 5
   enabled: True
 test_40637:
-  max_size: 5G
-  max_objects: 10
-  quota_type: "user"
+  max_size: 1048576
+  max_objects: 5
   enabled: True
 test_40638:
-  max_size: 5G
+  max_size: 1024
   max_objects: 10
-  extra_bytes: 5M
-  total_parts: 5
-  quota_type: "user"
   enabled: True
+  total_parts: 4
+  file_size: 40
+  b_size: 1048576
 test_40639:
-  max_size: 5G
+  max_size: 1024
   max_objects: 10
-  quota_type: "user"
   enabled: True
+  total_parts: 4
+  file_size: 40
+  b_size: 1048576
 test_40640:
-  max_size: 5G
-  max_objects: 10
-  quota_type: "user"
+  max_size: 1048576
+  max_objects: 5
   enabled: True
 test_39924:
   err_margin: 0
@@ -100,59 +78,106 @@ test_39924:
 test_39923:
   err_margin: 0
   obj_size: 12288
-  num_clients: 2
+  num_clients: 1
   num_sample: 5
-  obj_name_pref: "load_gen"
+  obj_name_pref: "test_39923_obj"
+  obj_size: "16Mb"
+  duration: "0h0m60s"
 test_41127:
-  max_size: 12288
+  max_size: 1048576
 test_41128:
-  max_size: 12288
-  max_objects: 10
-  quota_type: "user"
+  max_size: 1048576
+  max_objects: 4
   enabled: True
 test_41151:
-  max_size: 12288
+  max_size: 1048576
+  error_code_1: 4113
+  message_id_1: "HttpError"
+  message_index_1: 1
+  error_code_2: 4099
+  message_id_2: "MalformedRequest"
+  message_index_2: 0
 test_41746:
-  max_size: 12288
+  max_size: 1048576
 test_41750:
-  max_size: 12288
+  max_size: 1048576
 test_41757:
-  max_size: 12288
+  max_size: 1048576
+  error_code: 12288
+  message_id: "NoSuchUser"
+  message_index: 0 
 test_41758:
-  max_size: 12288
+  max_size: 1048576
+  error_code: 12288
+  message_id: "NoSuchUser"
+  message_index: 0
 test_41954:
-  max_size: 12288
+  max_size: 1048576
 test_41172:
   min_users: 5
-  max_users: 100
-  available_size: 1024
+  max_users: 10
+  available_size: 1048576
 test_41173:
   min_bucket: 5
-  max_bucket: 1000
-  available_size: 1024
+  max_bucket: 10
+  available_size: 1048576
 test_41156:
   min_users: 5
-  max_users: 100
-  available_size: 1024
+  max_users: 10
+  available_size: 1048576
 test_41964:
-  max_objects: 1000
+  max_objects: 5
   quota_type: "user"
-  extra_bytes: 1024
+  extra_bytes: 100
   enabled: True
 test_41965:
   small_size: 1024
-  quota_type: "user"
   enabled: True
-  max_size: 12288
+  max_size: 1048576
 test_41966:
-  quota_type: "user"
   enabled: True
-  max_objects: 1000
+  max_objects: 4
+  available_size: 1048576
 test_41967:
-  quota_type: "user"
   enabled: True
-  size_for_io: 1024
-  objects_for_io: 10
+  size_for_io: 1048576
+  objects_for_io: 5
 test_41970:
   duration: 3600
-
+test_40600:
+  max_size: 12288
+  max_objects: 10
+  enabled: True
+test_40601:
+  max_size: -1
+  max_objects: -1
+  enabled: True
+test_40602:
+  max_size: -1
+  max_objects: -1
+  enabled: True
+test_40603:
+  max_size: -1
+  max_objects: -1
+  enabled: True
+test_40604:
+  max_size: -1
+  max_objects: -1
+  enabled: True
+test_40605:
+  max_size: -1
+  max_objects: -1
+  enabled: False
+test_43955:
+  max_objects: 20
+test_43957:
+  max_objects: 20
+test_43857:
+  max_size: 1048576
+  max_objects_1: 1
+  max_objects_2: 2
+  enabled: True
+test_43862:
+  max_size: 1572864
+  max_objects: 2
+  enabled: True

@@ -142,7 +142,6 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.lr
@@ -546,7 +545,6 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -764,6 +762,7 @@ class TestS3user():
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -793,6 +792,7 @@ class TestS3user():
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -822,6 +822,7 @@ class TestS3user():
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -995,7 +996,6 @@ class TestS3user():
                 self.log.info("[END] Create Bucket count : %s", i + 1)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest

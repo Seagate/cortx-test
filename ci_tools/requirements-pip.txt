@@ -31,9 +31,8 @@ mkdocs==0.17.3  # this is to prevent a version non-compliant with mkdocs-materia
 msgpack==0.6.2
 munch==2.5.0
 mypy==0.782
-numpy==1.22.0rc1
 pandas==1.2.1
-paramiko==2.6.0
+paramiko==2.10.4
 prometheus-client
 pika==1.1.0
 pycryptodome==3.10.1

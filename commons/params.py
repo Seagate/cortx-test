@@ -46,14 +46,16 @@ S3_LDAP_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "test_openldap.yaml")
 RAS_CONFIG_PATH = "config/ras_config.yaml"
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
 PROV_TEST_CONFIG_PATH = "config/prov/prov_test.yaml"
+DEPLOY_TEST_CONFIG_PATH = "config/prov/deploy_config.yaml"
 COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 DI_CONFIG_PATH = os.path.join(CONFIG_DIR, 'di_config.yaml')
 DATA_PATH_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3/test_data_path_validate.yaml')
 HA_TEST_CONFIG_PATH = "config/ha_test.yaml"
 DEL_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "test_delayed_delete.yaml")
 IAM_POLICY_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "s3_iam_policy_test.yaml")
-S3_VER_CFG_PATH = os.path.join(CONFIG_DIR,  "s3", "test_versioning.yaml")
 PROV_CONFIG_PATH = "config/prov/test_prov_config.yaml"
+DTM_CFG_PATH = os.path.join(CONFIG_DIR, "dtm","dtm_config.yaml")
+DURABILITY_CFG_PATH = os.path.join(CONFIG_DIR, "durability_test.yaml")
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 JIRA_TEST_LIST = 'test_lists.csv'

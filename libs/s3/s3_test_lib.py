@@ -409,23 +409,31 @@ class S3TestLib(S3Lib):
             self,
             bucket_name: str = None,
             obj_list: list = None,
-            quiet=False) -> tuple:
+            quiet: bool = False,
+            prepared_obj_list: list = None) -> tuple:
         """
         Delete multiple objects from a single bucket.
 
         :param bucket_name: Name of bucket.
         :param obj_list: List of objects to be deleted.
         :param quiet: It enables a quiet mode.
+        :param prepared_obj_list: Override DeleteObjects Objects list generation,
+            list assigned is passed as-is to DeleteObjects call, expected format:
+                [{'Key': 'string', 'VersionId': 'string'}, ...]
+                where 'VersionId' is optional
         :return: True and response or False and error.
         :rtype: (boolean, dict/str)
         """
         try:
             LOGGER.info("deleting multiple objects")
-            objects = []
-            for key in obj_list:
-                obj_d = dict()
-                obj_d["Key"] = key
-                objects.append(obj_d)
+            if prepared_obj_list is not None:
+                objects = prepared_obj_list
+            else:
+                objects = []
+                for key in obj_list:
+                    obj_d = dict()
+                    obj_d["Key"] = key
+                    objects.append(obj_d)
             if quiet:
                 response = self.s3_client.delete_objects(
                     Bucket=bucket_name, Delete={
@@ -640,19 +648,25 @@ class S3TestLib(S3Lib):
             bucket: str = None,
             key: str = None,
             ranges: str = None,
-            raise_exec: bool = True) -> tuple:
+            **kwargs) -> tuple:
         """
         Retrieve object from specified S3 bucket.
 
-        :param raise_exec: raise an exception in default case.
         :param key: Key of the object to get.
         :param ranges: Byte range to be retrieved
         :param bucket: The bucket name containing the object.
+        :keyword raise_exec: raise an exception in default case.
+        :keyword skip_polling: Skip retry for GET Object, in case of failures
         :return: (Boolean, Response)
         """
+        raise_exec = kwargs.get("raise_exec", True)
+        skip_polling = kwargs.get("skip_polling", False)
         try:
             LOGGER.info("Retrieving object from a bucket")
-            response = poll(super().get_object, bucket, key, ranges)
+            if not skip_polling:
+                response = poll(super().get_object, bucket, key, ranges)
+            else:
+                response = super().get_object(bucket, key, ranges)
         except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.get_object.__name__,

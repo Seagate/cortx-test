@@ -21,6 +21,29 @@
 Module is intended to cater Motr level DI tests which utilize M0* utils and validate data
 corruption detection. It will host all test classes or functions related to detection of
 discrepancies in data blocks, checksum, parity and emaps.
+
+m0cp -G -l inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@21201
+-H inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@22001
+-p 0x7000000000000001:0x110 -P 0x7200000000000001:0xae
+
+m0cp from data unit aligned offset 0
+-s 4096 -c 10 -o 1048583 /root/infile -L 3
+-s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
+m0cat   -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
+
+2) m0cp from data unit aligned offset 16384
+m0cp  -s 4096 -c 10 -o 1048584 /root/myfile -L 3
+m0cat   -o 1048584 -s 4096 -c 10 -L 3 /root/dest_myfile
+m0cp  -s 4096 -c 1 -o 1048584 /root/myfile -L 3 -u -O 16384
+m0cat   -o 1048584 -s 4096 -c 10 -L 3 /root/dest_myfile
+m0cp  -s 4096 -c 4 -o 1048584 /root/myfile -L 3 -u -O 16384
+m0cat   -o 1048584 -s 4096 -c 10 -L 3 /root/dest_myfile
+3) m0cp from non aligned offset 4096
+m0cp  -s 4096 -c 10 -o 1048587 /root/myfile -L 3
+m0cat -o 1048587 -s 4096 -c 10 -L 3 /root/dest_myfile
+m0cp  -s 4096 -c 4 -o 1048587 /root/myfile -L 3 -u -O 4096
+m0cat -o 1048587 -s 4096 -c 10 -L 3 /root/dest_myfile
+
 """
 
 import os
@@ -37,7 +60,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="class", autouse=False)
-def setup_multipart_fixture(request):
+def setup_teardown_fixture(request):
     """
     Yield fixture to setup pre requisites and teardown them.
     Part before yield will be invoked prior to each test case and
@@ -81,48 +104,98 @@ class TestCorruptDataDetection:
             con.disconnect()
         del self.motr_obj
 
-    def m0cp_corrupt_m0cat(self):
+    # pylint: disable=R0914
+    def m0cp_corrupt_data_m0cat(self, layout_ids, bsize_list, count_list, offsets):
         """
         Create an object with M0CP, corrupt with M0CP and
         validate the corruption with md5sum after M0CAT.
         """
-        logger.info("STARTED: m0cp corrupt and m0cat workflow")
+        logger.info("STARTED: m0cp, corrupt and m0cat workflow")
         infile = TEMP_PATH + 'input'
         outfile = TEMP_PATH + 'output'
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
+        object_id = str(self.system_random.randint(1, 1024 * 1024)) + ":" + \
+                    str(self.system_random.randint(1, 1024 * 1024))
         for client_num in range(motr_client_num):
             for node in node_pod_dict:
-                count_list = ['1', '2', '4', '4', '4', '2', '4', '4', '250',
-                              '2', '4', '2', '3', '4', '8', '4', '1024']
-                bsize_list = ['4K', '4K', '4K', '8K', '16K', '64K', '64K', '128K',
-                              '4K', '1M', '1M', '4M', '4M', '4M', '4M', '16M', '1M']
-                layout_ids = ['1', '1', '1', '2', '3', '5', '5', '6', '1',
-                              '9', '9', '11', '11', '11', '11', '13', '9']
-                for b_size, count, layout in zip(bsize_list, count_list, layout_ids):
-                    object_id = str(self.system_random.randint(1, 100)) + ":" + \
-                                str(self.system_random.randint(1, 100))
-                    self.motr_obj.dd_cmd(b_size, count, infile, node)
-                    self.motr_obj.cp_cmd(b_size, count, object_id, layout, infile, node, client_num)
-                    self.motr_obj.cat_cmd(b_size, count, object_id, layout, outfile, node,
+
+                for b_size, (cnt_c, cnt_u), layout, offset in zip(bsize_list, count_list,
+                                                                  layout_ids, offsets):
+                    self.motr_obj.dd_cmd(
+                        b_size, cnt_c, infile, node)
+                    self.motr_obj.cp_cmd(
+                        b_size, cnt_c, object_id,
+                        layout, infile, node, client_num)
+                    self.motr_obj.cat_cmd(
+                        b_size, cnt_c, object_id,
+                        layout, outfile, node, client_num)
+                    self.motr_obj.cp_update_cmd(
+                        b_size=b_size, count=cnt_u,
+                        object_id=object_id, layout=layout,
+                        infile=infile, node=node, client_num=client_num, offset=offset)
+                    self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout, outfile, node,
                                           client_num)
                     self.motr_obj.md5sum_cmd(infile, outfile, node)
                     self.motr_obj.unlink_cmd(object_id, layout, node, client_num)
 
             logger.info("Stop: Verify multiple m0cp/cat operation")
 
+    @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.tags("TEST-41739")
-    @pytest.mark.motr_sanity
+    @pytest.mark.motr_di
     def test_m0cp_m0cat_block_corruption(self):
         """
         Corrupt data block using m0cp and reading from object with m0cat should error.
+        -s 4096 -c 10 -o 1048583 /root/infile -L 3
+        -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
+        -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
         """
-        self.m0cp_corrupt_m0cat()
+        count_list = [['10', '1'], ['10', '1']]
+        bsize_list = ['4K', '4K']
+        layout_ids = ['3', '3']
+        offsets = [0, 16384]
+        self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
-    @pytest.mark.tags("TEST-41742")
-    @pytest.mark.motr_sanity
-    def test_m0cp_m0cat_checksum_corruption(self):
+    @pytest.mark.skip(reason="Test incomplete without teardown")
+    @pytest.mark.tags("TEST-41766")
+    @pytest.mark.motr_di
+    def test_m0cp_m0cat_block_corruption_degraded_mode(self):
+        """
+        In degraded mode Corrupt data block using m0cp and reading
+        from object with m0cat should error.
+        """
+        logger.info("Step 2: Shutdown random data pod by making replicas=0 and "
+                    "verify cluster & remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0])
+        # Assert if empty dictionary
+        assert resp[1], "Failed to shutdown/delete pod"
+        pod_name = list(resp[1].keys())[0]
+        self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.restore_pod = True
+        self.restore_method = resp[1][pod_name]['method']
+        assert resp[0], "Cluster/Services status is not as expected"
+        logger.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+        count_list = [['10', '1'], ['10', '1']]
+        bsize_list = ['4K', '4K']
+        layout_ids = ['3', '3']
+        offsets = [0, 16384]
+        self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
+
+    @pytest.mark.skip(reason="Feature Unavailable")
+    @pytest.mark.tags("TEST-41911")
+    @pytest.mark.motr_di
+    def test_m0cp_m0cat_block_corruption_unaligned(self):
         """
         Corrupt data block using m0cp and reading from object with m0cat should error.
+        -s 4096 -c 10 -o 1048583 /root/infile -L 3
+        -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
+        -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
         """
-        self.m0cp_corrupt_m0cat()
+        count_list = [['10', '10']]
+        bsize_list = ['4K']
+        layout_ids = ['3']
+        offsets = [4096]
+        self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)

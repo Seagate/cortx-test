@@ -106,8 +106,8 @@ class TestControlPodRestart:
                                                         password=cls.password[node]))
 
         cls.rest_obj = S3AccountOperations()
-        cls.test_file = "ha-mp_obj"
-        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
+        cls.test_file = "ha-test-file"
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestData")
         control_pods = cls.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
         ctrl_pod = list(control_pods.keys())[0]
         backup_path = cls.node_master_list[0].backup_deployment(
@@ -218,6 +218,7 @@ class TestControlPodRestart:
         sysutils.remove_file(self.modified_yaml)
         self.node_master_list[0].remove_remote_file(self.modified_yaml)
         self.node_master_list[0].remove_remote_file(self.backup_yaml)
+        sysutils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-statements
@@ -226,6 +227,7 @@ class TestControlPodRestart:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32459")
     @CTFailOn(error_handler)
+    @pytest.mark.skip(reason="VM issue in after Restart(CORTX-32933). Need to be tested on HW")
     def test_restart_control_node(self):
         """
         Verify IOs before and after control pod fails over after restarting node hosting control
@@ -474,7 +476,7 @@ class TestControlPodRestart:
         test_prefix_write = 'test-write-34827'
         args = {'s3userinfo': list(users.values())[1], 'log_prefix': test_prefix_write,
                 'nclients': 5, 'nsamples': 50, 'skipread': True, 'skipcleanup': True,
-                'output': wr_output}
+                'output': wr_output, 'setup_s3bench': False}
         thread_wr = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                      kwargs=args)
         thread_wr.daemon = True  # Daemonize thread
@@ -702,14 +704,17 @@ class TestControlPodRestart:
         users = self.mgnt_ops.create_account_users(nusers=1)
         access_key = list(users.values())[0]["accesskey"]
         secret_key = list(users.values())[0]["secretkey"]
+        user_name = list(users.values())[0]['user_name']
         self.s3_clean.update(users)
+        new_user = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                               'user_name': user_name}}
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        bucket_name = f"new_bkt_{self.random_time}"
+        bucket_name = f"new-bkt-{self.random_time}"
         object_name = f"new_obj_{self.random_time}"
         LOGGER.info("Step 6.1: Successfully created IAM user")
         LOGGER.info("Step 6.2: Perform multipart upload for size 5GB.")
-        resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
+        resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=new_user,
                                                          bucket_name=bucket_name,
                                                          object_name=object_name,
                                                          file_size=file_size,
@@ -814,6 +819,7 @@ class TestControlPodRestart:
                     failover_node)
 
         for cnt in range(HA_CFG["common_params"]["loop_count"]):
+            LOGGER.info("Loop: %s", cnt)
             control_pods = self.node_master_list[0].get_pods_node_fqdn(
                 const.CONTROL_POD_NAME_PREFIX)
             control_pod_name = list(control_pods.keys())[0]
@@ -912,7 +918,7 @@ class TestControlPodRestart:
         iam_output = Queue()
         bkt_output = Queue()
         num_users = HA_CFG["s3_operation_data"]["iam_users"]
-        num_bkts = HA_CFG["s3_bucket_data"]["no_bck_background_deletes"]
+        num_bkts = HA_CFG["s3_operation_data"]["no_bkt_del_ctrl_pod"]
 
         LOGGER.info("Step 1: Create IAM user.")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -924,14 +930,17 @@ class TestControlPodRestart:
                            endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("Step 1: Created IAM user successfully")
 
-        LOGGER.info("Step 2: Perform IAM user and bucket creation/deletion in background")
+        LOGGER.info("Create %s iam users for deletion", num_users)
+        users = self.mgnt_ops.create_account_users(nusers=num_users)
+        LOGGER.info("Step 2: Perform IAM user creation/deletion in background")
         args = {'user_crud': True, 'bkt_crud': False, 'num_users': num_users, 's3_obj': s3_obj,
-                'output': iam_output}
+                'output': iam_output, 'del_users_dict': users}
         thread1 = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
                                    args=(event, ), kwargs=args)
         thread1.daemon = True  # Daemonize thread
         thread1.start()
 
+        LOGGER.info("Start buckets creation/deletion in background")
         args = {'user_crud': False, 'bkt_crud': True, 'num_bkts': num_bkts, 's3_obj': s3_obj,
                 'output': bkt_output}
         thread2 = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
@@ -976,7 +985,7 @@ class TestControlPodRestart:
         LOGGER.info("Step 5: Verifying responses from background processes")
         LOGGER.info("Checking background process for IAM user CRUDs")
         iam_resp = tuple()
-        while len(iam_resp) != 3:
+        while len(iam_resp) != 4:
             iam_resp = iam_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not iam_resp:
             assert_utils.assert_true(False, "Background process failed to do IAM user CRUD "
@@ -984,14 +993,15 @@ class TestControlPodRestart:
         exp_fail = iam_resp[0]
         failed = iam_resp[1]
         user_del_failed = iam_resp[2]
+        created_users = iam_resp[3]
         if failed:
             assert_utils.assert_true(False, "Failures observed in background process for IAM "
                                             f"user CRUD operations. \nFailed buckets: {failed}")
         elif exp_fail:
             LOGGER.info("In-Flight IAM user creation/deletion failed for users: %s", exp_fail)
             LOGGER.info("In-Flight IAM user deletion failed for users: %s", user_del_failed)
-            for i in user_del_failed:
-                self.s3_clean.update(i)
+            for i_i in user_del_failed:
+                self.s3_clean.update({i_i: users[i_i]})
         else:
             assert_utils.assert_true(False, "IAM user CRUD operations are expected to be failed "
                                             "during control pod failover")
@@ -1013,18 +1023,31 @@ class TestControlPodRestart:
 
         LOGGER.info("Step 6: Perform new IAM users(%s) and buckets(%s) creation/deletion in loop",
                     num_users, num_bkts)
+        users_dict = dict()
+        for i_i in created_users:
+            users_dict.update(i_i)
         output = Queue()
-        args = {'user_crud': True, 'bkt_crud': True, 'num_users': num_users,
-                'num_bkts': num_bkts, 's3_obj': s3_obj, 'output': output}
+        args = {'user_crud': True, 'bkt_crud': True, 'num_users': 10,
+                'del_users_dict': users_dict, 'num_bkts': 10, 's3_obj': s3_obj,
+                'output': output}
         self.ha_obj.iam_bucket_cruds(event, **args)
         LOGGER.info("Checking responses for IAM user CRUD operations")
         iam_resp = tuple()
-        while len(iam_resp) != 3:
+        while len(iam_resp) != 4:
             iam_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not iam_resp:
             assert_utils.assert_true(False, "Failed to do IAM user CRUD operations")
         exp_fail = iam_resp[0]
         failed = iam_resp[1]
+        user_del_failed = iam_resp[2]
+        new_created_users = iam_resp[3]
+        if user_del_failed:
+            for i_i in created_users:
+                if list(i_i.keys())[0] in user_del_failed:
+                    self.s3_clean.update(i_i)
+        if new_created_users:
+            for i_i in new_created_users:
+                self.s3_clean.update(i_i)
         assert_utils.assert_false(len(exp_fail) or len(failed), "Failure in IAM user CRUD "
                                                                 "operations. \nFailed users: "
                                                                 f"\nexp_fail: {exp_fail} and "
@@ -1136,7 +1159,7 @@ class TestControlPodRestart:
                     "failover", uids)
 
         LOGGER.info("Step 5: Upload remaining parts")
-        remaining_parts = list(filter(lambda i: i not in part_numbers,
+        remaining_parts = list(filter(lambda i_i: i_i not in part_numbers,
                                       list(range(1, total_parts + 1))))
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,
@@ -1191,6 +1214,7 @@ class TestControlPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-40376")
     @CTFailOn(error_handler)
     def test_copy_obj_after_ctrl_pod_failover(self):
@@ -1387,12 +1411,12 @@ class TestControlPodRestart:
         LOGGER.debug("Responses received from background process:\nexp_failed_parts: "
                      "%s\nfailed_parts: %s\nparts_etag: %s\nmpu_id: %s", exp_failed_parts,
                      failed_parts, parts_etag, mpu_id)
-        assert_utils.assert_true(len(failed_parts) != 0, "Failed to upload parts before or after "
-                                                         "control pod failover/restart "
-                                                         f"Failed parts: {failed_parts}")
-        assert_utils.assert_true(len(exp_failed_parts) != 0, "Failed to upload parts during"
-                                                             "control pod failover. Failed"
-                                                             f"parts {exp_failed_parts}")
+        assert_utils.assert_false(len(failed_parts), "Failed to upload parts before or after "
+                                                     "control pod failover/restart "
+                                                     f"Failed parts: {failed_parts}")
+        assert_utils.assert_false(len(exp_failed_parts), "Failed to upload parts during"
+                                                         "control pod failover. Failed"
+                                                         f"parts {exp_failed_parts}")
         LOGGER.info("All the parts are uploaded successfully")
         LOGGER.info("Step 4: Successfully checked background process responses")
 
@@ -1438,6 +1462,7 @@ class TestControlPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-40382")
     @CTFailOn(error_handler)
     def test_copy_obj_during_ctrl_pod_failover(self):
@@ -1627,8 +1652,6 @@ class TestControlPodRestart:
         self.test_prefix = 'test-40386'
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
-        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                endpoint_url=S3_CFG["s3_url"])
         uids = [self.s3acc_name]
         args = {'s3_data': self.s3_clean, 'bucket_name': self.bucket_name,
                 'file_size': file_size, 'chunk_obj_path': chunk_obj_path, 'output': output}
@@ -1683,7 +1706,10 @@ class TestControlPodRestart:
                                                            compare=False)[0]
 
         LOGGER.info("Step 6: Download object and verify checksum")
-        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        resp = self.ha_obj.object_download_jclient(s3_data=self.s3_clean,
+                                                   bucket_name=self.bucket_name,
+                                                   object_name=self.object_name,
+                                                   obj_download_path=download_path)
         LOGGER.info("Download object response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
         download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],

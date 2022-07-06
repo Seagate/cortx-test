@@ -24,9 +24,12 @@
 import os
 import base64
 import logging
+import string
+import secrets
 from botocore.exceptions import ClientError
 from commons import errorcodes as err
 from commons.exceptions import CTException
+from commons.exceptions import EncodingNotSupported
 from commons.utils.system_utils import create_file
 from commons.utils.s3_utils import poll
 from config.s3 import S3_CFG
@@ -99,7 +102,7 @@ class S3TaggingTestLib(Tagging):
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_bucket_tag.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -158,19 +161,22 @@ class S3TaggingTestLib(Tagging):
         :param obj_name: Name of the object.
         :param key: Key for object tagging.
         :param value: Value for object tagging.
+        :keyword tags: Value for {"TagSet": [{"Key": key_val, "Value": value_val},.. ]}
         :return: (Boolean, response)
         """
         tag_count = kwargs.get("tag_count", 1)
+        tags = kwargs.get("tags", None)
         try:
-            LOGGER.info("Set object tagging")
-            tag_set = list()
-            for num in range(tag_count):
-                tag = dict()
-                tag.update([("Key", "{}{}".format(key, str(num))),
-                            ("Value", "{}{}".format(value, str(num)))])
-                tag_set.append(tag)
-            LOGGER.debug(tag_set)
-            tags = {"TagSet": tag_set}
+            if tags is None:
+                LOGGER.info("Set object tagging")
+                tag_set = list()
+                for num in range(tag_count):
+                    tag = dict()
+                    tag.update([("Key", "{}{}".format(key, str(num))),
+                                ("Value", "{}{}".format(value, str(num)))])
+                    tag_set.append(tag)
+                LOGGER.debug(tag_set)
+                tags = {"TagSet": tag_set}
             response = self.put_object_tagging(bucket_name, obj_name, tags)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
@@ -468,3 +474,37 @@ class S3TaggingTestLib(Tagging):
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
+
+    def set_encoded_tag_values(
+            self,
+            bucket_name: str = None,
+            encoding_type: str = "utf-8") -> tuple:
+        """
+        Set tag to a bucket with encoded tag values.
+
+        :param bucket_name: Name of bucket.
+        :param encoding_type: encoding type e.g. base64,utf-8
+        :return: True or False, response and encoded tag set.
+        """
+        LOGGER.info("Set bucket tag with encoded key value pair.")
+        if encoding_type not in ("utf-8", "base64"):
+            raise EncodingNotSupported(f"Encoding {encoding_type} is not supported")
+        key = ''.join((secrets.choice(string.printable) for i in range(8)))
+        value = ''.join((secrets.choice(string.printable) for i in range(8)))
+        tag_set = list()
+        if encoding_type == 'utf-8':
+            key_encode = key.encode('utf-8')
+            value_encode = value.encode('utf-8')
+        elif encoding_type == 'base64':
+            key_encode = base64.b64encode(key.encode())
+            value_encode = base64.b64encode(value.encode())
+        tag = dict()
+        tag.update([("Key", "{}".format(key_encode)),
+                    ("Value", "{}".format(value_encode))])
+        tag_set.append(tag)
+        LOGGER.info(
+            "Put bucket tagging with encoded value of TagSet: %s", str(tag_set))
+        response = super().set_bucket_tags(
+            bucket_name, tag_set={'TagSet': tag_set})
+
+        return True, response, tag_set

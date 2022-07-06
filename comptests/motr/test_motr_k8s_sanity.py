@@ -24,12 +24,14 @@ Test class that contains MOTR K8s tests.
 
 import os
 import csv
-import time
+import random
 import shutil
+import traceback
 import uuid
+import time
+import json
 import logging
 import multiprocessing
-from random import SystemRandom
 import pytest
 from commons.utils import assert_utils
 from commons.utils import config_utils
@@ -37,6 +39,7 @@ from commons import constants as common_const
 from libs.motr import TEMP_PATH
 from libs.motr.layouts import BSIZE_LAYOUT_MAP
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
+from libs.durability.disk_failure_recovery_libs import DiskFailureRecoveryLib
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +66,8 @@ class TestExecuteK8Sanity:
         """ Setup class for running Motr tests"""
         logger.info("STARTED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
-        cls.system_random = SystemRandom()
+        cls.system_random = random.SystemRandom()
+        cls.disk_recvry_obj = DiskFailureRecoveryLib()
         cls.m0kv_cfg = config_utils.read_yaml("config/motr/m0kv_test.yaml")
         logger.info("ENDED: Setup Operation")
 
@@ -241,15 +245,18 @@ class TestExecuteK8Sanity:
         return_dict = multiprocessing.Manager().dict()
         for node in self.motr_obj.cortx_node_list:
             node_process = multiprocessing.Process(target=self.motr_obj.run_io_in_parallel,
-                args=[node, [4], False, True, return_dict])
+                args=[node, BSIZE_LAYOUT_MAP, [4], False, True, return_dict])
             node_process.start()
         logger.info("Let the motr IO run on all the nodes for 120 sec")
         time.sleep(120)
         self.motr_obj.shutdown_cluster()
         for exc in return_dict.values():
-            if isinstance(exc, Exception) and not isinstance(exc, AssertionError):
-                raise exc
-
+            if isinstance(exc, Exception):
+                ex_str = ''.join(traceback.format_exception(etype=type(exc), value=exc,
+                            tb=exc.__traceback__))
+                logger.exception("Exception occured:: %s", ex_str)
+                if 'm0_panic' in ex_str:
+                    raise exc
 
     @pytest.mark.tags("TEST-29706")
     @pytest.mark.motr_sanity
@@ -275,9 +282,100 @@ class TestExecuteK8Sanity:
             time.sleep(30)
             self.motr_obj.shutdown_cluster()
             for exc in return_dict.values():
-                if not isinstance(exc, AssertionError):
-                    raise exc
+                if isinstance(exc, Exception):
+                    ex_str = ''.join(traceback.format_exception(etype=type(exc), value=exc,
+                                tb=exc.__traceback__))
+                    logger.exception("Exception occured:: %s", ex_str)
+                    if 'm0_panic' in ex_str:
+                        raise exc
         finally:
             if temp_files:
                 for file in temp_files:
                     os.remove(file)
+
+    @pytest.mark.tags("TEST-37336")
+    @pytest.mark.motr_sanity
+    def test_sns_repair_rebalance_with_failure_less_than_k(self):
+        """
+        This is to test if SNS repair/rebalance start and status hctl interfaces works
+        """
+        resp = self.disk_recvry_obj.retrieve_durability_values(self.motr_obj.node_obj, "sns")
+        assert_utils.assert_true(resp[0], resp[1])
+        parity_units = resp[1]['parity']
+        logger.info("Step 1: Fail disks less than K(parity units)")
+        if int(parity_units) == 1:
+            disk_fail_cnt = 1
+        else:
+            disk_fail_cnt = random.randint(1, int(parity_units) - 1)  # nosec
+        logger.info("Failed disk count: %s", disk_fail_cnt)
+        cortx_node = self.motr_obj.get_primary_cortx_node()
+        resp = self.disk_recvry_obj.fail_disk(disk_fail_cnt, self.motr_obj.node_obj,
+                self.motr_obj.worker_node_objs,
+                self.motr_obj.node_pod_dict[cortx_node])
+        assert_utils.assert_true(resp[0], resp[1])
+        failed_disks_dict = resp[1]
+        logger.info("Step 2: Check if the disks are marked failed")
+        disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()
+        time.sleep(10)
+        for disk in failed_disks_dict:
+            disk_status = disk_status_dict[common_const.CORTX_DATA_NODE_PREFIX + \
+                            failed_disks_dict[disk][0]][failed_disks_dict[disk][2]]
+            assert_utils.assert_exact_string("failed", disk_status,
+                message="Disk is not marked failed")
+        logger.info("Step 3: Changing the disks status to repair")
+        for disk in failed_disks_dict:
+            resp = self.disk_recvry_obj.change_disk_status_hctl(self.motr_obj.node_obj,
+                    self.motr_obj.node_pod_dict[cortx_node],
+                    common_const.CORTX_DATA_NODE_PREFIX + failed_disks_dict[disk][0],
+                    failed_disks_dict[disk][2], "repair")
+        logger.info("Step 4: Checking if the disks are marked as repairing")
+        disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()
+        for disk in failed_disks_dict:
+            disk_status = disk_status_dict[common_const.CORTX_DATA_NODE_PREFIX + \
+                            failed_disks_dict[disk][0]][failed_disks_dict[disk][2]]
+            assert_utils.assert_exact_string("repairing", disk_status,
+                message="Disk is not marked repairing")
+        logger.info("Step 5: Starting SNS Repair operation")
+        resp = self.disk_recvry_obj.sns_repair(self.motr_obj.node_obj, "start",
+                    self.motr_obj.node_pod_dict[cortx_node])
+        logger.info("Step 6: Checking the SNS Repair status")
+        repair_status = self.disk_recvry_obj.sns_repair(self.motr_obj.node_obj, "status",
+                            self.motr_obj.node_pod_dict[cortx_node])
+        for state in json.loads(repair_status):
+            assert_utils.assert_equal(state['state'], 1)
+        logger.info("Step 7: Checking if the disks are marked as repaired")
+        disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()
+        for disk in failed_disks_dict:
+            disk_status = disk_status_dict[common_const.CORTX_DATA_NODE_PREFIX + \
+                            failed_disks_dict[disk][0]][failed_disks_dict[disk][2]]
+            assert_utils.assert_exact_string("repaired", disk_status,
+                message="Disk is not marked repaired")
+        logger.info("Step 8: Changing the disks status to rebalancing")
+        for disk in failed_disks_dict:
+            resp = self.disk_recvry_obj.change_disk_status_hctl(self.motr_obj.node_obj,
+                    self.motr_obj.node_pod_dict[cortx_node],
+                    common_const.CORTX_DATA_NODE_PREFIX + failed_disks_dict[disk][0],
+                    failed_disks_dict[disk][2], "rebalance")
+        time.sleep(10)
+        logger.info("Step 9: Checking if the disks are marked as rebalancing")
+        disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()
+        for disk in failed_disks_dict:
+            disk_status = disk_status_dict[common_const.CORTX_DATA_NODE_PREFIX + \
+                            failed_disks_dict[disk][0]][failed_disks_dict[disk][2]]
+            assert_utils.assert_exact_string("rebalancing", disk_status,
+                message="Disk is not marked rebalancing")
+        logger.info("Step 10: Starting SNS Rebalance operation")
+        resp = self.disk_recvry_obj.sns_rebalance(self.motr_obj.node_obj, "start",
+                    self.motr_obj.node_pod_dict[cortx_node])
+        logger.info("Step 11: Checking the SNS Rebalance status")
+        rebalance_status = self.disk_recvry_obj.sns_rebalance(self.motr_obj.node_obj, "status",
+                            self.motr_obj.node_pod_dict[cortx_node])
+        for state in json.loads(rebalance_status):
+            assert_utils.assert_equal(state['state'], 1)
+        logger.info("Step 12: Checking if the disks are marked as online")
+        disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()
+        for disk in failed_disks_dict:
+            disk_status = disk_status_dict[common_const.CORTX_DATA_NODE_PREFIX + \
+                            failed_disks_dict[disk][0]][failed_disks_dict[disk][2]]
+            assert_utils.assert_exact_string("online", disk_status,
+                message="Disk is not marked online")

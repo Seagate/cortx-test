@@ -21,6 +21,7 @@
 """Provisioner Component level test cases for CORTX deployment in k8s environment."""
 
 import logging
+import time
 import pytest
 
 from commons import configmanager
@@ -28,11 +29,13 @@ from commons import constants as common_const
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from config import PROV_CFG
 from config import PROV_TEST_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.s3.s3_test_lib import S3TestLib
 
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
 
@@ -41,8 +44,7 @@ LOGGER = logging.getLogger(__name__)
 SECRETS_FILES_LIST = ["s3_auth_admin_secret", "openldap_admin_secret", "kafka_admin_secret",
                       "csm_mgmt_admin_secret", "csm_auth_admin_secret", "consul_admin_secret",
                       "common_admin_secret"]
-PVC_LIST = ["cluster.conf", "hare", "log", "motr", "rgw_s3", "solution"]
-
+PVC_LIST = ["cluster.conf", "config", "consul_conf", "hare", "log", "motr", "rgw_s3", "solution"]
 
 class TestProvK8Cortx:
 
@@ -52,6 +54,7 @@ class TestProvK8Cortx:
         LOGGER.info("STARTED: Setup Module operations")
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        cls.s3t_obj = S3TestLib()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.ha_obj = HAK8s()
         cls.dir_path = common_const.K8S_SCRIPTS_PATH
@@ -59,6 +62,7 @@ class TestProvK8Cortx:
         cls.worker_node_list = []
         cls.master_node_list = []
         cls.host_list = []
+        cls.local_sol_path = common_const.LOCAL_SOLUTION_PATH
         for node in range(cls.num_nodes):
             node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                    username=CMN_CFG["nodes"][node]["username"],
@@ -66,8 +70,8 @@ class TestProvK8Cortx:
             if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
                 cls.master_node_obj = node_obj
                 cls.master_node_list.append(node_obj)
-                cls.master_node_obj.execute_cmd(cmd=commands.SET_NAMESPACE.format("default"),
-                read_lines=True)
+                cls.master_node_obj.execute_cmd(cmd=commands.SET_NAMESPACE.format
+                                        (common_const.NAMESPACE),read_lines=True)
             else:
                 cls.worker_node_list.append(node_obj)
         LOGGER.info("Done: Setup operations finished.")
@@ -218,15 +222,18 @@ class TestProvK8Cortx:
         LOGGER.info("Check files are copied and accessible to containers.")
         LOGGER.info("Step 1: Get all running data pods from cluster.")
         data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
+        time.sleep(100)
         assert_utils.assert_true(data_pod_list[0])
         LOGGER.info("Step 2: Check files are copied and accessible to containers.")
         for pod_name in data_pod_list[1]:
             resp = self.master_node_obj.execute_cmd(
                 cmd=commands.K8S_POD_INTERACTIVE_CMD.format(pod_name, 'ls /etc/cortx'),
                 read_lines=True)
+            LOGGER.info("Output %s", resp)
             assert_utils.assert_is_not_none(resp)
             for out in resp:
                 out = out.split("\n")
+                LOGGER.info(out[0])
                 assert_utils.assert_in(out[0], PVC_LIST)
         LOGGER.info("Test Completed.")
 
@@ -352,6 +359,7 @@ class TestProvK8Cortx:
             LOGGER.info("Cluster not in good state, trying to restart it.")
             resp = self.ha_obj.cortx_start_cluster(self.master_node_list[0],
                                                    dir_path=self.prov_deploy_cfg["git_remote_path"])
+            time.sleep(100)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and running.")
         LOGGER.info("Step 5: Cluster is back online.")
@@ -383,6 +391,7 @@ class TestProvK8Cortx:
                                                dir_path=self.prov_deploy_cfg["git_remote_path"])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster is up and running.")
+        time.sleep(100)
         LOGGER.info("Step 4: Checking whether all CORTX Data pods have been restarted.")
         resp = self.ha_obj.check_pod_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
@@ -431,3 +440,32 @@ class TestProvK8Cortx:
                                            data_disk_per_cvg=config['data_disk_per_cvg'],
                                            master_node_list=self.master_node_list,
                                            worker_node_list=self.master_node_list)
+
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-41569")
+    def test_41569(self):
+        """
+        S3 IO Operations
+        """
+        access_key, secret_key = self.deploy_lc_obj.get_default_access_secret_key(self.local_sol_path)
+        LOGGER.debug("access key and secret key are %s , %s",access_key, secret_key)
+        client_config_res = self.deploy_lc_obj.client_config(self.master_node_list, common_const.NAMESPACE, access_key=access_key, secret_key=secret_key, flag="component")
+        LOGGER.info(client_config_res)
+        LOGGER.info("Step to Perform basic IO operations")
+        bucket_name = "bucket-" + str(int(time.time()))
+        # ext_port_ip = client_config_res[2][2]
+        s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                    endpoint_url=client_config_res[2][2])
+        create_bucket_resp = s3t_obj.create_bucket(bucket_name)
+        LOGGER.info("Created bucket name %s", bucket_name)
+        assert_utils.assert_true(create_bucket_resp[0], create_bucket_resp[1])
+        bucket_resp = s3t_obj.bucket_list()
+        LOGGER.debug("bucket_list %s", bucket_resp[1])
+        cmd = commands.CMD_AWSCLI_HEAD_BUCKET.format(bucket_name) + " --endpoint-url " + client_config_res[2][2]
+        resp = system_utils.run_local_cmd(cmd=cmd, chk_stderr=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp=s3t_obj.delete_bucket(bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Uploading the bucket")
+        self.deploy_lc_obj.basic_io_write_read_validate(s3t_obj, bucket_name)
+       

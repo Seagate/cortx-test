@@ -4,6 +4,10 @@
   Access denied for account:
     - "Access denied. Cannot modify another S3 account."
     - "Access denied."
+  NotFoundError:
+    - "$resource is not valid"
+  InternalError:
+    - "Error"
 4104:
   user_permission_denied:
     - "Cannot change roles for super user"
@@ -21,6 +25,7 @@
     - "Only $A user can create other $B users"
   PermissionDenied:
     - 'Access to the requested resource is forbidden'
+    - 'Only admin user can create other admin users'
 4099:
   invalid body msg_id:
     - "Invalid request body: {'bucket_name': [\"Bucket Name should be between 4-56 Characters long.Should contain either lowercase, numeric or '-' characters. Not starting or ending with '-'\"]}"
@@ -58,12 +63,25 @@
     - "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.']}"
     - "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.'], 'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
     - "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"], 'role': ['Must be one of: admin, manage, monitor.']}"
+    - "$str_part: Must be greater than or equal to 1."
+    - "$key: Unknown field."
+    - "error(22): Invalid compatibility rules $rule"
+    - "error(22): Incomplete compatibilty rules $rule"
+    - "error(22): Invalid Resource Id $resource_id"
+    - "Invalid request body: {'password': ['Password Policy Not Met. Must contain at least one Numeric value.']}"
+    - "{'sortby': ['Must be one of: user_id, username, email, user_type, role, created_time, updated_time, email_address, user_role.']}"
+    - "{'dir': ['Must be one of: desc, asc.']}"
+    - "username cannot be modified"
+    - "Insufficient information in request body"
+    - "$A: must be greater than or equal to 1."
+    - "$A: Missing data for required field."
 4103:
   users_already_exists:
     - "User already exists:"
 4113:
   HttpError:
     - 'Unauthorized'
+    - 'Not Found'
 12288:
   EntityAlreadyExists:
     - "The request was rejected because it attempted to create an account that already exists."
@@ -78,3 +96,10 @@
     - "Attempt to create existing user."
   EmailExists:
     - "Provided email address exists."
+4111:
+  UnauthorizedError:
+    - "Invalid authentication credentials for the target resource."
+    - "Invalid credentials for user"
+  HttpError:
+    - 'Unauthorized'
+    - 'Not Found'

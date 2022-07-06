@@ -38,9 +38,9 @@ test_39028:
   message_index: 0
 test_37778:
   error_code: 4099
-  message_id: "empty key"
-  message_index_1: 0
-  message_index_2: 1
+  message_id: "MalformedRequest"
+  message_index_1: 4
+  message_index_2: 4
 test_37777:
   error_code: 12288
   message_id: "KeyExists"
@@ -55,11 +55,11 @@ test_37783:
   message_index: 0
 test_37779:
   error_code: 4099
-  message_id: "empty key"
-  message_index: 2
+  message_id: "MalformedRequest"
+  message_index: 1
 test_38093:
   error_code: 4099
-  message_id: "empty key"
+  message_id: "MalformedRequest"
   message_index_1: 1
   message_index_2: 0
 test_38095:
@@ -83,13 +83,38 @@ test_38107:
   message_index: 0
 test_38091:
   error_code: 4099
-  message_id: "empty key"
-  message_index: 1
+  message_id: "MalformedRequest"
+  message_index: 6
 test_38094:
   error_code: 4099
-  message_id: "empty key"
-  message_index: 1
+  message_id: "MalformedRequest"
+  message_index: 4
 test_39401:
   error_code: 12288
   message_id: "UserAlreadyExists"
+  message_index: 0
+test_42273:
+  error_code: 4099
+  message_id: "MalformedRequest"
+  message_index_1: 24
+  message_index_2: 2
+test_42284:
+  max_entries: 5  
+test_42274:
+  ran_int: 10
+test_42287:
+  error_code: 4104
+  message_id: "PermissionDenied"
+  message_index: 0
+test_42288:
+  error_code: 4104
+  message_id: "PermissionDenied"
+  message_index: 0
+test_42289:
+  error_code: 12288
+  message_id: "UserAlreadyExists"
+  message_index: 0
+test_42290:
+  error_code: 4111
+  message_id: "UnauthorizedError"
   message_index: 0

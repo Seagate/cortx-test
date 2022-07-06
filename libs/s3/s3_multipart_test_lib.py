@@ -20,23 +20,24 @@
 #
 """Python library contains methods for s3 multipart upload."""
 
-import os
 import logging
+import os
 from hashlib import md5
-from numpy.random import permutation
+from time import perf_counter_ns
 
 from botocore.exceptions import ClientError
+from numpy.random import permutation
+
 from commons import errorcodes as err
+from commons.constants import ERR_MSG
 from commons.exceptions import CTException
 from commons.greenlet_worker import GeventPool
-from commons.utils.system_utils import create_file
-from commons.utils.system_utils import cal_percent
 from commons.utils import s3_utils
-
+from commons.utils.system_utils import cal_percent
+from commons.utils.system_utils import create_file
 from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_multipart import Multipart
-from libs.s3.s3_common_test_lib import S3BackgroundIO
 
 LOGGER = logging.getLogger(__name__)
 
@@ -44,38 +45,27 @@ LOGGER = logging.getLogger(__name__)
 class S3MultipartTestLib(Multipart):
     """Class initialising s3 connection and including methods for multipart operations."""
 
-    def __init__(self,
-                 access_key: str = ACCESS_KEY,
-                 secret_key: str = SECRET_KEY,
-                 endpoint_url: str = S3_CFG["s3_url"],
-                 s3_cert_path: str = S3_CFG["s3_cert_path"],
+    def __init__(self, access_key: str = ACCESS_KEY, secret_key: str = SECRET_KEY,
+                 endpoint_url: str = S3_CFG["s3_url"], s3_cert_path: str = S3_CFG["s3_cert_path"],
                  **kwargs) -> None:
         """
-        This method initializes members of S3MultipartTestLib and its parent class.
+        Method initializes members of S3MultipartTestLib and its parent class.
 
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint url.
         :param s3_cert_path: s3 certificate path.
-        :param region: region.
-        :param aws_session_token: aws_session_token.
-        :param debug: debug mode.
+        :keyword region: region.
+        :keyword aws_session_token: aws_session_token.
+        :keyword debug: debug mode.
         """
         kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
         kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
-        super().__init__(
-            access_key,
-            secret_key,
-            endpoint_url,
-            s3_cert_path,
-            **kwargs)
+        super().__init__(access_key, secret_key, endpoint_url, s3_cert_path, **kwargs)
 
-    def create_multipart_upload(self,
-                                bucket_name: str = None,
-                                obj_name: str = None,
-                                m_key: str = None,
-                                m_value: str = None) -> tuple:
+    def create_multipart_upload(self, bucket_name: str = None, obj_name: str = None,
+                                m_key: str = None, m_value: str = None) -> tuple:
         """
         Request to initiate a multipart upload.
 
@@ -87,22 +77,15 @@ class S3MultipartTestLib(Multipart):
         """
         try:
             LOGGER.info("Creating multipart upload....")
-            response = super().create_multipart_upload(
-                bucket_name, obj_name, m_key, m_value)
-            LOGGER.debug(
-                "Response: %s Upload id: %s", response, response["UploadId"])
+            response = super().create_multipart_upload(bucket_name, obj_name, m_key, m_value)
+            LOGGER.debug("Response: %s Upload id: %s", response, response["UploadId"])
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.create_multipart_upload.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.create_multipart_upload.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
-    def upload_part(self,
-                    body: bytes = None,
-                    bucket_name: str = None,
-                    object_name: str = None,
+    def upload_part(self, body: bytes = None, bucket_name: str = None, object_name: str = None,
                     **kwargs) -> tuple:
         """
         Upload parts of a specific multipart upload.
@@ -129,19 +112,14 @@ class S3MultipartTestLib(Multipart):
                                                upload_id=upload_id, part_number=part_number)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.upload_part.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.upload_part.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
-    def upload_parts(self,
-                     mpu_id: int = None,
-                     bucket_name: str = None,
-                     object_name: str = None,
-                     multipart_obj_size: int = None,
-                     **kwargs) -> tuple:
+    # pylint: disable-msg=too-many-locals
+    def upload_parts(self, mpu_id: int = None, bucket_name: str = None, object_name: str = None,
+                     multipart_obj_size: int = None, **kwargs) -> tuple:
         """
         Upload parts for a specific multipart upload ID.
 
@@ -149,20 +127,21 @@ class S3MultipartTestLib(Multipart):
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
         :param multipart_obj_size: Size of object need to be uploaded.
-        # :param total_parts: No. of parts to be uploaded.
-        # :param multipart_obj_path: Path of object file.
+        :keyword total_parts: No. of parts to be uploaded.
+        :keyword multipart_obj_path: Path of object file.
         :return: (Boolean, List of uploaded parts).
         """
         try:
+            b_size = kwargs.get("block_size", "1M")
             total_parts = kwargs.get("total_parts", None)
             multipart_obj_path = kwargs.get("multipart_obj_path", None)
-            parts = list()
+            parts = []
             uploaded_bytes = 0
             single_part_size = int(multipart_obj_size) // int(total_parts)
             if kwargs.get('create_file', True):
                 if os.path.exists(multipart_obj_path):
                     os.remove(multipart_obj_path)
-                create_file(multipart_obj_path, multipart_obj_size)
+                create_file(multipart_obj_path, multipart_obj_size, b_size=b_size)
             with open(multipart_obj_path, "rb") as file_pointer:
                 i = 1
                 while True:
@@ -175,33 +154,21 @@ class S3MultipartTestLib(Multipart):
                     LOGGER.debug("Part : %s", str(part))
                     parts.append({"PartNumber": i, "ETag": part["ETag"]})
                     uploaded_bytes += len(data)
-                    LOGGER.debug(
-                        "{0} of {1} uploaded ({2:.2f}%)".format(
-                            uploaded_bytes,
-                            multipart_obj_size *
-                            1048576,
-                            cal_percent(
-                                uploaded_bytes,
-                                multipart_obj_size *
-                                1048576)))
+                    LOGGER.debug("%s of %s uploaded %.2f%%", uploaded_bytes, multipart_obj_size *
+                                 1048576, cal_percent(uploaded_bytes, multipart_obj_size * 1048576))
                     i += 1
             LOGGER.info(parts)
 
             return True, parts
         except (ClientError, Exception) as error:
-            LOGGER.exception("Error in %s: %s",
-                             S3MultipartTestLib.upload_parts.__name__,
-                             error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.upload_parts.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
-    def upload_precalculated_parts(self,
-                                   upload_id: int = None,
-                                   bucket_name: str = None,
-                                   object_name: str = None,
-                                   **kwargs) -> tuple:
+    # pylint: disable-msg=too-many-locals
+    def upload_precalculated_parts(self, upload_id: int = None, bucket_name: str = None,
+                                   object_name: str = None, **kwargs) -> tuple:
         """
-        Upload specified/precalculated part sizes for a specific multipart upload ID one part
-        at a time.
+        Upload precalculated part sizes for a specific multipart uploadID one part at a time.
 
         :param upload_id: Multipart Upload ID.
         :param bucket_name: Name of the bucket.
@@ -212,8 +179,8 @@ class S3MultipartTestLib(Multipart):
             multipart_obj_path = kwargs.get("multipart_obj_path", None)
             part_sizes = kwargs.get("part_sizes", None)
             chunk_size = kwargs.get("chunk_size", None)
-            uploaded_parts = list()
-            total_part_list = list()
+            uploaded_parts = []
+            total_part_list = []
             for part in part_sizes:
                 total_part_list.extend([part['part_size']] * part['count'])
             md5_digests = [None] * len(total_part_list)
@@ -221,26 +188,20 @@ class S3MultipartTestLib(Multipart):
                 for i, partnum in enumerate(permutation(len(total_part_list))):
                     data = file_pointer.read(int(chunk_size * total_part_list[i]))
                     LOGGER.info("data_len %s", str(len(data)))
-                    part = super().upload_part(
-                        data, bucket_name, object_name, upload_id=upload_id,
-                        part_number=int(partnum) + 1)
+                    part = super().upload_part(data, bucket_name, object_name, upload_id=upload_id,
+                                               part_number=int(partnum) + 1)
                     LOGGER.debug("Part : %s", str(part))
                     uploaded_parts.append({"PartNumber": int(partnum) + 1, "ETag": part["ETag"]})
-                    md5_digests[int(partnum)] = md5(data).digest()
-            multipart_etag = '"%s"' % \
-                             (md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests)))
+                    md5_digests[int(partnum)] = md5(data).digest()  # nosec
+            multipart_etag = f'''"{md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(
+                md5_digests))}"'''  # nosec
             return True, {'uploaded_parts': uploaded_parts, 'expected_etag': multipart_etag}
         except BaseException as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.upload_parts.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.upload_parts.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
-    def upload_parts_parallel(self,
-                              upload_id: int = None,
-                              bucket_name: str = None,
-                              object_name: str = None,
-                              **kwargs) -> tuple:
+    def upload_parts_parallel(self, upload_id: int = None, bucket_name: str = None,
+                              object_name: str = None, **kwargs) -> tuple:
         """
         Upload parts for a specific multipart upload ID in parallel.
 
@@ -266,16 +227,11 @@ class S3MultipartTestLib(Multipart):
             response = self.list_parts(upload_id, bucket_name, object_name)
             return response
         except BaseException as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.upload_parts_parallel.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error)
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.upload_parts_parallel.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error) from error
 
-    def upload_parts_sequential(self,
-                                upload_id: int = None,
-                                bucket_name: str = None,
-                                object_name: str = None,
-                                **kwargs) -> tuple:
+    def upload_parts_sequential(self, upload_id: int = None, bucket_name: str = None,
+                                object_name: str = None, **kwargs) -> tuple:
         """
         Upload parts(ordered/unordered) for a specific multipart upload ID in sequential.
 
@@ -297,15 +253,10 @@ class S3MultipartTestLib(Multipart):
 
             return True, parts_details
         except BaseException as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.upload_parts_sequential.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.upload_parts_sequential.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
-    def upload_multipart(self,
-                         body: str = None,
-                         bucket_name: str = None,
-                         object_name: str = None,
+    def upload_multipart(self, body: str = None, bucket_name: str = None, object_name: str = None,
                          **kwargs) -> tuple:
         """
         Upload single part of a specific multipart upload.
@@ -325,44 +276,34 @@ class S3MultipartTestLib(Multipart):
 
             return True, part
         except BaseException as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.upload_multipart.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.upload_multipart.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
-    def list_parts(
-            self,
-            mpu_id: str = None,
-            bucket_name: str = None,
-            object_name: str = None,
-            **kwargs) -> tuple:
+    def list_parts(self, mpu_id: str = None, bucket_name: str = None, object_name: str = None,
+                   **kwargs) -> tuple:
         """
         List parts of a specific multipart upload.
 
-        :param mpu_id: Id of complete multipart upload.
+        :param mpu_id: ID of complete multipart upload.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
+        :keyword part_number_marker: next part number in case parts greater than 1000.
         :return: (Boolean, response)
         """
         try:
             LOGGER.info("Listing uploaded parts.")
             part_num_marker = kwargs.get("PartNumberMarker", 0)
-            response = super().list_parts(mpu_id, bucket_name, object_name, part_num_marker)
+            response = super().list_parts(
+                mpu_id, bucket_name, object_name, part_num_marker=part_num_marker)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.list_parts.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.list_parts.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
-    def complete_multipart_upload(
-            self,
-            mpu_id: str = None,
-            parts: list = None,
-            bucket: str = None,
-            object_name: str = None) -> tuple:
+    def complete_multipart_upload(self, mpu_id: str = None, parts: list = None, bucket: str = None,
+                                  object_name: str = None) -> tuple:
         """
         Complete a multipart upload, s3 creates an object by concatenating the parts.
 
@@ -377,11 +318,8 @@ class S3MultipartTestLib(Multipart):
             response = super().complete_multipart_upload(mpu_id, parts, bucket, object_name)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.complete_multipart_upload.__name__,
-                         error)
-
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.complete_multipart_upload.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
@@ -397,18 +335,13 @@ class S3MultipartTestLib(Multipart):
             response = super().list_multipart_uploads(bucket)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.list_multipart_uploads.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.list_multipart_uploads.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
-    def abort_multipart_upload(
-            self,
-            bucket: str = None,
-            object_name: str = None,
-            upload_id: str = None) -> tuple:
+    def abort_multipart_upload(self, bucket: str = None, object_name: str = None,
+                               upload_id: str = None) -> tuple:
         """
         Abort multipart upload for given upload_id.
 
@@ -422,18 +355,13 @@ class S3MultipartTestLib(Multipart):
             LOGGER.info("Abort a multipart upload.")
             response = super().abort_multipart_upload(bucket, object_name, upload_id)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.abort_multipart_upload.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.abort_multipart_upload.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
-    def upload_part_copy(self,
-                         copy_source: str = None,
-                         bucket_name: str = None,
-                         object_name: str = None,
-                         **kwargs) -> tuple:
+    def upload_part_copy(self, copy_source: str = None, bucket_name: str = None,
+                         object_name: str = None, **kwargs) -> tuple:
         """
         Upload part using uploadPartCopy.
 
@@ -459,16 +387,11 @@ class S3MultipartTestLib(Multipart):
                                                 content_md5=content_md5)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.upload_part_copy.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.upload_part_copy.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
         return True, response
 
-    def abort_multipart_all(
-            self,
-            bucket: str = None,
-            object_name: str = None) -> tuple:
+    def abort_multipart_all(self, bucket: str = None, object_name: str = None) -> tuple:
         """
         Abort all the multipart uploads.
 
@@ -485,23 +408,15 @@ class S3MultipartTestLib(Multipart):
             if "Uploads" in mpus:
                 for upload in mpus["Uploads"]:
                     upload_id = upload["UploadId"]
-                    response.append(
-                        super().abort_multipart_upload(
-                            bucket, object_name, upload_id))
+                    response.append(super().abort_multipart_upload(bucket, object_name, upload_id))
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.abort_multipart_all.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.abort_multipart_all.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
-    def get_byte_range_of_object(
-            self,
-            bucket_name: str = None,
-            my_key: str = None,
-            start_byte: int = None,
-            stop_byte: int = None) -> tuple:
+    def get_byte_range_of_object(self, bucket_name: str = None, my_key: str = None,
+                                 start_byte: int = None, stop_byte: int = None) -> tuple:
         """
         Getting byte range of the object.
 
@@ -513,24 +428,18 @@ class S3MultipartTestLib(Multipart):
         """
         try:
             LOGGER.info("Getting byte range of the object.")
-            range_byte = "bytes={}-{}".format(start_byte, stop_byte)
+            range_byte = f"bytes={start_byte}-{stop_byte}"
             response = self.get_object(bucket_name, my_key, range_byte)
             LOGGER.info(response)
         except (ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.get_byte_range_of_object.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.get_byte_range_of_object.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
         return True, response
 
-    def simple_multipart_upload(
-            self,
-            bucket_name: str,
-            object_name: str,
-            file_size: int,
-            file_path: str,
-            parts: int):
+    # pylint: disable = too-many-arguments
+    def simple_multipart_upload(self, bucket_name: str, object_name: str, file_size: int,
+                                file_path: str, parts: int):
         """
         Do multipart upload for given object by dividing it into given parts.
 
@@ -553,19 +462,12 @@ class S3MultipartTestLib(Multipart):
             LOGGER.info("Completing multipart upload")
             self.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
         except Exception as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.simple_multipart_upload.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.simple_multipart_upload.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0]) from error
 
     # pylint: disable-msg=too-many-locals
-    def complete_multipart_upload_with_di(
-            self,
-            bucket_name: str,
-            object_name: str,
-            file_path: str,
-            total_parts: int,
-            **kwargs):
+    def complete_multipart_upload_with_di(self, bucket_name: str, object_name: str, file_path: str,
+                                          total_parts: int, **kwargs):
         """
         Complete the Multipart upload and do DI check for uploaded object.
 
@@ -580,6 +482,8 @@ class S3MultipartTestLib(Multipart):
         :param file_path: Absolute file path.
         :param total_parts: Number of parts that get uploaded.
         """
+        download_path = os.path.join(
+            os.path.split(file_path)[0], f"mp-download-{perf_counter_ns()}.txt")
         try:
             random = kwargs.get("random", False)
             file_size = kwargs.get("file_size", 10)  # should be multiple of 1MB
@@ -612,7 +516,6 @@ class S3MultipartTestLib(Multipart):
                 raise Exception(f"Failed to match ETag: {upload_etag}, {get_etag}")
             LOGGER.info("Matched ETag: %s, %s", upload_etag, get_etag)
             LOGGER.info("Compare checksum by downloading object.")
-            download_path = os.path.join(os.path.split(file_path)[0], "mp-download.txt")
             resp = self.object_download(bucket_name, object_name, download_path)
             LOGGER.info(resp)
             downloaded_checksum = s3_utils.calc_checksum(download_path)
@@ -621,34 +524,10 @@ class S3MultipartTestLib(Multipart):
                                 f"{uploaded_checksum}, {downloaded_checksum}")
             LOGGER.info("Matched checksum: %s, %s", uploaded_checksum, downloaded_checksum)
         except Exception as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.simple_multipart_upload.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error)
+            LOGGER.exception(ERR_MSG, S3MultipartTestLib.simple_multipart_upload.__name__, error)
+            raise CTException(err.S3_CLIENT_ERROR, error) from error
+        finally:
+            if os.path.exists(download_path):
+                os.remove(download_path)
 
         return response
-
-    @staticmethod
-    def start_ios_get_precalc_parts(
-            mp_config: dict,
-            obj_path: str,
-            **kwargs):
-        """
-        This creates file, starts IOs, Initiates mpu and gets the precalculated parts for uploading
-        to multipart upload
-        :param mp_config: configuration dict for multipart upload
-        :param obj_path: path to object file
-        """
-        log_prefix = kwargs.get("log_prefix", None)
-        duration = kwargs.get("duration", None)
-        s3_test_obj = kwargs.get("s3_test_lib_obj", "s3_test_lib_obj")
-        if os.path.exists(obj_path):
-            os.remove(obj_path)
-        create_file(obj_path, mp_config["file_size"])
-        s3_background_io = S3BackgroundIO(s3_test_lib_obj=s3_test_obj)
-        LOGGER.info("start s3 IO's")
-        s3_background_io.start(log_prefix, duration)
-        precalc_parts = s3_utils.get_precalculated_parts(obj_path, mp_config["part_sizes"],
-                                                 chunk_size=mp_config["chunk_size"])
-        keys = list(precalc_parts.keys())
-        return precalc_parts, keys, s3_background_io

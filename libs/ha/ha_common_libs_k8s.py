@@ -888,7 +888,8 @@ class HAK8s:
 
     def event_s3_operation(self, event, setup_s3bench=True, log_prefix=None, s3userinfo=None,
                            skipread=False, skipwrite=False, skipcleanup=False, nsamples=10,
-                           nclients=10, output=None):
+                           nclients=10, output=None, event_set_clr=None,
+                           httpclientimeout=HA_CFG["s3_operation_data"]["httpclientimeout"]):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
         :param event: Thread event to be sent in case of parallel IOs
@@ -901,6 +902,9 @@ class HAK8s:
         :param nsamples: Number of samples of object
         :param nclients: Number of clients/workers
         :param output: Queue to fill results
+        :param httpclientimeout: Time limit in ms for requests made by this Client.
+        :param event_set_clr: Thread event set-clear flag reference when s3bench workload
+        execution miss the event set-clear time window
         :return: None
         """
         pass_res = []
@@ -909,8 +913,6 @@ class HAK8s:
         workloads = HA_CFG["s3_bench_workloads"]
         if self.setup_type == "HW":
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
-        # Flag to store next workload status after/while event gets clear from test function
-        event_clear_flg = False
         if setup_s3bench:
             resp = s3bench.setup_s3bench()
             if not resp:
@@ -924,15 +926,14 @@ class HAK8s:
                 num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 skip_write=skipwrite, skip_read=skipread, obj_size=workload,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
-                end_point=S3_CFG["s3_url"], validate_certs=S3_CFG["validate_certs"])
-            if event.is_set():
+                end_point=S3_CFG["s3_url"], validate_certs=S3_CFG["validate_certs"],
+                httpclientimeout=httpclientimeout)
+            if event.is_set() or (isinstance(event_set_clr, list) and event_set_clr[0]):
+                LOGGER.debug("The state of event set clear Flag is %s", event_set_clr)
                 fail_res.append(resp)
-                event_clear_flg = True
+                if isinstance(event_set_clr, list):
+                    event_set_clr[0] = False
             else:
-                if event_clear_flg:
-                    fail_res.append(resp)
-                    event_clear_flg = False
-                    continue
                 pass_res.append(resp)
         results["pass_res"] = pass_res
         results["fail_res"] = fail_res
@@ -1471,15 +1472,17 @@ class HAK8s:
     def delete_kpod_with_shutdown_methods(self, master_node_obj, health_obj,
                                           pod_prefix=None, kvalue=1,
                                           down_method=common_const.RESTORE_SCALE_REPLICAS,
-                                          event=None):
+                                          event=None, event_set_clr=None):
         """
         Delete K pods by given shutdown method. Check and verify deleted/remaining pod's services
         status, cluster status
         :param master_node_obj: Master node object list
         :param health_obj: Health object
         :param pod_prefix: Pod prefix to be deleted (Expected List type)
-        :param down_method: Pod shutdown/delete method
-        :param kvalue: Number of pod to be shutdown/deleted
+        :param down_method: Pod shutdown/delete method.
+        :param kvalue: Number of pod to be shutdown/deleted.
+        :param event_set_clr: Thread event set-clear flag reference when s3bench workload
+        execution miss the event set-clear time window
         :param event: Thread event to set/clear before/after pods/nodes
         shutdown with parallel IOs
         return : tuple
@@ -1524,8 +1527,10 @@ class HAK8s:
             pod_info[pod]['method'] = down_method
             pod_info[pod]['hostname'] = hostname
             if event is not None:
-                LOGGER.debug("Clearing the Thread event")
+                LOGGER.debug("Clearing the Thread event and setting event set_clear flag")
                 event.clear()
+                if isinstance(event_set_clr, list):
+                    event_set_clr[0] = True
             LOGGER.info("Check services status that were running on pod %s", pod)
             resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
                                                  hostname=pod_info[pod]['hostname'])
@@ -1813,8 +1818,8 @@ class HAK8s:
 
         return True, f"Successfully failed over pods {list(pod_yaml.keys())}"
 
-    def iam_bucket_cruds(self, event, s3_obj, user_crud=False, num_users=None, bkt_crud=False,
-                         num_bkts=None, output=None):
+    def iam_bucket_cruds(self, event, s3_obj=None, user_crud=False, num_users=None, bkt_crud=False,
+                         num_bkts=None, del_users_dict=None, output=None):
         """
         Function to perform iam user and bucket crud operations in loop (To be used for background)
         :param event: event to intimate thread about main thread operations
@@ -1823,18 +1828,21 @@ class HAK8s:
         :param num_users: Number of iam users to be created and deleted
         :param bkt_crud: Flag for performing bucket crud operations
         :param num_bkts: Number of buckets to be created and deleted
+        :param del_users_dict: Dict of users to be deleted
         :param output: Output queue in which results should be put
         :return: Queue containing output lists
         """
         exp_fail = list()
         failed = list()
+        created_users = list()
         user_del_failed = list()
         user = None
+        del_users = list(del_users_dict.keys()) if del_users_dict else list()
         if user_crud:
             LOGGER.info("Create and delete %s IAM users in loop", num_users)
-            for i in range(num_users):
+            for i_i in range(num_users):
                 try:
-                    LOGGER.debug("Creating %s user", i)
+                    LOGGER.debug("Creating %s user", i_i)
                     user = None
                     user = self.mgnt_ops.create_account_users(nusers=1)
                     if user is None:
@@ -1842,17 +1850,8 @@ class HAK8s:
                             exp_fail.append(user)
                         else:
                             failed.append(user)
-                        break
-                    LOGGER.debug("Deleting %s user", i)
-                    resp = self.delete_s3_acc_buckets_objects(user)
-                    if not resp[0]:
-                        user_del_failed.append(user)
-                        if event.is_set():
-                            exp_fail.append(user)
-                        else:
-                            failed.append(user)
                     else:
-                        LOGGER.debug("Created and deleted %s user successfully", i)
+                        created_users.append(user)
                 except CTException as error:
                     LOGGER.exception("Error: %s", error)
                     if event.is_set():
@@ -1860,9 +1859,20 @@ class HAK8s:
                     else:
                         failed.append(user)
 
-            result = (exp_fail, failed, user_del_failed)
+                if len(del_users) > i_i:
+                    LOGGER.debug("Deleting %s user", del_users[i_i])
+                    user = del_users[i_i]
+                    resp = self.delete_s3_acc_buckets_objects({user: del_users_dict[user]})
+                    if not resp[0]:
+                        user_del_failed.append(user)
+                        if event.is_set():
+                            exp_fail.append(user)
+                        else:
+                            failed.append(user)
+
+            result = (exp_fail, failed, user_del_failed, created_users)
             output.put(result)
-        elif bkt_crud:
+        if bkt_crud:
             self.bucket_cruds(event, s3_obj, num_bkts=num_bkts, output=output)
 
     @staticmethod
@@ -1879,9 +1889,9 @@ class HAK8s:
         exp_fail = list()
         failed = list()
         bucket_name = None
-        for i in range(num_bkts):
+        for i_i in range(num_bkts):
             try:
-                bucket_name = f"bkt-loop-{i}"
+                bucket_name = f"bkt-loop-{i_i}"
                 res = s3_obj.create_bucket(bucket_name)
                 if res[1] != bucket_name:
                     if event.is_set():
@@ -1890,7 +1900,7 @@ class HAK8s:
                         failed.append(bucket_name)
                     break
                 s3_obj.delete_bucket(bucket_name=bucket_name, force=True)
-                LOGGER.debug("Created and deleted %s bucket successfully", i)
+                LOGGER.debug("Created and deleted %s bucket successfully", i_i)
             except CTException as error:
                 LOGGER.exception("Error: %s", error)
                 if event.is_set():
@@ -1900,3 +1910,23 @@ class HAK8s:
 
         result = (exp_fail, failed)
         output.put(result)
+
+    @staticmethod
+    def object_download_jclient(s3_data, bucket_name, object_name, obj_download_path):
+        """
+        Function to download object using jclient tool
+        :param s3_data: s3 account details
+        :param bucket_name: Name of the bucket
+        :param object_name: Name of the object
+        :param obj_download_path: Path of the file to which object is to be downloaded
+        :return: response
+        """
+        jclient_prop = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"]
+        access_key = s3_data["s3_acc"]["accesskey"]
+        secret_key = s3_data["s3_acc"]["secretkey"]
+        java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
+        get_cmd = f"{java_cmd} -c {jclient_prop} get s3://{bucket_name}/{object_name} " \
+                  f"--access_key {access_key} --secret_key {secret_key} {obj_download_path}"
+        LOGGER.info("Running command %s", get_cmd)
+        resp = system_utils.execute_cmd(get_cmd)
+        return resp

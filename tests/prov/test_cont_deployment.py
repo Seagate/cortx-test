@@ -40,6 +40,7 @@ DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.y
 class TestContDeployment:
     """Test Multiple config of N+K+S deployment testsuite"""
 
+    # pylint: disable=too-many-statements
     @classmethod
     def setup_class(cls):
         """Setup class"""
@@ -75,7 +76,7 @@ class TestContDeployment:
             cls.log.error("The NAMESPACE contains invalid chars %s", cls.namespace)
             assert False, "Please Provide valid NAMESPACE name, " \
                           "it should contain lowercase and digit with `-` only"
-        cls.deploy_lc_obj = ProvDeployK8sCortxLib()
+        cls.deploy_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
         cls.master_node_list = []
@@ -102,7 +103,7 @@ class TestContDeployment:
                         data_size < cls.meta_disk_size.strip('Gi'):
                     cls.log.error("VM disk size is %sG and provided disk size are %s, %s",
                                   data_size, cls.data_disk_size, cls.meta_disk_size)
-                    return False, f"VM disk size is {data_size}G and provided disk size are" \
+                    assert False, f"VM disk size is {data_size}G and provided disk size are" \
                                   f" {cls.data_disk_size},{cls.meta_disk_size}"
 
         cls.report_filepath = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
@@ -164,28 +165,16 @@ class TestContDeployment:
         iteration = 0
         while iteration < count:
             self.log.info("The iteration no is %s", (iteration + 1))
-            self.deploy_lc_obj.test_deployment(sns_data=self.sns[0],
-                                               sns_parity=self.sns[1],
-                                               sns_spare=self.sns[2],
-                                               dix_data=self.dix[0],
-                                               dix_parity=self.dix[1],
-                                               dix_spare=self.dix[2],
-                                               cvg_count=self.cvg_per_node,
-                                               data_disk_per_cvg=self.data_disk_per_cvg,
-                                               master_node_list=self.master_node_list,
-                                               worker_node_list=self.worker_node_list,
-                                               setup_k8s_cluster_flag=self.setup_k8s_cluster_flag,
-                                               cortx_cluster_deploy_flag=
-                                               self.cortx_cluster_deploy_flag,
-                                               setup_client_config_flag=
-                                               self.setup_client_config_flag,
-                                               run_s3bench_workload_flag=
-                                               self.run_s3bench_workload_flag,
-                                               run_basic_s3_io_flag=self.run_basic_s3_io_flag,
-                                               destroy_setup_flag=self.destroy_setup_flag,
-                                               custom_repo_path=self.custom_repo_path,
-                                               namespace=self.namespace,
-                                               report_filepath=self.report_file,
-                                               data_disk_size=self.data_disk_size,
-                                               meta_disk_size=self.meta_disk_size)
+            self.deploy_obj.test_deployment(
+                sns_data=self.sns[0], sns_parity=self.sns[1], sns_spare=self.sns[2],
+                dix_data=self.dix[0], dix_parity=self.dix[1], dix_spare=self.dix[2],
+                cvg_count=self.cvg_per_node, data_disk_per_cvg=self.data_disk_per_cvg,
+                master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
+                setup_k8s_cluster_flag=self.setup_k8s_cluster_flag, cortx_cluster_deploy_flag=
+                self.cortx_cluster_deploy_flag, setup_client_config_flag=
+                self.setup_client_config_flag, run_s3bench_workload_flag=
+                self.run_s3bench_workload_flag, run_basic_s3_io_flag=self.run_basic_s3_io_flag,
+                destroy_setup_flag=self.destroy_setup_flag, custom_repo_path=self.custom_repo_path,
+                namespace=self.namespace, report_filepath=self.report_file, data_disk_size=
+                self.data_disk_size, meta_disk_size=self.meta_disk_size)
             iteration = iteration + 1

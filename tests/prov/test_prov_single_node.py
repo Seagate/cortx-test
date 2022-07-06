@@ -23,6 +23,7 @@ Prov test file for all the Prov tests scenarios for single node VM.
 
 import os
 import logging
+
 import pytest
 from commons.helpers.node_helper import Node
 from commons import commands as common_cmds
@@ -50,17 +51,17 @@ class TestProvSingleNode:
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.build = os.getenv("Build", None)
         cls.build_branch = os.getenv("Build_Branch", "stable")
+        build_branch_list = ["stable", "main"]
         if cls.build:
-            if cls.build_branch == "stable" or cls.build_branch == "main":
-                cls.build = "{}/{}".format(cls.build, "prod")
+            if cls.build_branch in build_branch_list:
+                cls.build = "%s/%s", cls.build, "prod"
         else:
             cls.build = "last_successful_prod"
         cls.build_path = PROV_CFG["build_url"].format(
             cls.build_branch, cls.build)
 
         LOGGER.info(
-            "User provided Hostname: {} and build path: {}".format(
-                cls.host, cls.build_path))
+            "User provided Hostname: %s and build path: %s", cls.host, cls.build_path)
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.nd_obj = Node(hostname=cls.host, username=cls.uname,
@@ -68,20 +69,14 @@ class TestProvSingleNode:
         cls.prov_obj = Provisioner()
         LOGGER.info("Done: Setup module operations")
 
-    def teardown_method(self):
-        """
-        Teardown operations after each test.
-        """
-        LOGGER.info("Successfully performed Teardown operation")
-
     @pytest.mark.cluster_management_ops
     @pytest.mark.singlenode
     @pytest.mark.lr
     @pytest.mark.tags("TEST-19439")
     def test_deployment_single_node(self):
         """
-        Test method for the single node VM deployment.
-        This has 3 main stages: check for the required prerequisites, trigger the deployment jenkins job
+        Test method for the single node VM deployment. This has 3 main stages:
+        check for the required prerequisites, trigger the deployment jenkins job
         and after deployment done, check for services status.
         """
         LOGGER.info("Starting the prerequisite checks.")
@@ -94,7 +89,7 @@ class TestProvSingleNode:
         LOGGER.info("Checking number of volumes present")
         cmd = common_cmds.CMD_LSBLK
         count = self.nd_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.info("count : {}".format(int(count[0])))
+        LOGGER.info("count : %s", int(count[0]))
         assert_utils.assert_greater_equal(
             int(count[0]), test_cfg["count"], "Need at least 2 disks for deployment")
 
@@ -102,7 +97,7 @@ class TestProvSingleNode:
         cmd = common_cmds.CMD_OS_REL
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         resp = resp[0].strip()
-        LOGGER.info("os rel: {}".format(resp))
+        LOGGER.info("os rel: %s",resp)
         assert_utils.assert_equal(resp, test_cfg["os_release"],
                                   "OS release is different than expected.")
 
@@ -110,7 +105,7 @@ class TestProvSingleNode:
         cmd = common_cmds.CMD_KRNL_VER
         resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
         resp = resp[0].strip()
-        LOGGER.info("kernel: {}".format(resp))
+        LOGGER.info("kernel: %s",resp)
         assert_utils.assert_equal(
             resp,
             test_cfg["kernel"],
@@ -125,7 +120,7 @@ class TestProvSingleNode:
         token = pswdmanager.decrypt(common_cnst.TOKEN_NAME)
         output = Provisioner.build_job(
             test_cfg["job_name"], common_cnst.PARAMS, token)
-        LOGGER.info("Jenkins Build URL: {}".format(output['url']))
+        LOGGER.info("Jenkins Build URL: %s", output['url'])
         assert_utils.assert_equal(
             output['result'],
             test_cfg["success_msg"],

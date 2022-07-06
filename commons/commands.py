@@ -37,6 +37,7 @@ HA_CONSUL_STR = 'consul kv get ' \
                 '--recurse "cortx>ha>v1>cluster_stop_key"'
 MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
 HCTL_STATUS_CMD_JSON = "hctl status --json"
+HCTL_DISK_STATUS = "hctl status -d"
 NETSAT_CMD = "netstat -tnlp | grep {}"
 PCS_CLUSTER_START = "pcs cluster start {}"
 PCS_CLUSTER_STOP = "pcs cluster stop {}"
@@ -89,6 +90,7 @@ CMD_HARE_RESET = "/opt/seagate/cortx/hare/bin/hare_setup reset " \
                  "--file /var/lib/hare/cluster.yaml"
 PROV_CLUSTER = "jq . /opt/seagate/cortx_configs/provisioner_cluster.json"
 DOS2UNIX_CMD = "yum install dos2unix -y; dos2unix {}"
+GET_CLUSTER_PROCESSES_CMD = "consul kv get --recurse processes"
 
 CMD_AWS_INSTALL = "make aws-install --makefile=scripts/s3_tools/Makefile"
 
@@ -183,6 +185,7 @@ PCS_RESOURCE_STATUS_CMD = "pcs resource show {}"
 SYSTEM_CTL_RELOAD_CMD = "systemctl reload {}"
 GET_PID_CMD = "systemctl status {}.service | grep PID"
 KILL_CMD = "kill -9 {}"
+PIDOF_CMD = "pidof {}"
 
 # CORTXCLI Commands
 CMD_LOGIN_CORTXCLI = "cortxcli"
@@ -393,9 +396,22 @@ LDAP_PWD = ("s3cipher decrypt --data "  # nosec
 
 # Motr commands
 M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
-M0CP_U = "m0cp -G -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} -O {} -u {}"
-# m0cp -G -l 192.168.59.17@tcp:12345:34:101 -H 192.168.59.17@tcp:12345:34:1 -p 0x7000000000000001:0
-# -P 0x7200000000000000:0 -o 1048580 /var/motr/update_file -s 4096 -c 8 -L 3 -u -O 4096
+
+M0CP_G = "m0cp -G -l $ep -H $hax_ep -P $fid -p $prof_fid -s $bsize -c $count -o $obj -L" \
+         " $layout $file"
+
+M0CP_U = "m0cp -G -l $ep -H $hax_ep -P $fid -p $prof_fid -s $bsize -c $count -o $obj -L" \
+         " $layout -O $off -u $file" 
+
+# m0cp from data unit aligned offset 0
+# m0cp -G -l inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@21201
+# -H inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@22001 -p 0x7000000000000001:0x110
+# -P 0x7200000000000001:0xae -s 4096 -c 10 -o 1048583 /root/infile -L 3
+#
+# m0cp -G -l inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@21201
+# -H inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@22001 -p 0x7000000000000001:0x110
+# -P 0x7200000000000001:0xae -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
+
 
 M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"
@@ -559,15 +575,13 @@ CLSTR_START_CMD = "cd {}; ./start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; ./shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; ./status-cortx-cloud.sh"
 CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
-PRE_REQ_CMD = "cd $dir; ./prereq-deploy-cortx-cloud.sh -d $disk"
+PRE_REQ_CMD = "cd $dir; ./prereq-deploy-cortx-cloud.sh -p -d $disk"
 DEPLOY_CLUSTER_CMD = "cd $path; ./deploy-cortx-cloud.sh > $log"
 DESTROY_CLUSTER_CMD = "cd $dir; ./destroy-cortx-cloud.sh --force"
-UPGRADE_CLUSTER_DESTRUPTIVE_CMD = "sh upgrade-cortx-cloud.sh -i {} -r"
-UPGRADE_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -p {}"
-UPGRADE_COLD_CLUSTER_CMD = "cd {}; ./upgrade-cortx-cloud.sh -cold"
+UPGRADE_CLUSTER_CMD = "cd $dir; ./upgrade-cortx-cloud.sh start -p $pod"
 
 # Incomplete commands
-UPGRADE_NEG_CMD = "cd {}; ./upgrade-cortx-cloud.sh"
+UPGRADE_NEG_CMD = "cd $dir; ./upgrade-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
@@ -616,10 +630,10 @@ SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle ge
 
 # SNS repair
 SNS_REPAIR_CMD = "hctl repair {}"
-CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json '{\"node\" : \"node_val\", " \
-                               "\"source_type\" : \"drive\",  \"device\" : \"device_val\", " \
-                               "\"state\" : \"status_val\"}'"
-
+SNS_REBALANCE_CMD = "hctl rebalance {}"
+CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json $(jq --null-input --compact-output "\
+                                " '{node : \"cortx_nod\", source_type : \"drive\", "\
+                                " device : \"device_val\", state : \"status_val\"}')"
 # Procpath Collection
 PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'); procpath " \
            "record -i 45 -d {} -p $pid"

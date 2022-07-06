@@ -28,13 +28,13 @@ from commons import constants as cons
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG, PROV_TEST_CFG
+from libs.prov.prov_k8s_cortx_upgrade import ProvUpgradeK8sCortxLib
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 LOGGER = logging.getLogger(__name__)
 
 
 class TestProvK8CortxGranular:
-
     """
     This class contains Provisioner Component level test cases for K8s.
     CORTX Software Granular Type Upgrade.
@@ -51,7 +51,8 @@ class TestProvK8CortxGranular:
         cls.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
         cls.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         cls.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
-        cls.deploy_lc_obj = ProvDeployK8sCortxLib()
+        cls.deploy_obj = ProvDeployK8sCortxLib()
+        cls.upgrade_obj = ProvUpgradeK8sCortxLib()
         cls.deploy_pod_obj = LogicalNode(hostname="hostname", username="user", password="pswd")
         cls.num_nodes = CMN_CFG["nodes"]
         cls.worker_node_list = []
@@ -78,16 +79,18 @@ class TestProvK8CortxGranular:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
-        installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
+        installed_version = self.deploy_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
+        ver_resp = self.deploy_obj.generate_and_compare_both_version(self.cortx_all_image,
+                                                                     installed_version)
+        assert_utils.assert_true(ver_resp)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj)
+        resp = self.deploy_obj.check_s3_status(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Done.")
 
@@ -97,28 +100,28 @@ class TestProvK8CortxGranular:
                                                                 local_path=self.local_sol_path)
         assert_utils.assert_true(solution_path[0], solution_path[1])
         image_dict = {"cortxha": self.cortx_ha_image}
-        local_path = self.deploy_lc_obj.update_sol_with_image_any_pod(self.local_sol_path,
-                                                                      image_dict)
+        local_path = self.deploy_obj.update_sol_with_image_any_pod(self.local_sol_path,
+                                                                   image_dict)
         assert_utils.assert_true(local_path[0], local_path[1])
         for node_obj in self.host_list:
-            resp = self.deploy_lc_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
-                                                    remote_code_path=self.
-                                                    prov_deploy_cfg["git_remote_path"])
+            resp = self.deploy_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
+                                                 remote_code_path=self.
+                                                 prov_deploy_cfg["git_remote_path"])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Done.")
 
         LOGGER.info("Step 5: Pull the images for upgrade.")
         for node_obj in self.host_list:
             for image in image_dict:
-                resp = self.deploy_lc_obj.pull_image(node_obj, image_dict[image])
+                resp = self.deploy_obj.pull_image(node_obj, image_dict[image])
                 assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Done.")
 
         LOGGER.info("Step 6: Start upgrade.")
         LOGGER.info("Upgrading HA CORTX image to version: %s.", self.cortx_ha_image)
-        resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
-                                                   self.prov_deploy_cfg["git_remote_path"],
-                                                   granular_type="ha")
+        resp = self.upgrade_obj.upgrade_software(self.master_node_obj,
+                                                 self.prov_deploy_cfg["git_remote_path"],
+                                                 granular_type="ha")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Done.")
 
@@ -130,8 +133,10 @@ class TestProvK8CortxGranular:
         LOGGER.info(resp)
         version = resp[1].split("cortx-all:")[1].split("-")
         new_version = version[0] + "-" + version[1].strip()
-        installing_version = self.deploy_lc_obj.generate_and_compare_both_version(self.cortx_all_image, installed_version)
-        assert_utils.assert_equals(new_version, installing_version,"Installing version is equal to new installed version.")
+        installing_version = self.deploy_obj.generate_and_compare_both_version(
+            self.cortx_all_image, installed_version)
+        assert_utils.assert_equals(new_version, installing_version, "Installing version is equal"
+                                                                    " to new installed version.")
         LOGGER.info("New CORTX image version: %s", new_version)
         LOGGER.info("Step 7: Done.")
         LOGGER.info("Test Completed.")
@@ -145,16 +150,18 @@ class TestProvK8CortxGranular:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
-        installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
+        installed_version = self.deploy_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
+        ver_resp = self.deploy_obj.generate_and_compare_both_version(self.cortx_all_image,
+                                                                     installed_version)
+        assert_utils.assert_true(ver_resp)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj)
+        resp = self.deploy_obj.check_s3_status(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Done.")
 
@@ -164,28 +171,28 @@ class TestProvK8CortxGranular:
                                                                 local_path=self.local_sol_path)
         assert_utils.assert_true(solution_path[0], solution_path[1])
         image_dict = {"cortxcontrol": self.cortx_control_image}
-        local_path = self.deploy_lc_obj.update_sol_with_image_any_pod(self.local_sol_path,
-                                                                      image_dict)
+        local_path = self.deploy_obj.update_sol_with_image_any_pod(self.local_sol_path,
+                                                                   image_dict)
         assert_utils.assert_true(local_path[0], local_path[1])
         for node_obj in self.host_list:
-            resp = self.deploy_lc_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
-                                                    remote_code_path=self.
-                                                    prov_deploy_cfg["git_remote_path"])
+            resp = self.deploy_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
+                                                 remote_code_path=self.
+                                                 prov_deploy_cfg["git_remote_path"])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Done.")
 
         LOGGER.info("Step 5: Pull the images for upgrade.")
         for node_obj in self.host_list:
             for image in image_dict:
-                resp = self.deploy_lc_obj.pull_image(node_obj, image_dict[image])
+                resp = self.deploy_obj.pull_image(node_obj, image_dict[image])
                 assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Done.")
 
         LOGGER.info("Step 6: Start upgrade.")
         LOGGER.info("Upgrading CORTX CONTROL image to version: %s.", self.cortx_control_image)
-        resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
-                                                   self.prov_deploy_cfg["git_remote_path"],
-                                                   granular_type="control")
+        resp = self.upgrade_obj.upgrade_software(self.master_node_obj,
+                                                 self.prov_deploy_cfg["git_remote_path"],
+                                                 granular_type="control")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Done.")
 
@@ -199,7 +206,8 @@ class TestProvK8CortxGranular:
         version = resp[1].split("cortx-all:")[1].split("-")
         new_version = version[0] + "-" + version[1].strip()
         LOGGER.info(new_version)
-        installing_version = self.deploy_lc_obj.generate_and_compare_both_version(self.cortx_all_image, installed_version)
+        installing_version = self.deploy_obj.generate_and_compare_both_version(
+            self.cortx_all_image, installed_version)
         LOGGER.info("New CORTX image version: %s Installing Version %s", new_version,
                     installing_version)
         assert_utils.assert_equals(installing_version, new_version,
@@ -216,16 +224,18 @@ class TestProvK8CortxGranular:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
-        installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
+        installed_version = self.deploy_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
+        ver_resp = self.deploy_obj.generate_and_compare_both_version(self.cortx_all_image,
+                                                                     installed_version)
+        assert_utils.assert_true(ver_resp)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj)
+        resp = self.deploy_obj.check_s3_status(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Done.")
 
@@ -235,28 +245,28 @@ class TestProvK8CortxGranular:
                                                                 local_path=self.local_sol_path)
         assert_utils.assert_true(solution_path[0], solution_path[1])
         image_dict = {"cortxdata": self.cortx_data_image}
-        local_path = self.deploy_lc_obj.update_sol_with_image_any_pod(self.local_sol_path,
-                                                                      image_dict)
+        local_path = self.deploy_obj.update_sol_with_image_any_pod(self.local_sol_path,
+                                                                   image_dict)
         assert_utils.assert_true(local_path[0], local_path[1])
         for node_obj in self.host_list:
-            resp = self.deploy_lc_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
-                                                    remote_code_path=self.
-                                                    prov_deploy_cfg["git_remote_path"])
+            resp = self.deploy_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
+                                                 remote_code_path=self.
+                                                 prov_deploy_cfg["git_remote_path"])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Done.")
 
         LOGGER.info("Step 5: Pull the images for upgrade.")
         for node_obj in self.host_list:
             for image in image_dict:
-                resp = self.deploy_lc_obj.pull_image(node_obj, image_dict[image])
+                resp = self.deploy_obj.pull_image(node_obj, image_dict[image])
                 assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Done.")
 
         LOGGER.info("Step 6: Start upgrade.")
         LOGGER.info("Upgrading CORTX DATA image to version: %s.", self.cortx_data_image)
-        resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
-                                                   self.prov_deploy_cfg["git_remote_path"],
-                                                   granular_type="data")
+        resp = self.upgrade_obj.upgrade_software(self.master_node_obj,
+                                                 self.prov_deploy_cfg["git_remote_path"],
+                                                 granular_type="data")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Done.")
 
@@ -269,7 +279,8 @@ class TestProvK8CortxGranular:
         version = resp[1].split("cortx-all:")[1].split("-")
         new_version = version[0] + "-" + version[1].strip()
         LOGGER.info(new_version)
-        installing_version = self.deploy_lc_obj.generate_and_compare_both_version(self.cortx_all_image, installed_version)
+        installing_version = self.deploy_obj.generate_and_compare_both_version(
+            self.cortx_all_image, installed_version)
         LOGGER.info("New CORTX image version: %s Installing Version %s", new_version,
                     installing_version)
         assert_utils.assert_equals(installing_version, new_version,
@@ -286,16 +297,18 @@ class TestProvK8CortxGranular:
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Step 1: Get installed version.")
-        installed_version = self.deploy_lc_obj.get_installed_version(self.master_node_obj)
+        installed_version = self.deploy_obj.get_installed_version(self.master_node_obj)
         LOGGER.info("Current version: %s", installed_version)
         LOGGER.info("Step 1: Done.")
 
         LOGGER.info("Step 2: Check if installing version is higher than installed version.")
-        self.deploy_lc_obj.generate_and_compare_version(self.cortx_all_image, installed_version)
+        ver_resp = self.deploy_obj.generate_and_compare_both_version(self.cortx_all_image,
+                                                                     installed_version)
+        assert_utils.assert_true(ver_resp)
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check cluster health.")
-        resp = self.deploy_lc_obj.check_s3_status(self.master_node_obj)
+        resp = self.deploy_obj.check_s3_status(self.master_node_obj)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Done.")
 
@@ -305,28 +318,28 @@ class TestProvK8CortxGranular:
                                                                 local_path=self.local_sol_path)
         assert_utils.assert_true(solution_path[0], solution_path[1])
         image_dict = {"cortxserver": self.cortx_server_image}
-        local_path = self.deploy_lc_obj.update_sol_with_image_any_pod(self.local_sol_path,
-                                                                      image_dict)
+        local_path = self.deploy_obj.update_sol_with_image_any_pod(self.local_sol_path,
+                                                                   image_dict)
         assert_utils.assert_true(local_path[0], local_path[1])
         for node_obj in self.host_list:
-            resp = self.deploy_lc_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
-                                                    remote_code_path=self.
-                                                    prov_deploy_cfg["git_remote_path"])
+            resp = self.deploy_obj.copy_sol_file(node_obj, local_sol_path=local_path[1],
+                                                 remote_code_path=self.
+                                                 prov_deploy_cfg["git_remote_path"])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Done.")
 
         LOGGER.info("Step 5: Pull the images for upgrade.")
         for node_obj in self.host_list:
             for image in image_dict:
-                resp = self.deploy_lc_obj.pull_image(node_obj, image_dict[image])
+                resp = self.deploy_obj.pull_image(node_obj, image_dict[image])
                 assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Done.")
 
         LOGGER.info("Step 6: Start upgrade.")
         LOGGER.info("Upgrading CORTX SERVER image to version: %s.", self.cortx_server_image)
-        resp = self.deploy_lc_obj.upgrade_software(self.master_node_obj,
-                                                   self.prov_deploy_cfg["git_remote_path"],
-                                                   granular_type="server")
+        resp = self.upgrade_obj.upgrade_software(self.master_node_obj,
+                                                 self.prov_deploy_cfg["git_remote_path"],
+                                                 granular_type="server")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Done.")
 
@@ -340,7 +353,8 @@ class TestProvK8CortxGranular:
         version = resp[1].split("cortx-rgw:")[1].split("-")
         new_version = version[0] + "-" + version[1].strip()
         LOGGER.info(new_version)
-        installing_version = self.deploy_lc_obj.generate_and_compare_both_version(self.cortx_all_image, installed_version)
+        installing_version = self.deploy_obj.generate_and_compare_both_version(
+            self.cortx_all_image, installed_version)
         LOGGER.info("New CORTX image version: %s Installing Version %s", new_version,
                     installing_version)
         assert_utils.assert_equals(installing_version, new_version,

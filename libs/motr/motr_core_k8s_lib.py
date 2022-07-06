@@ -24,6 +24,7 @@ Python library contains methods which provides the services endpoints.
 import json
 import logging
 from random import SystemRandom
+from string import Template
 
 from libs.motr import TEMP_PATH
 from libs.motr import FILE_BLOCK_COUNT
@@ -34,12 +35,13 @@ from commons.utils import system_utils
 from commons.utils import config_utils
 from commons.utils import assert_utils
 from commons.helpers.pods_helper import LogicalNode
+from commons.helpers.health_helper import Health
 from commons import commands as common_cmd
 from commons import constants as common_const
 
 log = logging.getLogger(__name__)
 
-
+# pylint: disable=too-many-public-methods
 class MotrCoreK8s():
     """ Motr Kubernetes environment test library """
 
@@ -48,6 +50,7 @@ class MotrCoreK8s():
         self.profile_fid = None
         self.cortx_node_list = None
         self.worker_node_list = []
+        self.worker_node_objs = []
         for node in range(len(CMN_CFG["nodes"])):
             if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
                 self.master_node = CMN_CFG["nodes"][node]["hostname"]
@@ -56,8 +59,15 @@ class MotrCoreK8s():
                 self.node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                             username=CMN_CFG["nodes"][node]["username"],
                                             password=CMN_CFG["nodes"][node]["password"])
+                self.health_obj = Health(hostname=CMN_CFG["nodes"][node]["hostname"],
+                                            username=CMN_CFG["nodes"][node]["username"],
+                                            password=CMN_CFG["nodes"][node]["password"])
             else:
                 self.worker_node_list.append(CMN_CFG["nodes"][node]["hostname"])
+                self.worker_node_objs.append(LogicalNode(
+                                            hostname=CMN_CFG["nodes"][node]["hostname"],
+                                            username=CMN_CFG["nodes"][node]["username"],
+                                            password=CMN_CFG["nodes"][node]["password"]))
         self.node_dict = self._get_cluster_info
         self.node_pod_dict = self.get_node_pod_dict()
         self.ha_obj = HAK8s()
@@ -126,12 +136,12 @@ class MotrCoreK8s():
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                            f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}",
             decode=True)
-        return primary_cortx_node
+        return primary_cortx_node.replace("data", "client")
 
     def get_cortx_node_endpoints(self, cortx_node=None):
         """
         To get the endpoints details of the cortx node
-        
+
         :param cortx_node: Name of the cortx node
         :type: str
         :returns: Dict of a cortx node containing the endpoints details
@@ -226,7 +236,7 @@ class MotrCoreK8s():
                                    f'"{cmd}" Failed, Please check the log')
 
     # pylint: disable=too-many-arguments
-    def cp_cmd(self, b_size, count, obj, layout, file, node, client_num=None):
+    def cp_cmd(self, b_size, count, obj, layout, file, node, client_num=None, di_g=False):
         """
         M0CP command creation
 
@@ -237,15 +247,25 @@ class MotrCoreK8s():
         :file: Output file name
         :node: on which node m0cp cmd need to perform
         :client_num: perform operation on motr_client
+        :di_g: DI mode flag
         """
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0CP.format(node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
-                                     node_dict["hax_ep"],
-                                     node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-                                     self.profile_fid, b_size.lower(),
-                                     count, obj, layout, file)  # nosec
+        if di_g:
+            cmd = Template(common_cmd.M0CP_G).substitute(
+                ep=node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                hax_ep=node_dict["hax_ep"],
+                fid=node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                prof_fid=self.profile_fid, bsize=b_size.lower(),
+                count=count, obj=obj, layout=layout, file=file)
+        else:
+            cmd = common_cmd.M0CP.format(
+                node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                node_dict["hax_ep"],
+                node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                self.profile_fid, b_size.lower(),
+                count, obj, layout, file)  # nosec
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
@@ -256,9 +276,9 @@ class MotrCoreK8s():
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
 
-    def cp_corrupt_cmd(self, **kwargs):
+    def cp_update_cmd(self, **kwargs):
         """
-        M0CP command creation
+        M0CP update command with -G option which introduces corruption.
 
         :b_size: Block size
         :count: Block count
@@ -279,18 +299,18 @@ class MotrCoreK8s():
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0CP_U.format(
-            node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
-            node_dict["hax_ep"],
-            node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-            self.profile_fid, b_size.lower(),
-            count, obj, layout, offset, file)  # nosec
+        cmd = Template(common_cmd.M0CP_U).substitute(
+            ep=node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+            hax_ep=node_dict["hax_ep"],
+            fid=node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+            prof_fid=self.profile_fid, bsize=b_size.lower(),
+            count=count, obj=obj, layout=layout, offset=offset, file=file)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                                          f"-- {cmd}", decode=True)
 
-        log.info("CP Resp: %s", resp)
+        log.info("CP Update Resp: %s", resp)
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
@@ -360,13 +380,16 @@ class MotrCoreK8s():
         :file2: second file
         :node: compare files on which node
         """
-
+        diff_utils_install = common_cmd.CMD_INSTALL_TOOL.format("diffutils") + " -y"
         cmd = common_cmd.DIFF.format(file1, file2)
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
-        log.info("DIFF Resp: %s", resp)
+        cmd_list = [diff_utils_install, cmd]
+        for cmd in cmd_list:
+            resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
+                                              namespace=common_const.NAMESPACE,
+                                              command_suffix=
+                                              f"-c {common_const.HAX_CONTAINER_NAME} "
+                                              f"-- {cmd}", decode=True)
+            log.info("DIFF Resp: %s", resp)
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
@@ -512,7 +535,7 @@ class MotrCoreK8s():
 
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
-    
+
     def shutdown_cluster(self):
         """
         This will shutdown cluster and update the node_pod dict
@@ -543,49 +566,58 @@ class MotrCoreK8s():
         self.dd_cmd(b_size.upper(), str(count), source_file, node)
         config_utils.write_yaml(config_file, m0cfg, backup=False, sort_keys=False)
 
-    def run_motr_io(self, node, block_count=FILE_BLOCK_COUNT, run_m0cat=True, delete_objs=True):
+    def run_motr_io(self, node, bsize_layout_map=BSIZE_LAYOUT_MAP, block_count=FILE_BLOCK_COUNT,
+                    run_m0cat=True, delete_objs=True):
         """
         Run m0cp, m0cat and m0unlink on a node for all the motr clients and returns the objects
         :param: str node: Cortx node on which utilities to be executed
+        :param: dict bsize_layout_map: mapping of block size and layout for IOs to run
         :param: list block_count: List containing the integer values. If block count is 1,
                 then size of object file will vary from 4K to 32M,
                 i.e multiple of supported object block sizes
         :param: bool run_m0cat: if True, will also run m0cat and compares the md5sum
         :param: bool delete_objs: if True, will delete the created objects
-        :return: object dictionary containing objects block size, md5sum and delete flag
+        :return: object dictionary containing objects block size, count, md5sum and delete flag
+                {'10:20':{'block_size':'4k', 'deleted': False, 'count': 4,
+                'md5sum': '2322f8a66f9eab2925e90182bad21dae'},
+                '10:21':{'block_size':'8k', 'deleted': False, 'count': 2,
+                'md5sum': 'bcf5e0570940a834455b6c5d449af5a7'}
+                }
         :rtype: dict
         """
         object_dict = {}
-        infile = TEMP_PATH + 'input'
-        outfile = TEMP_PATH + 'output'
+        infile = TEMP_PATH + '/input'
+        outfile = TEMP_PATH + '/output'
         try:
             for count in block_count:
-                for b_size in BSIZE_LAYOUT_MAP.keys():
+                for b_size in bsize_layout_map.keys():
                     object_id = str(SystemRandom().randint(1, 9999)) + ":" + \
                                     str(SystemRandom().randint(1, 9999))
                     object_dict[object_id] = {'block_size' : b_size }
                     object_dict[object_id]['deleted'] = False
+                    object_dict[object_id]['count'] = count
                     self.dd_cmd(b_size, str(count), infile, node)
-                    self.cp_cmd(b_size, str(count), object_id, BSIZE_LAYOUT_MAP[b_size],
+                    self.cp_cmd(b_size, str(count), object_id, bsize_layout_map[b_size],
                         infile, node)
                     if run_m0cat:
                         self.cat_cmd(b_size, str(count), object_id,
-                            BSIZE_LAYOUT_MAP[b_size], outfile, node)
+                            bsize_layout_map[b_size], outfile, node)
                         md5sum = self.get_md5sum(outfile, node)
                         object_dict[object_id]['md5sum'] = md5sum
                         self.md5sum_cmd(infile, outfile, node)
                     if delete_objs:
-                        self.unlink_cmd(object_id, BSIZE_LAYOUT_MAP[b_size], node)
+                        self.unlink_cmd(object_id, bsize_layout_map[b_size], node)
                         object_dict[object_id]['deleted'] = True
             return object_dict
         except Exception as exc:
             log.exception("Test has failed with execption: %s", exc)
             raise exc
 
-    def run_io_in_parallel(self, node, block_count=FILE_BLOCK_COUNT,
-                        run_m0cat=True, delete_objs=True, return_dict=None):
+    def run_io_in_parallel(self, node, bsize_layout_map=BSIZE_LAYOUT_MAP,
+            block_count=FILE_BLOCK_COUNT, run_m0cat=True, delete_objs=True, return_dict=None):
         """
         :param: str node: Cortx node on which utilities to be executed
+        :param: dict bsize_layout_map: mapping of block size and layout for IOs to run
         :param: list block_count: List containing the integer values. If block count is 1,
                 then size of object file will vary from 4K to 32M,
                 i.e multiple of supported object block sizes
@@ -596,7 +628,7 @@ class MotrCoreK8s():
         if return_dict is None:
             return_dict = {}
         try:
-            obj_dict = self.run_motr_io(node, block_count, run_m0cat, delete_objs)
+            obj_dict = self.run_motr_io(node, bsize_layout_map, block_count, run_m0cat, delete_objs)
             return_dict[node] = obj_dict
             return return_dict
         except (OSError, AssertionError, IOError) as exc:

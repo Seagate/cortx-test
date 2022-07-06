@@ -2867,7 +2867,8 @@ class TestPodRestart:
                     "(0B - 512MB(VM)/5GB(HW)), on degraded cluster")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed READs & Verify DI on written variable object sizes. "
                     "(0B - 512MB(VM)/5GB(HW)), on degraded cluster")
@@ -2893,7 +2894,7 @@ class TestPodRestart:
                     "(0B - 512MB(VM)/5GB(HW)), after pod restart on online cluster")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Performed READs & verified DI on written variable object sizes. "
                     "(0B - 512MB(VM)/5GB(HW)), after pod restart on online cluster")
@@ -2902,7 +2903,8 @@ class TestPodRestart:
                     "512MB(VM)/5GB(HW))")
         self.test_prefix = 'test-36003-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 10: Performed WRITEs/READs/Verify with variable sizes objects.")
         LOGGER.info("ENDED: Test to verify READs after data pod restart.")
@@ -2979,8 +2981,8 @@ class TestPodRestart:
             "Step 6: Perform READs and verify DI on the written data in background during "
             "pod restart using %s method", self.restore_method)
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
-                'nclients': 1, 'nsamples': 20, 'skipwrite': True, 'skipcleanup': True,
-                'output': output}
+                'nclients': 2, 'nsamples': 20, 'skipwrite': True, 'skipcleanup': True,
+                'output': output, 'setup_s3bench': False}
 
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
@@ -3041,7 +3043,7 @@ class TestPodRestart:
         self.test_prefix = 'test-36004-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Successfully created multiple buckets and ran IOs")
 

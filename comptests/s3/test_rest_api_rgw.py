@@ -16,7 +16,7 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-
+# pylint: disable=E0401
 """All IAM users test  Module."""
 import asyncio
 import time
@@ -39,8 +39,11 @@ class TestRestApiRgw:
         cls.log.info("STARTED: setup class ")
         cls.obj = RestApiRgw()
         cls.user_name_prefix = "user"
+        cls.access_key_prefix = "access_key"
+        cls.secret_key_prefix = "secret_key"
         cls.email_id = "{}@seagate.com"
         cls.created_users = []
+        cls.tenant = 'Group1'
 
     def teardown_method(self):
         """
@@ -80,14 +83,12 @@ class TestRestApiRgw:
             'display-name': user_name,
             'uid' : user_name
          }
-        self.log.info(
-            "Step 1: Creating a new IAM user with name %s", str(user_name))
+        self.log.info("Step 1: Creating a new IAM user with name %s", str(user_name))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK , "Not able to create user. Test Failed"
         self.log.info("Created user details: %s",user_info)
-        self.log.info(
-            "Step 2: Verifying that new IAM user is created successfully")
+        self.log.info("Step 2: Verifying that new IAM user is created successfully")
         status, user_info = loop.run_until_complete(self.obj.get_user_info(user_params))
         assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
         self.log.info("Get user info output: %s",user_info)
@@ -108,14 +109,12 @@ class TestRestApiRgw:
             'email' : email,
             'uid' : user_name
          }
-        self.log.info(
-            "Step 1: Creating a new IAM user with name %s", str(user_name))
+        self.log.info("Step 1: Creating a new IAM user with name %s", str(user_name))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK , "Not able to create user. Test Failed"
         self.log.info("Created user details: %s",user_info)
-        self.log.info(
-            "Step 2: Verifying that new IAM user is created successfully")
+        self.log.info("Step 2: Verifying that new IAM user is created successfully")
         status, user_info = loop.run_until_complete(self.obj.get_user_info(user_params))
         assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
         self.log.info("Get user info output: %s",user_info)
@@ -133,8 +132,7 @@ class TestRestApiRgw:
         user_params = {
             'uid' : user_name
          }
-        self.log.info(
-            "Step 1: Creating a new IAM user with name %s", str(user_name))
+        self.log.info("Step 1: Creating a new IAM user with name %s", str(user_name))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.BAD_REQUEST, "Able to create user with just uid. Test Failed"
@@ -154,20 +152,17 @@ class TestRestApiRgw:
             'display-name': user_name,
             'uid' : user_name
          }
-        self.log.info(
-            "Step 1: Creating a new IAM user with name %s", str(user_name))
+        self.log.info("Step 1: Creating a new IAM user with name %s", str(user_name))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK , "Not able to create user. Test Failed"
         self.log.info("Created user details: %s",user_info)
-        self.log.info(
-            "Step 2: Verifying that new IAM user is created successfully")
+        self.log.info("Step 2: Verifying that new IAM user is created successfully")
         status, user_info = loop.run_until_complete(self.obj.get_user_info(user_params))
         assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
         self.log.info("Get user info output: %s",user_info)
         self.created_users.append(user_params)
-        self.log.info(
-            "Step 3: Creating another IAM user with same name %s", str(user_name))
+        self.log.info("Step 3: Creating another IAM user with same name %s", str(user_name))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.CONFLICT , "Didn't get the expected error"
@@ -191,20 +186,17 @@ class TestRestApiRgw:
             'display-name': user_name,
             'uid' : user_name2
          }
-        self.log.info(
-            "Step 1: Creating a new IAM user with name %s", str(user_name))
+        self.log.info("Step 1: Creating a new IAM user with name %s", str(user_name))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK , "Not able to create user. Test Failed"
         self.log.info("Created user details: %s",user_info)
-        self.log.info(
-            "Step 2: Verifying that new IAM user is created successfully")
+        self.log.info("Step 2: Verifying that new IAM user is created successfully")
         status, user_info = loop.run_until_complete(self.obj.get_user_info(user_params))
         assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
         self.log.info("Get user info output: %s",user_info)
         self.created_users.append(user_params)
-        self.log.info(
-            "Step 3: Creating another IAM user with same display name %s", str(user_name))
+        self.log.info("Step 3: Creating another IAM user with same display name %s", str(user_name))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params2))
         assert status == HTTPStatus.OK , "Not able to create user. Test Failed"
@@ -237,20 +229,17 @@ class TestRestApiRgw:
             'email' : email,
             'uid' : user_name2
         }
-        self.log.info(
-            "Step 1: Creating a new IAM user with name %s", str(user_name))
+        self.log.info("Step 1: Creating a new IAM user with name %s", str(user_name))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK , "Not able to create user. Test Failed"
         self.log.info("Created user details: %s",user_info)
-        self.log.info(
-            "Step 2: Verifying that new IAM user is created successfully")
+        self.log.info("Step 2: Verifying that new IAM user is created successfully")
         status, user_info = loop.run_until_complete(self.obj.get_user_info(user_params))
         assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
         self.log.info("Get user info output: %s",user_info)
         self.created_users.append(user_params)
-        self.log.info(
-            "Step 3: Creating another IAM user with same email %s", str(email))
+        self.log.info("Step 3: Creating another IAM user with same email %s", str(email))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params2))
         assert status == HTTPStatus.CONFLICT , "Didn't get the expected error"
@@ -269,14 +258,12 @@ class TestRestApiRgw:
             'display-name': user_name,
             'uid' : user_name
         }
-        self.log.info(
-            "Step 1: Creating a new IAM user with name %s", str(user_name))
+        self.log.info("Step 1: Creating a new IAM user with name %s", str(user_name))
         loop = asyncio.get_event_loop()
         status, user_info = loop.run_until_complete(self.obj.create_user(user_params))
         assert status == HTTPStatus.OK , "Not able to create user. Test Failed"
         self.log.info("Created user details: %s",user_info)
-        self.log.info(
-            "Step 2: Verifying that new IAM user is created successfully")
+        self.log.info("Step 2: Verifying that new IAM user is created successfully")
         status, user_info = loop.run_until_complete(self.obj.get_user_info(user_params))
         assert status == HTTPStatus.OK , "Not able to Get user Info. Test Failed"
         self.log.info("Get user info output: %s",user_info)

@@ -3483,7 +3483,7 @@ class TestCsmUser():
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
-                                       Template(msg).substitute(A="csm_user_monitor",
+                                       Template(msg).substitute(A="csm_user_manage",
                                                                 B=CSM_REST_CFG["csm_admin_user"][
                                                                 "username"]))
 
@@ -3526,7 +3526,7 @@ class TestCsmUser():
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
-                                       Template(msg).substitute(A="csm_user_monitor",
+                                       Template(msg).substitute(A="csm_user_manage",
                                                                 B=CSM_REST_CFG["csm_admin_user"][
                                                                 "username"]))
 
@@ -3584,7 +3584,8 @@ class TestCsmUser():
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
-                                       Template(msg).substitute(A="admin"))
+                                       Template(msg).substitute(A="admin",
+                                       B="admin"))
 
         self.log.info("Step 2: Verify if last admin user"
                       "is not able to edit the self role to monitor")
@@ -3595,7 +3596,8 @@ class TestCsmUser():
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
             assert_utils.assert_equals(response.json()["message"],
-                                       Template(msg).substitute(A="admin"))
+                                       Template(msg).substitute(A="admin", 
+                                       B="admin"))
 
         self.log.info("Creating csm user")
         password = CSM_REST_CFG["csm_admin_user"]["password"]
@@ -4128,7 +4130,9 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg)
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="_schema", 
+                                       B="password"))
 
         self.log.info(
             "Verified that Login API returns error Response Code 400 "
@@ -4175,7 +4179,9 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg)
+            assert_utils.assert_equals(response.json()["message"],
+                                       Template(msg).substitute(A="_schema", 
+                                       B="username"))
 
         self.log.info(
             "Verified that Login API returns error Response Code 400 "
@@ -4220,7 +4226,9 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg)
+            assert_utils.assert_equals(response.json()["message"],
+                                      Template(msg).substitute(A="Password", 
+                                      B=msg))
 
         self.log.info(
             "Verified that Login API returns error Response Code 400 "
@@ -4266,7 +4274,9 @@ class TestCsmUser():
             self.log.info("Verifying error response...")
             assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
             assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg)
+            assert_utils.assert_equals(response.json()["message"], 
+                                       Template(msg).substitute(A="Username", 
+                                       B=msg))
 
         self.log.info(
             "Verified that Login API returns error Response Code 400 "
@@ -5447,15 +5457,15 @@ class TestCsmUser():
             assert response.json()['role'] == 'monitor', "User is not created with monitor role"
             self.log.info("Verified User %s got created successfully", username)
 
-        self.log.info("Step 3: Creating 3 s3 account users")
-        for _ in range(3):
-            response = self.csm_obj.create_s3_account(user_type="valid")
-            self.log.info("Verifying if s3 user was created successfully")
-            assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Account creation successful."
-            username = response.json()["account_name"]
-            self.created_s3_users.append(username)
-            self.log.info("users list is %s", self.created_users)
-            self.log.info("Verified User %s got created successfully", username)
+        #self.log.info("Step 3: Creating 3 s3 account users")
+        #for _ in range(3):
+        #    response = self.csm_obj.create_s3_account(user_type="valid")
+        #    self.log.info("Verifying if s3 user was created successfully")
+        #    assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Account creation successful."
+        #    username = response.json()["account_name"]
+        #    self.created_s3_users.append(username)
+        #    self.log.info("users list is %s", self.created_users)
+        #    self.log.info("Verified User %s got created successfully", username)
 
         self.log.info("Step 4: Login with first manage user and change password for second")
         response = self.csm_obj.edit_csm_user(login_as=new_user,
@@ -5482,14 +5492,14 @@ class TestCsmUser():
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
             response = self.csm_obj.custom_rest_login(username=usr, password=new_password)
             self.csm_obj.check_expected_response(response, HTTPStatus.OK)
-        self.log.info("Step 7: Login with first manage user and change password for all s3 account users")
-        payload = {"password": new_password, "current_password": current_password}
-        for usr in self.created_s3_users:
-            response = self.csm_obj.edit_s3_account(
-                username=usr,
-                payload=json.dumps(payload),
-                login_as=new_user)
-            assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        #self.log.info("Step 7: Login with first manage user and change password for all s3 account users")
+        #payload = {"password": new_password, "current_password": current_password}
+        #for usr in self.created_s3_users:
+        #    response = self.csm_obj.edit_s3_account(
+        #        username=usr,
+        #        payload=json.dumps(payload),
+        #        login_as=new_user)
+        #    assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 

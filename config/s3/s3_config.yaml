@@ -74,3 +74,6 @@ delay:
   del_bkt_tag: 20
   set_obj_tag: 15
   del_obj_tag: 20
+
+object_tagging_special_char_cortx: ["+", "-", "=", ".", "_", ":", "/", "@"]
+object_tagging_special_char_rgw: ["~", "`", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "-", "_", "+", "=", ";", ":", "|", "\\", ":", ";", "\"", "'", "<", ",", ">", ".", "?", "/"]

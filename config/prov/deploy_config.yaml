@@ -774,6 +774,17 @@ nodes_25:
     cvg_per_node: 2
     data_disk_per_cvg: 2
 
+nodes_27:
+  config_1:
+    sns_data: 18
+    sns_parity: 9
+    sns_spare: 0
+    dix_data: 1
+    dix_parity: 26
+    dix_spare: 0
+    cvg_per_node: 2
+    data_disk_per_cvg: 2
+
 nodes_36:
   config_1:
     sns_data: 24
@@ -784,3 +795,9 @@ nodes_36:
     dix_spare: 0
     cvg_per_node: 2
     data_disk_per_cvg: 2
+
+mutidata_pod:
+  test_41907:
+    cvg_count: 1
+  test_41909:
+    cvg_count: 2
