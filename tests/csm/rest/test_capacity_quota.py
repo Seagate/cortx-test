@@ -395,15 +395,18 @@ class TestCapacityQuota():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Creating 2 IAM user with same uid but different tenant")
         for cnt in range(2):
-            tenant = "tenant_" + str(cnt)
+            uid = "iam_user_1_" + str(int(time.time()))
+            tenant = "tenant_" + system_utils.random_string_generator()
             self.log.info("Creating new iam user with tenant %s", tenant)
             payload = self.csm_obj.iam_user_payload_rgw("random")
+            payload.update({"uid":uid})
+            payload.update({"tenant":tenant})
             self.log.info("updated payload :  %s", payload)
             resp1 = self.csm_obj.create_iam_user_rgw(payload)
             self.log.info("Verify Response : %s", resp1)
             assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
                                      "IAM user creation failed")
-            uid = resp1.json()['tenant'] + "$" + payload["uid"]
+            uid = resp1.json()["keys"][0]["user"]
             akey = resp1.json()["keys"][0]["access_key"]
             skey = resp1.json()["keys"][0]["secret_key"]
             self.created_iam_users.add(uid)
@@ -519,6 +522,7 @@ class TestCapacityQuota():
                                                  test_cfg["file_size"],
                                                  test_cfg["total_parts"])
         mpu_id, parts = res
+        self.buckets_created.append([bucket, self.akey, self.skey])
         self.log.debug("parts:%s", parts)
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
                                                     login_as="csm_user_manage")
@@ -675,7 +679,7 @@ class TestCapacityQuota():
 
     # pylint: disable-msg=too-many-statements
 
-    @pytest.mark.skip("Feature not ready")
+    @pytest.mark.skip("Reason=CORTX-32487")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -786,20 +790,9 @@ class TestCapacityQuota():
         self.log.info("total objects and size %s and %s ", total_objects, total_size)
         self.log.info("Data size is %s ", data_size)
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-            "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_equal(total_size, data_size*1024, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects)
+        assert res, "Verify User capacity failed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -837,24 +830,9 @@ class TestCapacityQuota():
         self.log.info("total objects and size %s and %s ", total_objects, total_size)
         self.log.info("Data size is %s ", data_size)
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
-                                                    login_as="csm_user_manage")
-        assert resp.status_code == HTTPStatus.OK, \
-            "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-        self.log.info("Step 5: Delete object")
-        for objs in obj_list:
-            assert s3_misc.delete_object(
-                objs, self.bucket, self.akey, self.skey), "Failed to delete object."
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_equal(total_size, data_size*1024, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects)
+        assert res, "Verify User capacity failed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -890,21 +868,9 @@ class TestCapacityQuota():
         self.log.info("total objects and size %s and %s ", total_objects, total_size)
         self.log.info("Data size is %s ", data_size)
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id,
-                                                    login_as="csm_user_monitor")
-        assert resp.status_code == HTTPStatus.OK, \
-            "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_equal(total_size, data_size*1024, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects)
+        assert res, "Verify User capacity failed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -1059,18 +1025,9 @@ class TestCapacityQuota():
         self.log.info("total objects and size %s and %s ", total_objects, total_size)
         self.log.info("Data size is %s ", data_size)
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-            "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects)
+        assert res, "Verify User capacity failed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -1189,20 +1146,10 @@ class TestCapacityQuota():
         self.log.info("Step 7: Get capacity count from AWS")
         total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
                                                                     self.akey, self.skey)
-        self.log.info("Step 8: Perform GET API to get capacity usage")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-            "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(t_obj, 0, "Number of objects not equal")
-        assert_utils.assert_equal(t_size, 0, "Total Size mismatch found")
-        assert_utils.assert_equal(total_size, 0, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, 0, "Total Used Size mismatch found ")
+        self.log.info("Step 8: Perform & Verify GET API to get capacity usage stats")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects)
+        assert res, "Verify User capacity failed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -1265,27 +1212,9 @@ class TestCapacityQuota():
             self.log.info("total objects and size %s and %s ", total_objects, total_size)
             self.log.info("Data size is %s ", data_size)
             self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-            resp = self.csm_obj.get_user_capacity_usage("user", user_id)
-            assert resp.status_code == HTTPStatus.OK, \
-                "Status code check failed for get capacity"
-            uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-            t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-            t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-            m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-            for objs in obj_list:
-                self.log.info("Step 3: Delete object")
-                assert s3_misc.delete_object(
-                    objs, bucket, akey, skey), "Failed to delete object."
-            assert_utils.assert_equals(resp1.json()['user_id'], uid, "id is not equal")
-            assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-            assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
-            assert_utils.assert_equal(
-                total_size, t_size, "Total Size mismatch found")
-            assert_utils.assert_equal(
-                total_size / 1024, data_size, "Total Size mismatch found")
-            assert_utils.assert_greater_equal(
-                m_size, total_size, "Total Used Size mismatch found ")
-
+            res, resp = self.csm_obj.verify_user_capacity(user_id, total_size,
+                                total_size, total_objects)
+            assert res, "Verify User capacity failed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -1347,26 +1276,9 @@ class TestCapacityQuota():
             total_num_objects = total_num_objects + num_objects
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-            "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-        for objs in obj_list:
-            self.log.info("Step 3: Delete object")
-            assert s3_misc.delete_object(
-                objs, bucket, self.akey, self.skey), "Failed to delete object."
-        assert_utils.assert_equals(self.uid, uid, "uid is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equals(total_objects, total_num_objects, "Number of objects not equal")
-        assert_utils.assert_equal(
-            total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_equal(
-            total_size / 1024, total_data_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(
-            m_size, total_size, "Total Used Size mismatch found ")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects)
+        assert res, "Verify User capacity failed"
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1386,16 +1298,19 @@ class TestCapacityQuota():
         min_users = test_cfg["min_users"]
         max_users = test_cfg["max_users"]
         random_users = self.csm_obj.random_gen.randrange(min_users, max_users)
+        uid = "iam_user_1_" + str(int(time.time()))
         for tnt in range(0, random_users):
             tenant = "tenant_" + system_utils.random_string_generator()
             self.log.info("Step 1 : Creating new iam user with tenant %s in loop %s", tenant, tnt)
             optional_payload = self.csm_obj.iam_user_payload_rgw("loaded")
+            optional_payload.update({"uid":uid})
+            optional_payload.update({"tenant":tenant})
             self.log.info("updated payload :  %s", optional_payload)
             resp1 = self.csm_obj.create_iam_user_rgw(optional_payload)
             self.log.info("Verify Response : %s", resp1)
             assert_utils.assert_true(resp1.status_code == HTTPStatus.CREATED,
                                      "IAM user creation failed")
-            user_id = resp1.json()['tenant'] + "$" + optional_payload['uid']
+            user_id = resp1.json()["keys"][0]["user"]
             self.created_iam_users.add(user_id)
             resp = self.csm_obj.compare_iam_payload_response(resp1, optional_payload)
             self.log.info("Printing response %s", resp)
@@ -1429,27 +1344,12 @@ class TestCapacityQuota():
             self.log.info("Step 3: Get capacity count from AWS")
             total_objects, total_size = s3_misc.get_objects_size_bucket(bucket, akey, skey)
 
+            self.log.info("total objects and size %s and %s ", total_objects, total_size)
+            self.log.info("Data size is %s ", data_size)
             self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-            resp = self.csm_obj.get_user_capacity_usage("user", user_id)
-            assert resp.status_code == HTTPStatus.OK, \
-                "Status code check failed for get capacity"
-            uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-            t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-            t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-            m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-            for objs in obj_list:
-                self.log.info("Step 3: Delete object")
-                assert s3_misc.delete_object(
-                    objs, bucket, akey, skey), "Failed to delete object."
-            assert_utils.assert_equals(resp1.json()['user_id'], uid, "uid is not equal")
-            assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-            assert_utils.assert_equals(total_objects, num_objects, "Number of objects not equal")
-            assert_utils.assert_equal(
-                total_size, t_size, "Total Size mismatch found")
-            assert_utils.assert_equal(
-                total_size / 1024, data_size, "Total Size mismatch found")
-            assert_utils.assert_greater_equal(
-                m_size, total_size, "Total Used Size mismatch found ")
+            res, resp = self.csm_obj.verify_user_capacity(user_id, total_size,
+                                total_size, total_objects)
+            assert res, "Verify User capacity failed"
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1467,7 +1367,6 @@ class TestCapacityQuota():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_41964"]
-        quota_type = test_cfg["quota_type"]
         enabled = test_cfg["enabled"]
         max_objects = test_cfg["max_objects"]
         list_factors = []
@@ -1478,7 +1377,7 @@ class TestCapacityQuota():
         total_available = resp.json()["capacity"]["system"]["cluster"][0]["available"]
         max_size = total_available + test_cfg["extra_bytes"]
         self.log.info("Step 2: Set max size to greater than available capacity")
-        payload = self.csm_obj.iam_user_quota_payload(quota_type, enabled, max_size, max_objects)
+        payload = self.csm_obj.iam_user_quota_payload(enabled, max_size, max_objects)
         result, resp = self.csm_obj.verify_get_set_user_quota(self.user_id, payload,
                                                               verify_response=True)
         assert result, "Verification for get set user failed."
@@ -1706,7 +1605,6 @@ class TestCapacityQuota():
             self.log.error("Bucket deletion failed for %s ", bucket_name)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Feature not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1795,19 +1693,9 @@ class TestCapacityQuota():
         self.log.info("Data size is %s ", data_size)
 
         self.log.info("Step 3: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-                "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
-        assert_utils.assert_equal(m_size, t_size, "used_rounded and used mismatch found ")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects, aligned=True)
+        assert res, "Verify User capacity failed"
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1846,19 +1734,9 @@ class TestCapacityQuota():
         self.log.info("Data size is %s ", data_size)
 
         self.log.info("Step 3: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-                "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
-        assert_utils.assert_greater(m_size, t_size, "used_rounded and used mismatch found ")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects, aligned=False)
+        assert res, "Verify User capacity failed"
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1900,20 +1778,10 @@ class TestCapacityQuota():
         self.log.info("total objects and size %s and %s ", total_objects, total_size)
         self.log.info("Data size is %s ", data_size)
 
-        self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-                "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
-        assert_utils.assert_equal(m_size, t_size, "used_rounded and used mismatch found ")
+        self.log.info("Step 3: Perform & Verify GET API to get capacity usage stats")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects, aligned=True)
+        assert res, "Verify User capacity failed"
         # Revisit after CORTX-32486
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -1958,19 +1826,9 @@ class TestCapacityQuota():
         self.log.info("Data size is %s ", data_size)
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-                "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
-        assert_utils.assert_equal(m_size, t_size, "used_rounded and used mismatch found ")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects, aligned=True)
+        assert res, "Verify User capacity failed"
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -2012,19 +1870,9 @@ class TestCapacityQuota():
         self.log.info("Data size is %s ", data_size)
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-                "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
-        assert_utils.assert_greater(m_size, t_size, "used_rounded and used mismatch found ")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects, aligned=False)
+        assert res, "Verify User capacity failed"
         # Revisit after CORTX-32486
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -2069,19 +1917,9 @@ class TestCapacityQuota():
         self.log.info("Data size is %s ", data_size)
 
         self.log.info("Step 4: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-                "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
-        assert_utils.assert_equal(m_size, t_size, "used_rounded and used mismatch found ")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects, aligned=True)
+        assert res, "Verify User capacity failed"
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
@@ -2112,7 +1950,6 @@ class TestCapacityQuota():
                                             self.akey, self.skey, object_size=data_size,
                                             block_size="1K")
         assert resp, "Put object Failed"
-
         self.log.info("Step 1.2: Perform & Verify GET API to get capacity usage stats")
         resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
         assert resp.status_code == HTTPStatus.OK, \
@@ -2157,21 +1994,9 @@ class TestCapacityQuota():
         self.log.info("Data size is %s ", data_size)
 
         self.log.info("Step 5: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-                "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
-        assert_utils.assert_greater_equal(m_size, t_size, "used_rounded and used mismatch found ")
-        #assert_utils.assert_greater_equal(used_data_size, m_size) Revisit after CORTX-32486
-
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects, aligned=None) # Revisit after CORTX-32486
+        assert res, "Verify User capacity failed"
         self.log.info("Step 6: Delete all object: %s", obj_name)
         assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
 
@@ -2264,20 +2089,9 @@ class TestCapacityQuota():
         self.log.info("Data size is %s ", data_size)
 
         self.log.info("Step 5: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-                "Status code check failed for get capacity"
-        uid = resp.json()["capacity"]["s3"]["users"][0]["id"]
-        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
-        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
-        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
-
-        assert_utils.assert_equals(self.uid, uid, "id is not equal")
-        assert_utils.assert_equals(total_objects, t_obj, "Number of objects not equal")
-        assert_utils.assert_equal(total_size, t_size, "Total Size mismatch found")
-        assert_utils.assert_greater_equal(m_size, total_size, "Total Used Size mismatch found ")
-        assert_utils.assert_greater_equal(m_size, t_size, "used_rounded and used mismatch found ")
-        #assert_utils.assert_greater_equal(used_data_size, m_size) Revisit after CORTX-32486
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects, aligned=None) # Revisit after CORTX-32486
+        assert res, "Verify User capacity failed"
 
         self.log.info("Step 6: Delete all object: %s", obj_name)
         assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
