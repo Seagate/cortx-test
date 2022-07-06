@@ -23,6 +23,7 @@ like send_k8s_cmd.
 
 import logging
 import os
+import random
 import time
 from typing import Tuple
 
@@ -537,9 +538,28 @@ class LogicalNode(Host):
         """
         if not self.path_exists(file_path):
             return False, f"{file_path} does not exist on node {self.hostname}"
-        log.info("Applying deployment from %s",file_path)
-        resp = self.execute_cmd(cmd=commands.K8S_APPLY_DEPLOYMENT,read_lines=True,exc=False)
+        log.info("Applying deployment from %s", file_path)
+        resp = self.execute_cmd(cmd=commands.K8S_APPLY_YAML_CONFIG.format(file_path),
+                                read_lines=True,exc=False)
         return True, resp
+
+    def select_random_pod_container(self,pod_prefix: str,
+                                    container_prefix: str):
+        """
+        Select random pod and container for the given pods and container prefix
+        :param master_node: Logical Node object for master node.
+        :param pod_prefix: Pod prefix
+        :param container_prefix: Container Prefix
+        return pod_selected,container_selected
+        """
+        pod_list = self.get_all_pods(pod_prefix=pod_prefix)
+        pod_selected = pod_list[random.randint(0, len(pod_list) - 1)]
+        log.info("Pod selected : %s", pod_selected)
+        container_list = self.get_container_of_pod(pod_name=pod_selected,
+                                                          container_prefix=container_prefix)
+        container = container_list[random.randint(0, len(container_list) - 1)]
+        log.info("Container selected : %s", container)
+        return pod_selected, container
 
 
     def restart_container_in_pod(self, pod_name, container_name):
