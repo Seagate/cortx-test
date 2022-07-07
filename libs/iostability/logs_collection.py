@@ -21,6 +21,8 @@
 """Methods to collect various logs such as dmesgs and journal"""
 
 import logging
+import os
+from datetime import datetime
 
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
@@ -32,9 +34,7 @@ LOGGER = logging.getLogger(__name__)
 class ServerOSLogsCollectLib:
 
     """
-    collect 2 log on each node
-    copy all logs to local from each node
-    remove logs from each node
+    This class contains common methods TO collect dmesgs and journalctl logs
     """
 
     def __init__(self, cmn_cfg):
@@ -56,20 +56,23 @@ class ServerOSLogsCollectLib:
         function to collect dmesgs and journalctl logs
         :param path: local path to copy files from server machines
         """
-        dmesgs_cmd = 'dmesg > {}_dmesg.log'
-        journalctl_cmd = 'journalctl > {}_journalctl.log'
+        dmesgs_cmd = 'dmesg > {}'
+        journalctl_cmd = 'journalctl > {}'
+        time_stamp = str(datetime.now().strftime("%m_%d_%Y_%H_%M_%S"))
         for machine in self.machine_node_list:
-            dmesgs_path = "{}_dmesg.log".format(machine.hostname)
-            journalctl_path = "{}_journalctl.log".format(machine.hostname)
+            dmesgs_path = "{}_{}_dmesg.log".format(machine.hostname, time_stamp)
+            journalctl_path = "{}_{}_journalctl.log".format(machine.hostname, time_stamp)
 
             LOGGER.info("Executing cmd on machine %s", machine.hostname)
-            machine.execute_cmd(cmd=dmesgs_cmd.format(machine.hostname))
-            machine.execute_cmd(cmd=journalctl_cmd.format(machine.hostname))
+            machine.execute_cmd(cmd=dmesgs_cmd.format(dmesgs_path))
+            machine.execute_cmd(cmd=journalctl_cmd.format(journalctl_path))
 
             LOGGER.info("Copying logs from machine %s", machine.hostname)
-            resp_cp = machine.copy_file_to_local(remote_path=dmesgs_path, local_path=path)
+            resp_cp = machine.copy_file_to_local(remote_path=dmesgs_path,
+                                                 local_path=os.path.join(path, dmesgs_path))
             assert_utils.assert_true(resp_cp[0], resp_cp[1])
-            resp_cp = machine.copy_file_to_local(remote_path=journalctl_path, local_path=path)
+            resp_cp = machine.copy_file_to_local(remote_path=journalctl_path,
+                                                 local_path=os.path.join(path, journalctl_path))
             assert_utils.assert_true(resp_cp[0], resp_cp[1])
 
             LOGGER.info("Removing logs from machine %s", machine.hostname)
