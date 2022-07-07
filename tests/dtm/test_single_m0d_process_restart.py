@@ -617,6 +617,7 @@ class TestSingleProcessRestart:
                                                  que))
             proc.start()
             write_proc.append(proc)
+            self.log.info("Delay for 5 seconds")
             time.sleep(5)
 
         self.log.info("Step 2: Wait for Write Operation to complete.")

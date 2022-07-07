@@ -1,6 +1,6 @@
 clients: 10
-samples: 500
-size: '128Mb'
+samples: 1500
+size: '256Mb'
 loop_count: 10
 delay: 30 #Before service restart
 
@@ -10,7 +10,7 @@ size_list: [1, 2, 3, 4, 5, 6, 7]
 rgw_restart_cnt: 5
 
 test_41234:
-  samples: 30
+  samples: 50
 
 test_41235:
   samples: 10
