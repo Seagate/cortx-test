@@ -79,7 +79,7 @@ class TestPodRestart:
         cls.host_worker_list = []
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
-        cls.random_time = cls.s3_clean = cls.test_prefix = None
+        cls.random_time = cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = cls.node_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.restore_node = cls.multipart_obj_path = None
@@ -213,9 +213,15 @@ class TestPodRestart:
         LOGGER.info("Step 3: Performed READs/Verify on data written in healthy cluster.")
 
         LOGGER.info("Step 4: Perform WRITEs/READs/Verify with variable object sizes.")
-        self.test_prefix1 = 'test-34072-deg'
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix1, skipcleanup=True)
+        if CMN_CFG["dtm0_disabled"]:
+            self.test_prefix_deg = 'test-34072-deg'
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_deg,
+                                                        skipcleanup=True)
+        else:
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs/READs/Verify with variable sizes objects.")
 
@@ -232,19 +238,25 @@ class TestPodRestart:
         LOGGER.info("Step 5: Successfully started the pod and cluster is online.")
         self.restore_pod = False
 
-        LOGGER.info("Step 6.1: Perform READs and verify DI on the written data in healthy cluster.")
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 6: Perform READs and verify DI on the written data in degraded "
+                        "cluster with new buckets and objects.")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_deg,
+                                                        skipwrite=True,
+                                                        skipcleanup=True)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 6: Successfully run READ/Verify on data written in degraded cluster "
+                        "with new buckets and objects.")
+        LOGGER.info("Step 6: Perform READs and verify DI on the written data with buckets created "
+                    "in healthy cluster.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
                                                     skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6.1: Successfully run READ/Verify on data written in healthy cluster")
-        LOGGER.info("Step 6.2: Perform READs and verify DI on the written data in degraded "
-                    "cluster.")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix1, skipwrite=True,
-                                                    skipcleanup=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6.2: Successfully run READ/Verify on data written in degraded cluster")
+        LOGGER.info("Step 6: Successfully run READ/Verify on data written with buckets created "
+                    "in healthy cluster")
+        
         LOGGER.info("ENDED: Test to verify READs after data pod restart.")
 
     # pylint: disable=too-many-statements
