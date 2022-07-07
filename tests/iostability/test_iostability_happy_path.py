@@ -37,6 +37,7 @@ from conftest import LOG_DIR
 from libs.dtm.ProcPathStasCollection import EnableProcPathStatsCollection
 from libs.durability.near_full_data_storage import NearFullStorage
 from libs.iostability.iostability_lib import IOStabilityLib, send_mail_notification
+from libs.iostability.logs_collection import ServerOSLogsCollectLib
 from libs.s3 import ACCESS_KEY
 from libs.s3 import SECRET_KEY
 
@@ -88,6 +89,7 @@ class TestIOWorkload:
         self.log.info("Setup Method Started")
         self.log.info("Start Procpath collection")
         self.proc_path = EnableProcPathStatsCollection(CMN_CFG)
+        self.log_collect = ServerOSLogsCollectLib(CMN_CFG)
         resp = self.proc_path.setup_requirement()
         assert_utils.assert_true(resp[0], resp[1])
         self.proc_path.start_collection()
@@ -107,6 +109,7 @@ class TestIOWorkload:
             resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                                    scripts_path=K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
+            self.log_collect.collect_logs(path=path)
         else:
             self.mail_notify.event_pass.set()
         self.log.info("Stop Procpath collection")
