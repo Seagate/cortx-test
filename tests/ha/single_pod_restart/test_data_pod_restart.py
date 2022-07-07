@@ -205,12 +205,12 @@ class TestPodRestart:
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
 
-        LOGGER.info("STEP 3: Perform READs/Verify on data written before degraded")
+        LOGGER.info("STEP 3: Perform READs/Verify on data written in healthy cluster.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
                                                     skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 3: Performed READs/Verify on data written before degraded")
+        LOGGER.info("Step 3: Performed READs/Verify on data written in healthy cluster.")
 
         LOGGER.info("Step 4: Perform WRITEs/READs/Verify with variable object sizes.")
         self.test_prefix1 = 'test-34072-deg'
