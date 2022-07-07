@@ -126,8 +126,12 @@ def main():
     admin_user = os.getenv("ADMIN_USR")
     admin_passwd = os.getenv("ADMIN_PWD")
     ext_node = os.getenv("EXTERNAL_EXPOSURE_SERVICE")
-    print("ext_node: ", ext_node)
     node_obj = LogicalNode(hostname=master_node, username=username, password=args.password)
+    print("Setting the current namespace")
+    resp_ns = node_obj.execute_cmd(cmd=com_cmds.KUBECTL_SET_CONTEXT.format(const.NAMESPACE),
+                                   read_lines=True)
+    print(resp_ns)
+    print("ext_node: ", ext_node)
     iface = config['interface']['centos_vm']
     if ext_node == "NodePort":
         resp = ext_lb.configure_nodeport_lb(node_obj, iface)
@@ -181,12 +185,7 @@ def main():
     print("Listing contents of kube dir")
     resp = sysutils.execute_cmd(cmd="ls -l /root/.kube/")
     print(resp)
-    print("Setting the current namespace")
-    resp_ns = node_obj.execute_cmd(cmd=com_cmds.KUBECTL_SET_CONTEXT.format(const.NAMESPACE),
-                                   read_lines=True)
-    print(resp_ns)
     print("Mutlinode Server-Client Setup Done.")
-
 
 if __name__ == "__main__":
     main()
