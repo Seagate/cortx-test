@@ -179,7 +179,6 @@ class TestTaggingDeleteObject:
                     "enabled bucket")
 
     # pylint:disable-msg=too-many-statements
-    @pytest.mark.sanity
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-40436")
     @CTFailOn(error_handler)
