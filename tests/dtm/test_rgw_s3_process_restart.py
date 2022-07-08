@@ -301,7 +301,7 @@ class TestRGWProcessRestart:
 
         self.log.info("Step 4: Successfully verified status for In-flight DELETEs while service "
                       "was restarting")
-
+        self.test_completed = True
         self.log.info("ENDED: Verify DELETEs during rgw_s3 service restart using pkill")
 
     @pytest.mark.lc
@@ -513,7 +513,6 @@ class TestRGWProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
 
         self.test_completed = True
-
         self.log.info("ENDED: Verify continuous WRITEs during rgw_s3 restart using pkill")
 
     # pylint: disable-msg=too-many-locals
@@ -680,6 +679,7 @@ class TestRGWProcessRestart:
                       "and parallel deletes during rgw restart:")
         write_proc = []
         w_args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
+                  'obj_size': self.test_cfg['size'],
                   'no_of_clients': self.test_cfg['clients'],
                   'no_of_samples': self.test_cfg['samples'],
                   'log_file_prefix': log_file_prefix, 'queue': que}
@@ -689,6 +689,7 @@ class TestRGWProcessRestart:
                                            kwargs=w_args)
             proc.start()
             write_proc.append(proc)
+            time.sleep(5)
 
         self.log.info("Step 2: Wait for Write Operation to complete.")
         workload_info_list = []
@@ -785,13 +786,13 @@ class TestRGWProcessRestart:
                                             container_prefix=const.RGW_CONTAINER_NAME,
                                             process=self.rgw_process,
                                             check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for Overwrite Operation to complete.")
         if proc_overwrite_op.is_alive():
             proc_overwrite_op.join()
-        resp = que.get()
-        assert_utils.assert_true(resp[0], resp[1])
+        resp1 = que.get()
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+        assert_utils.assert_true(resp1[0], resp1[1])
         self.test_completed = True
         self.log.info("ENDED: Overwrite same object during rgw restart.")
 
@@ -830,7 +831,7 @@ class TestRGWProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
-
+        self.test_completed = True
         self.log.info("ENDED: Verify IO operations work after rgw restart using pkill")
 
     @pytest.mark.lc
@@ -866,7 +867,7 @@ class TestRGWProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
-
+        self.test_completed = True
         self.log.info("ENDED: Verify bucket creation and IOs after rgw restart using pkill")
 
     @pytest.mark.lc
@@ -964,5 +965,5 @@ class TestRGWProcessRestart:
                                   f" {download_checksum}")
         self.log.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         self.log.info("Step 6: Successfully downloaded the object and verified the checksum")
-
+        self.test_completed = True
         self.log.info("ENDED: Verify multipart upload during rgw restart")
