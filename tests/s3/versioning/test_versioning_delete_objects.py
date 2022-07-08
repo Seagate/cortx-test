@@ -153,7 +153,6 @@ class TestVersioningDeleteObjects:
                                           head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test DELETE Objects for pre-existing objects in a versioned bucket")
 
-    @pytest.mark.sanity
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-43188")
     def test_delete_objects_versioned_43188(self):
@@ -405,7 +404,6 @@ class TestVersioningDeleteObjects:
                                           head_error_msg=errmsg.NOT_FOUND_ERR)
         self.log.info("ENDED: Test Delete Objects for pre-existing multipart uploads")
 
-    @pytest.mark.sanity
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-43184")
     def test_delete_objects_multipart_versioned_43184(self):

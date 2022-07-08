@@ -363,7 +363,7 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Successfully performed READs-Verify on already written data in "
                       "Step 1")
-
+        self.test_completed = True
         self.log.info("ENDED: Verify IOs before and after RC pod m0d restart using pkill")
 
     @pytest.mark.lc
@@ -391,7 +391,7 @@ class TestSingleProcessRestart:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed WRITEs/READs-Verify/DELETEs with variable "
                       "sizes objects.")
-
+        self.test_completed = True
         self.log.info("ENDED: Verify bucket creation and IOs after m0d restart using pkill")
 
     @pytest.mark.lc
@@ -591,7 +591,7 @@ class TestSingleProcessRestart:
         self.log.info("Matched checksum: %s, %s", upload_checksum, download_checksum1)
         self.log.info("Step 4: Successfully downloaded the object and verified the checksum after "
                       "m0d recovery")
-
+        self.test_completed = True
         self.log.info("ENDED: Verify multipart upload and download before/after m0d is restarted")
 
     @pytest.mark.lc
@@ -617,6 +617,8 @@ class TestSingleProcessRestart:
                                                  que))
             proc.start()
             write_proc.append(proc)
+            self.log.info("Delay for 5 seconds")
+            time.sleep(5)
 
         self.log.info("Step 2: Wait for Write Operation to complete.")
         workload_info_list = []
@@ -661,13 +663,12 @@ class TestSingleProcessRestart:
         time.sleep(self.delay)
         self.log.info(
             "Step 4: Perform Single m0d Process Restart During Write/Read/Delete Operations")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.POD_NAME_PREFIX,
-                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                            process=self.m0d_process,
-                                            check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+        resp_proc = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                                 health_obj=self.health_obj,
+                                                 pod_prefix=const.POD_NAME_PREFIX,
+                                                 container_prefix=const.MOTR_CONTAINER_PREFIX,
+                                                 process=self.m0d_process,
+                                                 check_proc_state=True)
 
         self.log.info("Step 5: Check if all the operations were successful")
         write_during_restart = None
@@ -678,6 +679,8 @@ class TestSingleProcessRestart:
             assert_utils.assert_true(resp[0], resp[1])
             if isinstance(resp[1], list):
                 write_during_restart = resp[1]
+
+        assert_utils.assert_true(resp_proc, "Failure observed during process restart/recovery")
 
         if not write_during_restart:
             assert_utils.assert_true(False, 'No workload returned for writes performed during m0d '
@@ -712,17 +715,19 @@ class TestSingleProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 3 : Perform Single m0d Process Restart during overwrite ")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.POD_NAME_PREFIX,
-                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                            process=self.m0d_process,
-                                            check_proc_state=True)
-        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+        resp_proc = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
+                                                 health_obj=self.health_obj,
+                                                 pod_prefix=const.POD_NAME_PREFIX,
+                                                 container_prefix=const.MOTR_CONTAINER_PREFIX,
+                                                 process=self.m0d_process,
+                                                 check_proc_state=True)
 
         self.log.info("Step 4: Wait for Overwrite Operation to complete.")
         if proc_overwrite_op.is_alive():
             proc_overwrite_op.join()
+        # assert post IO completion.
+        assert_utils.assert_true(resp_proc,
+                                 "Failure observed during process restart/recovery")
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         self.test_completed = True
