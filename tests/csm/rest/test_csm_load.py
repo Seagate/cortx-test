@@ -35,7 +35,6 @@ from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.csm_interface import csm_api_factory
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-from libs.csm.rest.csm_rest_stats import SystemStats
 from libs.jmeter.jmeter_integration import JmeterInt
 from libs.ras.sw_alerts import SoftwareAlert
 
@@ -49,7 +48,6 @@ class TestCsmLoad():
         cls.log = logging.getLogger(__name__)
         cls.log.info("[STARTED]: Setup class")
         cls.jmx_obj = JmeterInt()
-        cls.system_stats = SystemStats()
         cls.sw_alert_obj = SoftwareAlert(CMN_CFG["nodes"][0]["hostname"],
                                          CMN_CFG["nodes"][0]["username"],
                                          CMN_CFG["nodes"][0]["password"])
@@ -287,7 +285,7 @@ class TestCsmLoad():
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.test_cfgs["test_22207"]
         fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
-        resp = self.system_stats.get_stats()
+        resp = self.csm_obj.get_stats()
         assert resp.status_code == 200
         unit_list = resp.json()['unit_list']
         content = []
