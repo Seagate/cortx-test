@@ -92,6 +92,7 @@ class JmeterInt():
         self.append_log(log_file_path)
         return resp
 
+    # pylint: disable=too-many-arguments
     def run_verify_jmx(
         self,
         jmx_file: str,
