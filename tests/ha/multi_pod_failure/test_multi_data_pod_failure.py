@@ -343,7 +343,7 @@ class TestMultiDataPodFailure:
                                                         setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 4: Performed READs and verified DI on the written data")
-        LOGGER.info("%s (K) %s data pods shutdown one by one successfully and read/verify "
+        LOGGER.info("Step 3: %s (K) %s data pods shutdown one by one successfully and read/verify "
                     "after each pod down verified", self.kvalue, self.pod_name_list)
 
         LOGGER.info("Completed: Test to verify degraded READs after each pod failure till K "
