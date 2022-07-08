@@ -54,7 +54,7 @@ class JmeterInt():
         self.log.debug(content)
 
     def run_jmx(self, jmx_file: str, threads:int=25, rampup:int=1, loop:int=1, test_cfg:str=None):
-        """Set the user properties and run the jmx file and verify the logs
+        """Set the user properties and run the jmx file
         :param jmx_file: jmx file located in the JMX_PATH
         :return [tuple]: response of command
         """
@@ -83,12 +83,10 @@ class JmeterInt():
         cmd = JMX_CMD.format(self.jmeter_path, jmx_file_path, log_file_path, self.jtl_log_path)
         self.log.info("Executing JMeter command : %s", cmd)
         result, resp = system_utils.run_local_cmd(cmd, chk_stderr=True)
-        self.log.info("Verify if any errors are reported...")
         if result:
             self.log.info("Jmeter execution completed.")
         else:
             assert result, "Failed to execute command."
-        self.log.info("No Errors are reported in the Jmeter execution.")
         self.append_log(log_file_path)
         return resp
 
