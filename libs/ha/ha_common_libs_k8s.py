@@ -862,14 +862,14 @@ class HAK8s:
         LOGGER.debug("Time taken by cluster restart is %s seconds", int(time.time()) - start_time)
         return resp
 
-    @staticmethod
-    def restore_pod(pod_obj, restore_method, restore_params: dict = None):
+    def restore_pod(self, pod_obj, restore_method, restore_params: dict = None, clstr_status=False):
         """
         Helper function to restore pod based on way_to_restore
         :param pod_obj: Object of master node
         :param restore_method: Restore method to be used depending on shutdown method
         ("scale_replicas", "k8s", "helm")
         :param restore_params: Dict which has parameters required to restore pods
+        :clstr_status: Flag to check cluster status after pod restored
         :return: Bool, response
         """
         resp = False
@@ -884,6 +884,10 @@ class HAK8s:
         elif restore_method == common_const.RESTORE_DEPLOYMENT_HELM:
             resp = pod_obj.recover_deployment_helm(deployment_name=deployment_name)
 
+        if resp[0] and clstr_status:
+            resp_clstr = self.poll_cluster_status(pod_obj, timeout=180)
+            LOGGER.debug("Cluster status: %s", resp_clstr)
+            return resp_clstr
         return resp
 
     def event_s3_operation(self, event, setup_s3bench=True, log_prefix=None, s3userinfo=None,
