@@ -114,7 +114,6 @@ class TestVersioningMultipart:
                                                     version_id="null", etag=etag)
         self.log.info("ENDED: Test pre-existing multipart upload in a versioning enabled bucket")
 
-    @pytest.mark.sanity
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-41285")
     def test_mpu_ver_enabled_bkt_41285(self):

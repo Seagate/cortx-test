@@ -274,7 +274,6 @@ class TestGetPutObjectTagging:
         LOGGER.info("ENDED: Test GET and PUT object tagging for pre-existing object in"
                     " a versioning enabled bucket ")
 
-    @pytest.mark.sanity
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-40431")
     def test_get_put_obj_tags_ver_bkt_40431(self):
