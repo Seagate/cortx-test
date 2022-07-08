@@ -87,12 +87,13 @@ class JmeterInt():
         self.log.info("Verify if any errors are reported...")
         if result:
             self.log.info("Jmeter execution completed.")
-            result = re.match(r"Err:\s*0\s*.*", resp) is not None
+            err_list = re.findall(r"Err:\s*\s*.*", resp)
+            zero_err_list = re.findall(r"Err:\s*0\s*.*", resp)
         else:
             assert result, "Failed to execute command."
         self.log.info("No Errors are reported in the Jmeter execution.")
         self.append_log(log_file_path)
-        return resp
+        return (len(err_list) == len(zero_err_list)), resp
 
     def update_user_properties(self, content: dict):
         """Update the user.properties file in the JMX_PATH/bin
