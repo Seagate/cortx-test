@@ -33,10 +33,8 @@ from commons.constants import SwAlerts as const
 from commons.utils import config_utils
 from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
 from libs.csm.csm_setup import CSMConfigsCheck
+from libs.csm.csm_interface import csm_api_factory
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-from libs.csm.rest.csm_rest_csmuser import RestCsmUser
-from libs.csm.rest.csm_rest_s3user import RestS3user
-from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_stats import SystemStats
 from libs.jmeter.jmeter_integration import JmeterInt
 from libs.ras.sw_alerts import SoftwareAlert
@@ -55,6 +53,7 @@ class TestCsmLoad():
         cls.sw_alert_obj = SoftwareAlert(CMN_CFG["nodes"][0]["hostname"],
                                          CMN_CFG["nodes"][0]["username"],
                                          CMN_CFG["nodes"][0]["password"])
+        cls.csm_obj = csm_api_factory("rest")
         cls.csm_alert_obj = SystemAlerts(cls.sw_alert_obj.node_utils)
         cls.config_chk = CSMConfigsCheck()
         cls.test_cfgs = config_utils.read_yaml('config/csm/test_jmeter.yaml')[1]
@@ -69,9 +68,6 @@ class TestCsmLoad():
         assert s3acc_already_present
         cls.log.info("[Completed]: Setup class")
         cls.default_cpu_usage = False
-        cls.s3user = RestS3user()
-        cls.iamuser = RestIamUser()
-        cls.csm_user = RestCsmUser()
 
     def setup_method(self):
         """
@@ -103,8 +99,7 @@ class TestCsmLoad():
         self.log.info("##### Test started -  %s #####", test_case_name)
         jmx_file = "CSM_Login.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        result, resp = self.jmx_obj.run_jmx(jmx_file)
-        assert resp, "Jmeter Execution Failed."
+        result = self.jmx_obj.run_verify_jmx(jmx_file)
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -139,12 +134,11 @@ class TestCsmLoad():
         config_utils.write_csv(fpath, fieldnames, content)
         jmx_file = "CSM_Concurrent_Same_User_Login.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        result, resp = self.jmx_obj.run_jmx(
+        result = self.jmx_obj.run_verify_jmx(
             jmx_file,
             threads=test_cfg["threads"],
             rampup=test_cfg["rampup"],
             loop=test_cfg["loop"])
-        assert resp, "Jmeter Execution Failed."
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -177,12 +171,11 @@ class TestCsmLoad():
         config_utils.write_csv(fpath, fieldnames, content)
         jmx_file = "CSM_Concurrent_Same_User_Login.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        result, resp = self.jmx_obj.run_jmx(
+        result = self.jmx_obj.run_verify_jmx(
             jmx_file,
             threads=test_cfg["threads"],
             rampup=test_cfg["rampup"],
             loop=test_cfg["loop"])
-        assert resp, "Jmeter Execution Failed."
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -201,7 +194,7 @@ class TestCsmLoad():
         jmx_file = "CSM_Concurrent_Different_User_Login.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
 
-        resp = self.s3user.list_all_created_s3account()
+        resp = self.csm_obj.list_all_created_s3account()
         assert resp.status_code == HTTPStatus.OK, "List S3 account failed."
         user_data = resp.json()
         self.log.info("List user response : %s", user_data)
@@ -212,7 +205,7 @@ class TestCsmLoad():
         self.log.info("New users to create: %s", new_s3_users)
 
         self.log.info("Step 1: Listing all csm users")
-        response = self.csm_user.list_csm_users(
+        response = self.csm_obj.list_csm_users(
             expect_status_code=rest_const.SUCCESS_STATUS,
             return_actual_response=True)
         self.log.info("Verifying response code 200 was returned")
@@ -225,17 +218,16 @@ class TestCsmLoad():
         new_csm_users = rest_const.MAX_CSM_USERS - existing_user
         self.log.info("New users to create: %s", new_csm_users)
         loops = min(new_s3_users, new_csm_users)
-        result, resp = self.jmx_obj.run_jmx(
+        result = self.jmx_obj.run_verify_jmx(
             jmx_file,
             threads=test_cfg["threads"],
             rampup=test_cfg["rampup"],
             loop=loops)
-        assert resp, "Jmeter Execution Failed."
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
-    @pytest.mark.lr
+    @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -251,7 +243,7 @@ class TestCsmLoad():
         jmx_file = "CSM_Concurrent_Different_User_Login_lc.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
 
-        resp = self.iamuser.list_iam_users()
+        resp = self.csm_obj.list_iam_users_rgw()
         assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
         user_data = resp.json()
         self.log.info("List user response : %s", user_data)
@@ -262,7 +254,7 @@ class TestCsmLoad():
         self.log.info("New users to create: %s", new_iam_users)
 
         self.log.info("Step 1: Listing all csm users")
-        response = self.csm_user.list_csm_users(
+        response = self.csm_obj.list_csm_users(
             expect_status_code=rest_const.SUCCESS_STATUS,
             return_actual_response=True)
         self.log.info("Verifying response code 200 was returned")
@@ -275,12 +267,11 @@ class TestCsmLoad():
         new_csm_users = rest_const.MAX_CSM_USERS - existing_user
         self.log.info("New users to create: %s", new_csm_users)
         loops = min(new_iam_users, new_csm_users,test_cfg["loop"])
-        result, resp = self.jmx_obj.run_jmx(
+        result = self.jmx_obj.run_verify_jmx(
             jmx_file,
             threads=test_cfg["threads"],
             rampup=test_cfg["rampup"],
             loop=loops)
-        assert resp, "Jmeter Execution Failed."
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -308,12 +299,11 @@ class TestCsmLoad():
         config_utils.write_csv(fpath, fieldnames, content)
         jmx_file = "CSM_Concurrent_Performance.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        result, resp = self.jmx_obj.run_jmx(
+        result = self.jmx_obj.run_verify_jmx(
             jmx_file,
             threads=test_cfg["threads"],
             rampup=test_cfg["rampup"],
             loop=test_cfg["loop"])
-        assert resp, "Jmeter Execution Failed."
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -353,11 +343,10 @@ class TestCsmLoad():
 
         jmx_file = "CSM_Concurrent_alert.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        result, resp = self.jmx_obj.run_jmx(jmx_file,
+        result = self.jmx_obj.run_verify_jmx(
                                     threads=test_cfg["threads"],
                                     rampup=test_cfg["rampup"],
                                     loop=test_cfg["loop"])
-        assert resp, "Jmeter Execution Failed."
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("JMX script execution completed")
 
@@ -412,12 +401,11 @@ class TestCsmLoad():
         config_utils.write_csv(fpath, fieldnames, content)
         jmx_file = "CSM_Concurrent_Same_User_Login_lc.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        result, resp = self.jmx_obj.run_jmx(
+        result = self.jmx_obj.run_verify_jmx(
             jmx_file,
             threads=test_cfg["threads"],
             rampup=test_cfg["rampup"],
             loop=test_cfg["loop"])
-        assert resp, "Jmeter Execution Failed."
         assert result, "Errors reported in the Jmeter execution"
         err_cnt, total_cnt = self.jmx_obj.get_err_cnt(os.path.join(self.jmx_obj.jtl_log_path,
                                                                    "statistics.json"))

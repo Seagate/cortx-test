@@ -55,9 +55,8 @@ class JmeterInt():
 
     def run_jmx(self, jmx_file: str, threads:int=25, rampup:int=1, loop:int=1, test_cfg:str=None):
         """Set the user properties and run the jmx file and verify the logs
-
         :param jmx_file: jmx file located in the JMX_PATH
-        :return [tuple]: boolean, Error message
+        :return [tuple]: response of command
         """
         if test_cfg is None:
             test_cfg = os.path.join(self.jmeter_path, self.test_data_csv)
@@ -87,13 +86,33 @@ class JmeterInt():
         self.log.info("Verify if any errors are reported...")
         if result:
             self.log.info("Jmeter execution completed.")
-            err_list = re.findall(r"Err:\s*\s*.*", resp)
-            zero_err_list = re.findall(r"Err:\s*0\s*.*", resp)
         else:
             assert result, "Failed to execute command."
         self.log.info("No Errors are reported in the Jmeter execution.")
         self.append_log(log_file_path)
-        return (len(err_list) == len(zero_err_list)), resp
+        return resp
+
+    def run_verify_jmx(
+        self,
+        jmx_file: str,
+        threads:int=25,
+        rampup:int=1,
+        loop:int=1,
+        test_cfg:str=None
+        ):
+        """Set the user properties and run the jmx file and verify the logs
+        :param jmx_file: jmx file located in the JMX_PATH
+        :return [bool]: True if error count is zero in jmx result log
+        """
+        resp = self.run_jmx(jmx_file, threads, rampup, loop, test_cfg)
+        resp = resp.replace("\\n","\n")
+        err_list = re.findall(r"Err:\s*\s*.*", resp)
+        zero_err_list = re.findall(r"Err:\s*0\s*.*", resp)
+        result = (len(err_list) == len(zero_err_list))
+        if result is False:
+            self.log.info("err_list : %s", err_list)
+            self.log.info("zero_err_list : %s", zero_err_list)
+        return result
 
     def update_user_properties(self, content: dict):
         """Update the user.properties file in the JMX_PATH/bin
