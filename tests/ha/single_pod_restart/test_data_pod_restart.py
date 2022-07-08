@@ -208,7 +208,7 @@ class TestDataPodRestart:
         LOGGER.info("STEP 3: Perform READs/Verify on data written in healthy cluster.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed READs/Verify on data written in healthy cluster.")
 
@@ -217,11 +217,11 @@ class TestDataPodRestart:
             self.test_prefix_deg = 'test-34072-deg'
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix_deg,
-                                                        skipcleanup=True)
+                                                        skipcleanup=True, setup_s3bench=False)
         else:
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        skipcleanup=True)
+                                                        skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs/READs/Verify with variable sizes objects.")
 
@@ -243,8 +243,8 @@ class TestDataPodRestart:
                         "cluster with new buckets and objects.")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix_deg,
-                                                        skipwrite=True,
-                                                        skipcleanup=True)
+                                                        skipwrite=True, skipcleanup=True,
+                                                        setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 6: Successfully run READ/Verify on data written in degraded cluster "
                         "with new buckets and objects.")
@@ -252,7 +252,7 @@ class TestDataPodRestart:
                     "in healthy cluster.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully run READ/Verify on data written with buckets created "
                     "in healthy cluster")

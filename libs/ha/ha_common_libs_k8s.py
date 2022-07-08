@@ -869,7 +869,7 @@ class HAK8s:
         :param restore_method: Restore method to be used depending on shutdown method
         ("scale_replicas", "k8s", "helm")
         :param restore_params: Dict which has parameters required to restore pods
-        :clstr_status: Flag to check cluster status fter pod restored
+        :clstr_status: Flag to check cluster status after pod restored
         :return: Bool, response
         """
         resp = False
