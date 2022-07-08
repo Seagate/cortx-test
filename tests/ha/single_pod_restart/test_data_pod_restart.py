@@ -58,9 +58,9 @@ LOGGER = logging.getLogger(__name__)
 # pylint: disable=R0902
 # pylint: disable=C0302
 # pylint: disable=R0904
-class TestPodRestart:
+class TestDataPodRestart:
     """
-    Test suite for Pod Restart
+    Test suite for single Data Pod Restart
     """
 
     @classmethod
@@ -184,7 +184,7 @@ class TestPodRestart:
         LOGGER.info("STEP 1: Perform WRITEs/READs/Verify with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34072'
-        self.s3_clean = users
+        self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
