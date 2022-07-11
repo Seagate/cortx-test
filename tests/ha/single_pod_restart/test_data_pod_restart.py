@@ -762,7 +762,7 @@ class TestDataPodRestart:
 
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        part_numbers = random.sample(list(range(1, total_parts + 1)), total_parts // 4)
+        part_numbers = self.system_random.sample(list(range(1, total_parts + 1)), total_parts // 4)
         download_path = os.path.join(self.test_dir_path, self.test_file + "_download")
         if os.path.exists(self.multipart_obj_path):
             os.remove(self.multipart_obj_path)
@@ -825,7 +825,7 @@ class TestDataPodRestart:
 
         remaining_parts = list(filter(lambda i: i not in part_numbers,
                                       list(range(1, total_parts + 1))))
-        parts_fifty = random.sample(remaining_parts, 50)
+        parts_fifty = self.system_random.sample(remaining_parts, 50)
         part_numbers.extend(parts_fifty)
         LOGGER.info("Step 4: Start multipart upload for 5GB object in multiple parts and complete "
                     "partially for %s part out of %s", parts_fifty, total_parts)
