@@ -2688,3 +2688,37 @@ class TestCapacityQuota():
                 assert error.response['Error']['Code'] == "QuotaExceeded", \
                                       "Second overwrite passed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-44411')
+    def test_44411(self):
+        """
+        Verify user capacity after recursively deleting all objects in bucket
+        """
+        test_case_name = cortxlogging.get_frame()
+        test_cfg = self.csm_conf["test_44411"]
+        max_size = test_cfg["max_size"]
+        random_size = self.csm_obj.random_gen.randrange(1, max_size)
+        num_objects = test_cfg["num_objects"]
+        random_objects = self.csm_obj.random_gen.randrange(1, num_objects)
+        self.log.info("Step 1:Create and upload objects in a bucket")
+        for _ in range(0, random_objects):
+            obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
+            resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                          self.akey, self.skey,
+                                 object_size=int(random_size/1024), block_size="1K")
+        assert resp, "Put Object failed"
+        import pdb;pdb.set_trace()
+        self.log.info("Step 2: Delete all uploaded objects recursively")
+        assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                                                                    self.akey, self.skey)
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        #self.log.info("Step 3: Get user capacity stats")
+        #res, resp = self.csm_obj.verify_user_capacity(self.user_id, 0,
+        #                        0, 0, aligned=True)
+        #assert res, "Verify User capacity failed"
+        self.log.info("##### Test ended -  %s #####", test_case_name)

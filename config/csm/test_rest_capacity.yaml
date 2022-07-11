@@ -181,3 +181,6 @@ test_43862:
   max_size: 1572864
   max_objects: 2
   enabled: True
+test_44411:
+  max_size: 1048576
+  num_objects: 10
