@@ -89,8 +89,8 @@ class TestMultiDataPodFailure:
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.restore_node = cls.node_name = cls.deploy = cls.kvalue = cls.multipart_obj_path = None
         cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
-        cls.pod_dict = {}
-        cls.ip_dict = {}
+        cls.pod_dict = dict()
+        cls.ip_dict = dict()
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -125,7 +125,7 @@ class TestMultiDataPodFailure:
         self.restore_node = False
         self.restore_ip = False
         self.deploy = False
-        self.s3_clean = {}
+        self.s3_clean = dict()
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
@@ -239,25 +239,17 @@ class TestMultiDataPodFailure:
         """
         LOGGER.info("Started: Test to verify degraded READs after all K data pods are failed.")
 
-        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes.")
+        LOGGER.info("STEP 1: Perform WRITEs/READs/verify DI with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-35772'
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipread=True,
+                                                    log_prefix=self.test_prefix,
                                                     skipcleanup=True, nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
+        LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
 
-        LOGGER.info("Step 2: Perform READs and verify DI on the written data")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True, nsamples=2, nclients=2,
-                                                    setup_s3bench=False)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: Performed READs and verified DI on the written data")
-
-        LOGGER.info("Step 3: Shutdown random %s (K) data pods by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random %s (K) data pods by deleting deployment and "
                     "verify cluster & remaining pods status", self.kvalue)
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
@@ -274,17 +266,17 @@ class TestMultiDataPodFailure:
         self.restore_pod = self.deploy = True
         self.restore_method = const.RESTORE_DEPLOYMENT_K8S
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 3: Successfully shutdown %s (K) data pod %s. Verified cluster and "
+        LOGGER.info("Step 2: Successfully shutdown %s (K) data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.",
                     self.kvalue, self.pod_name_list)
 
-        LOGGER.info("Step 4: Perform READs and verify DI on the written data")
+        LOGGER.info("Step 3: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
                                                     skipcleanup=True, nsamples=2, nclients=2,
                                                     setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Performed READs and verified DI on the written data")
+        LOGGER.info("Step 3: Performed READs and verified DI on the written data")
 
         LOGGER.info("Completed: Test to verify degraded READs after all K data pods are failed.")
 
@@ -299,25 +291,17 @@ class TestMultiDataPodFailure:
         LOGGER.info("Started: Test to verify degraded READs after each pod failure till K "
                     "data pods fail.")
 
-        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes.")
+        LOGGER.info("STEP 1: Perform WRITEs/READs/Verify with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-35771'
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipread=True,
+                                                    log_prefix=self.test_prefix,
                                                     skipcleanup=True, nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
+        LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
 
-        LOGGER.info("Step 2: Perform READs and verify DI on the written data")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True, nsamples=2, nclients=2,
-                                                    setup_s3bench=False)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: Performed READs and verified DI on the written data")
-
-        LOGGER.info("Step 3: Shutdown %s (K) data pods one by one and verify read/verify "
+        LOGGER.info("Step 2: Shutdown %s (K) data pods one by one and verify read/verify "
                     "after each pod down.", self.kvalue)
         for count in range(1, self.kvalue+1):
             resp = self.ha_obj.delete_kpod_with_shutdown_methods(
@@ -336,14 +320,14 @@ class TestMultiDataPodFailure:
             assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
             LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
 
-            LOGGER.info("Step 4: Perform READs and verify DI on the written data")
+            LOGGER.info("Step 3: Perform READs and verify DI on the written data")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix, skipwrite=True,
                                                         skipcleanup=True, nsamples=2, nclients=2,
                                                         setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 4: Performed READs and verified DI on the written data")
-        LOGGER.info("Step 3: %s (K) %s data pods shutdown one by one successfully and read/verify "
+            LOGGER.info("Step 3: Performed READs and verified DI on the written data")
+        LOGGER.info("Step 2: %s (K) %s data pods shutdown one by one successfully and read/verify "
                     "after each pod down verified", self.kvalue, self.pod_name_list)
 
         LOGGER.info("Completed: Test to verify degraded READs after each pod failure till K "
@@ -993,7 +977,7 @@ class TestMultiDataPodFailure:
         LOGGER.info("Joining background thread. Waiting for %s seconds to "
                     "collect the queue logs", HA_CFG["common_params"]["60sec_delay"])
         thread.join()
-        responses = {}
+        responses = dict()
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         LOGGER.info("Step 6: Verify status for In-flight IOs while %s (K) pods going "
@@ -1096,7 +1080,7 @@ class TestMultiDataPodFailure:
 
         LOGGER.info("Step 4: Perform READs on the remaining %s buckets.", remain_bkt)
         rd_output = Queue()
-        new_s3data = {}
+        new_s3data = dict()
         for bkt in remain_bkt:
             new_s3data[bkt] = s3_data[bkt]
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
@@ -1123,7 +1107,7 @@ class TestMultiDataPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until 'CORTX-27549' resolve")
+    @pytest.mark.skip(reason="VM issue in after Restart(CORTX-32933). Need to be tested on HW.")
     @pytest.mark.tags("TEST-35787")
     def test_kpods_fail_node_down(self):
         """
@@ -1302,7 +1286,7 @@ class TestMultiDataPodFailure:
         LOGGER.info("Step 7: Verify status for In-flight READs/Verify DI while %s (K) pods going "
                     "down should be failed/error.", self.kvalue)
         thread.join()
-        responses = {}
+        responses = dict()
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
@@ -1406,7 +1390,7 @@ class TestMultiDataPodFailure:
         LOGGER.info("Step 6: Verify status for In-flight WRITEs while %s (K) pods going "
                     "down should be failed/error.", self.kvalue)
         thread.join()
-        responses = {}
+        responses = dict()
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
@@ -1763,7 +1747,7 @@ class TestMultiDataPodFailure:
 
         LOGGER.info("Step 10.2: Verify status for In-flight WRITEs while %s (K) pods going "
                     "down should be failed/error.", self.kvalue)
-        responses_wr = {}
+        responses_wr = dict()
         while len(responses_wr) != 2:
             responses_wr = output_wr.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses_wr["pass_res"])
@@ -1778,7 +1762,7 @@ class TestMultiDataPodFailure:
 
         LOGGER.info("Step 10.3: Verify status for In-flight READs/Verify DI while %s (K) pods "
                     "going down should be failed/error.", self.kvalue)
-        responses_rd = {}
+        responses_rd = dict()
         while len(responses_rd) != 2:
             responses_rd = output_rd.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses_rd["pass_res"])
@@ -2053,7 +2037,7 @@ class TestMultiDataPodFailure:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until 'CORTX-27549' resolve")
+    @pytest.mark.skip(reason="VM issue in after Restart(CORTX-32933). Need to be tested on HW.")
     @pytest.mark.tags("TEST-35788")
     def test_kpods_fail_node_nw_down(self):
         """
@@ -2160,7 +2144,7 @@ class TestMultiDataPodFailure:
         LOGGER.info("STARTED: Test to Verify copy object when all K data pods are failed.")
 
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
-        bkt_obj_dict = {}
+        bkt_obj_dict = dict()
         for cnt in range(bkt_cnt):
             bkt_obj_dict[f"ha-bkt{cnt}-{self.random_time}"] = \
                 f"ha-obj{cnt}-{self.random_time}"
@@ -2392,7 +2376,7 @@ class TestMultiDataPodFailure:
         """
         LOGGER.info("STARTED: Verify copy object during data pods failure till K pods.")
 
-        bkt_obj_dict = {}
+        bkt_obj_dict = dict()
         output = Queue()
         bkt_obj_dict[f"ha-bkt-{perf_counter_ns()}"] = f"ha-obj-{perf_counter_ns()}"
         event = threading.Event()
