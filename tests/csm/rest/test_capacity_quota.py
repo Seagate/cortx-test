@@ -2714,11 +2714,8 @@ class TestCapacityQuota():
         import pdb;pdb.set_trace()
         self.log.info("Step 2: Delete all uploaded objects recursively")
         assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), "Delete object Failed"
-        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
-                                                                    self.akey, self.skey)
-        self.log.info("total objects and size %s and %s ", total_objects, total_size)
-        #self.log.info("Step 3: Get user capacity stats")
-        #res, resp = self.csm_obj.verify_user_capacity(self.user_id, 0,
-        #                        0, 0, aligned=True)
-        #assert res, "Verify User capacity failed"
+        self.log.info("Step 3: Get user capacity stats")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, 0,
+                                0, 0, aligned=True)
+        assert res, "Verify User capacity failed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
