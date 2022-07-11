@@ -2708,16 +2708,19 @@ class TestCapacityQuota():
         for num in range(0, random_objects):
             self.log.info("Creating object : %s", num)
             obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
-            self.log.info("Creating object %s of size %s in bucket %s ", obj_name,
+            self.log.info("Creating object %s of size %s bytes in bucket %s ", obj_name,
                                   int(random_size/1024), self.bucket)
             resp = s3_misc.create_put_objects(obj_name, self.bucket,
                                           self.akey, self.skey,
                                  object_size=int(random_size/1024), block_size="1K")
         assert resp, f"Put object {obj_name} failed"
-        self.log.info("Step 1: Perform & Verify GET API to get capacity usage stats")
-        resp = self.csm_obj.get_user_capacity_usage("user", self.user_id)
-        assert resp.status_code == HTTPStatus.OK, \
-                "Status code check failed for get capacity"
+        self.log.info("Step 2: Perform & Verify GET API to get capacity usage stats")
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                                                                    self.akey, self.skey)
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects, aligned=None)
+        assert res, "Verify User capacity failed"
         self.log.info("Step 2: Delete all uploaded objects recursively")
         assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), \
                                          "Delete object Failed"
