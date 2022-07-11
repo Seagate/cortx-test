@@ -576,52 +576,12 @@ class TestDataPodRestart:
         This test tests multipart upload after data pod restart.
         """
         LOGGER.info("STARTED: Test to verify multipart upload after data pod restart.")
-        LOGGER.info("Step 1: Shutdown the data pod by deleting deployment (unsafe)")
-        LOGGER.info("Get pod name to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)[0]
-        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
-        LOGGER.info("Deleting pod %s", pod_name)
-        resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
-        LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
-                    pod_name)
-        self.deployment_backup = resp[1]
-        self.deployment_name = resp[2]
-        self.restore_pod = True
-        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
-
-        LOGGER.info("Step 2: Verify cluster status is in degraded state")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 2: Verified cluster status is in degraded state")
-
-        LOGGER.info("Step 3: Verify services that were running on pod %s are in offline state",
-                    pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
-                                                           hostname=pod_host)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 3: Verified services of %s are in offline state", pod_name)
-
-        remain_pod_list = list(filter(lambda x: x != pod_name, pod_list))
-        LOGGER.info("Step 4: Verify services status on remaining pods %s are in online state",
-                    remain_pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list,
-                                                           fail=False)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Verified services on remaining pods %s are in online state",
-                    remain_pod_list)
 
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        download_file = self.test_file + "_download"
-        download_path = os.path.join(self.test_dir_path, download_file)
+        download_path_1 = os.path.join(self.test_dir_path, self.test_file + "_download_1")
 
-        LOGGER.info("Step 5: Create and list buckets. Perform multipart upload for size %s MB in "
+        LOGGER.info("Step 1: Create and list buckets. Perform multipart upload for size %s MB in "
                     "total %s parts.", file_size, total_parts)
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
@@ -647,47 +607,110 @@ class TestDataPodRestart:
         obj_size = result[1]["ContentLength"]
         LOGGER.debug("Uploaded object info for %s is %s", self.bucket_name, result)
         assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
-        upload_checksum = str(resp[2])
-        LOGGER.info("Step 5: Sucessfully performed multipart upload for  size %s MB in "
+        upload_checksum_1 = str(resp[2])
+        LOGGER.info("Step 1: Successfully performed multipart upload for size %s MB in total %s "
+                    "parts.", file_size, total_parts)
+
+        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+                    "verify cluster & remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            down_method=const.RESTORE_DEPLOYMENT_K8S)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+        pod_name = list(resp[1].keys())[0]
+        self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.restore_method = resp[1][pod_name]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+
+        LOGGER.info("Step 3: Download the uploaded object %s in Step 1 & verify checksum",
+                    self.object_name)
+        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path_1)
+        LOGGER.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum_1 = self.ha_obj.cal_compare_checksum(file_list=[download_path_1],
+                                                               compare=False)[0]
+        assert_utils.assert_equal(upload_checksum_1, download_checksum_1,
+                                  f"Failed to match checksum: {upload_checksum_1},"
+                                  f" {download_checksum_1}")
+        LOGGER.info("Matched checksum: %s, %s", upload_checksum_1, download_checksum_1)
+        LOGGER.info("Step 3: Successfully downloaded the object %s & verified the checksum",
+                    self.object_name)
+
+        download_path_2 = os.path.join(self.test_dir_path, self.test_file + "_download_2")
+        object_name_1 = f"ha-mp-obj-{int(perf_counter_ns())}"
+        if CMN_CFG["dtm0_disabled"]:
+            bucket_name_1 = f"ha-mp-bkt-{int(perf_counter_ns())}"
+        else:
+            bucket_name_1 = self.bucket_name
+
+        LOGGER.info("Step 4: Create and list buckets. Perform multipart upload for size %s MB in "
+                    "total %s parts.", file_size, total_parts)
+        resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
+                                                         bucket_name=bucket_name_1,
+                                                         object_name=object_name_1,
+                                                         file_size=file_size,
+                                                         total_parts=total_parts,
+                                                         multipart_obj_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], resp)
+        result = s3_test_obj.object_info(self.bucket_name, self.object_name)
+        obj_size = result[1]["ContentLength"]
+        LOGGER.debug("Uploaded object info for %s is %s", self.bucket_name, result)
+        assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
+        upload_checksum_2 = str(resp[2])
+        LOGGER.info("Step 4: Successfully performed multipart upload for  size %s MB in "
                     "total %s parts.", file_size, total_parts)
 
-        LOGGER.info("Step 6: Start pod again by creating deployment.")
+        LOGGER.info("Step 5: Start pod again by creating deployment.")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup})
+                                                           self.deployment_backup},
+                                       clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         self.restore_pod = False
-        LOGGER.info("Step 6: Successfully started pod again by creating deployment.")
+        LOGGER.info("Step 5: Successfully started pod again by creating deployment.")
 
-        LOGGER.info("Step 7: Verify cluster status is in online state")
-        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 7: Verified cluster is in online state. All services are up & running")
-
-        LOGGER.info("Step 8: Download the uploaded object %s & verify checksum", self.object_name)
-        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        LOGGER.info("Step 6.1: Download the uploaded object %s in Step 1 & verify checksum",
+                    self.object_name)
+        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path_1)
         LOGGER.info("Download object response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
-        download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
-                                                             compare=False)[0]
-        assert_utils.assert_equal(upload_checksum, download_checksum,
-                                  f"Failed to match checksum: {upload_checksum},"
-                                  f" {download_checksum}")
-        LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
-        LOGGER.info("Step 8: Successfully downloaded the object %s & verified the checksum",
+        download_checksum_1 = self.ha_obj.cal_compare_checksum(file_list=[download_path_1],
+                                                               compare=False)[0]
+        assert_utils.assert_equal(upload_checksum_1, download_checksum_1,
+                                  f"Failed to match checksum: {upload_checksum_1},"
+                                  f" {download_checksum_1}")
+        LOGGER.info("Matched checksum: %s, %s", upload_checksum_1, download_checksum_1)
+        LOGGER.info("Step 6.1: Successfully downloaded the object %s & verified the checksum",
                     self.object_name)
-        LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
-        system_utils.remove_file(self.multipart_obj_path)
-        system_utils.remove_file(download_path)
 
-        LOGGER.info("Step 9: Create and list buckets. Perform multipart upload for size %s MB in "
+        LOGGER.info("Step 6.2: Download the uploaded object %s in Step 4 & verify checksum",
+                    object_name_1)
+        resp = s3_test_obj.object_download(bucket_name_1, object_name_1, download_path_2)
+        LOGGER.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum_2 = self.ha_obj.cal_compare_checksum(file_list=[download_path_2],
+                                                               compare=False)[0]
+        assert_utils.assert_equal(upload_checksum_2, download_checksum_2,
+                                  f"Failed to match checksum: {upload_checksum_2},"
+                                  f" {download_checksum_2}")
+        LOGGER.info("Matched checksum: %s, %s", upload_checksum_2, download_checksum_2)
+        LOGGER.info("Step 6.2: Successfully downloaded the object %s & verified the checksum",
+                    object_name_1)
+
+        LOGGER.info("Step 7: Create and list buckets. Perform multipart upload for size %s MB in "
                     "total %s parts.", file_size, total_parts)
-        test_bucket = f"ha-mp-bkt-{int(perf_counter_ns())}"
         test_object = f"ha-mp-obj-{int(perf_counter_ns())}"
+        if CMN_CFG["dtm0_disabled"]:
+            test_bucket = f"ha-mp-bkt-{int(perf_counter_ns())}"
+        else:
+            test_bucket = self.bucket_name
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=test_bucket,
                                                          object_name=test_object,
@@ -700,10 +723,11 @@ class TestDataPodRestart:
         LOGGER.debug("Uploaded object info for %s is %s", test_bucket, result)
         assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
         upload_checksum = str(resp[2])
-        LOGGER.info("Step 9: Sucessfully performed multipart upload for  size %s MB in "
+        LOGGER.info("Step 7: Successfully performed multipart upload for  size %s MB in "
                     "total %s parts.", file_size, total_parts)
 
-        LOGGER.info("Step 10: Download the uploaded object %s & verify checksum", test_object)
+        download_path = os.path.join(self.test_dir_path, self.test_file + "_download")
+        LOGGER.info("Step 8: Download the uploaded object %s & verify checksum", test_object)
         resp = s3_test_obj.object_download(test_bucket, test_object, download_path)
         LOGGER.info("Download object response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -713,11 +737,15 @@ class TestDataPodRestart:
                                   f"Failed to match checksum: {upload_checksum},"
                                   f" {download_checksum}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
-        LOGGER.info("Step 10: Successfully downloaded the object %s & verified the checksum",
+        LOGGER.info("Step 8: Successfully downloaded the object %s & verified the checksum",
                     test_object)
-        LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
+        LOGGER.info("Removing files %s, %s, %s, %s", self.multipart_obj_path, download_path,
+                    download_path_1, download_path_2)
         system_utils.remove_file(self.multipart_obj_path)
         system_utils.remove_file(download_path)
+        system_utils.remove_file(download_path_1)
+        system_utils.remove_file(download_path_2)
+
         LOGGER.info("COMPLETED: Test to verify multipart upload after data pod restart.")
 
     # pylint: disable=too-many-locals
@@ -731,51 +759,11 @@ class TestDataPodRestart:
         This test tests partial multipart upload after data pod restart
         """
         LOGGER.info("STARTED: Test to verify partial multipart upload after data pod restart.")
-        LOGGER.info("Step 1: Shutdown the data pod by deleting deployment (unsafe)")
-        LOGGER.info("Get pod name to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)[0]
-        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
-        LOGGER.info("Deleting pod %s", pod_name)
-        resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
-        LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
-                    pod_name)
-        self.deployment_backup = resp[1]
-        self.deployment_name = resp[2]
-        self.restore_pod = True
-        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
-
-        LOGGER.info("Step 2: Verify cluster status is in degraded state")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 2: Verified cluster status is in degraded state")
-
-        LOGGER.info("Step 3: Verify services that were running on pod %s are in offline state",
-                    pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
-                                                           hostname=pod_host)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 3: Verified services of %s are in offline state", pod_name)
-
-        remain_pod_list = list(filter(lambda x: x != pod_name, pod_list))
-        LOGGER.info("Step 4: Verify services status on remaining pods %s are in online state",
-                    remain_pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list,
-                                                           fail=False)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Verified services on remaining pods %s are in online state",
-                    remain_pod_list)
 
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        part_numbers = random.sample(list(range(1, total_parts + 1)), total_parts // 2)
-        download_file = self.test_file + "_download"
-        download_path = os.path.join(self.test_dir_path, download_file)
+        part_numbers = random.sample(list(range(1, total_parts + 1)), total_parts // 4)
+        download_path = os.path.join(self.test_dir_path, self.test_file + "_download")
         if os.path.exists(self.multipart_obj_path):
             os.remove(self.multipart_obj_path)
         system_utils.create_file(self.multipart_obj_path, file_size)
@@ -783,6 +771,8 @@ class TestDataPodRestart:
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
                                                            compare=False)[0]
 
+        LOGGER.info("Step 1: Start multipart upload for 5GB object in multiple parts and complete "
+                    "partially for %s part out of %s", part_numbers, total_parts)
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -797,8 +787,6 @@ class TestDataPodRestart:
         LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
-        LOGGER.info("Step 5: Start multipart upload for 5GB object in multiple parts and complete "
-                    "partially for %s part out of %s", part_numbers, total_parts)
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
@@ -810,36 +798,73 @@ class TestDataPodRestart:
         object_path = resp[2]
         parts_etag1 = resp[3]
         assert_utils.assert_true(resp[0], f"Failed to upload parts. Response: {resp}")
-        LOGGER.info("Step 5: Successfully completed partial multipart upload for %s part out of "
+        LOGGER.info("Step 1: Successfully completed partial multipart upload for %s part out of "
                     "%s", part_numbers, total_parts)
 
-        LOGGER.info("Step 6: Listing parts of partial multipart upload")
+        LOGGER.info("Step 2: Listing parts of partial multipart upload")
         res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res)
         for part_n in res[1]["Parts"]:
             assert_utils.assert_list_item(part_numbers, part_n["PartNumber"])
-        LOGGER.info("Step 6: Listed parts of partial multipart upload: %s", res[1])
+        LOGGER.info("Step 2: Listed parts of partial multipart upload: %s", res[1])
 
-        LOGGER.info("Step 7: Start pod again by creating deployment.")
+        LOGGER.info("Step 3: Shutdown random data pod by deleting deployment and "
+                    "verify cluster & remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            down_method=const.RESTORE_DEPLOYMENT_K8S)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+        pod_name = list(resp[1].keys())[0]
+        self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.restore_method = resp[1][pod_name]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+
+        remaining_parts = list(filter(lambda i: i not in part_numbers,
+                                      list(range(1, total_parts + 1))))
+        parts_fifty = random.sample(remaining_parts, 50)
+        part_numbers.extend(parts_fifty)
+        LOGGER.info("Step 4: Start multipart upload for 5GB object in multiple parts and complete "
+                    "partially for %s part out of %s", parts_fifty, total_parts)
+        resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
+                                                    bucket_name=self.bucket_name,
+                                                    object_name=self.object_name,
+                                                    part_numbers=parts_fifty,
+                                                    remaining_upload=True, mpu_id=mpu_id,
+                                                    multipart_obj_size=file_size,
+                                                    total_parts=total_parts,
+                                                    multipart_obj_path=object_path)
+        object_path = resp[2]
+        parts_etag2 = resp[3]
+        assert_utils.assert_true(resp[0], f"Failed to upload parts. Response: {resp}")
+        LOGGER.info("Step 4: Successfully completed partial multipart upload for %s part out of "
+                    "%s", parts_fifty, total_parts)
+
+        LOGGER.info("Step 5: Listing parts of partial multipart upload")
+        res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res)
+        for part_n in res[1]["Parts"]:
+            assert_utils.assert_list_item(part_numbers, part_n["PartNumber"])
+        LOGGER.info("Step 5: Listed parts of partial multipart upload: %s", res[1])
+
+        LOGGER.info("Step 6: Start pod again by creating deployment.")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup})
+                                                           self.deployment_backup},
+                                       clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         self.restore_pod = False
-        LOGGER.info("Step 7: Successfully started pod again by creating deployment.")
-
-        LOGGER.info("Step 8: Verify cluster status is in online state")
-        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 8: Verified cluster is in online state. All services are up & running")
+        LOGGER.info("Step 6: Successfully started pod again by creating deployment.")
 
         remaining_parts = list(filter(lambda i: i not in part_numbers,
                                       list(range(1, total_parts + 1))))
-        LOGGER.info("Step 9: Upload remaining %s parts out of %s", remaining_parts, total_parts)
+        LOGGER.info("Step 7: Upload remaining %s parts out of %s", remaining_parts, total_parts)
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
@@ -850,20 +875,20 @@ class TestDataPodRestart:
                                                     multipart_obj_path=object_path)
 
         assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
-        parts_etag2 = resp[3]
-        LOGGER.info("Step 9: Successfully uploaded remaining %s parts out of %s",
+        parts_etag3 = resp[3]
+        LOGGER.info("Step 7: Successfully uploaded remaining %s parts out of %s",
                     remaining_parts, total_parts)
 
-        etag_list = parts_etag1 + parts_etag2
+        etag_list = parts_etag1 + parts_etag2 + parts_etag3
         parts_etag = sorted(etag_list, key=lambda d: d['PartNumber'])
 
-        LOGGER.info("Step 10: Listing parts of multipart upload")
+        LOGGER.info("Step 8: Listing parts of multipart upload")
         res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res)
         assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
-        LOGGER.info("Step 10: Listed parts of multipart upload, Count: %s", len(res[1]["Parts"]))
+        LOGGER.info("Step 8: Listed parts of multipart upload, Count: %s", len(res[1]["Parts"]))
 
-        LOGGER.info("Step 11: Completing multipart upload & check upload size is %s", file_size *
+        LOGGER.info("Step 9: Completing multipart upload & check upload size is %s", file_size *
                     const.Sizes.MB)
         res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
                                                        self.object_name)
@@ -875,10 +900,10 @@ class TestDataPodRestart:
         obj_size = result[1]["ContentLength"]
         LOGGER.debug("Uploaded object info for %s is %s", self.bucket_name, result)
         assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
-        LOGGER.info("Step 11: Multipart upload completed and verified upload size is %s",
+        LOGGER.info("Step 9: Multipart upload completed and verified upload size is %s",
                     file_size * const.Sizes.MB)
 
-        LOGGER.info("Step 12: Download the uploaded object and verify checksum")
+        LOGGER.info("Step 10: Download the uploaded object and verify checksum")
         resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
         LOGGER.info("Download object response: %s", resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -888,7 +913,7 @@ class TestDataPodRestart:
                                   f"Failed to match checksum: {upload_checksum},"
                                   f" {download_checksum}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
-        LOGGER.info("Step 12: Successfully downloaded the object and verified the checksum")
+        LOGGER.info("Step 10: Successfully downloaded the object and verified the checksum")
         LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
         system_utils.remove_file(self.multipart_obj_path)
         system_utils.remove_file(download_path)
