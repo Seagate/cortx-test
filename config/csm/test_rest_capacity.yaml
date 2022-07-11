@@ -183,4 +183,4 @@ test_43862:
   enabled: True
 test_44411:
   max_size: 1048576
-  num_objects: 10
+  max_objects: 100
