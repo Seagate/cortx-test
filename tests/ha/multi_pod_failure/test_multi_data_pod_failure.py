@@ -318,7 +318,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
 
             LOGGER.info("Step 3: Perform READs and verify DI on the written data")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -576,7 +576,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
             event.clear()
         LOGGER.info("Step 2: Successfully deleted %s server pods", self.kvalue)
 
@@ -689,7 +689,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
             event.clear()
         LOGGER.info("Step 2: Successfully deleted %s server and data pods", self.kvalue)
 
@@ -810,7 +810,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
             event.clear()
         LOGGER.info("Step 3: Successfully deleted %s data pods", self.kvalue)
 
@@ -945,7 +945,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
         LOGGER.info("Step 2: Shutdown %s (K) data pods one by one while continuous IOs in "
                     "background", self.kvalue)
         event.clear()
@@ -1254,7 +1254,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
         LOGGER.info("Step 3: Successfully shutdown %s (K) data pods one by one during "
                     "READs/VerifyDI on written data in background", self.kvalue)
         event.clear()
@@ -1358,7 +1358,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
         LOGGER.info("Step 2: Successfully shutdown %s (K) data pods one by one during WRITEs in "
                     "background", self.kvalue)
         event.clear()
@@ -1494,7 +1494,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
         LOGGER.info("Step 3: Sucessfully shutdown %s (K) data pods one by one while continuous "
                     "DELETEs in background", self.kvalue)
         event.clear()
@@ -1694,7 +1694,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
         LOGGER.info("Step 6: Sucessfully shutdown %s (K) data pods one by one while continuous "
                     "IOs in background", self.kvalue)
         event.clear()
@@ -1818,7 +1818,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
 
             LOGGER.info("Step 3: Perform WRITEs, READs and verify DI on the already created "
                         "bucket")
@@ -1980,7 +1980,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
 
             LOGGER.info("Step 3: Perform DELETEs on random %s buckets", del_bucket)
             args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
@@ -2193,7 +2193,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
         LOGGER.info("Step 2: Successfully deleted %s data pods", self.kvalue)
 
         LOGGER.info("Step 3: Check cluster status")
@@ -2456,7 +2456,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
             event.clear()
         LOGGER.info("Step 3: Successfully deleted %s data pods", self.kvalue)
 
@@ -2819,7 +2819,7 @@ class TestMultiDataPodFailure:
             self.restore_pod = self.deploy = True
             self.restore_method = const.RESTORE_DEPLOYMENT_K8S
             self.pod_dict[pod_name] = pod_data
-            LOGGER.info("Deleted %s pod %s by deleting deployment (unsafe)", count, pod_name)
+            LOGGER.info("Deleted %s data pod %s by deleting deployment (unsafe)", count, pod_name)
         LOGGER.info("Step 2: Sucessfully shutdown %s (K) data pods one by one while continuous "
                     "multipart upload in background", self.kvalue)
 
