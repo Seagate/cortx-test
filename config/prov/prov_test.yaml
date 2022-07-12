@@ -130,6 +130,7 @@ k8s_cortx_deploy:
   log_path: "/etc/cortx/log"
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 240
+  s3_instances_per_node: 3
   sleep_time: 60
   service_delay: 120
   service_delay_scale: 360

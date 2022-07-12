@@ -250,10 +250,10 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         if node_obj.path_exists(self.deploy_cfg['local_path_prov']):
             resp1 = node_obj.execute_cmd(list_mnt_dir, read_lines=True)
-            if node_obj.path_exists(self.deploy_cfg["mnt_path"]):
-                resp = node_obj.execute_cmd(
-                    common_cmd.CMD_REMOVE_DIR.format(self.deploy_cfg["mnt_path"]))
-                LOGGER.debug(resp)
+            # if node_obj.path_exists(self.deploy_cfg["mnt_path"]):
+            #     resp = node_obj.execute_cmd(
+            #         common_cmd.CMD_REMOVE_DIR.format(self.deploy_cfg["mnt_path"]))
+            #     LOGGER.debug(resp)
             LOGGER.info("\n %s", resp1)
         if node_obj.path_exists(self.deploy_cfg['3rd_party_dir']):
             openldap_dir_residue = node_obj.execute_cmd(list_etc_3rd_party, read_lines=True)
@@ -481,6 +481,7 @@ class ProvDeployK8sCortxLib:
                                             self.deploy_cfg['control_port_https'])
         deployment_type = kwargs.get("deployment_type", self.deployment_type)
         client_instance = kwargs.get("client_instance", self.client_instance)
+        s3_instance = kwargs.get('s3_instance', self.deploy_cfg['s3_instances_per_node'])
 
         LOGGER.debug("Service type & Ports are %s\n%s\n%s\n%s", service_type,
                      nodeport_http, nodeport_https, control_nodeport_https)
@@ -552,7 +553,8 @@ class ProvDeployK8sCortxLib:
                                                       deployment_type=deployment_type,
                                                       namespace=namespace,
                                                       lb_count=self.lb_count,
-                                                      client_instance=client_instance)
+                                                      client_instance=client_instance,
+                                                      s3_instance=s3_instance)
         if not resp_passwd[0]:
             return False, "Failed to update service type,deployment type, ports in solution file"
         # Update resources for third_party
@@ -601,22 +603,23 @@ class ProvDeployK8sCortxLib:
         Param: worker_obj: list of node object
         :returns the filepath and status True
         """
-        node_list = len(worker_obj)
+        # node_list = len(worker_obj)
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
-            node = conf['solution']['nodes']
-            total_nodes = node.keys()
+            node = conf['solution']['storage_sets'][0]['nodes']
+            total_nodes = node
+            node = []
             # Removing the elements from the node dict
-            for key_count in list(total_nodes):
-                node.pop(key_count)
+            # for key_count in list(total_nodes):
+            #     node.pop(key_count)
             # Updating the node dict
-            for item, host in zip(list(range(node_list)), worker_obj):
-                dict_node = {}
-                name = {'name': host.hostname}
-                dict_node.update(name)
-                new_node = {Template('node$num').substitute(num=item + 1): dict_node}
-                node.update(new_node)
-            conf['solution']['nodes'] = node
+            for host in worker_obj:
+                # dict_node = {}
+                node.append(host.hostname)
+                # name = {host.hostname}
+                # dict_node.update(name)
+                # new_node = {Template('node$num').substitute(num=item + 1): dict_node}
+            conf['solution']['storage_sets'][0]['nodes'] = node
             soln.close()
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True
@@ -671,33 +674,36 @@ class ProvDeployK8sCortxLib:
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
-            storage = parent_key['storage']  # child of child key
-            cmn_storage_sets = parent_key['common']['storage_sets']  # child of child key
-            total_cvg = storage.keys()
+            cmn_storage_sets = parent_key['storage_sets'][0]  # child of child key
+            storage = cmn_storage_sets['storage']
+            total_cvg = len(storage)
+            LOGGER.debug("len of storage is %s", total_cvg)
+            # total_cvg = storage.values()
             # SNS and dix value update
             cmn_storage_sets['durability']['sns'] = nks
             cmn_storage_sets['durability']['dix'] = dix
-            for cvg_item in list(total_cvg):
-                storage.pop(cvg_item)
+            storage = []
+            # for cvg_item in storage:
+            #     storage.pop(cvg_item)
             for cvg in range(0, cvg_count):
                 cvg_dict = {}
                 metadata_schema_upd = {'device': metadata_devices[cvg], 'size': size_metadata}
-                data_schema = {}
+                data_schema = []
                 for disk in range(0, data_disk_per_cvg):
                     disk_schema_upd = \
                         {'device': data_devices[cvg][disk], 'size': size_data_disk}
-                    c_data_device_schema = {'d{}'.format(disk + 1): disk_schema_upd}
-                    data_schema.update(c_data_device_schema)
+                    # c_data_device_schema = {'d{}'.format(disk + 1): disk_schema_upd}
+                    data_schema.append(disk_schema_upd)
                 c_device_schema = {'metadata': metadata_schema_upd, 'data': data_schema}
                 key_cvg_devices = {'devices': c_device_schema}
-                cvg_name = {'name': Template('cvg-0$num').substitute(num=cvg + 1)}
                 cvg_type_schema = {'type': cvg_type}
+                cvg_name = {'name': Template('cvg-0$num').substitute(num=cvg + 1)}
                 cvg_dict.update(cvg_name)
                 cvg_dict.update(cvg_type_schema)
                 cvg_dict.update(key_cvg_devices)
-                cvg_key = {Template('cvg$num').substitute(num=cvg + 1): cvg_dict}
-                storage.update(cvg_key)
-        conf['solution']['storage'] = storage
+                # cvg_key = {Template('cvg$num').substitute(num=cvg + 1): cvg_dict}
+                storage.append(cvg_dict)
+        conf['solution']['storage_sets'][0]['storage'] = storage
         LOGGER.debug("Storage Details : %s", storage)
         soln.close()
         noalias_dumper = yaml.dumper.SafeDumper
@@ -782,6 +788,7 @@ class ProvDeployK8sCortxLib:
         deployment_type = kwargs.get('deployment_type', self.deploy_cfg['deployment_type'])
         namespace = kwargs.get('namespace', self.deploy_cfg['namespace'])
         client_instance = kwargs.get('client_instance', self.deploy_cfg['client_instance'])
+        s3_instance = kwargs.get('s3_instance', self.deploy_cfg['s3_instances_per_node'])
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
@@ -791,7 +798,7 @@ class ProvDeployK8sCortxLib:
             common = parent_key['common']
             content = parent_key['secrets']['content']
             common['storage_provisioner_path'] = self.deploy_cfg['local_path_prov']
-            common['container_path']['log'] = log_path
+            # common['container_path']['log'] = log_path
             motr_config = common['motr']
             motr_config['num_client_inst'] = client_instance
             s3_service = common['external_services']['s3']
@@ -802,6 +809,7 @@ class ProvDeployK8sCortxLib:
             s3_service['nodePorts']['https'] = nodeport_https
             control_service['nodePorts']['https'] = control_nodeport_https
             common['s3']['max_start_timeout'] = self.deploy_cfg['s3_max_start_timeout']
+            common['s3']['instances_per_node'] = s3_instance
             if service_type == "LoadBalancer":
                 s3_service['count'] = lb_count
             passwd_dict = {}

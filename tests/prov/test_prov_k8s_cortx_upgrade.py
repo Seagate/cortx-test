@@ -52,6 +52,7 @@ class TestK8CortxUpgrade:
         cls.cortx_server_image = os.getenv("CORTX_SERVER_IMAGE", None)
         cls.upgrade_image = cls.cortx_control_image
         cls.prov_conf = PROV_CFG["k8s_cortx_deploy"]
+        cls.git_tag = os.getenv("GIT_SCRIPT_TAG", cls.prov_conf["prov_branch"])
         cls.upgrade_obj = ProvUpgradeK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
@@ -71,9 +72,6 @@ class TestK8CortxUpgrade:
                 cls.worker_node_list.append(node_obj)
         resp = cls.upgrade_obj.prov_obj.check_s3_status(cls.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        cls.upgrade_obj.retain_solution_file(
-            cls.master_node_list[0], cortx_control_img=cls.cortx_control_image,
-            cortx_data_img=cls.cortx_data_image, cortx_server_img=cls.cortx_server_image)
         LOGGER.info("Get installed version.")
         installed_version = cls.upgrade_obj.prov_obj.get_installed_version(
             cls.master_node_list[0])
@@ -129,52 +127,24 @@ class TestK8CortxUpgrade:
     def test_33660(self):
         """Verify CORTX Software upgrade."""
         LOGGER.info("Test Started.")
-        LOGGER.info("Step 1: Get installed version.")
-        resp = HAK8s.get_config_value(self.master_node_list[0])
-        assert_utils.assert_true(resp[0], resp[1])
-        current_version = resp[1]['cortx']['common']['release']['version']
-        LOGGER.info("Current version: %s", current_version)
-        installed_version = current_version.split("-")[1]
-        LOGGER.info("Current version: %s", installed_version)
-        LOGGER.info("Step 2: Done.")
-        LOGGER.info("Step 3: Check if installing version is higher than installed version.")
-        LOGGER.info("upgrade_image: %s", self.upgrade_image)
-        upgrade_image_version = self.upgrade_image.split(":")[1]
-        upgrade_version = upgrade_image_version.split("-")[1]
-        LOGGER.info("Installing CORTX image version: %s", upgrade_version)
-        if int(upgrade_version) <= int(installed_version):
-            assert False, "Installed version is same or higher than installing version."
-        else:
-            LOGGER.info("Installed version is lower than installing version.")
-        LOGGER.info("Step 4: Check cluster health.")
-        resp = self.upgrade_obj.prov_obj.check_s3_status(self.master_node_list[0], pod_prefix=
-        cons.POD_NAME_PREFIX)
-        assert_utils.assert_true(resp[0], resp[1])
+        # checkout the k8s repo tag
+        # self.upgrade_obj.prov_obj.prereq_git(self.master_node_list[0], self.git_tag)
         LOGGER.info("Step 5: Start upgrade.")
         resp = self.upgrade_obj.service_upgrade_software(self.master_node_list[0],
                                                          self.upgrade_image)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Check if installed version is equals to installing version.")
-        resp = HAK8s.get_config_value(self.master_node_list[0])
-        assert_utils.assert_true(resp[0], resp[1])
-        new_installed_version = resp[1]['cortx']['common']['release']['version'].split("-")[1]
-        LOGGER.info("New CORTX image version: %s", new_installed_version)
-        assert_utils.assert_equals(new_installed_version, upgrade_version,
-                                   "new_installed version is equal to upgrade_version.")
+        installed_version = self.upgrade_obj.prov_obj.get_installed_version(
+            self.master_node_list[0])
         LOGGER.info("Step 7 : Check PODs are up and running.")
         resp = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
-        assert_utils.assert_true(resp)
+        assert_utils.assert_true(resp[0])
         LOGGER.info("All PODs are up and running.")
         LOGGER.info("Step 8 : Check Cluster health and services.")
         time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
-        resp = self.upgrade_obj.prov_obj.check_s3_status(self.master_node_list[0], pod_prefix=
-                                                            cons.POD_NAME_PREFIX)
+        resp = self.upgrade_obj.prov_obj.check_service_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        pod_name = self.master_node_list[0].get_pod_name(pod_prefix=cons.POD_NAME_PREFIX)
-        assert_utils.assert_true(pod_name[0], pod_name[1])
-        resp = self.upgrade_obj.prov_obj.get_hctl_status(self.master_node_list[0], pod_name[1])
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Cluster is up and all services are started.")
+        LOGGER.info("Upgraded to version %s", installed_version)
         self.collect_sb = False
         LOGGER.info("Test Completed.")
 
@@ -215,6 +185,9 @@ class TestK8CortxUpgrade:
     def test_41953(self):
         """Verify resume of in progress rolling upgrade."""
         process_list = []
+        self.upgrade_obj.retain_solution_file(
+            self.master_node_list[0], cortx_control_img=self.cortx_control_image,
+            cortx_data_img=self.cortx_data_image, cortx_server_img=self.cortx_server_image)
         LOGGER.info("Test Started.")
         que = multiprocessing.Queue()
         start_upgrade_proc = multiprocessing.Process(target=self.rolling_upgrade, args=(
@@ -257,6 +230,9 @@ class TestK8CortxUpgrade:
     def test_42176(self):
         """Verify resume  functionality of upgrade,when abruptly stopped the upgrade process."""
         process_list = []
+        self.upgrade_obj.retain_solution_file(
+            self.master_node_list[0], cortx_control_img=self.cortx_control_image,
+            cortx_data_img=self.cortx_data_image, cortx_server_img=self.cortx_server_image)
         LOGGER.info("Test Started.")
         que = multiprocessing.Queue()
         start_upgrade_proc = multiprocessing.Process(target=self.rolling_upgrade, args=(
@@ -309,6 +285,9 @@ class TestK8CortxUpgrade:
     def test_42179(self):
         """Verify suspend/resume  functionality of upgrade"""
         process_list = []
+        self.upgrade_obj.retain_solution_file(
+            self.master_node_list[0], cortx_control_img=self.cortx_control_image,
+            cortx_data_img=self.cortx_data_image, cortx_server_img=self.cortx_server_image)
         count = 1
         LOGGER.info("Test Started.")
         que = multiprocessing.Queue()
