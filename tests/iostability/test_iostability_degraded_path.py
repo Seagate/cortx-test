@@ -110,7 +110,8 @@ class TestIOWorkloadDegradedPath:
             resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                                    scripts_path=K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
-            self.log_collect.collect_logs(path=path)
+            resp = self.log_collect.collect_logs(path=path)
+            assert_utils.assert_true(resp)
         else:
             self.mail_notify.event_pass.set()
         self.log.info("Stop Procpath collection")
