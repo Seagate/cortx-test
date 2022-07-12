@@ -1900,17 +1900,24 @@ class TestMultiDataPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed WRITEs-READs-Verify and verified DI on the written data")
 
-        LOGGER.info("Step 4: Perform WRITEs-READs-Verify on new buckets with variable object sizes "
-                    "on degraded cluster")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-35775-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True,
-                                                    nsamples=2, nclients=2, setup_s3bench=False)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 4: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
+                        "variable object sizes on degraded cluster")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-35775-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        nsamples=2, nclients=2, setup_s3bench=False)
+        else:
+            LOGGER.info("STEP 4: Perform WRITEs-READs-Verify with variable object sizes on "
+                        "degraded cluster")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True, nsamples=2, nclients=2,
+                                                        setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Performed WRITEs-READs-Verify on new buckets with variable sizes "
-                    "objects on degraded cluster")
+        LOGGER.info("Step 4: Performed IOs with variable sizes objects.")
 
         LOGGER.info("Completed: Test to verify degraded WRITEs after all K data pods are failed.")
 
@@ -2335,9 +2342,12 @@ class TestMultiDataPodFailure:
         sysutils.remove_file(self.multipart_obj_path)
         sysutils.remove_file(download_path)
 
-        LOGGER.info("Step 4: Create new bucket again and do multipart upload. "
-                    "Download the object & verify checksum.")
-        bucket_name = f"mp-bkt-{int(perf_counter_ns())}"
+        LOGGER.info("Step 4: Do multipart upload and download the object & verify checksum.")
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Creating new bucket for new upload")
+            bucket_name = f"mp-bkt-{perf_counter_ns()}"
+        else:
+            bucket_name = self.bucket_name
         object_name = f"mp-obj-{int(perf_counter_ns())}"
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name,
@@ -2361,8 +2371,7 @@ class TestMultiDataPodFailure:
                                   f"Failed to match checksum: {upload_checksum1},"
                                   f" {download_checksum1}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum1, download_checksum1)
-        LOGGER.info("Step 4: Successfully created bucket and did multipart upload. "
-                    "Downloaded the object & verified the checksum.")
+        LOGGER.info("Step 4: Did multipart upload & downloaded the object & verified the checksum.")
 
         LOGGER.info("COMPLETED: Test to verify multipart upload after all K data pods are failed.")
 
