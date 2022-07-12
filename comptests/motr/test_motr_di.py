@@ -51,11 +51,9 @@ import csv
 import logging
 import secrets
 import pytest
-from commons.utils import config_utils
 from config import CMN_CFG
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
-
 logger = logging.getLogger(__name__)
 
 
@@ -68,7 +66,6 @@ def setup_teardown_fixture(request):
     """
     request.cls.log = logging.getLogger(__name__)
     request.cls.log.info("STARTED: Setup test operations.")
-    request.cls.secure_range = secrets.SystemRandom()
     request.cls.nodes = CMN_CFG["nodes"]
     request.cls.m0crate_workload_yaml = os.path.join(
         os.getcwd(), "config/motr/sample_m0crate.yaml")
@@ -95,7 +92,7 @@ class TestCorruptDataDetection:
         """ Setup class for running Motr tests"""
         logger.info("STARTED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
-        cls.m0kv_cfg = config_utils.read_yaml("config/motr/m0kv_test.yaml")
+        cls.system_random = secrets.SystemRandom()
         logger.info("ENDED: Setup Operation")
 
     def teardown_class(self):
@@ -165,19 +162,9 @@ class TestCorruptDataDetection:
         In degraded mode Corrupt data block using m0cp and reading
         from object with m0cat should error.
         """
-        logger.info("Step 2: Shutdown random data pod by making replicas=0 and "
+        logger.info("Step 1: Shutdown random data pod by making replicas=0 and "
                     "verify cluster & remaining pods status")
-        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0])
-        # Assert if empty dictionary
-        assert resp[1], "Failed to shutdown/delete pod"
-        pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = True
-        self.restore_method = resp[1][pod_name]['method']
-        assert resp[0], "Cluster/Services status is not as expected"
-        logger.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
-                    "services states are as expected & remaining pods status is online.", pod_name)
+        self.motr_obj.switch_cluster_to_degraded_mode()
         count_list = [['10', '1'], ['10', '1']]
         bsize_list = ['4K', '4K']
         layout_ids = ['3', '3']
