@@ -178,7 +178,6 @@ class TestMultiServerPodFailure:
 
         LOGGER.info("Done: Teardown completed.")
 
-    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40567")
@@ -227,7 +226,6 @@ class TestMultiServerPodFailure:
         LOGGER.info("Completed: Test to verify READs after all K server pods down - unsafe "
                     "shutdown.")
 
-    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40568")
@@ -281,6 +279,7 @@ class TestMultiServerPodFailure:
                     " down - unsafe shutdown.")
 
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40573")
@@ -383,7 +382,6 @@ class TestMultiServerPodFailure:
         LOGGER.info("ENDED: Test to verify DELETEs after %s (K) server pods down"
                     " - unsafe shutdown.", self.kvalue)
 
-    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40578")
@@ -449,7 +447,6 @@ class TestMultiServerPodFailure:
         LOGGER.info("Completed: Test to verify WRITEs after each pod failure till K server pods"
                     " down - unsafe shutdown.")
 
-    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40579")
@@ -624,7 +621,6 @@ class TestMultiServerPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Not supported in RGW yet")
     @pytest.mark.tags("TEST-40581")
     def test_copy_object_kserver_pods_fail(self):
         """
@@ -944,7 +940,6 @@ class TestMultiServerPodFailure:
                                                         multipart_obj_size=file_size,
                                                         total_parts=total_parts,
                                                         multipart_obj_path=object_path)
-
             assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
             LOGGER.info("Listing parts of partial multipart upload")
             res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
@@ -1716,7 +1711,6 @@ class TestMultiServerPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Not supported in RGW yet")
     @pytest.mark.tags("TEST-40583")
     def test_copy_object_during_kserver_pods_down(self):
         """
