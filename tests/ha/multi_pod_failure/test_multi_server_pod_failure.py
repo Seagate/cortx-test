@@ -184,10 +184,10 @@ class TestMultiServerPodFailure:
     @pytest.mark.tags("TEST-40567")
     def test_reads_kserver_pods_fail(self):
         """
-        Test to verify degraded READs after all K server pods down - unsafe shutdown.
+        Test to verify READs after all K server pods down - unsafe shutdown.
         """
-        LOGGER.info("Started: Test to verify degraded READs after all K server pods "
-                    "down - unsafe shutdown.")
+        LOGGER.info("Started: Test to verify READs after all K server pods down - unsafe "
+                    "shutdown.")
         LOGGER.info("STEP 1: Perform WRITEs/READs and Verify DI with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40567'
@@ -224,8 +224,8 @@ class TestMultiServerPodFailure:
                                                     setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed READs and verified DI on the written data")
-        LOGGER.info("Completed: Test to verify degraded READs after all K server pods "
-                    "down - unsafe shutdown.")
+        LOGGER.info("Completed: Test to verify READs after all K server pods down - unsafe "
+                    "shutdown.")
 
     # pylint: disable=too-many-statements
     @pytest.mark.ha
@@ -233,11 +233,10 @@ class TestMultiServerPodFailure:
     @pytest.mark.tags("TEST-40568")
     def test_reads_till_kserver_pods_fail(self):
         """
-        Test to verify degraded READs after each pod failure till K server pods "
-        "down - unsafe shutdown.
+        Test to verify READs after each pod failure till K server pods down - unsafe shutdown.
         """
-        LOGGER.info("Started: Test to verify degraded READs after each pod failure till K "
-                    "server pods down - unsafe shutdown.")
+        LOGGER.info("Started: Test to verify READs after each pod failure till K server pods down"
+                    " - unsafe shutdown.")
         LOGGER.info("STEP 1: Perform WRITEs/READs and Verify DI with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40568'
@@ -278,8 +277,8 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 2: %s (K) server pods shutdown one by one successfully, Verified "
                     "cluster, services states are as expected & remaining pods status is online"
                     " and read/verify after each pod down verified", self.kvalue)
-        LOGGER.info("Completed: Test to verify degraded READs after each pod failure till K "
-                    "server pods down - unsafe shutdown.")
+        LOGGER.info("Completed: Test to verify READs after each pod failure till K server pods"
+                    " down - unsafe shutdown.")
 
     # pylint: disable=too-many-locals
     @pytest.mark.ha
@@ -287,7 +286,7 @@ class TestMultiServerPodFailure:
     @pytest.mark.tags("TEST-40573")
     def test_deletes_kserver_pods_fail(self):
         """
-        This test tests Degraded DELETEs after all K server pods down - unsafe shutdown
+        This test tests DELETEs after all K server pods down - unsafe shutdown
         """
         LOGGER.info("STARTED: Test to verify DELETEs after %s (K) server pods down - "
                     "unsafe shutdown", self.kvalue)
@@ -390,11 +389,10 @@ class TestMultiServerPodFailure:
     @pytest.mark.tags("TEST-40578")
     def test_writes_till_kserver_pods_fail(self):
         """
-        Test to verify degraded WRITEs after each pod failure till K server pods
-        down - unsafe shutdown.
+        Test to verify WRITEs after each pod failure till K server pods down - unsafe shutdown.
         """
-        LOGGER.info("Started: Test to verify degraded Writes after each pod failure till K "
-                    "server pods down - unsafe shutdown.")
+        LOGGER.info("Started: Test to verify Writes after each pod failure till K server pods "
+                    "down - unsafe shutdown.")
         LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40578'
@@ -448,8 +446,8 @@ class TestMultiServerPodFailure:
         LOGGER.info("Step 2: %s (K) server pods shutdown one by one successfully, Verify cluster,"
                     "services states are as expected & remaining pods status is online and WRITEs "
                     "after each server pod down on new and existing buckets verified", self.kvalue)
-        LOGGER.info("Completed: Test to verify degraded WRITEs after each pod failure till K "
-                    "server pods down - unsafe shutdown.")
+        LOGGER.info("Completed: Test to verify WRITEs after each pod failure till K server pods"
+                    " down - unsafe shutdown.")
 
     # pylint: disable=too-many-statements
     @pytest.mark.ha
@@ -457,10 +455,10 @@ class TestMultiServerPodFailure:
     @pytest.mark.tags("TEST-40579")
     def test_writes_kserver_pods_failure(self):
         """
-        Test to verify degraded WRITEs after all K server pods down - unsafe shutdown.
+        Test to verify WRITEs after all K server pods down - unsafe shutdown.
         """
-        LOGGER.info("Started: Test to verify degraded WRITEs after all K server pods "
-                    "down - unsafe shutdown.")
+        LOGGER.info("Started: Test to verify WRITEs after all K server pods down - unsafe "
+                    "shutdown.")
         LOGGER.info("STEP 1: Perform WRITEs-READs-Verify with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40579'
@@ -507,8 +505,8 @@ class TestMultiServerPodFailure:
                                                     setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs-READs-Verify with variable sizes objects ")
-        LOGGER.info("Completed: Test to verify degraded WRITEs after all K server pods "
-                    "down - unsafe shutdown.")
+        LOGGER.info("Completed: Test to verify WRITEs after all K server pods down - unsafe "
+                    "shutdown.")
 
     # pylint: disable=too-many-statements
     @pytest.mark.ha
@@ -516,11 +514,10 @@ class TestMultiServerPodFailure:
     @pytest.mark.tags("TEST-40580")
     def test_deletes_till_kserver_pods_fail(self):
         """
-        Test to verify degraded DELETEs after each pod failure till K server pods
-        down - unsafe shutdown.
+        Test to verify DELETEs after each pod failure till K server pods down - unsafe shutdown.
         """
-        LOGGER.info("Started: Test to verify degraded Deletes after each pod failure till "
-                    "K server pods down - unsafe shutdown.")
+        LOGGER.info("Started: Test to verify Deletes after each pod failure till K server pods "
+                    "down - unsafe shutdown.")
         wr_bucket = self.kvalue * 5 + HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = 20
         event = threading.Event()
@@ -622,8 +619,8 @@ class TestMultiServerPodFailure:
                     " services states are as expected & remaining pods status is online and "
                     "performed Deletes on random buckets and verified read on remaining bucket "
                     "after each server pod down", self.kvalue)
-        LOGGER.info("Completed: Test to verify degraded DELETEs after each pod failure till K "
-                    "server pods down - unsafe shutdown.")
+        LOGGER.info("Completed: Test to verify DELETEs after each pod failure till K server pods"
+                    " down - unsafe shutdown.")
 
     @pytest.mark.ha
     @pytest.mark.lc
