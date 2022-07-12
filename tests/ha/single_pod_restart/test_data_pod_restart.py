@@ -119,10 +119,10 @@ class TestDataPodRestart:
         self.restore_node = False
         self.restore_ip = False
         self.s3_clean = {}
-        self.s3acc_name = "{}_{}".format("ha_s3acc", int(perf_counter_ns()))
-        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
-        self.object_name = "ha-mp-obj-{}".format(self.random_time)
+        self.s3acc_name = f"ha_s3acc_{int(perf_counter_ns())}"
+        self.s3acc_email = f"{self.s3acc_name}@seagate.com"
+        self.bucket_name = f"ha-mp-bkt-{self.random_time}"
+        self.object_name = f"ha-mp-obj-{self.random_time}"
         if not os.path.exists(self.test_dir_path):
             resp = system_utils.make_dirs(self.test_dir_path)
             LOGGER.info("Created path: %s", resp)
@@ -168,6 +168,8 @@ class TestDataPodRestart:
         if not resp[0]:
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Removing extra files")
+        system_utils.remove_file(self.multipart_obj_path)
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-locals
@@ -256,7 +258,7 @@ class TestDataPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully run READ/Verify on data written with buckets created "
                     "in healthy cluster")
-        
+
         LOGGER.info("ENDED: Test to verify READs after data pod restart.")
 
     # pylint: disable=too-many-statements
@@ -564,8 +566,6 @@ class TestDataPodRestart:
 
         LOGGER.info("ENDED: Test to verify DELETEs after data pod restart.")
 
-    # pylint: disable=too-many-statements
-    # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
@@ -580,6 +580,8 @@ class TestDataPodRestart:
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
         download_path_1 = os.path.join(self.test_dir_path, self.test_file + "_download_1")
+        download_path_2 = os.path.join(self.test_dir_path, self.test_file + "_download_2")
+        download_path = os.path.join(self.test_dir_path, self.test_file + "_download")
 
         LOGGER.info("Step 1: Create and list buckets. Perform multipart upload for size %s MB in "
                     "total %s parts.", file_size, total_parts)
@@ -640,7 +642,6 @@ class TestDataPodRestart:
         LOGGER.info("Step 3: Successfully downloaded the object %s & verified the checksum",
                     self.object_name)
 
-        download_path_2 = os.path.join(self.test_dir_path, self.test_file + "_download_2")
         object_name_1 = f"ha-mp-obj-{int(perf_counter_ns())}"
         if CMN_CFG["dtm0_disabled"]:
             bucket_name_1 = f"ha-mp-bkt-{int(perf_counter_ns())}"
@@ -726,7 +727,6 @@ class TestDataPodRestart:
         LOGGER.info("Step 7: Successfully performed multipart upload for  size %s MB in "
                     "total %s parts.", file_size, total_parts)
 
-        download_path = os.path.join(self.test_dir_path, self.test_file + "_download")
         LOGGER.info("Step 8: Download the uploaded object %s & verify checksum", test_object)
         resp = s3_test_obj.object_download(test_bucket, test_object, download_path)
         LOGGER.info("Download object response: %s", resp)
@@ -739,16 +739,13 @@ class TestDataPodRestart:
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 8: Successfully downloaded the object %s & verified the checksum",
                     test_object)
-        LOGGER.info("Removing files %s, %s, %s, %s", self.multipart_obj_path, download_path,
-                    download_path_1, download_path_2)
-        system_utils.remove_file(self.multipart_obj_path)
+        LOGGER.info("Removing files %s, %s, %s", download_path, download_path_1, download_path_2)
         system_utils.remove_file(download_path)
         system_utils.remove_file(download_path_1)
         system_utils.remove_file(download_path_2)
 
         LOGGER.info("COMPLETED: Test to verify multipart upload after data pod restart.")
 
-    # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
@@ -825,14 +822,14 @@ class TestDataPodRestart:
 
         remaining_parts = list(filter(lambda i: i not in part_numbers,
                                       list(range(1, total_parts + 1))))
-        parts_fifty = self.system_random.sample(remaining_parts, 50)
-        part_numbers.extend(parts_fifty)
+        parts_half = self.system_random.sample(remaining_parts, total_parts // 2)
+        part_numbers.extend(parts_half)
         LOGGER.info("Step 4: Start multipart upload for 5GB object in multiple parts and complete "
-                    "partially for %s part out of %s", parts_fifty, total_parts)
+                    "partially for %s part out of %s", parts_half, total_parts)
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
-                                                    part_numbers=parts_fifty,
+                                                    part_numbers=parts_half,
                                                     remaining_upload=True, mpu_id=mpu_id,
                                                     multipart_obj_size=file_size,
                                                     total_parts=total_parts,
@@ -841,7 +838,7 @@ class TestDataPodRestart:
         parts_etag2 = resp[3]
         assert_utils.assert_true(resp[0], f"Failed to upload parts. Response: {resp}")
         LOGGER.info("Step 4: Successfully completed partial multipart upload for %s part out of "
-                    "%s", parts_fifty, total_parts)
+                    "%s", parts_half, total_parts)
 
         LOGGER.info("Step 5: Listing parts of partial multipart upload")
         res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
@@ -915,7 +912,6 @@ class TestDataPodRestart:
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 10: Successfully downloaded the object and verified the checksum")
         LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
-        system_utils.remove_file(self.multipart_obj_path)
         system_utils.remove_file(download_path)
         LOGGER.info("COMPLETED: Test to verify partial multipart upload after data pod restart.")
 
