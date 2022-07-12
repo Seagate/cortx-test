@@ -23,7 +23,6 @@ Python library contains methods which provides the services endpoints.
 
 import json
 import logging
-import secrets
 from random import SystemRandom
 from string import Template
 
