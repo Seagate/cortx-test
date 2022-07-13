@@ -937,7 +937,7 @@ class TestMultiDataPodFailure:
         """
         This test tests continuous READs/WRITEs while pods are failing till K data pods are failed
         """
-        LOGGER.info("STARTED: Test to verify continuous READs/WRITEs while %s (K) pods "
+        LOGGER.info("STARTED: Test to verify continuous READs/WRITEs while %s (K) data pods "
                     "were going down.", self.kvalue)
 
         event = threading.Event()  # Event to be used to send intimation of data pod deletion
@@ -1049,7 +1049,7 @@ class TestMultiDataPodFailure:
                     " data pods going down.", self.kvalue)
         LOGGER.info("Step 3: Verified responses from WRITEs & READs/VerifyDI background processes")
 
-        LOGGER.info("ENDED: Test to verify continuous READs/WRITEs while %s (K) pods "
+        LOGGER.info("ENDED: Test to verify continuous READs/WRITEs while %s (K) data pods "
                     "were going down.", self.kvalue)
 
     @pytest.mark.ha
@@ -1392,7 +1392,7 @@ class TestMultiDataPodFailure:
                     "services states are as expected & remaining pods status is online.",
                     self.kvalue, self.pod_name_list)
 
-        LOGGER.info("Step 3: Verify status for In-flight WRITEs while %s (K) pods going "
+        LOGGER.info("Step 3: Verify status for In-flight WRITEs while %s (K) data pods going "
                     "down should be failed/error.", self.kvalue)
         thread.join()
         responses = dict()
@@ -1406,7 +1406,7 @@ class TestMultiDataPodFailure:
         # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain pass: {resp[1]}")
-        LOGGER.info("Step 3: Verified status for In-flight WRITEs while %s (K) pods "
+        LOGGER.info("Step 3: Verified status for In-flight WRITEs while %s (K) data pods "
                     "going down.", self.kvalue)
 
         if CMN_CFG["dtm0_disabled"]:
@@ -1510,7 +1510,7 @@ class TestMultiDataPodFailure:
                     "services states are as expected & remaining pods status is online.",
                     self.kvalue, self.pod_name_list)
 
-        LOGGER.info("Step 4: Verify status for In-flight DELETEs while %s (K) pods were"
+        LOGGER.info("Step 4: Verify status for In-flight DELETEs while %s (K) pods data were"
                     "going down", self.kvalue)
         LOGGER.info("Waiting for background DELETEs thread to join. Waiting for %s seconds to "
                     "collect the queue logs", HA_CFG["common_params"]["60sec_delay"])
@@ -1528,7 +1528,7 @@ class TestMultiDataPodFailure:
         # assert_utils.assert_true(len(event_del_bkt), "No bucket DELETEs failed during "
         #                                              f"data pod down {event_del_bkt}")
         LOGGER.info("Failed buckets while in-flight DELETEs operation : %s", event_del_bkt)
-        LOGGER.info("Step 4: Verified status for In-flight DELETEs while %s (K) pods were"
+        LOGGER.info("Step 4: Verified status for In-flight DELETEs while %s (K) data pods were"
                     "going down", self.kvalue)
 
         LOGGER.info("Step 5: Perform DELETEs on remaining FailedToDelete buckets when pods were "
@@ -1726,13 +1726,13 @@ class TestMultiDataPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 9: Services of remaining pods are in online state")
 
-        LOGGER.info("Step 10: Verify status for In-flight READs/WRITEs/DELETEs while %s (K) pods "
-                    "were going down.", self.kvalue)
+        LOGGER.info("Step 10: Verify status for In-flight READs/WRITEs/DELETEs while %s (K) "
+                    "data pods were going down.", self.kvalue)
         LOGGER.info("Waiting for background IOs thread to join")
         thread_wri.join()
         thread_rd.join()
         thread_del.join()
-        LOGGER.info("Step 10.1: Verify status for In-flight DELETEs while %s (K) pods were"
+        LOGGER.info("Step 10.1: Verify status for In-flight DELETEs while %s (K) data pods were"
                     "going down", self.kvalue)
         del_resp = ()
         while len(del_resp) != 2:
@@ -1745,10 +1745,10 @@ class TestMultiDataPodFailure:
                                   f"Bucket deletion failed when cluster was online {fail_del_bkt}")
         assert_utils.assert_true(len(rem_bkts_aftr_del) < del_bucket,
                                  "Some bucket deletion expected during pods going down")
-        LOGGER.info("Step 10.1: Verified status for In-flight DELETEs while %s (K) pods were"
+        LOGGER.info("Step 10.1: Verified status for In-flight DELETEs while %s (K) data pods were"
                     "going down", self.kvalue)
 
-        LOGGER.info("Step 10.2: Verify status for In-flight WRITEs while %s (K) pods going "
+        LOGGER.info("Step 10.2: Verify status for In-flight WRITEs while %s (K) data pods going "
                     "down should be failed/error.", self.kvalue)
         responses_wr = dict()
         while len(responses_wr) != 2:
@@ -1761,10 +1761,10 @@ class TestMultiDataPodFailure:
         # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain pass: {resp[1]}")
-        LOGGER.info("Step 10.2: Verified status for In-flight WRITEs while %s (K) pods "
+        LOGGER.info("Step 10.2: Verified status for In-flight WRITEs while %s (K) data pods "
                     "going down.", self.kvalue)
 
-        LOGGER.info("Step 10.3: Verify status for In-flight READs/Verify DI while %s (K) pods "
+        LOGGER.info("Step 10.3: Verify status for In-flight READs/Verify DI while %s (K) data pods "
                     "going down should be failed/error.", self.kvalue)
         responses_rd = dict()
         while len(responses_rd) != 2:
@@ -2580,10 +2580,10 @@ class TestMultiDataPodFailure:
     def test_partial_mpu_after_kpods_fail(self):
         """
         This test tests partial multipart upload after each data pod is failed till K
-        pods and complete upload after all K pods are failed
+        pods and complete upload after all K data pods are failed
         """
         LOGGER.info("STARTED: Test to verify partial multipart upload after each data pod is "
-                    "failed till K pods and complete upload after all K pods are failed")
+                    "failed till K data pods and complete upload after all K data pods are failed")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = self.kvalue * 5 + HA_CFG["5gb_mpu_data"]["total_parts"]
         parts = list(range(1, total_parts + 1))
@@ -2767,7 +2767,7 @@ class TestMultiDataPodFailure:
         LOGGER.info("Step 11: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
         LOGGER.info("ENDED: Test to verify partial multipart upload after each data pod is "
-                    "failed till K pods and complete upload after all K pods are failed")
+                    "failed till K data pods and complete upload after all K data pods are failed")
 
     # pylint: disable=C0321
     # pylint: disable-msg=too-many-locals
@@ -2779,8 +2779,8 @@ class TestMultiDataPodFailure:
         """
         This test tests multipart upload during data pods failure till K pods
         """
-        LOGGER.info("STARTED: Test to verify multipart upload during data pods failure till K pods "
-                    "by delete deployment")
+        LOGGER.info("STARTED: Test to verify multipart upload during data pods failure till K "
+                    "data pods by delete deployment")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = self.kvalue * 5 + HA_CFG["5gb_mpu_data"]["total_parts"]
         part_numbers = list(range(1, total_parts + 1))
