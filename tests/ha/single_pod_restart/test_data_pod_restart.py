@@ -1891,7 +1891,7 @@ class TestDataPodRestart:
             bkt_obj_dict.clear()
             for cnt in range(bkt_cnt):
                 bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
-            bucket_name = f"ha-mp-bkt-{self.random_time}-1"
+            bucket_name = f"ha-mp-bkt-{self.random_time}-2"
             bkt_op = True
         else:
             for idx, bkt in enumerate(bkt_obj_dict):
