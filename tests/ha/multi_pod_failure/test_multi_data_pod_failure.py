@@ -1783,7 +1783,6 @@ class TestMultiDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35774")
-    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     def test_degraded_writes_till_kpods_fail(self):
         """
         Test to verify degraded WRITEs after each pod failure till K data pods fail.
@@ -1860,7 +1859,6 @@ class TestMultiDataPodFailure:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-35775")
     def test_degraded_writes_kpods_failure(self):
         """
