@@ -659,9 +659,9 @@ class TestDataPodRestart:
                                                          total_parts=total_parts,
                                                          multipart_obj_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], resp)
-        result = s3_test_obj.object_info(self.bucket_name, self.object_name)
+        result = s3_test_obj.object_info(bucket_name_1, object_name_1)
         obj_size = result[1]["ContentLength"]
-        LOGGER.debug("Uploaded object info for %s is %s", self.bucket_name, result)
+        LOGGER.debug("Uploaded object info for %s is %s", bucket_name_1, result)
         assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
         upload_checksum_2 = str(resp[2])
         LOGGER.info("Step 4: Successfully performed multipart upload for  size %s MB in "
