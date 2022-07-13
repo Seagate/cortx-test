@@ -1084,3 +1084,267 @@ class TestSystemCapacity():
             break
         self.log.info("[END] completed")
         self.deploy = True
+
+    # pylint: disable-msg=too-many-statements
+    @pytest.mark.skip("Feature Not Ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44342')
+    def test_44342(self):
+        """
+        Test degraded capacity with Transient node failure in fixed protection scheme 
+		without write
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_44342"]
+        cap_df = pandas.DataFrame()
+        resp = self.csm_obj.get_degraded_all(self.hlth_master)
+        total_written = s3_misc.get_total_used(self.akey, self.skey)
+        new_row = pandas.Series(data=resp, name='Nofail')
+        cap_df = cap_df.append(new_row, ignore_index=False)
+
+        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
+            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        assert result[0], result[1]
+
+        self.log.info("[START] Failure loop")
+        for failure_cnt in range(1, self.kvalue + 2):
+            deploy_name = self.deploy_list[failure_cnt]
+            self.log.info("[Start] Shutdown the data pod safely")
+            self.log.info("Deleting pod %s", deploy_name)
+            resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
+            assert_utils.assert_false(resp[0], f"Failed to delete pod {deploy_name}")
+            self.log.info("[End] Successfully deleted pod %s", deploy_name)
+
+            self.failed_pod.append(deploy_name)
+
+            self.log.info("[Start] Check cluster status")
+            resp = self.ha_obj.check_cluster_status(self.master)
+            assert_utils.assert_false(resp[0], resp)
+            self.log.info("[End] Cluster is in degraded state")
+
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+            time.sleep(self.update_seconds)
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+
+            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            index = deploy_name + "offline"
+            new_row = pandas.Series(data=resp, name=index)
+            cap_df = cap_df.append(new_row, ignore_index=False)
+
+            result = self.csm_obj.verify_bytecount_fixed_placement(resp,failure_cnt, self.kvalue,
+                test_cfg["err_margin"], total_written)
+            assert result[0], result[1]
+        self.log.info("[END] Failure loop")
+
+        self.log.info("[START] Recovery loop")
+        failure_cnt = len(self.failed_pod)
+        for deploy_name in reversed(self.failed_pod):
+            self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
+            resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+            self.log.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            self.log.info("Successfully restored pod by %s way", self.restore_method)
+            self.failed_pod.remove(deploy_name)
+            self.log.info("[End] Restore deleted pods : %s", deploy_name)
+            failure_cnt -=1
+
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+            time.sleep(self.update_seconds)
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+
+            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            index = deploy_name + "online"
+            new_row = pandas.Series(data=resp, name=index)
+            cap_df = cap_df.append(new_row, ignore_index=False)
+
+            result = self.csm_obj.verify_bytecount_fixed_placement(resp,failure_cnt, self.kvalue,
+                test_cfg["err_margin"], total_written)
+            assert result[0], result[1] + f"for {failure_cnt} failures"
+        self.deploy = True
+
+    # pylint: disable-msg=too-many-statements
+    @pytest.mark.skip("Feature Not Ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44345')
+    def test_44345(self):
+        """
+        Test degraded capacity with Transient node failure in fixed protection scheme 
+		without write
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_44345"]
+        cap_df = pandas.DataFrame()
+        resp = self.csm_obj.get_degraded_all(self.hlth_master)
+        total_written = s3_misc.get_total_used(self.akey, self.skey)
+        new_row = pandas.Series(data=resp, name='Nofail')
+        cap_df = cap_df.append(new_row, ignore_index=False)
+
+        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
+            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        assert result[0], result[1]
+
+        self.log.info("[START] Failure loop")	
+        for failure_cnt in range(1, self.kvalue + 2):
+            deploy_name = self.deploy_list[failure_cnt]
+            self.log.info("[Start] Shutdown the data pod safely")
+            self.log.info("Deleting pod %s", deploy_name)
+            resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
+            assert_utils.assert_false(resp[0], f"Failed to delete pod {deploy_name}")
+            self.log.info("[End] Successfully deleted pod %s", deploy_name)
+
+            self.failed_pod.append(deploy_name)
+
+            self.log.info("[Start] Check cluster status")
+            resp = self.ha_obj.check_cluster_status(self.master)
+            assert_utils.assert_false(resp[0], resp)
+            self.log.info("[End] Cluster is in degraded state")
+
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+            time.sleep(self.update_seconds)
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+
+            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            index = deploy_name + "offline"
+            new_row = pandas.Series(data=resp, name=index)
+            cap_df = cap_df.append(new_row, ignore_index=False)
+
+            result = self.csm_obj.verify_bytecount_fixed_placement(resp,failure_cnt, self.kvalue,
+                test_cfg["err_margin"], total_written)
+            assert result[0], result[1]
+            if failure_cnt<=self.kvalue:
+                obj = f"object{self.s3_user}{time.time_ns()}.txt"
+                self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, self.aligned_size,
+                        self.bucket)
+                resp = s3_misc.create_put_objects(
+                  obj, self.bucket, self.akey, self.skey, object_size=self.aligned_size)
+                assert resp, "Put object Failed"
+                total_written = total_written+self.aligned_size
+                result = self.csm_obj.verify_bytecount_fixed_placement(resp,failure_cnt, self.kvalue,
+                  test_cfg["err_margin"], total_written)
+                assert result[0], result[1]
+        self.log.info("[END] Failure loop")
+
+        self.log.info("[START] Recovery loop")
+        failure_cnt = len(self.failed_pod)
+        for deploy_name in reversed(self.failed_pod):
+            self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
+            resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+            self.log.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            self.log.info("Successfully restored pod by %s way", self.restore_method)
+            self.failed_pod.remove(deploy_name)
+            self.log.info("[End] Restore deleted pods : %s", deploy_name)
+            failure_cnt -=1
+
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+            time.sleep(self.update_seconds)
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+
+            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            index = deploy_name + "online"
+            new_row = pandas.Series(data=resp, name=index)
+            cap_df = cap_df.append(new_row, ignore_index=False)
+
+            result = self.csm_obj.verify_bytecount_all(resp,failure_cnt, self.kvalue,
+                test_cfg["err_margin"], total_written)
+            assert result[0], result[1] + f"for {failure_cnt} failures"
+		
+        self.deploy = True
+
+    # pylint: disable-msg=too-many-statements
+    @pytest.mark.skip("Feature Not Ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44347')
+    def test_44347(self):
+        """
+        Test degraded capacity with Transient node failure in fixed protection scheme 
+		without write
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        cap_df = pandas.DataFrame()
+        resp = self.csm_obj.get_degraded_all(self.hlth_master)
+        total_written = s3_misc.get_total_used(self.akey, self.skey)
+        new_row = pandas.Series(data=resp, name='Nofail')
+        cap_df = cap_df.append(new_row, ignore_index=False)
+
+        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
+            critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
+        assert result[0], result[1]
+
+        self.log.info("[START] Failure loop")	
+        for failure_cnt in range(1, self.kvalue + 2):
+            deploy_name = self.deploy_list[failure_cnt]
+            self.log.info("[Start] Shutdown the data pod safely")
+            self.log.info("Deleting pod %s", deploy_name)
+            resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
+            assert_utils.assert_false(resp[0], f"Failed to delete pod {deploy_name}")
+            self.log.info("[End] Successfully deleted pod %s", deploy_name)
+
+            self.failed_pod.append(deploy_name)
+
+            self.log.info("[Start] Check cluster status")
+            resp = self.ha_obj.check_cluster_status(self.master)
+            assert_utils.assert_false(resp[0], resp)
+            self.log.info("[End] Cluster is in degraded state")
+
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+            time.sleep(self.update_seconds)
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+
+            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            index = deploy_name + "offline"
+            new_row = pandas.Series(data=resp, name=index)
+            cap_df = cap_df.append(new_row, ignore_index=False)
+
+            result = self.csm_obj.verify_bytecount_fixed_placement(resp,failure_cnt, self.kvalue,
+                self.err_margin, total_written)
+            assert result[0], result[1]
+            if failure_cnt<=self.kvalue:
+                obj = f"object{self.s3_user}{time.time_ns()}.txt"
+                self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, self.aligned_size,
+                        self.bucket)
+                resp = s3_misc.create_put_objects(
+                  obj, self.bucket, self.akey, self.skey, object_size=self.aligned_size)
+                assert resp, "Put object Failed"
+                total_written = total_written+self.aligned_size
+                result = self.csm_obj.verify_bytecount_fixed_placement(resp,failure_cnt, self.kvalue,
+                  self.err_margin, total_written)
+                assert result[0], result[1]
+        self.log.info("[END] Failure loop")
+
+        self.log.info("[START] Recovery loop")
+        failure_cnt = len(self.failed_pod)
+        for deploy_name in reversed(self.failed_pod):
+            self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
+            resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+            self.log.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            self.log.info("Successfully restored pod by %s way", self.restore_method)
+            self.failed_pod.remove(deploy_name)
+            self.log.info("[End] Restore deleted pods : %s", deploy_name)
+            failure_cnt -=1
+
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+            time.sleep(self.update_seconds)
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+
+            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            index = deploy_name + "online"
+            new_row = pandas.Series(data=resp, name=index)
+            cap_df = cap_df.append(new_row, ignore_index=False)
+
+            result = self.csm_obj.verify_bytecount_fixed_placement(resp,failure_cnt, self.kvalue,
+                self.err_margin, total_written)
+            assert result[0], result[1] + f"for {failure_cnt} failures"
+		
+        self.deploy = True
+
