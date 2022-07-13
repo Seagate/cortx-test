@@ -987,22 +987,26 @@ class TestDataPodRestart:
 
         bkt_obj_dict1 = bkt_obj_dict.copy()
         t_t = int(perf_counter_ns())
+        bucket_name = self.bucket_name
+        bkt_op = False
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Create and list buckets")
             bkt_obj_dict.clear()
             for cnt in range(bkt_cnt):
                 bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
+            bucket_name = f"ha-mp-bkt-{self.random_time}-1"
+            bkt_op = True
         else:
             for idx, bkt in enumerate(bkt_obj_dict):
                 bkt_obj_dict[bkt] = f"ha-obj{idx}-{t_t}"
 
         LOGGER.info("Step 4: Copy object from the %s bucket to other buckets and verify copy object"
-                    " etags", self.bucket_name)
+                    " etags", bucket_name)
         resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
-                                                  bucket_name=self.bucket_name,
+                                                  bucket_name=bucket_name,
                                                   object_name=self.object_name,
                                                   bkt_obj_dict=bkt_obj_dict,
-                                                  file_path=self.multipart_obj_path, bkt_op=False)
+                                                  file_path=self.multipart_obj_path, bkt_op=bkt_op)
         assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
         put_etag = resp[1]
         LOGGER.info("Step 4: Successfully created multiple buckets and copied object from the %s "
@@ -1039,23 +1043,26 @@ class TestDataPodRestart:
 
         bkt_obj_dict2 = bkt_obj_dict.copy()
         t_t = int(perf_counter_ns())
+        bucket_name = self.bucket_name
+        bkt_op = False
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Create and list buckets")
             bkt_obj_dict.clear()
             for cnt in range(bkt_cnt):
                 bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
+            bucket_name = f"ha-mp-bkt-{self.random_time}-2"
+            bkt_op = True
         else:
             for idx, bkt in enumerate(bkt_obj_dict):
                 bkt_obj_dict[bkt] = f"ha-obj{idx}-{t_t}"
 
         LOGGER.info("Step 7: Perform copy object from already created/uploaded %s bucket to other "
-                    "buckets verify copy object etags", self.bucket_name)
+                    "buckets verify copy object etags", bucket_name)
         resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
-                                                  bucket_name=self.bucket_name,
+                                                  bucket_name=bucket_name,
                                                   object_name=self.object_name,
-                                                  bkt_obj_dict=bkt_obj_dict,
-                                                  put_etag=put_etag,
-                                                  bkt_op=False)
+                                                  bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
+                                                  bkt_op=bkt_op)
         assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
         LOGGER.info("Step 7: Performed copy object from already created/uploaded %s bucket to other"
                     " buckets verified copy object etags", self.bucket_name)
