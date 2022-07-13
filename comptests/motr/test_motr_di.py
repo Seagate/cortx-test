@@ -97,8 +97,7 @@ class TestCorruptDataDetection:
 
     def teardown_class(self):
         """Teardown Node object"""
-        for con in self.connections:
-            con.disconnect()
+        self.motr_obj.close_connections()
         del self.motr_obj
 
     # pylint: disable=R0914
@@ -129,16 +128,16 @@ class TestCorruptDataDetection:
                         layout, outfile, node, client_num)
                     self.motr_obj.cp_update_cmd(
                         b_size=b_size, count=cnt_u,
-                        object_id=object_id, layout=layout,
-                        infile=infile, node=node, client_num=client_num, offset=offset)
+                        obj=object_id, layout=layout,
+                        file=infile, node=node, client_num=client_num, offset=offset)
                     self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout, outfile, node,
                                           client_num)
-                    self.motr_obj.md5sum_cmd(infile, outfile, node)
+                    self.motr_obj.md5sum_cmd(infile, outfile, node, flag=True)
                     self.motr_obj.unlink_cmd(object_id, layout, node, client_num)
 
             logger.info("Stop: Verify multiple m0cp/cat operation")
 
-    @pytest.mark.skip(reason="Feature Unavailable")
+    # @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.tags("TEST-41739")
     @pytest.mark.motr_di
     def test_m0cp_m0cat_block_corruption(self):
@@ -154,7 +153,7 @@ class TestCorruptDataDetection:
         offsets = [0, 16384]
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
-    @pytest.mark.skip(reason="Test incomplete without teardown")
+    # @pytest.mark.skip(reason="Test incomplete without teardown")
     @pytest.mark.tags("TEST-41766")
     @pytest.mark.motr_di
     def test_m0cp_m0cat_block_corruption_degraded_mode(self):
@@ -171,7 +170,7 @@ class TestCorruptDataDetection:
         offsets = [0, 16384]
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
-    @pytest.mark.skip(reason="Feature Unavailable")
+    # @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.tags("TEST-41911")
     @pytest.mark.motr_di
     def test_m0cp_m0cat_block_corruption_unaligned(self):
