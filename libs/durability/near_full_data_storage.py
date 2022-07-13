@@ -184,10 +184,11 @@ class NearFullStorage:
         num_buckets_delete = int(delete_percent * len(workload_info_list) / 100)
         delete_list = []
         LOGGER.info("Delete %s random buckets.", num_buckets_delete)
-
+        LOGGER.debug("workload info: %s", workload_info_list)
+        LOGGER.debug("Number of available buckets : %s", len(workload_info_list))
         for _ in range(num_buckets_delete):
             bucket_info = workload_info_list[
-                random.SystemRandom().randint(1, len(workload_info_list) - 1)]
+                random.SystemRandom().randint(0, len(workload_info_list) - 1)]
             delete_list.append(bucket_info)
             workload_info_list.remove(bucket_info)
         LOGGER.info("Deleting buckets : %s", delete_list)
