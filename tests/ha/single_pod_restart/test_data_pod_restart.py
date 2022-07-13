@@ -118,11 +118,12 @@ class TestDataPodRestart:
         self.restore_pod = True
         self.restore_node = False
         self.restore_ip = False
-        self.s3_clean = {}
+        self.s3_clean = dict()
         self.s3acc_name = f"ha_s3acc_{int(perf_counter_ns())}"
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
         self.bucket_name = f"ha-mp-bkt-{self.random_time}"
         self.object_name = f"ha-mp-obj-{self.random_time}"
+        self.extra_files = list()
         if not os.path.exists(self.test_dir_path):
             resp = system_utils.make_dirs(self.test_dir_path)
             LOGGER.info("Created path: %s", resp)
@@ -169,7 +170,8 @@ class TestDataPodRestart:
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Removing extra files")
-        system_utils.remove_file(self.multipart_obj_path)
+        for file in self.extra_files:
+            system_utils.remove_file(file)
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-locals
@@ -568,7 +570,7 @@ class TestDataPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until F-22A is available")
+    @pytest.mark.skip(reason="Multipart upload is not supported with DTMInt0")
     @pytest.mark.tags("TEST-34080")
     @CTFailOn(error_handler)
     def test_mpu_after_pod_restart(self):
@@ -585,7 +587,7 @@ class TestDataPodRestart:
 
         LOGGER.info("Step 1: Create and list buckets. Perform multipart upload for size %s MB in "
                     "total %s parts.", file_size, total_parts)
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -595,7 +597,7 @@ class TestDataPodRestart:
         secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
@@ -739,16 +741,14 @@ class TestDataPodRestart:
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 8: Successfully downloaded the object %s & verified the checksum",
                     test_object)
-        LOGGER.info("Removing files %s, %s, %s", download_path, download_path_1, download_path_2)
-        system_utils.remove_file(download_path)
-        system_utils.remove_file(download_path_1)
-        system_utils.remove_file(download_path_2)
+        self.extra_files.extend((self.multipart_obj_path, download_path, download_path_1,
+                                 download_path_2))
 
         LOGGER.info("COMPLETED: Test to verify multipart upload after data pod restart.")
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until F-22A is available")
+    @pytest.mark.skip(reason="Multipart upload is not supported with DTMInt0")
     @pytest.mark.tags("TEST-34082")
     @CTFailOn(error_handler)
     def test_partial_mpu_after_pod_restart(self):
@@ -770,7 +770,7 @@ class TestDataPodRestart:
 
         LOGGER.info("Step 1: Start multipart upload for 5GB object in multiple parts and complete "
                     "partially for %s part out of %s", part_numbers, total_parts)
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -781,7 +781,7 @@ class TestDataPodRestart:
                                 endpoint_url=S3_CFG["s3_url"])
         s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
                                             endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
@@ -911,8 +911,7 @@ class TestDataPodRestart:
                                   f" {download_checksum}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 10: Successfully downloaded the object and verified the checksum")
-        LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
-        system_utils.remove_file(download_path)
+        self.extra_files.extend((self.multipart_obj_path, download_path))
         LOGGER.info("COMPLETED: Test to verify partial multipart upload after data pod restart.")
 
     # pylint: disable=too-many-statements
