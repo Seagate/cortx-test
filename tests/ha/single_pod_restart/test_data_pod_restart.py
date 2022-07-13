@@ -262,7 +262,6 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34074")
-    @CTFailOn(error_handler)
     def test_write_after_pod_restart(self):
         """
         This test tests WRITEs after data pod restart
@@ -359,7 +358,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Buckets cruds not supported in DTM0")
     @pytest.mark.tags("TEST-34077")
-    @CTFailOn(error_handler)
     def test_deletes_after_pod_restart(self):
         """
         This test tests DELETEs after data pod restart
@@ -367,8 +365,10 @@ class TestDataPodRestart:
         LOGGER.info("STARTED: Test to verify DELETEs after data pod restart.")
         wr_output = Queue()
         del_output = Queue()
+        deg_output = Queue()
         wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         del_bucket = wr_bucket - 100
+        deg_bucket = 50
         event = threading.Event()
 
         LOGGER.info("Step 1: Perform WRITEs with variable object sizes.")
@@ -433,7 +433,24 @@ class TestDataPodRestart:
 
         LOGGER.info("Step 3: Successfully Performed DELETEs on %s buckets", del_bucket)
 
-        LOGGER.info("Step 4: Restore pod and check cluster status.")
+        LOGGER.info("Step 4: Create %s buckets and put variable size objects.", deg_bucket)
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipget': True, 'skipdel': True, 'bkts_to_wr': deg_bucket, 'output': deg_output}
+
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        deg_resp = ()
+        while len(deg_resp) != 3:
+            deg_resp = deg_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        s3_data.update(deg_resp[0])  # Contains s3 data for passed buckets
+        buckets_deg = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(buckets_deg), deg_bucket, f"Failed to create {deg_bucket} "
+                                                                "number of buckets."
+                                                                f"Created {len(buckets_deg)} "
+                                                                "number of buckets")
+
+        LOGGER.info("Step 4: Successfully performed WRITEs with variable object sizes.")
+
+        LOGGER.info("Step 5: Restore pod and check cluster status.")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
@@ -443,10 +460,10 @@ class TestDataPodRestart:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
                                           "OR the cluster is not online")
-        LOGGER.info("Step 4: Successfully started the pod and cluster is online.")
+        LOGGER.info("Step 5: Successfully started the pod and cluster is online.")
         self.restore_pod = False
 
-        LOGGER.info("Step 5: Perform DELETEs again on %s buckets with restarted pod", del_bucket)
+        LOGGER.info("Step 6: Perform DELETEs again on %s buckets with restarted pod", del_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
 
@@ -455,7 +472,7 @@ class TestDataPodRestart:
         while len(del_resp) != 2:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         remain_bkt = s3_test_obj.bucket_list()[1]
-        assert_utils.assert_equal(len(remain_bkt), new_bkt - del_bucket,
+        assert_utils.assert_equal(len(remain_bkt), new_bkt - del_bucket + deg_bucket,
                                   f"Failed to delete {del_bucket} number of buckets from "
                                   f"{new_bkt}. Remaining {len(remain_bkt)} number of buckets")
 
