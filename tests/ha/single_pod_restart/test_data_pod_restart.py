@@ -25,6 +25,7 @@ HA test suite for single data Pod restart
 import logging
 import os
 import random
+import secrets
 import threading
 import time
 from multiprocessing import Queue
@@ -32,9 +33,8 @@ from time import perf_counter_ns
 
 import pytest
 
-from commons import constants as const
 from commons import commands as cmd
-from commons.utils import system_utils as sysutils
+from commons import constants as const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
@@ -42,6 +42,7 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils import system_utils as sysutils
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
@@ -85,7 +86,7 @@ class TestDataPodRestart:
         cls.restore_node = cls.multipart_obj_path = None
         cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
         cls.mgnt_ops = ManagementOPs()
-        cls.system_random = random.SystemRandom()
+        cls.system_random = secrets.SystemRandom()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -646,12 +647,13 @@ class TestDataPodRestart:
 
         object_name_1 = f"ha-mp-obj-{int(perf_counter_ns())}"
         if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create and list buckets")
             bucket_name_1 = f"ha-mp-bkt-{int(perf_counter_ns())}"
         else:
             bucket_name_1 = self.bucket_name
 
-        LOGGER.info("Step 4: Create and list buckets. Perform multipart upload for size %s MB in "
-                    "total %s parts.", file_size, total_parts)
+        LOGGER.info("Step 4: Perform multipart upload for size %s MB in total %s parts.",
+                    file_size, total_parts)
         resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
                                                          bucket_name=bucket_name_1,
                                                          object_name=object_name_1,
@@ -707,10 +709,11 @@ class TestDataPodRestart:
         LOGGER.info("Step 6.2: Successfully downloaded the object %s & verified the checksum",
                     object_name_1)
 
-        LOGGER.info("Step 7: Create and list buckets. Perform multipart upload for size %s MB in "
-                    "total %s parts.", file_size, total_parts)
+        LOGGER.info("Step 7: Perform multipart upload for size %s MB in total %s parts.",
+                    file_size, total_parts)
         test_object = f"ha-mp-obj-{int(perf_counter_ns())}"
         if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create and list buckets")
             test_bucket = f"ha-mp-bkt-{int(perf_counter_ns())}"
         else:
             test_bucket = self.bucket_name
