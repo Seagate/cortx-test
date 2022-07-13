@@ -921,7 +921,6 @@ class TestDataPodRestart:
     # pylint: disable=too-many-branches
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34083")
     @CTFailOn(error_handler)
     def test_copy_obj_after_pod_restart(self):
@@ -937,7 +936,7 @@ class TestDataPodRestart:
             bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
         event = threading.Event()
 
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -946,7 +945,7 @@ class TestDataPodRestart:
         secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         LOGGER.info("Step 1: Create and list buckets. Upload object to %s & copy object from the"
@@ -989,6 +988,7 @@ class TestDataPodRestart:
         bkt_obj_dict1 = bkt_obj_dict.copy()
         t_t = int(perf_counter_ns())
         if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create and list buckets")
             bkt_obj_dict.clear()
             for cnt in range(bkt_cnt):
                 bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
@@ -996,8 +996,8 @@ class TestDataPodRestart:
             for idx, bkt in enumerate(bkt_obj_dict):
                 bkt_obj_dict[bkt] = f"ha-obj{idx}-{t_t}"
 
-        LOGGER.info("Step 4: Create and list buckets. Copy object from the %s bucket to other "
-                    "buckets and verify copy object etags", self.bucket_name)
+        LOGGER.info("Step 4: Copy object from the %s bucket to other buckets and verify copy object"
+                    " etags", self.bucket_name)
         resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
@@ -1040,6 +1040,7 @@ class TestDataPodRestart:
         bkt_obj_dict2 = bkt_obj_dict.copy()
         t_t = int(perf_counter_ns())
         if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create and list buckets")
             bkt_obj_dict.clear()
             for cnt in range(bkt_cnt):
                 bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
@@ -1073,7 +1074,6 @@ class TestDataPodRestart:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34073")
     @CTFailOn(error_handler)
     def test_continuous_reads_during_pod_restart(self):
@@ -1115,7 +1115,7 @@ class TestDataPodRestart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipwrite=True, skipcleanup=True,
-                                                    nclients=10, nsamples=10)
+                                                    nclients=10, nsamples=10, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed WRITEs/READs-Verify with variable sizes objects.")
 
@@ -1124,8 +1124,8 @@ class TestDataPodRestart:
             self.test_prefix = 'test-34073-1'
 
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipread=True,
-                                                    skipcleanup=True, nclients=10, nsamples=10)
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nclients=10, nsamples=10, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs/READs-Verify with variable object sizes.")
 
@@ -1133,7 +1133,7 @@ class TestDataPodRestart:
         self.test_prefix = 'test-34073'
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
                 'nclients': 1, 'nsamples': 10, 'skipwrite': True, 'skipcleanup': True,
-                'output': output}
+                'output': output, 'setup_s3bench': False}
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
@@ -1142,7 +1142,7 @@ class TestDataPodRestart:
             self.test_prefix = 'test-34073-1'
             args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
                     'nclients': 1, 'nsamples': 10, 'skipwrite': True, 'skipcleanup': True,
-                    'output': output1}
+                    'output': output1, 'setup_s3bench': False}
             thread1 = threading.Thread(target=self.ha_obj.event_s3_operation,
                                        args=(event,), kwargs=args)
             thread1.daemon = True  # Daemonize thread
@@ -1192,7 +1192,7 @@ class TestDataPodRestart:
             self.test_prefix = 'test-34073-2'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Successfully ran IOs")
 
