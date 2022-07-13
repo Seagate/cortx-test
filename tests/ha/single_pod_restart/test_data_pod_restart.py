@@ -481,9 +481,9 @@ class TestDataPodRestart:
                                   f"Failed to delete {del_bucket} number of buckets from "
                                   f"{new_bkt}. Remaining {len(remain_bkt)} number of buckets")
 
-        LOGGER.info("Step 5: Successfully Performed DELETEs on %s buckets", del_bucket)
+        LOGGER.info("Step 6: Successfully Performed DELETEs on %s buckets", del_bucket)
 
-        LOGGER.info("Step 6: Perform READs and verify on remaining buckets")
+        LOGGER.info("Step 7: Perform READs and verify on remaining buckets")
         rd_output = Queue()
         new_s3data = {}
         for bkt in remain_bkt:
@@ -507,10 +507,10 @@ class TestDataPodRestart:
                                                      "operations. Found failures in READ: "
                                                      f"{fail_bkt_get} {event_bkt_get}"
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
-        LOGGER.info("Step 6: Successfully verified READs and DI check for remaining buckets: %s",
+        LOGGER.info("Step 7: Successfully verified READs and DI check for remaining buckets: %s",
                     remain_bkt)
 
-        LOGGER.info("Step 7: Again create %s buckets and put variable size objects and perform "
+        LOGGER.info("Step 8: Again create %s buckets and put variable size objects and perform "
                     "delete on %s buckets", wr_bucket, del_bucket)
         args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
@@ -539,10 +539,10 @@ class TestDataPodRestart:
                                   f"{wr_bucket + len(remain_bkt)}. Remaining {len(buckets1)} number"
                                   " of buckets")
 
-        LOGGER.info("Step 7: Successfully performed WRITEs with variable object sizes "
+        LOGGER.info("Step 8: Successfully performed WRITEs with variable object sizes "
                     "and DELETEs on %s buckets", del_bucket)
 
-        LOGGER.info("Step 8: Perform READs and verify on remaining buckets")
+        LOGGER.info("Step 9: Perform READs and verify on remaining buckets")
         for bkt in buckets1:
             if bkt in s3_data:
                 new_s3data[bkt] = s3_data[bkt]
@@ -565,7 +565,7 @@ class TestDataPodRestart:
                                                      "operations. Found failures in READ: "
                                                      f"{fail_bkt_get} {event_bkt_get}"
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
-        LOGGER.info("Step 8: Successfully verified READs and DI check for remaining buckets: %s",
+        LOGGER.info("Step 9: Successfully verified READs and DI check for remaining buckets: %s",
                     buckets1)
 
         LOGGER.info("ENDED: Test to verify DELETEs after data pod restart.")
