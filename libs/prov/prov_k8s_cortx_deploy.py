@@ -83,7 +83,11 @@ class ProvDeployK8sCortxLib:
         self.nodeport_http = int(os.getenv("HTTP_PORT", self.deploy_cfg["http_port"]))
         self.control_nodeport_https = int(os.getenv("CONTROL_HTTPS_PORT",
                                                     self.deploy_cfg["control_port_https"]))
-        self.client_instance = int(os.getenv("CLIENT_INSTANCE", self.deploy_cfg['client_instance']))
+        self.client_instance = int(os.getenv("CLIENT_INSTANCE",
+                                             self.deploy_cfg['client_instance']))
+        self.s3_instance = int(os.getenv("S3_INSTANCE", self.deploy_cfg['s3_instances_per_node']))
+        self.container_group_size = int(os.getenv("CONTAINER_GROUP",
+                                                  self.deploy_cfg['container_group']))
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
         self.data_only_list = ["data-only", "standard"]
         self.server_only_list = ["server-only", "standard"]
@@ -472,7 +476,6 @@ class ProvDeployK8sCortxLib:
                                              self.deploy_cfg['third_party_images'])
         cortx_server_image = kwargs.get("cortx_server_image", None)
         cortx_data_image = kwargs.get("cortx_data_image", None)
-        log_path = kwargs.get("log_path", self.deploy_cfg['log_path'])
         service_type = kwargs.get("service_type", self.deploy_cfg['service_type'])
         namespace = kwargs.get("namespace", self.deploy_cfg['namespace'])
         nodeport_http = kwargs.get("http_port", self.deploy_cfg['http_port'])
@@ -482,10 +485,12 @@ class ProvDeployK8sCortxLib:
         deployment_type = kwargs.get("deployment_type", self.deployment_type)
         client_instance = kwargs.get("client_instance", self.client_instance)
         s3_instance = kwargs.get('s3_instance', self.deploy_cfg['s3_instances_per_node'])
-
+        container_group_size = kwargs.get('container_group_size',
+                                          self.deploy_cfg['container_group_size'])
         LOGGER.debug("Service type & Ports are %s\n%s\n%s\n%s", service_type,
                      nodeport_http, nodeport_https, control_nodeport_https)
-        LOGGER.debug("Client instances are %s", self.client_instance)
+        LOGGER.debug("Client, S3, container_group are %s,%s,%s", self.client_instance,
+                     self.s3_instance, self.container_group_size)
         node_list = len(worker_obj)
         valid_disk_count = sns_spare + sns_data + sns_parity
         sys_disk_pernode = {}  # empty dict
@@ -544,7 +549,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Metadata disk %s", metadata_devices)
         LOGGER.info("data disk %s", data_devices)
         # Update the solution yaml file with service_type,deployment type, ports,namespace
-        resp_passwd = self.update_miscellaneous_param(filepath, log_path,
+        resp_passwd = self.update_miscellaneous_param(filepath,
                                                       nodeport_http=self.nodeport_http,
                                                       nodeport_https=self.nodeport_https,
                                                       control_nodeport_https=
@@ -585,7 +590,8 @@ class ProvDeployK8sCortxLib:
                                             dix_parity=dix_parity,
                                             dix_spare=dix_spare,
                                             size_metadata=size_metadata,
-                                            size_data_disk=size_data_disk)
+                                            size_data_disk=size_data_disk,
+                                            container_group_size=container_group_size)
         if not resp_cvg[0]:
             return False, "Fail to update the cvg details in solution file"
 
@@ -607,18 +613,10 @@ class ProvDeployK8sCortxLib:
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             node = conf['solution']['storage_sets'][0]['nodes']
-            total_nodes = node
-            node = []
-            # Removing the elements from the node dict
-            # for key_count in list(total_nodes):
-            #     node.pop(key_count)
-            # Updating the node dict
+            LOGGER.debug("Nodes details are %s", node)
+            node = [] # Empty the node list
             for host in worker_obj:
-                # dict_node = {}
                 node.append(host.hostname)
-                # name = {host.hostname}
-                # dict_node.update(name)
-                # new_node = {Template('node$num').substitute(num=item + 1): dict_node}
             conf['solution']['storage_sets'][0]['nodes'] = node
             soln.close()
         noalias_dumper = yaml.dumper.SafeDumper
@@ -655,7 +653,7 @@ class ProvDeployK8sCortxLib:
         :Param: size_data_disk: size of data disk
         :returns the status ,filepath
         """
-        cvg_type = kwargs.get("cvg_type", )
+        cvg_type = kwargs.get("cvg_type", "ios")
         cvg_count = kwargs.get("cvg_count")
         sns_data = kwargs.get("sns_data")
         sns_parity = kwargs.get("sns_parity")
@@ -665,6 +663,7 @@ class ProvDeployK8sCortxLib:
         dix_spare = kwargs.get("dix_spare")
         size_metadata = kwargs.get("size_metadata")
         size_data_disk = kwargs.get("size_data_disk")
+        container_group_size = kwargs.get("container_group_size", 1)
         nks = Template("$data+$parity+$spare").substitute(data=sns_data,
                                                           parity=sns_parity,
                                                           spare=sns_spare)  # Value of N+K+S for sns
@@ -677,14 +676,12 @@ class ProvDeployK8sCortxLib:
             cmn_storage_sets = parent_key['storage_sets'][0]  # child of child key
             storage = cmn_storage_sets['storage']
             total_cvg = len(storage)
+            cmn_storage_sets['container_group_size'] = container_group_size
             LOGGER.debug("len of storage is %s", total_cvg)
-            # total_cvg = storage.values()
             # SNS and dix value update
             cmn_storage_sets['durability']['sns'] = nks
             cmn_storage_sets['durability']['dix'] = dix
             storage = []
-            # for cvg_item in storage:
-            #     storage.pop(cvg_item)
             for cvg in range(0, cvg_count):
                 cvg_dict = {}
                 metadata_schema_upd = {'device': metadata_devices[cvg], 'size': size_metadata}
@@ -692,7 +689,6 @@ class ProvDeployK8sCortxLib:
                 for disk in range(0, data_disk_per_cvg):
                     disk_schema_upd = \
                         {'device': data_devices[cvg][disk], 'size': size_data_disk}
-                    # c_data_device_schema = {'d{}'.format(disk + 1): disk_schema_upd}
                     data_schema.append(disk_schema_upd)
                 c_device_schema = {'metadata': metadata_schema_upd, 'data': data_schema}
                 key_cvg_devices = {'devices': c_device_schema}
@@ -701,7 +697,6 @@ class ProvDeployK8sCortxLib:
                 cvg_dict.update(cvg_name)
                 cvg_dict.update(cvg_type_schema)
                 cvg_dict.update(key_cvg_devices)
-                # cvg_key = {Template('cvg$num').substitute(num=cvg + 1): cvg_dict}
                 storage.append(cvg_dict)
         conf['solution']['storage_sets'][0]['storage'] = storage
         LOGGER.debug("Storage Details : %s", storage)
@@ -768,8 +763,7 @@ class ProvDeployK8sCortxLib:
         return True, filepath
 
     # pylint: disable-msg=too-many-locals
-    def update_miscellaneous_param(self, filepath, log_path,
-                                   **kwargs):
+    def update_miscellaneous_param(self, filepath, **kwargs):
         """
         This Method update the miscellaneous params in solution.yaml file
         Param: filepath: filename with complete path
@@ -798,7 +792,6 @@ class ProvDeployK8sCortxLib:
             common = parent_key['common']
             content = parent_key['secrets']['content']
             common['storage_provisioner_path'] = self.deploy_cfg['local_path_prov']
-            # common['container_path']['log'] = log_path
             motr_config = common['motr']
             motr_config['num_client_inst'] = client_instance
             s3_service = common['external_services']['s3']
@@ -1376,6 +1369,8 @@ class ProvDeployK8sCortxLib:
         metadata_disk_size = kwargs.get("meta_disk_size", self.deploy_cfg["metadata_disk_size"])
         deployment_type = kwargs.get("deployment_type", self.deployment_type)
         client_instance = kwargs.get("client_instances", self.client_instance)
+        s3_instance = kwargs.get("s3_instance", self.s3_instance)
+        container_group_size = kwargs.get("container_group_size", self.container_group_size)
         row = list()
         row.append(len(worker_node_list))
         LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
@@ -1424,7 +1419,9 @@ class ProvDeployK8sCortxLib:
                                         http_port=self.nodeport_http,
                                         control_https_port=self.control_nodeport_https,
                                         deployment_type=deployment_type,
-                                        client_instance=client_instance)
+                                        client_instance=client_instance,
+                                        s3_instance=s3_instance,
+                                        container_group_size=container_group_size)
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
             with open(resp[1]) as file:
                 LOGGER.info("The detailed solution yaml file is\n")
