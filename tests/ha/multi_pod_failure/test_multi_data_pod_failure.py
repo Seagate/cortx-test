@@ -429,6 +429,7 @@ class TestMultiDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35790")
+    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     def test_ios_during_data_kpods_down_safe(self):
         """
         Test to verify continuous IOs while k data pods are failing one by one by scale replicas
@@ -577,6 +578,7 @@ class TestMultiDataPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"WRITEs logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"WRITEs logs which contain pass: {resp[1]}")
         LOGGER.info("Step 7.2: Verified status for In-flight WRITEs while %s (K) data pods "
@@ -594,6 +596,7 @@ class TestMultiDataPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Reads logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Reads logs which contain pass: {resp[1]}")
         LOGGER.info("Step 7.3: Verified status for In-flight READs/Verify DI while %s (K)"
@@ -606,6 +609,7 @@ class TestMultiDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35792")
+    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     def test_server_data_kpods_fail_during_ios(self):
         """
         Test to verify continuous IOs while k server and data pods are failing one by one by delete
@@ -759,6 +763,7 @@ class TestMultiDataPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"WRITEs logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"WRITEs logs which contain pass: {resp[1]}")
         LOGGER.info("Step 7.2: Verified status for In-flight WRITEs while %s (K) data & server "
@@ -776,6 +781,7 @@ class TestMultiDataPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Reads logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Reads logs which contain pass: {resp[1]}")
         LOGGER.info("Step 7.3: Verified status for In-flight READs/Verify DI while %s (K)"
@@ -991,6 +997,7 @@ class TestMultiDataPodFailure:
         assert_utils.assert_false(len(resp[1]),
                                   f"Expected all pass, But Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
         LOGGER.info("Step 6: Verified status for In-flight IOs while %s (K) pods going "
@@ -1297,6 +1304,7 @@ class TestMultiDataPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain pass: {resp[1]}")
         LOGGER.info("Step 7: Verified status for In-flight READs/Verify DI while %s (K) pods "
@@ -1401,6 +1409,7 @@ class TestMultiDataPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain pass: {resp[1]}")
         LOGGER.info("Step 6: Verified status for In-flight WRITEs while %s (K) pods "
@@ -1758,6 +1767,7 @@ class TestMultiDataPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain pass: {resp[1]}")
         LOGGER.info("Step 10.2: Verified status for In-flight WRITEs while %s (K) pods "
@@ -1773,6 +1783,7 @@ class TestMultiDataPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain pass: {resp[1]}")
         LOGGER.info("Step 10.3: Verified status for In-flight READs/Verify DI while %s (K) pods "
