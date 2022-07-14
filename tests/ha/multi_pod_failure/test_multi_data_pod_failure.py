@@ -471,7 +471,7 @@ class TestMultiDataPodFailure:
         test_prefix_read = 'test-read-35790'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=test_prefix_read, skipread=True,
-                                                    skipcleanup=True, nclients=7, nsamples=7)
+                                                    skipcleanup=True, nclients=5, nsamples=5)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Performed WRITEs with variable sizes objects for parallel READs.")
 
@@ -496,7 +496,7 @@ class TestMultiDataPodFailure:
         output_wr = Queue()
         event_set_clr = [False]
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
-                'nclients': 1, 'nsamples': 7, 'skipread': True, 'skipcleanup': True,
+                'nclients': 1, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
                 'output': output_wr, 'event_set_clr': event_set_clr}
         thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                       kwargs=args)
@@ -511,7 +511,7 @@ class TestMultiDataPodFailure:
         LOGGER.info("Step 5: Perform READs and verify DI on the written data in background")
         output_rd = Queue()
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_read,
-                'nclients': 1, 'nsamples': 7, 'skipwrite': True, 'skipcleanup': True,
+                'nclients': 1, 'nsamples': 5, 'skipwrite': True, 'skipcleanup': True,
                 'output': output_rd, "setup_s3bench": False, 'event_set_clr': event_set_clr}
         thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                      kwargs=args)
@@ -653,7 +653,7 @@ class TestMultiDataPodFailure:
         test_prefix_read = 'test-read-35792'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=test_prefix_read, skipread=True,
-                                                    skipcleanup=True, nclients=7, nsamples=7)
+                                                    skipcleanup=True, nclients=5, nsamples=5)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Performed WRITEs with variable sizes objects for parallel READs.")
 
@@ -678,7 +678,7 @@ class TestMultiDataPodFailure:
         output_wr = Queue()
         event_set_clr = [False]
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
-                'nclients': 1, 'nsamples': 7, 'skipread': True, 'skipcleanup': True,
+                'nclients': 1, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
                 'output': output_wr, 'event_set_clr': event_set_clr}
         thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                       kwargs=args)
@@ -693,7 +693,7 @@ class TestMultiDataPodFailure:
         LOGGER.info("Step 5: Perform READs and verify DI on the written data in background")
         output_rd = Queue()
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_read,
-                'nclients': 1, 'nsamples': 7, 'skipwrite': True, 'skipcleanup': True,
+                'nclients': 1, 'nsamples': 5, 'skipwrite': True, 'skipcleanup': True,
                 'output': output_rd, "setup_s3bench": False, 'event_set_clr': event_set_clr}
         thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                      kwargs=args)
