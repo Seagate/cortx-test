@@ -1248,11 +1248,11 @@ class TestMultiDataPodFailure:
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.test_prefix = 'test-35787-1'
             self.s3_clean.update(users)
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        nsamples=2, nclients=2, setup_s3bench=False)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nsamples=2, nclients=2, setup_s3bench=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
 
         LOGGER.info("Completed: Test to Verify degraded IOs after multiple (max K) pods "
                     "(data and server) failures with node hosting them going down.")
@@ -1327,21 +1327,14 @@ class TestMultiDataPodFailure:
         LOGGER.info("Step 4: Verified status for In-flight READs/Verify DI while %s (K) data pods "
                     "going down.", self.kvalue)
 
+        LOGGER.info("STEP 5: Perform IOs with variable object sizes on degraded cluster")
         if CMN_CFG["dtm0_disabled"]:
-            LOGGER.info("STEP 5: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
-                        "variable object sizes on degraded cluster")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.test_prefix = 'test-35773-1'
             self.s3_clean.update(users)
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        nsamples=2, nclients=2)
-        else:
-            LOGGER.info("STEP 5: Perform WRITEs-READs-Verify with variable object sizes on "
-                        "degraded cluster")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        skipcleanup=True, nsamples=2, nclients=2)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nsamples=2, nclients=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Performed IOs with variable sizes objects.")
         LOGGER.info("ENDED: Test to verify continuous READs during %s (K) data pods down",
@@ -1411,21 +1404,14 @@ class TestMultiDataPodFailure:
         LOGGER.info("Step 3: Verified status for In-flight WRITEs while %s (K) data pods "
                     "going down.", self.kvalue)
 
+        LOGGER.info("STEP 4: Perform IOs with variable object sizes on degraded cluster")
         if CMN_CFG["dtm0_disabled"]:
-            LOGGER.info("STEP 4: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
-                        "variable object sizes on degraded cluster")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.test_prefix = 'test-35776-1'
             self.s3_clean.update(users)
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        nsamples=2, nclients=2)
-        else:
-            LOGGER.info("STEP 4: Perform WRITEs-READs-Verify with variable object sizes on "
-                        "degraded cluster")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        skipcleanup=True, nsamples=2, nclients=2)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nsamples=2, nclients=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed IOs with variable sizes objects.")
 
@@ -1856,9 +1842,9 @@ class TestMultiDataPodFailure:
                 test_prefix_new = f'test-35774-{count}'
                 self.s3_clean.update(users)
                 resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                            log_prefix=test_prefix_new,
-                                                            nsamples=2, nclients=2,
-                                                            setup_s3bench=False, skipcleanup=True)
+                                                            log_prefix=test_prefix_new, nclients=2,
+                                                            skipcleanup=True, nsamples=2,
+                                                            setup_s3bench=False)
                 assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info("Step 4: Performed IOs with variable sizes objects.")
 
