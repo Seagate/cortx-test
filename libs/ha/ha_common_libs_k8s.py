@@ -1353,7 +1353,7 @@ class HAK8s:
         return resp
 
     def delete_kpod_with_shutdown_methods(self, master_node_obj, health_obj,
-                                          pod_prefix=None, kvalue=1,
+                                          pod_prefix=None, kvalue=1, delete_pod=None,
                                           down_method=common_const.RESTORE_SCALE_REPLICAS,
                                           event=None, event_set_clr=None):
         """
@@ -1378,10 +1378,13 @@ class HAK8s:
                     "hostname": None}
         delete_pods = list()
         remaining = list()
-        for ptype in pod_prefix:
-            pod_list = master_node_obj.get_all_pods(pod_prefix=ptype)
-            # Get the list of Kvalue pods to be deleted for given pod_prefix list
-            delete_pods.extend(random.sample(pod_list, kvalue))
+        if delete_pod is not None:
+            delete_pods.extend(delete_pod)
+        else:
+            for ptype in pod_prefix:
+                pod_list = master_node_obj.get_all_pods(pod_prefix=ptype)
+                # Get the list of Kvalue pods to be deleted for given pod_prefix list
+                delete_pods.extend(random.sample(pod_list, kvalue))
 
         LOGGER.info("Get the list of all pods of total pod types.")
         for ptype in total_pod_type:
