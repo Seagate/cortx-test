@@ -49,7 +49,6 @@ class TestProvPodsDeployment:
         cls.log = logging.getLogger(__name__)
         cls.deploy_obj = ProvDeployK8sCortxLib()
         cls.prov_cfg = PROV_CFG["k8s_cortx_deploy"]
-        cls.test_cfg = DEPLOY_CFG["mutidata_pod"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
         cls.master_node_list = []
