@@ -332,7 +332,7 @@ class TestProvPodsDeployment:
             dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
             cvg_count=config["cvg_count"], data_disk_per_cvg=
             config['data_disk_per_cvg'], master_node_list=self.master_node_list,
-            worker_node_list=self.worker_node_list, destroy_setup_flag=False,s3_instance=1)
+            worker_node_list=self.worker_node_list, destroy_setup_flag=False, s3_instance=1)
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])

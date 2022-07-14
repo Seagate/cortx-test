@@ -489,8 +489,8 @@ class ProvDeployK8sCortxLib:
                                           self.deploy_cfg['container_group_size'])
         LOGGER.debug("Service type & Ports are %s\n%s\n%s\n%s", service_type,
                      nodeport_http, nodeport_https, control_nodeport_https)
-        LOGGER.debug("Client, S3, container_group are %s,%s,%s", self.client_instance,
-                     self.s3_instance, self.container_group_size)
+        LOGGER.debug("Client, S3, container_group are %s,%s,%s", client_instance,
+                     s3_instance, container_group_size)
         node_list = len(worker_obj)
         valid_disk_count = sns_spare + sns_data + sns_parity
         sys_disk_pernode = {}  # empty dict
@@ -517,11 +517,11 @@ class ProvDeployK8sCortxLib:
             # The condition to validate the config.
             if not skip_disk_count_check and valid_disk_count > \
                     (cvg_count * node_list):
-                return False, "The sum of data disks per cvg " \
+                assert False, "The sum of data disks per cvg " \
                               "is less than N+K+S count"
 
             if new_device_lst_len < data_disk_per_cvg * cvg_count:
-                return False, "The requested data disk is more than" \
+                assert False, "The requested data disk is more than" \
                               " the data disk available on the system"
             # This condition validated the total available disk count
             # and split the disks per cvg.
@@ -561,22 +561,22 @@ class ProvDeployK8sCortxLib:
                                                       client_instance=client_instance,
                                                       s3_instance=s3_instance)
         if not resp_passwd[0]:
-            return False, "Failed to update service type,deployment type, ports in solution file"
+            assert False, "Failed to update service type,deployment type, ports in solution file"
         # Update resources for third_party
         resource_resp = self.update_res_limit_third_party(filepath)
         if not resource_resp:
-            return False, "Failed to update the resources for thirdparty"
+            assert False, "Failed to update the resources for thirdparty"
         # Update resources for cortx component
         cortx_resource_resp = self.update_res_limit_cortx(filepath)
         if not cortx_resource_resp:
-            return False, "Failed to update the resources for cortx components"
+            assert False, "Failed to update the resources for cortx components"
         # Update the solution yaml file with images
         resp_image = self.update_image_section_sol_file(filepath, third_party_images_dict,
                                                         cortx_image=cortx_image,
                                                         cortx_server_image=cortx_server_image,
                                                         cortx_data_image=cortx_data_image)
         if not resp_image[0]:
-            return False, "Failed to update images in solution file"
+            assert False, "Failed to update images in solution file"
 
         # Update the solution yaml file with cvg
         resp_cvg = self.update_cvg_sol_file(filepath, metadata_devices,
@@ -593,12 +593,12 @@ class ProvDeployK8sCortxLib:
                                             size_data_disk=size_data_disk,
                                             container_group_size=container_group_size)
         if not resp_cvg[0]:
-            return False, "Fail to update the cvg details in solution file"
+            assert False, "Fail to update the cvg details in solution file"
 
         # Update the solution yaml file with node
         resp_node = self.update_nodes_sol_file(filepath, worker_obj)
         if not resp_node[0]:
-            return False, "Failed to update nodes details in solution file"
+            assert False, "Failed to update nodes details in solution file"
         return True, filepath, sys_disk_pernode
 
     @staticmethod
