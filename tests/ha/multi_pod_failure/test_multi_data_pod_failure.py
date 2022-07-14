@@ -1844,7 +1844,7 @@ class TestMultiDataPodFailure:
                         "written data")
 
             if CMN_CFG["dtm0_disabled"]:
-                LOGGER.info("STEP 4: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
+                LOGGER.info("STEP 4: Create IAM user and perform WRITEs-READs-Verify with "
                             "variable object sizes on degraded cluster")
                 users = self.mgnt_ops.create_account_users(nusers=1)
                 test_prefix_new = f'test-35774-{count}'
@@ -1852,16 +1852,9 @@ class TestMultiDataPodFailure:
                 resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                             log_prefix=test_prefix_new,
                                                             nsamples=2, nclients=2,
-                                                            setup_s3bench=False)
-            else:
-                LOGGER.info("STEP 4: Perform WRITEs-READs-Verify with variable object sizes on "
-                            "degraded cluster")
-                resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                            log_prefix=self.test_prefix,
-                                                            skipcleanup=True, nsamples=2,
-                                                            nclients=2, setup_s3bench=False)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 4: Performed IOs with variable sizes objects.")
+                                                            setup_s3bench=False, skipcleanup=True)
+                assert_utils.assert_true(resp[0], resp[1])
+                LOGGER.info("Step 4: Performed IOs with variable sizes objects.")
 
         LOGGER.info("%s (K) %s data pods shutdown one by one successfully and write/read/verify "
                     "after each pod down on new and existing buckets verified", self.kvalue,
@@ -1920,23 +1913,17 @@ class TestMultiDataPodFailure:
         LOGGER.info("Step 3: Performed WRITEs-READs-Verify and verified DI on the written data")
 
         if CMN_CFG["dtm0_disabled"]:
-            LOGGER.info("STEP 4: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
+            LOGGER.info("STEP 4: Create IAM user and perform WRITEs-READs-Verify with "
                         "variable object sizes on degraded cluster")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.test_prefix = 'test-35775-1'
             self.s3_clean.update(users)
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        nsamples=2, nclients=2, setup_s3bench=False)
-        else:
-            LOGGER.info("STEP 4: Perform WRITEs-READs-Verify with variable object sizes on "
-                        "degraded cluster")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
                                                         skipcleanup=True, nsamples=2, nclients=2,
                                                         setup_s3bench=False)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Performed IOs with variable sizes objects.")
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 4: Performed IOs with variable sizes objects.")
 
         LOGGER.info("Completed: Test to verify degraded WRITEs after all K data pods are failed.")
 
