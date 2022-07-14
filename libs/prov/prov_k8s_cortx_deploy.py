@@ -87,7 +87,7 @@ class ProvDeployK8sCortxLib:
                                              self.deploy_cfg['client_instance']))
         self.s3_instance = int(os.getenv("S3_INSTANCE", self.deploy_cfg['s3_instances_per_node']))
         self.container_group_size = int(os.getenv("CONTAINER_GROUP",
-                                                  self.deploy_cfg['container_group']))
+                                                  self.deploy_cfg['container_group_size']))
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
         self.data_only_list = ["data-only", "standard"]
         self.server_only_list = ["server-only", "standard"]
