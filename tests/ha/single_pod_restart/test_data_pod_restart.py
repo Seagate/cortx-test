@@ -1176,7 +1176,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="VM restart getting stuck CORTX-32933")
     @pytest.mark.tags("TEST-34086")
-    @CTFailOn(error_handler)
     def test_pod_restart_node_down(self):
         """
         Verify IOs before and after data pod restart (pod shutdown by making worker node down).
@@ -1239,17 +1238,17 @@ class TestDataPodRestart:
             self.test_prefix_deg = 'test-34086-deg'
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix_deg,
-                                                        skipcleanup=True)
+                                                        skipcleanup=True, setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Perform WRITE/READ/Verify on buckets created in healthy cluster.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: IOs completed successfully.")
-        LOGGER.info("Step 7: Start the pod %s back by restarting the node %s",
+        LOGGER.info("Step 7: Start the pod %s back by powering on the node %s",
                     data_pod_name, data_node_fqdn)
-        LOGGER.info("Power on the %s down node.", )
+        LOGGER.info("Power on the %s down node.", data_node_fqdn)
         resp = self.ha_obj.host_power_on(host=data_node_fqdn)
         assert_utils.assert_true(resp, "Host is not powered on")
         LOGGER.info("Step 7: Node %s is restarted", data_node_fqdn)
@@ -1264,12 +1263,14 @@ class TestDataPodRestart:
             LOGGER.info("Perform READ/Verify on buckets created in degraded cluster.")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix_deg,
-                                                        skipwrite=True, skipcleanup=True)
+                                                        skipwrite=True, skipcleanup=True,
+                                                        setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Perform READ/Verify on buckets created in healthy cluster.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipwrite=True, skipcleanup=True)
+                                                    skipwrite=True, skipcleanup=True,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Completed READ/Verify on already created buckets.")
         if CMN_CFG["dtm0_disabled"]:
@@ -1279,7 +1280,7 @@ class TestDataPodRestart:
             self.test_prefix = 'test-34086-restart'
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        skipcleanup=True)
+                                                        skipcleanup=True, setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 10: IOs completed successfully.")
         LOGGER.info("COMPLETED: Verify IOs before and after data pod restart, "
@@ -1289,7 +1290,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="VM restart getting stuck CORTX-32933")
     @pytest.mark.tags("TEST-34085")
-    @CTFailOn(error_handler)
     def test_pod_restart_node_nw_down(self):
         """
         Verify IOs before and after data pod restart,
@@ -1358,12 +1358,12 @@ class TestDataPodRestart:
             self.test_prefix_deg = 'test-34085-deg'
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix_deg,
-                                                        skipcleanup=True)
+                                                        skipcleanup=True, setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Perform WRITE/READ/Verify on buckets created in healthy cluster.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: IOs completed successfully.")
         LOGGER.info("Step 7: Get the network back up for node %s", data_node_fqdn)
@@ -1386,12 +1386,14 @@ class TestDataPodRestart:
             LOGGER.info("Perform READ/Verify on buckets created in degraded cluster.")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix_deg,
-                                                        skipwrite=True, skipcleanup=True)
+                                                        skipwrite=True, skipcleanup=True,
+                                                        setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Perform READ/Verify on buckets created in healthy cluster.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipwrite=True, skipcleanup=True)
+                                                    skipwrite=True, skipcleanup=True,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Completed READ/Verify on already created buckets.")
         if CMN_CFG["dtm0_disabled"]:
@@ -1401,7 +1403,7 @@ class TestDataPodRestart:
             self.test_prefix = 'test-34086-restart'
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        skipcleanup=True)
+                                                        skipcleanup=True, setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 10: IOs completed successfully.")
         LOGGER.info("COMPLETED: Verify IOs before and after data pod restart, "
