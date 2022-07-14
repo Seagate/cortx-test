@@ -1242,15 +1242,17 @@ class TestMultiDataPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services status on remaining pod are in online state")
 
-        LOGGER.info("Step 6: Perform WRITE/READ/Verify/DELETEs with variable object sizes.")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-35787-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    nclients=2, nsamples=2, setup_s3bench=False)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed WRITE/READ/Verify/DELETEs with variable sizes objects.")
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 6: Create IAM user and perform WRITEs-READs-Verify-DELETEs with "
+                        "variable object sizes on degraded cluster")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-35787-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        nsamples=2, nclients=2, setup_s3bench=False)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
 
         LOGGER.info("Completed: Test to Verify degraded IOs after multiple (max K) pods "
                     "(data and server) failures with node hosting them going down.")
