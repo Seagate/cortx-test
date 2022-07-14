@@ -239,6 +239,8 @@ CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{{print $1}}'"
 CMD_GET_IP_IFACE = "/sbin/ifconfig \"{}\" | awk '/inet / {{print $2}}'"
 CMD_HOSTS = "cat /etc/hosts"
 CMD_GET_NETMASK = "ifconfig | grep \"{}\" | awk '{{print $4}}'"
+CMD_DMESGS = "dmesg > {}"
+CMD_JOURNALCTL = "journalctl > {}"
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
 CMD_LSBLK_SIZE = "lsblk -r |grep disk| awk '{print $4}'"
