@@ -254,10 +254,6 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         if node_obj.path_exists(self.deploy_cfg['local_path_prov']):
             resp1 = node_obj.execute_cmd(list_mnt_dir, read_lines=True)
-            # if node_obj.path_exists(self.deploy_cfg["mnt_path"]):
-            #     resp = node_obj.execute_cmd(
-            #         common_cmd.CMD_REMOVE_DIR.format(self.deploy_cfg["mnt_path"]))
-            #     LOGGER.debug(resp)
             LOGGER.info("\n %s", resp1)
         if node_obj.path_exists(self.deploy_cfg['3rd_party_dir']):
             openldap_dir_residue = node_obj.execute_cmd(list_etc_3rd_party, read_lines=True)
