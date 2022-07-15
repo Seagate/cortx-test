@@ -1368,6 +1368,7 @@ class TestDataPodRestart:
             LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                         "services states are as expected & remaining pods status is online.",
                         pod_name)
+            self.restore_pod = True
             LOGGER.info("Step 3: Perform READ/Verify on data written in healthy cluster")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix, skipwrite=True,
@@ -1482,6 +1483,7 @@ class TestDataPodRestart:
             LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                         "services states are as expected & remaining pods status is online.",
                         pod_name)
+            self.restore_pod = True
             LOGGER.info("Step 3: Perform READ/Verify on data written in healthy cluster")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix, skipwrite=True,
