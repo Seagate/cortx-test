@@ -497,7 +497,7 @@ class TestMultiDataPodFailure:
         event_set_clr = [False]
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
                 'nclients': 1, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
-                'output': output_wr, 'event_set_clr': event_set_clr}
+                'output': output_wr, 'event_set_clr': event_set_clr, 'setup_s3bench': False}
         thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                       kwargs=args)
         thread_wri.daemon = True  # Daemonize thread
@@ -604,6 +604,7 @@ class TestMultiDataPodFailure:
         LOGGER.info("Step 7: Verified status for In-flight READs/WRITEs/DELETEs while %s (K)"
                     " data pods were going down.", self.kvalue)
 
+
         LOGGER.info("ENDED: Test to verify continuous IOs while k data pods are failing one by one")
 
     @pytest.mark.ha
@@ -679,7 +680,7 @@ class TestMultiDataPodFailure:
         event_set_clr = [False]
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
                 'nclients': 1, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
-                'output': output_wr, 'event_set_clr': event_set_clr}
+                'output': output_wr, 'event_set_clr': event_set_clr, 'setup_s3bench': False}
         thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                       kwargs=args)
         thread_wri.daemon = True  # Daemonize thread
@@ -789,6 +790,17 @@ class TestMultiDataPodFailure:
         LOGGER.info("Step 7: Verified status for In-flight READs/WRITEs/DELETEs while %s (K)"
                     " data and server pods were going down.", self.kvalue)
 
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 8: Perform WRITEs-READs-Verify with variable object sizes "
+                        "on degraded cluster with new user")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-35790-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        nsamples=2, nclients=2, setup_s3bench=False)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 8: Performed IOs with variable sizes objects.")
         LOGGER.info("ENDED: Test to verify continuous IOs while k server and data pods are failing "
                     "one by one")
 
@@ -1203,7 +1215,7 @@ class TestMultiDataPodFailure:
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    nclients=2, nsamples=2)
+                                                    nclients=2, nsamples=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed WRITE/READ/Verify/DELETEs with variable sizes objects.")
 
@@ -1314,7 +1326,7 @@ class TestMultiDataPodFailure:
         self.test_prefix = 'test-35773-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, nsamples=2,
-                                                    nclients=2)
+                                                    nclients=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Successfully created multiple buckets and ran IOs")
 
@@ -1790,6 +1802,18 @@ class TestMultiDataPodFailure:
                     "going down.", self.kvalue)
         LOGGER.info("Step 10: Verified status for In-flight READs/WRITEs/DELETEs while %s (K) pods "
                     "were going down.", self.kvalue)
+
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 11: Perform WRITEs-READs-Verify with variable object sizes "
+                        "on degraded cluster with new user")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = 'test-35781-1'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        nsamples=2, nclients=2, setup_s3bench=False)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 11: Performed IOs with variable sizes objects.")
         LOGGER.info("ENDED: Test to verify continuous READs/WRITEs/DELETEs while %s (K) pods "
                     "were going down.", self.kvalue)
 
