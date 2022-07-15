@@ -1095,11 +1095,10 @@ class TestDataPodRestart:
 
         LOGGER.info("Step 1: Perform WRITEs/READs-Verify with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-34073'
+        self.test_prefix = 'test-34073-hlt'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True,
-                                                    nclients=10, nsamples=10)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs-Verify with variable sizes objects.")
 
@@ -1122,22 +1121,22 @@ class TestDataPodRestart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipwrite=True, skipcleanup=True,
-                                                    nclients=10, nsamples=10, setup_s3bench=False)
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed WRITEs/READs-Verify with variable sizes objects.")
 
         LOGGER.info("Step 4: Perform WRITEs/READs-Verify with variable object sizes.")
         if CMN_CFG["dtm0_disabled"]:
-            self.test_prefix = 'test-34073-1'
+            self.test_prefix = 'test-34073-deg'
 
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True,
-                                                    nclients=10, nsamples=10, setup_s3bench=False)
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs/READs-Verify with variable object sizes.")
 
         LOGGER.info("Step 5: Perform READs and verify DI on the data in background")
-        self.test_prefix = 'test-34073'
+        self.test_prefix = 'test-34073-hlt'
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
                 'nclients': 1, 'nsamples': 10, 'skipwrite': True, 'skipcleanup': True,
                 'output': output, 'setup_s3bench': False}
@@ -1146,7 +1145,7 @@ class TestDataPodRestart:
         thread.daemon = True  # Daemonize thread
         thread.start()
         if CMN_CFG["dtm0_disabled"]:
-            self.test_prefix = 'test-34073-1'
+            self.test_prefix = 'test-34073-deg'
             args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
                     'nclients': 1, 'nsamples': 10, 'skipwrite': True, 'skipcleanup': True,
                     'output': output1, 'setup_s3bench': False}
@@ -1196,7 +1195,7 @@ class TestDataPodRestart:
 
         LOGGER.info("Step 8: Perform WRITEs/READs-Verify")
         if CMN_CFG["dtm0_disabled"]:
-            self.test_prefix = 'test-34073-2'
+            self.test_prefix = 'test-34073-rstrt'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipcleanup=True, setup_s3bench=False)
