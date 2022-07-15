@@ -1052,13 +1052,13 @@ class TestMultiDataPodFailure:
         LOGGER.info("STEP 4: Perform IOs with variable object sizes on degraded cluster")
         if CMN_CFG["dtm0_disabled"]:
             users = self.mgnt_ops.create_account_users(nusers=1)
-            self.test_prefix = 'test-35777-1'
+            test_prefix_write = 'test-35777-1'
             self.s3_clean.update(users)
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        skipcleanup=True, nsamples=2, nclients=2,
-                                                        setup_s3bench=False)
-            assert_utils.assert_true(resp[0], resp[1])
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=test_prefix_write,
+                                                    skipcleanup=True, nsamples=2, nclients=2,
+                                                    setup_s3bench=False)
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed IOs with variable sizes objects.")
 
         LOGGER.info("ENDED: Test to verify continuous READs/WRITEs while %s (K) data pods "
