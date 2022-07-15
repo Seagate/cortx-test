@@ -1233,10 +1233,10 @@ class TestDataPodRestart:
         LOGGER.info("Step 6: Perform WRITE/READ/Verify in degraded cluster.")
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Create new IAM user, buckets and run IOs")
-            users = self.mgnt_ops.create_account_users(nusers=1)
-            self.s3_clean.update(users)
+            users_deg = self.mgnt_ops.create_account_users(nusers=1)
+            self.s3_clean.update(users_deg)
             self.test_prefix_deg = 'test-34086-deg'
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_deg.values())[0],
                                                         log_prefix=self.test_prefix_deg,
                                                         skipcleanup=True, setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
@@ -1261,7 +1261,7 @@ class TestDataPodRestart:
         LOGGER.info("Step 9: Perform READ/Verify on already created buckets.")
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Perform READ/Verify on buckets created in degraded cluster.")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_deg.values())[0],
                                                         log_prefix=self.test_prefix_deg,
                                                         skipwrite=True, skipcleanup=True,
                                                         setup_s3bench=False)
@@ -1275,10 +1275,10 @@ class TestDataPodRestart:
         LOGGER.info("Step 9: Completed READ/Verify on already created buckets.")
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Step 10: Start IOs (create IAM user, buckets and upload objects).")
-            users = self.mgnt_ops.create_account_users(nusers=1)
-            self.s3_clean.update(users)
+            users_rst = self.mgnt_ops.create_account_users(nusers=1)
+            self.s3_clean.update(users_rst)
             self.test_prefix = 'test-34086-restart'
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_rst.values())[0],
                                                         log_prefix=self.test_prefix,
                                                         skipcleanup=True, setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
@@ -1353,10 +1353,10 @@ class TestDataPodRestart:
         LOGGER.info("Step 6: Perform WRITE/READ/Verify in degraded cluster.")
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Create new IAM user, buckets and run IOs")
-            users = self.mgnt_ops.create_account_users(nusers=1)
-            self.s3_clean.update(users)
+            users_deg = self.mgnt_ops.create_account_users(nusers=1)
+            self.s3_clean.update(users_deg)
             self.test_prefix_deg = 'test-34085-deg'
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_deg.values())[0],
                                                         log_prefix=self.test_prefix_deg,
                                                         skipcleanup=True, setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
@@ -1384,7 +1384,7 @@ class TestDataPodRestart:
         LOGGER.info("Step 9: Perform READ/Verify on already created buckets.")
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Perform READ/Verify on buckets created in degraded cluster.")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_deg.values())[0],
                                                         log_prefix=self.test_prefix_deg,
                                                         skipwrite=True, skipcleanup=True,
                                                         setup_s3bench=False)
@@ -1398,10 +1398,10 @@ class TestDataPodRestart:
         LOGGER.info("Step 9: Completed READ/Verify on already created buckets.")
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Step 10: Start IOs (create IAM user, buckets and upload objects).")
-            users = self.mgnt_ops.create_account_users(nusers=1)
-            self.s3_clean.update(users)
+            users_rst = self.mgnt_ops.create_account_users(nusers=1)
+            self.s3_clean.update(users_rst)
             self.test_prefix = 'test-34086-restart'
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_rst.values())[0],
                                                         log_prefix=self.test_prefix,
                                                         skipcleanup=True, setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
