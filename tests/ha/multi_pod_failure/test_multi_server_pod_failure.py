@@ -1748,8 +1748,6 @@ class TestMultiServerPodFailure:
         LOGGER.info("COMPLETED: Verify copy object during server pods failure till K pods down - "
                     "unsafe shutdown")
 
-    # pylint: disable=too-many-statements
-    # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40576")
@@ -1840,6 +1838,7 @@ class TestMultiServerPodFailure:
             assert_utils.assert_true(False, "Background process failed to do deletes")
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
+        rem_bkts_aftr_del = s3_test_obj.bucket_list()[1]
         assert_utils.assert_false(len(fail_del_bkt), "Expected pass, buckets which failed in "
                                                      f"DELETEs: {fail_del_bkt}.")
         # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
@@ -1848,11 +1847,46 @@ class TestMultiServerPodFailure:
         LOGGER.info("Failed buckets while in-flight DELETEs operation : %s", event_del_bkt)
         LOGGER.info("Step 4: Verified status for In-flight DELETEs while %s (K) server pods were"
                     "going down", self.kvalue)
-        LOGGER.info("Cleaning up IAM user data")
-        resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.s3_clean.pop('s3_acc')
-        LOGGER.info("Step 5: Create IAM user with multiple buckets and run IOs when server pod %s"
+        LOGGER.info("Step 5: Perform DELETEs on remaining FailedToDelete buckets "
+                    "when server pods were going down.")
+        fail_del_op = Queue()
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkt_list': event_del_bkt,
+                'output': fail_del_op}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        del_resp = tuple()
+        while len(del_resp) != 2:
+            del_resp = fail_del_op.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        event_del_bkt = del_resp[0]
+        fail_del_bkt = del_resp[1]
+        assert_utils.assert_false(len(event_del_bkt) or len(fail_del_bkt),
+                                  f"Failed to delete buckets: either {event_del_bkt} or"
+                                  f" {fail_del_bkt}")
+        LOGGER.info("Step 5: Successfully performed DELETEs on remaining FailedToDelete buckets "
+                    "when server pods were going down")
+
+        LOGGER.info("Step 6: Verify read on the remaining %s buckets.", len(rem_bkts_aftr_del))
+        rd_output = Queue()
+        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipdel': True, 'bkt_list': rem_bkts_aftr_del, 'di_check': True,
+                'output': rd_output}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        rd_resp = tuple()
+        while len(rd_resp) != 4:
+            rd_resp = rd_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        event_bkt_get = rd_resp[0]
+        fail_bkt_get = rd_resp[1]
+        event_di_bkt = rd_resp[2]
+        fail_di_bkt = rd_resp[3]
+        # Above four lists are expected to be empty as all pass expected
+        assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt) or len(event_bkt_get) or
+                                  len(event_di_bkt),
+                                  "Expected pass in read and di check operations. Found failures "
+                                  f"in READ: {fail_bkt_get} {event_bkt_get}"
+                                  f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
+        LOGGER.info("Step 6: Successfully verified READs & DI check for remaining buckets: %s",
+                    len(rem_bkts_aftr_del))
+        LOGGER.info("Step 7: Create IAM user with multiple buckets and run IOs when server pod %s"
                     " is down.", self.pod_name_list)
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
@@ -1861,7 +1895,7 @@ class TestMultiServerPodFailure:
                                                     log_prefix=self.test_prefix,
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Successfully created IAM user with multiple buckets and ran IOs.")
+        LOGGER.info("Step 7: Successfully created IAM user with multiple buckets and ran IOs.")
         LOGGER.info("ENDED: Test to verify continuous DELETEs while pods are failing till K "
                     "server pods down - unsafe shutdown.")
 
@@ -1930,6 +1964,7 @@ class TestMultiServerPodFailure:
         assert_utils.assert_false(len(resp[1]),
                                   f"Expected Pass, But Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
         LOGGER.info("Step 3: Verified status for In-flight WRITEs while %s (K) server pods "
@@ -1940,7 +1975,8 @@ class TestMultiServerPodFailure:
         self.test_prefix = 'test-40575-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, nsamples=2,
-                                                    nclients=2, setup_s3bench=False)
+                                                    nclients=2, setup_s3bench=False,
+                                                    skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Successfully created IAM user with multiple buckets and ran IOs.")
         LOGGER.info("ENDED: Test to verify WRITEs during %s (K) server "
@@ -2016,6 +2052,7 @@ class TestMultiServerPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain pass: {resp[1]}")
         LOGGER.info("Step 4: Verified status for In-flight READs/Verify DI while %s (K) "
