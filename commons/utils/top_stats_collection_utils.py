@@ -20,8 +20,14 @@
 """Methods to collect top command stats from server"""
 
 import logging
+from multiprocessing import Process
 
-from commons.commands import KILL_CMD, K8S_APPLY_FILE
+from commons.commands import KILL_CMD
+from commons.constants import PROFILE_FILE_PATH
+from commons.constants import COLLECTION_SCRIPT_PATH
+from commons.constants import COLLECTION_FILE
+from commons.constants import PROFILE_FILE
+from commons.constants import TOP_STAT_PROC
 from commons.helpers.pods_helper import LogicalNode
 
 # check and set pytest logging level as Globals.LOG_LEVEL
@@ -30,7 +36,7 @@ LOGGER = logging.getLogger(__name__)
 
 class TopStatsCollection:
     """
-        This class contains common methods to collect stats of top cmd from k8s system
+    This class contains common methods to collect stats of top cmd from k8s system
     """
     def __init__(self, cmn_cfg):
         """
@@ -47,32 +53,35 @@ class TopStatsCollection:
                                        password=node["password"])
                 self.master_node_list.append(node_obj)
 
+    @staticmethod
+    def exe_cmd(node: LogicalNode, cmd: str):
+        """function to execute command collection
+        :param node: Object of Logical node
+        :param cmd: command to be executed on worker node
+        """
+        LOGGER.debug("executing top cmd for stat collection")
+        node.execute_cmd(cmd=cmd)
+
     def collect_stats(self, dir_path):
         """
         function to collect top command stats
         :param dir_path: directory path for stats file
+        :return: Boolean (status of cmd execution)
         """
-        profile_file_path = "scripts/io_stability/profiling.yaml"
-        collection_script_path = "scripts/io_stability/collect-k8s-stats.sh"
-        self.master_node_list[0].copy_file_to_remote(profile_file_path)
-        self.master_node_list[0].copy_file_to_remote(collection_script_path)
-        self.master_node_list[0].execute_cmd(K8S_APPLY_FILE.format(profile_file_path))
-        cmd = f"collect-k8s-stats.sh {dir_path}"
-        self.master_node_list[0].execute_cmd(cmd=cmd)
+        resp = self.master_node_list[0].copy_file_to_remote(PROFILE_FILE_PATH, PROFILE_FILE)
+        if not resp[0]:
+            return resp[0]
+        resp = self.master_node_list[0].copy_file_to_remote(COLLECTION_SCRIPT_PATH, COLLECTION_FILE)
+        if not resp[0]:
+            return resp[0]
+        cmd = f"chmod +x {COLLECTION_FILE} && ./{COLLECTION_FILE} {dir_path}"
+        proc = Process(target=self.exe_cmd, args=(self.master_node_list[0], cmd))
+        proc.start()
+        return True
 
     def stop_collection(self):
         """function to get pid and kill it on server"""
-        proc = "collect-k8s-stats"
-        res = self.master_node_list[0].execute_cmd("echo $(pgrep {})".format(proc))
-        LOGGER.info(f'{proc} PID {res}')
-        self.master_node_list[0].execute_cmd(cmd=KILL_CMD.format(res))
 
-    def copy_files(self, remote_path, local_path):
-        """
-        get top stats file to local path
-        """
-        resp = self.master_node_list[0].copy_file_to_local(remote_path=remote_path,
-                                                           local_path=local_path)
-        if not resp[0]:
-            return resp[0]
-        return True
+        res = self.master_node_list[0].execute_cmd("echo $(pgrep {})".format(TOP_STAT_PROC))
+        LOGGER.info(f'{TOP_STAT_PROC} PID {res}')
+        self.master_node_list[0].execute_cmd(cmd=KILL_CMD.format(res))

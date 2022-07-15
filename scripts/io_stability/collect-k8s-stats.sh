@@ -1,5 +1,6 @@
 #!/bin/sh
-
+# Script to start collecting stats of top cmd
+#provide directory as argument
 DIR=$1
 mkdir -p "$DIR"
 
