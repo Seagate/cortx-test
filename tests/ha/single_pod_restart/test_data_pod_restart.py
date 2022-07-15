@@ -35,7 +35,6 @@ import pytest
 
 from commons import commands as cmd
 from commons import constants as const
-from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
@@ -540,7 +539,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Multipart upload is not supported with DTMInt0")
     @pytest.mark.tags("TEST-34080")
-    @CTFailOn(error_handler)
     def test_mpu_after_pod_restart(self):
         """
         This test tests multipart upload after data pod restart.
@@ -687,7 +685,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Multipart upload is not supported with DTMInt0")
     @pytest.mark.tags("TEST-34082")
-    @CTFailOn(error_handler)
     def test_partial_mpu_after_pod_restart(self):
         """
         This test tests partial multipart upload after data pod restart
@@ -837,7 +834,6 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34083")
-    @CTFailOn(error_handler)
     def test_copy_obj_after_pod_restart(self):
         """
         This test tests copy object after data pod restart
@@ -986,7 +982,6 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34073")
-    @CTFailOn(error_handler)
     def test_continuous_reads_during_pod_restart(self):
         """
         This test tests continuous reads during pod restart
@@ -1342,7 +1337,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34091")
-    @CTFailOn(error_handler)
     def test_different_data_pods_restart_loop(self):
         """
         This test tests IOs in degraded mode and after data pod restart in loop
@@ -1434,7 +1428,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34090")
-    @CTFailOn(error_handler)
     def test_same_data_pod_restart_loop(self):
         """
         This test tests IOs in degraded mode and after data pod restart in loop
@@ -1925,7 +1918,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34079")
-    @CTFailOn(error_handler)
     def test_ios_during_pod_restart(self):
         """
         This test tests continuous READs/WRITEs/DELETEs in loop during data pod restart
@@ -2030,7 +2022,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34078")
-    @CTFailOn(error_handler)
     def test_continuous_deletes_during_pod_restart(self):
         """
         This test tests continuous DELETEs during pod restart
@@ -2191,7 +2182,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34075")
-    @CTFailOn(error_handler)
     def test_continuous_writes_during_pod_restart(self):
         """
         Verify continuous WRITEs during data pod restart
@@ -2303,7 +2293,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34076")
-    @CTFailOn(error_handler)
     def test_continuous_read_write_during_pod_restart(self):
         """
         Verify continuous READ/WRITEs during data pod restart
@@ -2415,7 +2404,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34088")
-    @CTFailOn(error_handler)
     def test_ios_rc_node_restart(self):
         """
         This test tests IOs before and after pod restart by making RC node down
@@ -2527,7 +2515,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34087")
-    @CTFailOn(error_handler)
     def test_ios_safe_shutdown_pod_restart(self):
         """
         This test tests IOs before and after data pod restart (pod shutdown by making replicas=0)
@@ -2610,7 +2597,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34089")
-    @CTFailOn(error_handler)
     def test_io_server_pod_restart(self):
         """
         Verify IOs before and after server pod restart (setting replica=0 and 1)
@@ -2696,7 +2682,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34261")
-    @CTFailOn(error_handler)
     def test_server_pod_restart_kubectl_delete(self):
         """
         Verify IOs after pod restart (kubectl delete)
@@ -2767,7 +2752,6 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-32456")
-    @CTFailOn(error_handler)
     def test_pod_shutdown_kubectl_delete(self):
         """
         Verify IOs before and after data pod failure; pod shutdown deleting pod
@@ -2820,7 +2804,6 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36003")
-    @CTFailOn(error_handler)
     def test_reads_after_pod_restart_ros(self):
         """
         This test tests READs after data pod restart (F-26A Read Only Scope)
@@ -2927,7 +2910,6 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36004")
-    @CTFailOn(error_handler)
     def test_continuous_reads_during_pod_restart_ros(self):
         """
         This test tests continuous reads during pod restart (F-26A Read Only Scope)
