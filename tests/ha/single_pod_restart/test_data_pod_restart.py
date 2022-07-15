@@ -1612,7 +1612,7 @@ class TestDataPodRestart:
         else:
             bucket_name_1 = self.bucket_name
 
-        LOGGER.info("Step 4: Start multipart upload of 5GB object in background")
+        LOGGER.info("Step 4: Start multipart upload of %s MB object in background", file_size)
         args = {'s3_data': self.s3_clean, 'bucket_name': bucket_name_1,
                 'object_name': object_name_1, 'file_size': file_size, 'total_parts': total_parts,
                 'multipart_obj_path': self.multipart_obj_path, 'part_numbers': part_numbers,
@@ -1620,7 +1620,7 @@ class TestDataPodRestart:
         thread = threading.Thread(target=self.ha_obj.start_random_mpu, args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
-        LOGGER.info("Step 4: Started multipart upload of 5GB object in background")
+        LOGGER.info("Step 4: Started multipart upload of %s MB object in background", file_size)
 
         time.sleep(HA_CFG["common_params"]["60sec_delay"])
 
@@ -1712,7 +1712,7 @@ class TestDataPodRestart:
         LOGGER.debug("Uploaded object info for %s is %s", bucket_name_2, result)
         assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
         upload_checksum = str(resp[2])
-        LOGGER.info("Successfully performed multipart upload for  size %s MB in total %s parts.",
+        LOGGER.info("Successfully performed multipart upload for size %s MB in total %s parts.",
                     file_size, total_parts)
         resp = self.ha_obj.dnld_obj_verify_chcksm(s3_test_obj, bucket_name_2, object_name_2,
                                                   download_path2, upload_checksum)

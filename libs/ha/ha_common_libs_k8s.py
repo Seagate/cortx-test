@@ -1834,5 +1834,5 @@ class HAK8s:
             LOGGER.info("Failed to match checksums. \nUpload checksum:%s Download checksum: %s",
                         upload_checksum, download_checksum)
             return False, download_checksum
-        LOGGER.info("Matched checksums: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Successfully downloaded the object and verified the checksum")
+        return True, download_checksum
