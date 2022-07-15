@@ -21,3 +21,11 @@ test_32547:
   threads: 25
   rampup: 1
   loop: 10
+test_44256:
+  threads: 25
+  rampup: 1
+  loop: 10
+test_44257:
+  threads: 5
+  rampup: 2
+  loop: 10
