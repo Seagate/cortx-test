@@ -918,10 +918,9 @@ class TestDataPodRestart:
         self.extra_files.extend((self.multipart_obj_path, download_path))
         LOGGER.info("COMPLETED: Test to verify partial multipart upload after data pod restart.")
 
-    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-branches
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34083")
     @CTFailOn(error_handler)
     def test_copy_obj_after_pod_restart(self):
@@ -930,53 +929,14 @@ class TestDataPodRestart:
         """
         LOGGER.info("STARTED: Test to verify copy object after data pod restart.")
 
-        LOGGER.info("Step 1: Shutdown the data pod by deleting deployment (unsafe)")
+        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
+        bkt_obj_dict = dict()
+        t_t = int(perf_counter_ns())
+        for cnt in range(bkt_cnt):
+            bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
         event = threading.Event()
-        LOGGER.info("Get pod name to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)[0]
-        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
 
-        LOGGER.info("Deleting pod %s", pod_name)
-        resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
-        LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
-                    pod_name)
-        self.deployment_backup = resp[1]
-        self.deployment_name = resp[2]
-        self.restore_pod = True
-        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
-
-        LOGGER.info("Step 2: Verify cluster status is in degraded state")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 2: Verified cluster status is in degraded state")
-
-        LOGGER.info("Step 3: Verify services that were running on pod %s are in offline state",
-                    pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
-                                                           hostname=pod_host)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 3: Verified services of %s are in offline state", pod_name)
-
-        remain_pod_list = list(filter(lambda x: x != pod_name, pod_list))
-        LOGGER.info("Step 4: Verify services status on remaining pods %s are in online state",
-                    remain_pod_list)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list,
-                                                           fail=False)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Verified services on remaining pods %s are in online state",
-                    remain_pod_list)
-
-        bkt_obj_dict = {}
-        bucket2 = f"ha-bkt2-{int((perf_counter_ns()))}"
-        object2 = f"ha-obj2-{int((perf_counter_ns()))}"
-        bkt_obj_dict[bucket2] = object2
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
@@ -985,12 +945,11 @@ class TestDataPodRestart:
         secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created s3 account with name %s", self.s3acc_name)
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
-        LOGGER.info("Step 5: Create and list buckets. Upload object to %s & copy object from the"
-                    " same bucket to %s and verify copy object etags",
-                    self.bucket_name, bucket2)
+        LOGGER.info("Step 1: Create and list buckets. Upload object to %s & copy object from the"
+                    " same bucket to other buckets and verify copy object etags", self.bucket_name)
         resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
@@ -998,63 +957,130 @@ class TestDataPodRestart:
                                                   file_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
         put_etag = resp[1]
-        LOGGER.info("Step 5: Successfully created multiple buckets and uploaded object to %s "
-                    "and copied to %s and verified copy object etags", self.bucket_name, bucket2)
+        LOGGER.info("Step 1: Successfully created multiple buckets and uploaded object to %s "
+                    "and copied to other buckets and verified copy object etags", self.bucket_name)
 
-        LOGGER.info("Step 6: Start pod again by creating deployment.")
+        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+                    "verify cluster & remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            down_method=const.RESTORE_DEPLOYMENT_K8S)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+        pod_name = list(resp[1].keys())[0]
+        self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.restore_method = resp[1][pod_name]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+
+        LOGGER.info("Step 3: Download the copied objects & verify etags.")
+        for bkt, obj in bkt_obj_dict.items():
+            resp = s3_test_obj.get_object(bucket=bkt, key=obj)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {obj} of bucket "
+                                                          f"{bkt}.")
+        LOGGER.info("Step 3: Downloaded copied objects & verify etags.")
+
+        bkt_obj_dict1 = bkt_obj_dict.copy()
+        t_t = int(perf_counter_ns())
+        bucket_name = self.bucket_name
+        bkt_op = False
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create and list buckets")
+            bkt_obj_dict.clear()
+            for cnt in range(bkt_cnt):
+                bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
+            bucket_name = f"ha-mp-bkt-{self.random_time}-1"
+            bkt_op = True
+        else:
+            for idx, bkt in enumerate(bkt_obj_dict):
+                bkt_obj_dict[bkt] = f"ha-obj{idx}-{t_t}"
+
+        LOGGER.info("Step 4: Copy object from the %s bucket to other buckets and verify copy object"
+                    " etags", bucket_name)
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                  bucket_name=bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  file_path=self.multipart_obj_path, bkt_op=bkt_op)
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+        put_etag = resp[1]
+        LOGGER.info("Step 4: Successfully created multiple buckets and copied object from the %s "
+                    "bucket to other buckets and verified copy object etags", self.bucket_name)
+
+        LOGGER.info("Step 5: Start pod again by creating deployment.")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup})
+                                                           self.deployment_backup},
+                                       clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         self.restore_pod = False
-        LOGGER.info("Step 6: Successfully started pod again by creating deployment.")
+        LOGGER.info("Step 5: Successfully started pod again by creating deployment.")
 
-        LOGGER.info("Step 7: Verify cluster status is in online state")
-        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 7: Verified cluster is in online state. All services are up & running")
+        LOGGER.info("Step 6: Download the copied objects & verify etags.")
+        for bkt, obj in bkt_obj_dict.items():
+            resp = s3_test_obj.get_object(bucket=bkt, key=obj)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {obj} of bucket "
+                                                          f"{bkt}.")
+        for bkt, obj in bkt_obj_dict1.items():
+            resp = s3_test_obj.get_object(bucket=bkt, key=obj)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {obj} of bucket "
+                                                          f"{bkt}.")
+        LOGGER.info("Step 6: Downloaded copied objects & verify etags.")
 
-        LOGGER.info("Step 8: Download the uploaded %s on %s & verify etags.", object2, bucket2)
-        resp = s3_test_obj.get_object(bucket=bucket2, key=object2)
-        LOGGER.info("Get object response: %s", resp)
-        get_etag = resp[1]["ETag"]
-        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                      f"for object {object2} of bucket {bucket2}.")
-        LOGGER.info("Step 8: Downloaded the uploaded %s on %s & verified etags.", object2, bucket2)
+        bkt_obj_dict2 = bkt_obj_dict.copy()
+        t_t = int(perf_counter_ns())
+        bucket_name = self.bucket_name
+        bkt_op = False
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create and list buckets")
+            bkt_obj_dict.clear()
+            for cnt in range(bkt_cnt):
+                bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
+            bucket_name = f"ha-mp-bkt-{self.random_time}-2"
+            bkt_op = True
+        else:
+            for idx, bkt in enumerate(bkt_obj_dict):
+                bkt_obj_dict[bkt] = f"ha-obj{idx}-{t_t}"
 
-        bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
-        object3 = f"ha-obj3-{int((perf_counter_ns()))}"
-        bkt_obj_dict.pop(bucket2)
-        bkt_obj_dict[bucket3] = object3
-        LOGGER.info("Step 9: Perform copy of %s from already created/uploaded %s to %s and verify "
-                    "copy object etags", self.object_name, self.bucket_name, bucket3)
+        LOGGER.info("Step 7: Perform copy object from already created/uploaded %s bucket to other "
+                    "buckets verify copy object etags", bucket_name)
         resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
-                                                  bucket_name=self.bucket_name,
+                                                  bucket_name=bucket_name,
                                                   object_name=self.object_name,
-                                                  bkt_obj_dict=bkt_obj_dict,
-                                                  put_etag=put_etag,
-                                                  bkt_op=False)
+                                                  bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
+                                                  bkt_op=bkt_op)
         assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
-        LOGGER.info("Step 9: Performed copy of %s from already created/uploaded %s to %s and "
-                    "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+        LOGGER.info("Step 7: Performed copy object from already created/uploaded %s bucket to other"
+                    " buckets verified copy object etags", self.bucket_name)
 
-        LOGGER.info("Step 10: Download the uploaded %s on %s & verify etags.", object3, bucket3)
-        resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
-        LOGGER.info("Get object response: %s", resp)
-        get_etag = resp[1]["ETag"]
-        assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag "
-                                                      f"for object {object3} of bucket {bucket3}.")
-        LOGGER.info("Step 10: Downloaded the uploaded %s on %s & verified etags.", object3, bucket3)
+        LOGGER.info("Step 8: Download the copied objects & verify etags.")
+        for bkt, obj in bkt_obj_dict2.items():
+            resp = s3_test_obj.get_object(bucket=bkt, key=obj)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {obj} of bucket "
+                                                          f"{bkt}.")
+        LOGGER.info("Step 8: Downloaded copied objects & verify etags.")
+
         LOGGER.info("COMPLETED: Test to verify copy object after data pod restart.")
 
-    # pylint: disable=C0321
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Blocked until F-22A is available")
     @pytest.mark.tags("TEST-34073")
     @CTFailOn(error_handler)
     def test_continuous_reads_during_pod_restart(self):
@@ -1064,112 +1090,117 @@ class TestDataPodRestart:
         LOGGER.info("STARTED: Test to verify continuous READs during data pod restart.")
 
         output = Queue()
+        output1 = Queue()
         event = threading.Event()  # Event to be used to send intimation of pod restart
 
-        LOGGER.info("Step 1: Shutdown the data pod by deleting deployment (unsafe)")
-        LOGGER.info("Get pod name to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)[0]
-        pod_host = self.node_master_list[0].get_pod_hostname(pod_name=pod_name)
-
-        LOGGER.info("Deleting pod %s", pod_name)
-        resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by deleting deployment"
-                                           " (unsafe)")
-        LOGGER.info("Step 1: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
-                    pod_name)
-        self.deployment_backup = resp[1]
-        self.deployment_name = resp[2]
-        self.restore_pod = True
-        self.restore_method = const.RESTORE_DEPLOYMENT_K8S
-
-        LOGGER.info("Step 2: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_false(resp[0], resp)
-        LOGGER.info("Step 2: Cluster is in degraded state")
-
-        LOGGER.info("Step 3: Verify services that were running on pod %s are in offline state",
-                    pod_name)
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True,
-                                                           hostname=pod_host)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 3: Verified services of %s are in offline state", pod_name)
-
-        remain_pod_list = list(filter(lambda x: x != pod_name, pod_list))
-        LOGGER.info("Step 4: Verify services status on remaining pods %s are in online state",
-                    remain_pod_list)
-
-        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=remain_pod_list, fail=False)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 4: Services of pod are in online state")
-
-        LOGGER.info("Step 5: Perform WRITEs with variable object sizes. (0B - 512MB(VM)/5GB(HW))")
+        LOGGER.info("Step 1: Perform WRITEs/READs-Verify with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-34073'
+        self.test_prefix = 'test-34073-hlt'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipread=True,
-                                                    skipcleanup=True, nclients=10, nsamples=10)
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Performed WRITEs with variable sizes objects.")
+        LOGGER.info("Step 1: Performed WRITEs/READs-Verify with variable sizes objects.")
 
-        LOGGER.info("Step 6: Perform READs and verify DI on the written data in background")
+        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+                    "verify cluster & remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            down_method=const.RESTORE_DEPLOYMENT_K8S)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+        pod_name = list(resp[1].keys())[0]
+        self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.restore_method = resp[1][pod_name]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+
+        LOGGER.info("Step 3: Perform READ-Verify on data written in Step 1")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipwrite=True, skipcleanup=True,
+                                                    setup_s3bench=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Performed WRITEs/READs-Verify with variable sizes objects.")
+
+        LOGGER.info("Step 4: Perform WRITEs/READs-Verify with variable object sizes.")
+        if CMN_CFG["dtm0_disabled"]:
+            self.test_prefix = 'test-34073-deg'
+
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    setup_s3bench=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Performed WRITEs/READs-Verify with variable object sizes.")
+
+        LOGGER.info("Step 5: Perform READs and verify DI on the data in background")
+        self.test_prefix = 'test-34073-hlt'
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
                 'nclients': 1, 'nsamples': 10, 'skipwrite': True, 'skipcleanup': True,
-                'output': output}
-
+                'output': output, 'setup_s3bench': False}
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
-
-        LOGGER.info("Step 6: Successfully started READs and verified DI on the written data in "
+        if CMN_CFG["dtm0_disabled"]:
+            self.test_prefix = 'test-34073-deg'
+            args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
+                    'nclients': 1, 'nsamples': 10, 'skipwrite': True, 'skipcleanup': True,
+                    'output': output1, 'setup_s3bench': False}
+            thread1 = threading.Thread(target=self.ha_obj.event_s3_operation,
+                                       args=(event,), kwargs=args)
+            thread1.daemon = True  # Daemonize thread
+            thread1.start()
+        LOGGER.info("Step 5: Successfully started READs and verified DI on the written data in "
                     "background")
 
-        LOGGER.info("Step 7: Starting pod again by creating deployment using K8s command")
+        LOGGER.info("Step 6: Starting pod again by creating deployment using K8s command")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup})
+                                                           self.deployment_backup},
+                                       clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 7: Successfully started the pod")
+        LOGGER.info("Step 6: Successfully started the pod")
         self.restore_pod = False
-
-        LOGGER.info("Step 8: Check cluster status")
-        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 8: Cluster is in good state. All the services are up and running")
         event.clear()
         thread.join()
+        if CMN_CFG["dtm0_disabled"]:
+            thread1.join()
 
-        LOGGER.info("Verifying responses from background process")
-        responses = {}
+        LOGGER.info("Step 7: Verifying responses from background processes")
+        responses = dict()
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
-        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        pass_logs1 = fail_logs1 = list()
+        if CMN_CFG["dtm0_disabled"]:
+            responses1 = dict()
+            while len(responses1) != 2:
+                responses1 = output1.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+            pass_logs1 = list(x[1] for x in responses1["pass_res"])
+            fail_logs1 = list(x[1] for x in responses["fail_res"])
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs + pass_logs1)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs + fail_logs1)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        LOGGER.info("Step 6: Successfully completed READs and verified DI on the written data in "
+        LOGGER.info("Step 7: Successfully completed READs and verified DI on the written data in "
                     "background")
 
-        LOGGER.info("Step 9: Create multiple buckets and run IOs")
-        self.test_prefix = 'test-34073-1'
+        LOGGER.info("Step 8: Perform WRITEs/READs-Verify")
+        if CMN_CFG["dtm0_disabled"]:
+            self.test_prefix = 'test-34073-rstrt'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 9: Successfully created multiple buckets and ran IOs")
+        LOGGER.info("Step 8: Successfully ran IOs")
 
         LOGGER.info("ENDED: Test to verify continuous READs during data pod restart.")
 
