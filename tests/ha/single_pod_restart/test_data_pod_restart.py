@@ -1591,6 +1591,7 @@ class TestDataPodRestart:
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
+        self.restore_pod = True
 
         LOGGER.info("Step 3: Download the uploaded object in healthy cluster and verify checksum")
         resp = self.ha_obj.dnld_obj_verify_chcksm(s3_test_obj, self.bucket_name,
@@ -1772,6 +1773,7 @@ class TestDataPodRestart:
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
+        self.restore_pod = True
 
         LOGGER.info("Step 3: Download the copied objects & verify etags.")
         for bkt, obj in bkt_obj_dict.items():
