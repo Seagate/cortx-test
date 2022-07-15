@@ -1364,6 +1364,7 @@ class HAK8s:
         :param pod_prefix: Pod prefix to be deleted (Expected List type)
         :param down_method: Pod shutdown/delete method.
         :param kvalue: Number of pod to be shutdown/deleted.
+        :param delete_pod: pod name to be deleted (optional)
         :param event_set_clr: Thread event set-clear flag reference when s3bench workload
         execution miss the event set-clear time window
         :param event: Thread event to set/clear before/after pods/nodes
