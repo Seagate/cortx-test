@@ -459,12 +459,12 @@ class LogicalNode(Host):
         :return: dict
         """
         pod_dict = {}
-        output = self.execute_cmd(cmd=commands.K8S_GET_MGNT, read_lines=True)
+        output = self.execute_cmd(cmd=commands.K8S_GET_CUSTOM_MGNT, read_lines=True)
         for line in output:
             if pod_prefix in line:
                 data = line.strip()
                 pod_name = data.split()[0]
-                node_fqdn = data.split()[6]
+                node_fqdn = data.split()[1]
                 pod_dict[pod_name.strip()] = node_fqdn.strip()
         return pod_dict
 
@@ -526,3 +526,7 @@ class LogicalNode(Host):
                                  decode=True)
         process_list = resp.splitlines()
         return process_list
+
+    def restart_container_in_pod(self, pod_name, container_name):
+        """Restarts a container within a pod. Prefer pod restart for single container pods."""
+        raise NotImplementedError()

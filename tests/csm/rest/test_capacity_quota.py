@@ -2688,3 +2688,45 @@ class TestCapacityQuota():
                 assert error.response['Error']['Code'] == "QuotaExceeded", \
                                       "Second overwrite passed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-44411')
+    def test_44411(self):
+        """
+        Verify user capacity after recursively deleting all objects in bucket
+        """
+        test_case_name = cortxlogging.get_frame()
+        test_cfg = self.csm_conf["test_44411"]
+        max_size = test_cfg["max_size"]
+        random_size = self.csm_obj.random_gen.randrange(1, max_size) #specified in bytes
+        num_objects = test_cfg["max_objects"]
+        random_objects = self.csm_obj.random_gen.randrange(1, num_objects)
+        self.log.info("Step 1: Create and upload objects in a bucket")
+        for num in range(0, random_objects):
+            self.log.info("Creating object : %s", num)
+            obj_name = f'{self.obj_name_prefix}{time.perf_counter_ns()}'
+            self.log.info("Creating object %s of size %s bytes in bucket %s ", obj_name,
+                                  int(random_size/1024), self.bucket)
+            resp = s3_misc.create_put_objects(obj_name, self.bucket,
+                                          self.akey, self.skey,
+                                 object_size=int(random_size/1024), block_size="1K")
+        assert resp, f"Put object {obj_name} failed"
+        self.log.info("Step 2: Perform & Verify GET API to get capacity usage stats")
+        total_objects, total_size = s3_misc.get_objects_size_bucket(self.bucket,
+                                                                    self.akey, self.skey)
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, total_size,
+                                total_size, total_objects, aligned=None)
+        assert res, "Verify User capacity failed"
+        self.log.info("Step 2: Delete all uploaded objects recursively")
+        assert s3_misc.delete_objects(self.bucket, self.akey, self.skey), \
+                                         "Delete object Failed"
+        self.log.info("Step 3: Get user capacity stats")
+        res, resp = self.csm_obj.verify_user_capacity(self.user_id, 0,
+                                0, 0, aligned=True)   #Need to Revisit
+        self.log.info("Response is: %s", resp)
+        assert res, "Verify User capacity failed"
+        self.log.info("##### Test ended -  %s #####", test_case_name)
