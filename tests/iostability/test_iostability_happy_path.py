@@ -38,6 +38,7 @@ from libs.dtm.ProcPathStasCollection import EnableProcPathStatsCollection
 from libs.durability.near_full_data_storage import NearFullStorage
 from libs.iostability.iostability_lib import IOStabilityLib, send_mail_notification
 from libs.iostability.logs_collection import ServerOSLogsCollectLib
+from libs.iostability.top_stats_collection import TopStatsCollection
 from libs.s3 import ACCESS_KEY
 from libs.s3 import SECRET_KEY
 from scripts.s3_bench import s3bench
@@ -51,6 +52,7 @@ class TestIOWorkload:
         """Setup class."""
 
         cls.log = logging.getLogger(__name__)
+        cls.remote_dir_path = "/tmp/stats/"
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.master_node_list = []
         cls.worker_node_list = []
@@ -97,12 +99,14 @@ class TestIOWorkload:
         self.log.info("Start Procpath collection")
         self.proc_path = EnableProcPathStatsCollection(CMN_CFG)
         self.log_collect = ServerOSLogsCollectLib(CMN_CFG)
+        self.top_stats = TopStatsCollection(CMN_CFG)
         resp = self.proc_path.setup_requirement()
         assert_utils.assert_true(resp[0], resp[1])
         self.proc_path.start_collection()
         time.sleep(30)
         resp = self.proc_path.validate_collection()
         assert_utils.assert_true(resp[0], resp[1])
+        self.top_stats.collect_stats(dir_path=self.remote_dir_path)
         self.test_completed = False
         self.log.info("Setup Method Ended")
 
@@ -118,6 +122,8 @@ class TestIOWorkload:
             assert_utils.assert_true(resp)
             resp = self.log_collect.collect_logs(path=path)
             assert_utils.assert_true(resp)
+            self.top_stats.stop_collection()
+            self.top_stats.copy_files(remote_path=self.remote_dir_path, local_path=path)
         else:
             self.mail_notify.event_pass.set()
         self.log.info("Stop Procpath collection")
