@@ -23,6 +23,7 @@ import os
 import logging
 import time
 from http import HTTPStatus
+import random
 import pandas
 import pytest
 from commons import configmanager
@@ -1085,6 +1086,185 @@ class TestSystemCapacity():
         self.log.info("[END] completed")
         self.deploy = True
 
+class TestSystemCapacityFixedPlacement():
+    """System Capacity Testsuite"""
+
+    # pylint: disable-msg=too-many-statements
+    @classmethod
+    def setup_class(cls):
+        """ This is method is for test suite set-up """
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("[START] Setup Class")
+        cls.csm_obj = csm_api_factory("rest")
+        cls.log.info("Initiating Rest Client ...")
+        cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
+        cls.username = cls.csm_obj.config["csm_admin_user"]["username"]
+        cls.user_pass = cls.csm_obj.config["csm_admin_user"]["password"]
+        cls.deploy = False
+        cls.akey = ""
+        cls.skey = ""
+        cls.s3_user = ""
+        cls.bucket = ""
+        cls.row_temp = "N{} failure"
+        cls.node_list = []
+        cls.host_list = []
+        cls.num_nodes = len(CMN_CFG["nodes"])
+        cls.io_bucket_name = f"iobkt1-copyobject-{time.perf_counter_ns()}"
+        cls.s3_obj = s3_test_lib.S3TestLib()
+        cls.ha_obj = HAK8s()
+        for node in CMN_CFG["nodes"]:
+            cls.log.debug("Worker node : %s", node["hostname"])
+            cls.node_list.append(LogicalNode(hostname=node["hostname"],
+                                                 username=node["username"],
+                                                 password=node["password"]))
+            host = node["hostname"]
+            cls.host_list.append(host)
+        cls.log.info("Worker node List: %s", cls.host_list)
+        cls.num_worker = len(cls.host_list)
+        cls.log.info("Number of workers detected: %s", cls.num_worker)
+        cls.nd_obj = LogicalNode(hostname=CMN_CFG["nodes"][0]["hostname"],
+                                 username=CMN_CFG["nodes"][0]["username"],
+                                 password=CMN_CFG["nodes"][0]["password"])
+
+        cls.log.debug("Node object list : %s", cls.nd_obj)
+        cls.restore_pod = None
+        cls.restore_method = RESTORE_SCALE_REPLICAS
+        cls.deployment_name = []
+        cls.failed_pod = []
+        cls.deployment_backup = None
+        cls.fail_cnt = 0
+        cls.deploy_list = cls.csm_obj.master.get_deployment_name(cls.num_nodes)
+        cls.update_seconds = cls.csm_conf["update_seconds"]
+        cls.log.info("Get the value of K for the given cluster.")
+        resp = cls.ha_obj.get_config_value(cls.csm_obj.master)
+        if resp[0]:
+            cls.kvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['parity'])
+            cls.nvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['data'])
+        else:
+            cls.log.info("Failed to get parity value, will use 1.")
+            cls.kvalue = 1
+        cls.cap_df = pandas.DataFrame()
+        cls.aligned_size = 4 * cls.nvalue
+        cls.deploy_lc_obj = ProvDeployK8sCortxLib()
+        cls.err_margin = (cls.nvalue/(cls.nvalue+cls.kvalue))*100 + 1
+        cls.s3_cleanup = False
+        cls.restore_pod = True
+        cls.log.info("[END] Setup Class")
+
+    def setup_method(self):
+        """
+        Setup method for creating s3 user
+        """
+        self.log.info("[START] Setup Method")
+        self.failed_pod = []
+        self.deploy = False
+        self.log.info("Cleanup: Check cluster status")
+        resp = self.ha_obj.poll_cluster_status(self.csm_obj.master)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Cleanup: Cluster status checked successfully")
+
+        self.log.info("Creating S3 account")
+        resp = self.csm_obj.create_s3_account()
+        assert resp.status_code == HTTPStatus.CREATED, "Failed to create S3 account."
+        self.akey = resp.json()["access_key"]
+        self.skey = resp.json()["secret_key"]
+        self.s3_user = resp.json()["account_name"]
+        self.bucket = "iam-user-bucket-" + str(int(time.time()))
+
+        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                      self.bucket, self.akey, self.skey)
+        assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
+
+        self.cap_df = pandas.DataFrame()
+        total_written = s3_misc.get_total_used(self.akey, self.skey)
+
+        self.log.info("[Start] Start some IOs")
+        obj = f"object{self.s3_user}{time.time_ns()}.txt"
+        self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, self.aligned_size,
+                        self.bucket)
+        resp = s3_misc.create_put_objects(
+            obj, self.bucket, self.akey, self.skey, object_size=self.aligned_size)
+        assert resp, "Put object Failed"
+        self.log.info("[End] Start some IOs")
+
+        self.log.info("[Start] Sleep %s", self.update_seconds)
+        time.sleep(self.update_seconds)
+        self.log.info("[Start] Sleep %s", self.update_seconds)
+
+        resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
+
+        new_write = self.aligned_size * 1024 * 1024
+        total_written += new_write
+
+        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
+            critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
+        assert result[0], result[1]
+        self.log.info("[END] Setup Method")
+
+    def teardown_method(self):
+        """
+        Teardowm method for deleting s3 account created in setup.
+        """
+        self.log.info("[START] Teardown Method")
+        if self.restore_pod:
+            self.log.info("Failed deployments : %s", self.failed_pod)
+            for deploy_name in self.failed_pod:
+                self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
+                resp = self.csm_obj.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+                self.log.debug("Response: %s", resp)
+                assert resp[0], f"Failed to restore pod by {self.restore_method} way"
+                self.log.info("Successfully restored pod by %s way", self.restore_method)
+                self.log.info("[End] Restore deleted pods : %s", deploy_name)
+
+        if self.s3_cleanup:
+            self.log.info("Deleting bucket %s & associated objects", self.bucket)
+            resp = s3_misc.delete_all_buckets(self.akey,self.skey)
+            assert resp, "Delete all buckets and object failed."
+            self.log.info("Deleting S3 account %s created in setup", self.s3_user)
+            resp = self.csm_obj.delete_s3_account_user(self.s3_user)
+            assert resp.status_code == HTTPStatus.OK, "Failed to delete S3 user"
+
+        if not self.deploy:
+            bundle_dir = os.path.join(LOG_DIR, "latest", "support_bundle")
+            self.log.info("Support bundle dir : %s", bundle_dir)
+            resp = sb.collect_support_bundle_k8s(local_dir_path=bundle_dir,
+                                                scripts_path=K8S_SCRIPTS_PATH)
+
+        self.deploy = True
+        if self.deploy:
+            self.log.info("Cleanup: Destroying the cluster ")
+            resp = self.deploy_lc_obj.destroy_setup(self.csm_obj.master, self.node_list,
+                             K8S_SCRIPTS_PATH)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info("Cleanup: Cluster destroyed successfully")
+
+            self.log.info("Cleanup: Setting prerequisite")
+            self.deploy_lc_obj.execute_prereq_cortx(self.csm_obj.master,
+                                                    K8S_SCRIPTS_PATH,
+                                                    K8S_PRE_DISK)
+
+            for node in self.node_list:
+                self.deploy_lc_obj.execute_prereq_cortx(node, K8S_SCRIPTS_PATH,
+                                                        K8S_PRE_DISK)
+            self.log.info("Cleanup: Prerequisite set successfully")
+
+            self.log.info("Cleanup: Deploying the Cluster")
+            resp_cls = self.deploy_lc_obj.deploy_cluster(self.csm_obj.master,
+                                                            K8S_SCRIPTS_PATH)
+            assert_utils.assert_true(resp_cls[0], resp_cls[1])
+            self.log.info("Cleanup: Cluster deployment successfully")
+
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+            time.sleep(self.update_seconds)
+            self.log.info("[Start] Sleep %s", self.update_seconds)
+
+            self.log.info("Cleanup: Check cluster status")
+            resp = self.ha_obj.poll_cluster_status(self.csm_obj.master)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info("Cleanup: Cluster status checked successfully")
+
+        self.log.info("[END] Teardown Method")
+
     # pylint: disable-msg=too-many-statements
     @pytest.mark.skip("Feature Not Ready")
     @pytest.mark.lc
@@ -1100,7 +1280,7 @@ class TestSystemCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_44342"]
         cap_df = pandas.DataFrame()
-        resp = self.csm_obj.get_degraded_all(self.hlth_master)
+        resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
         total_written = s3_misc.get_total_used(self.akey, self.skey)
         new_row = pandas.Series(data=resp, name='Nofail')
         cap_df = cap_df.append(new_row, ignore_index=False)
@@ -1114,14 +1294,14 @@ class TestSystemCapacity():
             deploy_name = self.deploy_list[failure_cnt]
             self.log.info("[Start] Shutdown the data pod safely")
             self.log.info("Deleting pod %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
+            resp = self.csm_obj.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
             assert_utils.assert_false(resp[0], f"Failed to delete pod {deploy_name}")
             self.log.info("[End] Successfully deleted pod %s", deploy_name)
 
             self.failed_pod.append(deploy_name)
 
             self.log.info("[Start] Check cluster status")
-            resp = self.ha_obj.check_cluster_status(self.master)
+            resp = self.ha_obj.check_cluster_status(self.csm_obj.master)
             assert not resp[0], resp
             self.log.info("[End] Cluster is in degraded state")
 
@@ -1129,7 +1309,7 @@ class TestSystemCapacity():
             time.sleep(self.update_seconds)
             self.log.info("[End] Sleep %s", self.update_seconds)
 
-            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             index = deploy_name + "offline"
             new_row = pandas.Series(data=resp, name=index)
             cap_df = cap_df.append(new_row, ignore_index=False)
@@ -1141,9 +1321,10 @@ class TestSystemCapacity():
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
+        random.shuffle(self.failed_pod)
         for deploy_name in reversed(self.failed_pod):
             self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+            resp = self.csm_obj.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
             self.log.debug("Response: %s", resp)
             assert resp[0], f"Failed to restore pod by {self.restore_method} way"
             self.log.info("Successfully restored pod by %s way", self.restore_method)
@@ -1155,7 +1336,7 @@ class TestSystemCapacity():
             time.sleep(self.update_seconds)
             self.log.info("[End] Sleep %s", self.update_seconds)
 
-            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             index = deploy_name + "online"
             new_row = pandas.Series(data=resp, name=index)
             cap_df = cap_df.append(new_row, ignore_index=False)
@@ -1180,7 +1361,7 @@ class TestSystemCapacity():
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_44345"]
         cap_df = pandas.DataFrame()
-        resp = self.csm_obj.get_degraded_all(self.hlth_master)
+        resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
         total_written = s3_misc.get_total_used(self.akey, self.skey)
         new_row = pandas.Series(data=resp, name='Nofail')
         cap_df = cap_df.append(new_row, ignore_index=False)
@@ -1194,14 +1375,14 @@ class TestSystemCapacity():
             deploy_name = self.deploy_list[failure_cnt]
             self.log.info("[Start] Shutdown the data pod safely")
             self.log.info("Deleting pod %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
+            resp = self.csm_obj.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
             assert not resp[0], f"Failed to delete pod {deploy_name}"
             self.log.info("[End] Successfully deleted pod %s", deploy_name)
 
             self.failed_pod.append(deploy_name)
 
             self.log.info("[Start] Check cluster status")
-            resp = self.ha_obj.check_cluster_status(self.master)
+            resp = self.ha_obj.check_cluster_status(self.csm_obj.master)
             assert not resp[0], resp
             self.log.info("[End] Cluster is in degraded state")
 
@@ -1209,7 +1390,7 @@ class TestSystemCapacity():
             time.sleep(self.update_seconds)
             self.log.info("[End] Sleep %s", self.update_seconds)
 
-            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             index = deploy_name + "offline"
             new_row = pandas.Series(data=resp, name=index)
             cap_df = cap_df.append(new_row, ignore_index=False)
@@ -1230,21 +1411,22 @@ class TestSystemCapacity():
                 time.sleep(self.update_seconds)
                 self.log.info("[End] Sleep %s", self.update_seconds)
 
-                resp = self.csm_obj.get_degraded_all(self.hlth_master)
+                resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
                 index = deploy_name + "offline"
                 new_row = pandas.Series(data=resp, name=index)
                 cap_df = cap_df.append(new_row, ignore_index=False)
 
-                result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
-                  test_cfg["err_margin"], total_written)
+                result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt,
+                                self.kvalue, test_cfg["err_margin"], total_written)
                 assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
+        random.shuffle(self.failed_pod)
         for deploy_name in reversed(self.failed_pod):
             self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+            resp = self.csm_obj.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
             self.log.debug("Response: %s", resp)
             assert resp[0], f"Failed to restore pod by {self.restore_method} way"
             self.log.info("Successfully restored pod by %s way", self.restore_method)
@@ -1256,7 +1438,7 @@ class TestSystemCapacity():
             time.sleep(self.update_seconds)
             self.log.info("[End] Sleep %s", self.update_seconds)
 
-            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             index = deploy_name + "online"
             new_row = pandas.Series(data=resp, name=index)
             cap_df = cap_df.append(new_row, ignore_index=False)
@@ -1280,7 +1462,7 @@ class TestSystemCapacity():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         cap_df = pandas.DataFrame()
-        resp = self.csm_obj.get_degraded_all(self.hlth_master)
+        resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
         total_written = s3_misc.get_total_used(self.akey, self.skey)
         new_row = pandas.Series(data=resp, name='Nofail')
         cap_df = cap_df.append(new_row, ignore_index=False)
@@ -1289,19 +1471,19 @@ class TestSystemCapacity():
             critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
         assert result[0], result[1]
 
-        self.log.info("[START] Failure loop")	
+        self.log.info("[START] Failure loop")
         for failure_cnt in range(1, self.kvalue + 2):
             deploy_name = self.deploy_list[failure_cnt]
             self.log.info("[Start] Shutdown the data pod safely")
             self.log.info("Deleting pod %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
+            resp = self.csm_obj.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
             assert not resp[0], f"Failed to delete pod {deploy_name}"
             self.log.info("[End] Successfully deleted pod %s", deploy_name)
 
             self.failed_pod.append(deploy_name)
 
             self.log.info("[Start] Check cluster status")
-            resp = self.ha_obj.check_cluster_status(self.master)
+            resp = self.ha_obj.check_cluster_status(self.csm_obj.master)
             assert not resp[0], resp
             self.log.info("[End] Cluster is in degraded state")
 
@@ -1309,7 +1491,7 @@ class TestSystemCapacity():
             time.sleep(self.update_seconds)
             self.log.info("[End] Sleep %s", self.update_seconds)
 
-            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             index = deploy_name + "offline"
             new_row = pandas.Series(data=resp, name=index)
             cap_df = cap_df.append(new_row, ignore_index=False)
@@ -1318,11 +1500,14 @@ class TestSystemCapacity():
                 self.err_margin, total_written)
             assert result[0], result[1]
             if failure_cnt<=self.kvalue:
+                odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
+                unaligned_size = self.aligned_size + odd_multiplier
                 obj = f"object{self.s3_user}{time.time_ns()}.txt"
-                self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, self.aligned_size,
+                self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj,
+                              self.aligned_size,
                         self.bucket)
                 resp = s3_misc.create_put_objects(
-                  obj, self.bucket, self.akey, self.skey, object_size=self.aligned_size)
+                  obj, self.bucket, self.akey, self.skey, object_size=unaligned_size)
                 assert resp, "Put object Failed"
                 total_written = total_written + self.aligned_size
 
@@ -1330,21 +1515,22 @@ class TestSystemCapacity():
                 time.sleep(self.update_seconds)
                 self.log.info("[End] Sleep %s", self.update_seconds)
 
-                resp = self.csm_obj.get_degraded_all(self.hlth_master)
+                resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
                 index = deploy_name + "offline"
                 new_row = pandas.Series(data=resp, name=index)
                 cap_df = cap_df.append(new_row, ignore_index=False)
 
-                result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
-                  self.err_margin, total_written)
+                result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt,
+                         self.kvalue, self.err_margin, total_written)
                 assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
+        random.shuffle(self.failed_pod)
         for deploy_name in reversed(self.failed_pod):
             self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+            resp = self.csm_obj.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
             self.log.debug("Response: %s", resp)
             assert resp[0], f"Failed to restore pod by {self.restore_method} way"
             self.log.info("Successfully restored pod by %s way", self.restore_method)
@@ -1356,7 +1542,7 @@ class TestSystemCapacity():
             time.sleep(self.update_seconds)
             self.log.info("[End] Sleep %s", self.update_seconds)
 
-            resp = self.csm_obj.get_degraded_all(self.hlth_master)
+            resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             index = deploy_name + "online"
             new_row = pandas.Series(data=resp, name=index)
             cap_df = cap_df.append(new_row, ignore_index=False)
@@ -1364,5 +1550,5 @@ class TestSystemCapacity():
             result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
                 self.err_margin, total_written)
             assert result[0], result[1] + f"for {failure_cnt} failures"
-		
+
         self.deploy = True
