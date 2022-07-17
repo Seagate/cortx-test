@@ -208,7 +208,6 @@ class TestCorruptDataDetection:
         return True  # Todo: return status to be worked as per responses
 
     # pylint: disable=R0914
-    # Todo: WIP -------------------
     def motr_inject_checksum_corruption(self, layout_ids, bsize_list, count_list, offsets):
         logger.info("STARTED: m0cp, corrupt and m0cat workflow")
         infile = TEMP_PATH + "input"
@@ -221,8 +220,6 @@ class TestCorruptDataDetection:
             + str(self.system_random.randint(1, 1024 * 1024))
         )
 
-        # Todo: If needed then only enable all clients loop
-        # for client_num in range(motr_client_num):
         for node in node_pod_dict:
             for b_size, (cnt_c, cnt_u), layout, offset in zip(
                 bsize_list, count_list, layout_ids, offsets
@@ -256,12 +253,10 @@ class TestCorruptDataDetection:
                 # )
 
                 # Read object after
-                self.motr_obj.cat_cmd(
-                    b_size, cnt_c, object_id, layout, outfile, node, 0  # Todo re-add client_num
-                )
+                self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout, outfile, node, 0)
 
                 self.motr_obj.md5sum_cmd(infile, outfile, node, flag=True)
-                self.motr_obj.unlink_cmd(object_id, layout, node, 0)  # Todo: client_num re-add
+                self.motr_obj.unlink_cmd(object_id, layout, node, 0)
 
             logger.info("Stop: Verify emap corruption detection operation")
 
