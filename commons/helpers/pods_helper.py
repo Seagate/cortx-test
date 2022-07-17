@@ -40,27 +40,33 @@ class LogicalNode(Host):
     using this class.
     """
 
-    kube_commands = ('create', 'apply', 'config', 'get', 'explain',
-                     'autoscale', 'patch', 'scale', 'exec')
+    kube_commands = (
+        "create",
+        "apply",
+        "config",
+        "get",
+        "explain",
+        "autoscale",
+        "patch",
+        "scale",
+        "exec",
+        "cp",
+    )
 
-    def get_service_logs(self, svc_name: str, namespace: str, options: '') -> Tuple:
+    def get_service_logs(self, svc_name: str, namespace: str, options: "") -> Tuple:
         """Get logs of a pod or service."""
         cmd = commands.FETCH_LOGS.format(svc_name, namespace, options)
         res = self.execute_cmd(cmd)
         return res
 
     def send_k8s_cmd(
-            self,
-            operation: str,
-            pod: str,
-            namespace: str,
-            command_suffix: str,
-            decode=False,
-            **kwargs) -> bytes:
+        self, operation: str, pod: str, namespace: str, command_suffix: str, decode=False, **kwargs
+    ) -> bytes:
         """send/execute command on logical node/pods."""
         if operation not in LogicalNode.kube_commands:
             raise ValueError(
-                "command parameter must be one of %r." % str(LogicalNode.kube_commands))
+                "command parameter must be one of %r." % str(LogicalNode.kube_commands)
+            )
         log.debug("Performing %s on service %s in namespace %s...", operation, pod, namespace)
         cmd = commands.KUBECTL_CMD.format(operation, pod, namespace, command_suffix)
         resp = self.execute_cmd(cmd, **kwargs)
@@ -72,27 +78,26 @@ class LogicalNode(Host):
         """Function to shutdown any of the node."""
         try:
             cmd = "shutdown {}".format(options if options else "")
-            log.debug(
-                "Shutting down %s node using cmd: %s.",
-                self.hostname,
-                cmd)
+            log.debug("Shutting down %s node using cmd: %s.", self.hostname, cmd)
             resp = self.execute_cmd(cmd, shell=False)
             log.debug(resp)
         except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.shutdown_node.__name__, error)
+            log.error(
+                "*ERROR* An exception occurred in %s: %s", LogicalNode.shutdown_node.__name__, error
+            )
             return False, error
 
         return True, "Node shutdown successfully"
 
     def get_pod_name(self, pod_prefix: str = const.POD_NAME_PREFIX):
         """Function to get pod name with given prefix."""
-        output = self.execute_cmd(commands.CMD_POD_STATUS +
-                                  " -o=custom-columns=NAME:.metadata.name", read_lines=True)
+        output = self.execute_cmd(
+            commands.CMD_POD_STATUS + " -o=custom-columns=NAME:.metadata.name", read_lines=True
+        )
         for lines in output:
             if pod_prefix in lines:
                 return True, lines.strip()
-        return False, f"pod with prefix \"{pod_prefix}\" not found"
+        return False, f'pod with prefix "{pod_prefix}" not found'
 
     def send_sync_command(self, pod_prefix):
         """
@@ -106,8 +111,12 @@ class LogicalNode(Host):
             for pod, containers in pod_dict.items():
                 for cnt in containers:
                     res = self.send_k8s_cmd(
-                        operation="exec", pod=pod, namespace=const.NAMESPACE,
-                        command_suffix=f"-c {cnt} -- sync", decode=True)
+                        operation="exec",
+                        pod=pod,
+                        namespace=const.NAMESPACE,
+                        command_suffix=f"-c {cnt} -- sync",
+                        decode=True,
+                    )
                     log.info("Response for pod %s container %s: %s", pod, cnt, res)
 
         return True
@@ -122,8 +131,9 @@ class LogicalNode(Host):
         pod_containers = {}
         if not pod_list:
             log.info("Get all data pod names of %s", pod_prefix)
-            output = self.execute_cmd(commands.CMD_POD_STATUS +
-                                      " -o=custom-columns=NAME:.metadata.name", read_lines=True)
+            output = self.execute_cmd(
+                commands.CMD_POD_STATUS + " -o=custom-columns=NAME:.metadata.name", read_lines=True
+            )
             for lines in output:
                 if pod_prefix in lines:
                     pod_list.append(lines.strip())
@@ -160,8 +170,11 @@ class LogicalNode(Host):
             status = True if output else False
             return status, deploy
         except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.create_pod_replicas.__name__, error)
+            log.error(
+                "*ERROR* An exception occurred in %s: %s",
+                LogicalNode.create_pod_replicas.__name__,
+                error,
+            )
             return False, error
 
     def delete_pod(self, pod_name, force=False):
@@ -178,8 +191,9 @@ class LogicalNode(Host):
             output = self.execute_cmd(cmd=cmd, read_lines=True)
             log.info("Response: %s", output)
         except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.delete_pod.__name__, error)
+            log.error(
+                "*ERROR* An exception occurred in %s: %s", LogicalNode.delete_pod.__name__, error
+            )
             return False, error
 
         log.info("Successfully deleted pod %s", pod_name)
@@ -196,13 +210,16 @@ class LogicalNode(Host):
             cmd = commands.KUBECTL_GET_POD_DETAILS.format(pod_name)
             output = self.execute_cmd(cmd=cmd, read_lines=True)
             log.info("Response: %s", output)
-            output = (output[0].split())[-1].split(',')
-            deploy = output[0].split('=')[-1]
-            replicaset = deploy + "-" + output[-1].split('=')[-1]
+            output = (output[0].split())[-1].split(",")
+            deploy = output[0].split("=")[-1]
+            replicaset = deploy + "-" + output[-1].split("=")[-1]
             return True, deploy, replicaset
         except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.get_deploy_replicaset.__name__, error)
+            log.error(
+                "*ERROR* An exception occurred in %s: %s",
+                LogicalNode.get_deploy_replicaset.__name__,
+                error,
+            )
             return False, error
 
     def get_num_replicas(self, replicaset):
@@ -217,12 +234,19 @@ class LogicalNode(Host):
             output = self.execute_cmd(cmd=cmd, read_lines=True)
             log.info("Response: %s", output)
             output = output[0].split()
-            log.info("Desired replicas: %s \nCurrent replicas: %s \nReady replicas: %s",
-                     output[1], output[2], output[3])
+            log.info(
+                "Desired replicas: %s \nCurrent replicas: %s \nReady replicas: %s",
+                output[1],
+                output[2],
+                output[3],
+            )
             return True, output[1], output[2], output[3]
         except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.get_num_replicas.__name__, error)
+            log.error(
+                "*ERROR* An exception occurred in %s: %s",
+                LogicalNode.get_num_replicas.__name__,
+                error,
+            )
             return False, error
 
     def delete_deployment(self, pod_name):
@@ -249,8 +273,11 @@ class LogicalNode(Host):
             status = True if output else False
             return status, backup_path, deploy
         except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.delete_deployment.__name__, error)
+            log.error(
+                "*ERROR* An exception occurred in %s: %s",
+                LogicalNode.delete_deployment.__name__,
+                error,
+            )
             return False, error
 
     def recover_deployment_helm(self, deployment_name):
@@ -263,8 +290,12 @@ class LogicalNode(Host):
             resp = self.get_helm_rel_name_rev(deployment_name)
             helm_rel = resp[1]
             rel_revision = resp[2]
-            log.info("Rolling back the deployment %s using release %s and revision %s",
-                     deployment_name, helm_rel, rel_revision)
+            log.info(
+                "Rolling back the deployment %s using release %s and revision %s",
+                deployment_name,
+                helm_rel,
+                rel_revision,
+            )
             cmd = commands.HELM_ROLLBACK.format(helm_rel, rel_revision)
             output = self.execute_cmd(cmd=cmd, read_lines=True)
             log.info("Response: %s", output)
@@ -275,8 +306,11 @@ class LogicalNode(Host):
             status = True if output else False
             return status, helm_rel, rel_revision
         except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.recover_deployment_helm.__name__, error)
+            log.error(
+                "*ERROR* An exception occurred in %s: %s",
+                LogicalNode.recover_deployment_helm.__name__,
+                error,
+            )
             return False, error
 
     def recover_deployment_k8s(self, backup_path, deployment_name):
@@ -298,8 +332,11 @@ class LogicalNode(Host):
             status = True if output else False
             return status, output
         except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.recover_deployment_k8s.__name__, error)
+            log.error(
+                "*ERROR* An exception occurred in %s: %s",
+                LogicalNode.recover_deployment_k8s.__name__,
+                error,
+            )
             return False, error
 
     def backup_deployment(self, deployment_name):
@@ -318,8 +355,11 @@ class LogicalNode(Host):
             log.info("Response: %s", output)
             return True, backup_path
         except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.backup_deployment.__name__, error)
+            log.error(
+                "*ERROR* An exception occurred in %s: %s",
+                LogicalNode.backup_deployment.__name__,
+                error,
+            )
             return False, error
 
     def get_helm_rel_name_rev(self, deployment_name):
@@ -329,7 +369,7 @@ class LogicalNode(Host):
         :return: Bool, str, str (status, helm rel name, helm rel revision)
         """
         try:
-            search_str = deployment_name.split('-')[-1]
+            search_str = deployment_name.split("-")[-1]
             log.info("Getting helm release details")
             cmd = commands.HELM_LIST + f" | grep {search_str}"
             output = self.execute_cmd(cmd=cmd, read_lines=True)
@@ -349,8 +389,11 @@ class LogicalNode(Host):
             log.info("Couldn't find relevant release in helm")
             return False, releases
         except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.get_helm_rel_name_rev.__name__, error)
+            log.error(
+                "*ERROR* An exception occurred in %s: %s",
+                LogicalNode.get_helm_rel_name_rev.__name__,
+                error,
+            )
             return False, error
 
     def get_all_pods_and_ips(self, pod_prefix) -> dict:
@@ -433,13 +476,17 @@ class LogicalNode(Host):
         :param: container_name: Name of the container where the file will be copied
         """
         try:
-            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name, \
-                container_path, container_name)
+            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(
+                local_file_path, pod_name, container_path, container_name
+            )
             output = self.execute_cmd(cmd=cmd, exc=False)
             return True, output
         except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                    LogicalNode.copy_file_to_container.__name__, error)
+            log.error(
+                "*ERROR* An exception occurred in %s: %s",
+                LogicalNode.copy_file_to_container.__name__,
+                error,
+            )
             return False, error
 
     def get_machine_id_for_pod(self, pod_name: str):
@@ -447,9 +494,13 @@ class LogicalNode(Host):
         Getting machine id for given pod
         """
         log.info("Getting machine id for pod: %s", pod_name)
-        resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
-                                 command_suffix="cat /etc/machine-id",
-                                 decode=True)
+        resp = self.send_k8s_cmd(
+            operation="exec",
+            pod=pod_name,
+            namespace=const.NAMESPACE,
+            command_suffix="cat /etc/machine-id",
+            decode=True,
+        )
         return resp
 
     def get_pods_node_fqdn(self, pod_prefix):
@@ -484,12 +535,12 @@ class LogicalNode(Host):
         """
         Get deployment name from the master node
         """
-        resp_node = self.execute_cmd(cmd=commands.KUBECTL_GET_DEPLOYMENT,
-                                            read_lines=True,
-                                            exc=False)
+        resp_node = self.execute_cmd(
+            cmd=commands.KUBECTL_GET_DEPLOYMENT, read_lines=True, exc=False
+        )
         deploy_list = []
         for i in range(0, num_nodes):
-            resp = resp_node[i + const.NODE_INDEX].split(' ')
+            resp = resp_node[i + const.NODE_INDEX].split(" ")
             deploy_list.append(resp[0])
         return deploy_list
 
@@ -503,14 +554,22 @@ class LogicalNode(Host):
         """
         log.info("Getting PID of %s", process_name)
         cmd = commands.PIDOF_CMD.format(process_name)
-        resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
-                                 command_suffix=f"-c {container_name} -- {cmd}",
-                                 decode=True)
+        resp = self.send_k8s_cmd(
+            operation="exec",
+            pod=pod_name,
+            namespace=const.NAMESPACE,
+            command_suffix=f"-c {container_name} -- {cmd}",
+            decode=True,
+        )
         log.info("Killing PID %s", resp)
         cmd = commands.KILL_CMD.format(resp)
-        resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
-                                 command_suffix=f"-c {container_name} -- {cmd}",
-                                 decode=True)
+        resp = self.send_k8s_cmd(
+            operation="exec",
+            pod=pod_name,
+            namespace=const.NAMESPACE,
+            command_suffix=f"-c {container_name} -- {cmd}",
+            decode=True,
+        )
         return resp
 
     def get_all_cluster_processes(self, pod_name, container_name):
@@ -521,9 +580,13 @@ class LogicalNode(Host):
         :return: list (list of the processes running on container)
         """
         cmd = commands.GET_CLUSTER_PROCESSES_CMD
-        resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
-                                 command_suffix=f"-c {container_name} -- {cmd}",
-                                 decode=True)
+        resp = self.send_k8s_cmd(
+            operation="exec",
+            pod=pod_name,
+            namespace=const.NAMESPACE,
+            command_suffix=f"-c {container_name} -- {cmd}",
+            decode=True,
+        )
         process_list = resp.splitlines()
         return process_list
 
