@@ -2025,6 +2025,7 @@ class TestMultiServerPodFailure:
                                                     log_prefix=self.test_prefix, skipcleanup=True,
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: IOs run successfully.")
         LOGGER.info("ENDED: Test to verify continuous READs/WRITEs while %s (K) server pods "
                     "were going down.", self.kvalue)
 
