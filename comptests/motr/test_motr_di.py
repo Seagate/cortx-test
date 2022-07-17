@@ -53,13 +53,14 @@ import secrets
 import pytest
 from config import CMN_CFG
 from commons import constants as const
-from commons.constants import POD_NAME_PREFIX, M0D_SVC
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.helpers.health_helper import Health
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.motr.emap_fi_adapter import MotrCorruptionAdapter
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
+
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +108,14 @@ class TestCorruptDataDetection:
             cls.master_node_list[0].username,
             cls.master_node_list[0].password,
         )
+        for node in CMN_CFG["nodes"]:
+            node_obj = LogicalNode(
+                hostname=node["hostname"], username=node["username"], password=node["password"]
+            )
+            if node["node_type"].lower() == "master":
+                cls.master_node_list.append(node_obj)
+            else:
+                cls.worker_node_list.append(node_obj)
         cls.m0d_process = "m0d"
         cls.system_random = secrets.SystemRandom()
         logger.info("ENDED: Setup Operation")
@@ -220,43 +229,28 @@ class TestCorruptDataDetection:
             + str(self.system_random.randint(1, 1024 * 1024))
         )
 
-        for node in node_pod_dict:
+        for node_pod in node_pod_dict:
             for b_size, (cnt_c, cnt_u), layout, offset in zip(
                 bsize_list, count_list, layout_ids, offsets
             ):
                 # Create file for m0cp cmd
-                self.motr_obj.dd_cmd(b_size, cnt_c, infile, node)
+                self.motr_obj.dd_cmd(b_size, cnt_c, infile, node_pod)
                 # Create object
                 self.motr_obj.cp_cmd(
-                    b_size, cnt_c, object_id, layout, infile, node, 0
+                    b_size, cnt_c, object_id, layout, infile, node_pod, 0
                 )  # client_num
                 # Read object before emap corruption
-                self.motr_obj.cat_cmd(
-                    b_size, cnt_c, object_id, layout, outfile, node, 0  # client_num
-                )
 
                 # Todo: Copy the emap script
+                self.motr_obj.copy_file_to_remote_container(node_pod)
                 # Todo: and run Emap
                 self.motr_corruption_obj.inject_checksum_corruption()
 
-                # Actual object corruption is not needed for now
-                # Can change based on the flag to the method
-                # self.motr_obj.cp_update_cmd(
-                #     b_size=b_size,
-                #     count=cnt_u,
-                #     obj=object_id,
-                #     layout=layout,
-                #     file=infile,
-                #     node=node,
-                #     client_num=client_num,
-                #     offset=offset,
-                # )
-
                 # Read object after
-                self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout, outfile, node, 0)
+                self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout, outfile, node_pod, 0)
 
-                self.motr_obj.md5sum_cmd(infile, outfile, node, flag=True)
-                self.motr_obj.unlink_cmd(object_id, layout, node, 0)
+                self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
+                self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
 
             logger.info("Stop: Verify emap corruption detection operation")
 
@@ -309,8 +303,7 @@ class TestCorruptDataDetection:
         offsets = [4096]
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
-    # Todo: Remove this marker line ----- Pranav Tests --------------------------------
-    # @pytest.mark.skip(reason="Feature Unavailable")
+    @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.tags("TEST-41742")
     @pytest.mark.motr_di
     def test_corrupt_checksum_emap_aligned(self):
@@ -327,17 +320,10 @@ class TestCorruptDataDetection:
         bsize_list = ["1M"]
         layout_ids = ["9"]
         offsets = [0]
-        # Check for deployment status using kubectl commands - Taken care in setup stage
-        # Check for hctl status - taken care in setup
 
-        # Todo: Add in for loop to iterate over count list and block size parameters
-        # corrupt_checksum_emap(self, layout_id, bsize, count, offsets):
-        # for b_size, (cnt_c, cnt_u), layout, offset in zip(
-        #     bsize_list, count_list, layout_ids, offsets
-        # ):
         self.motr_inject_checksum_corruption(layout_ids, bsize_list, count_list, offsets)
 
-    # @pytest.mark.skip(reason="Feature Unavailable")
+    @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.tags("TEST-41768")
     @pytest.mark.motr_di
     def test_corrupt_parity_degraded_aligned(self):
