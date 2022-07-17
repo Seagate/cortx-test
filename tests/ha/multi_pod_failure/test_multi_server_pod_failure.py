@@ -2099,7 +2099,7 @@ class TestMultiServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-42053")
-    def test_ios_till_single_server_pod_running(self):
+    def test_conti_ios_till_single_server_pod_running(self):
         """
         This test tests READs/WRITEs/DELETEs while server pods are failing till only one server "
         "pod is running.
