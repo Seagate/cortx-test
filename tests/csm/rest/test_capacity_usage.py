@@ -1301,7 +1301,7 @@ class TestSystemCapacityFixedPlacement():
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
-        random.shuffle(self.failed_pod)
+        self.csm_obj.random_gen.shuffle(self.failed_pod)
         for deploy_name in reversed(self.failed_pod):
             self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
             resp = self.csm_obj.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
@@ -1391,7 +1391,7 @@ class TestSystemCapacityFixedPlacement():
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
-        random.shuffle(self.failed_pod)
+        self.csm_obj.random_gen.shuffle(self.failed_pod)
         for deploy_name in reversed(self.failed_pod):
             self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
             resp = self.csm_obj.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
@@ -1483,7 +1483,7 @@ class TestSystemCapacityFixedPlacement():
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
-        random.shuffle(self.failed_pod)
+        self.csm_obj.random_gen.shuffle(self.failed_pod)
         for deploy_name in reversed(self.failed_pod):
             self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
             resp = self.csm_obj.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
