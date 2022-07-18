@@ -52,8 +52,6 @@ from libs.s3.s3_test_lib import S3TestLib
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=R0902
-# pylint: disable=R0904
 class TestMultiDataServerPodFailure:
     """
     Test suite for Multiple (K) Data & Server Pods Failure
