@@ -167,8 +167,7 @@ class TestMultiDataPodFailure:
                             pod_name, self.restore_method)
         if os.path.exists(self.test_dir_path):
             sysutils.remove_dirs(self.test_dir_path)
-        # TODO: As cluster restart is not supported until F22A, Need to redeploy cluster after
-        #  every test
+        # TODO: Will need DTM support for pod restart and recovery so need to redeploy
         if self.deploy:
             LOGGER.info("Cleanup: Destroying the cluster ")
             resp = self.deploy_lc_obj.destroy_setup(self.node_master_list[0],
@@ -1724,7 +1723,6 @@ class TestMultiDataPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Not supported in RGW yet")
     @pytest.mark.tags("TEST-35785")
     def test_copy_object_kpods_fail(self):
         """
@@ -1793,31 +1791,42 @@ class TestMultiDataPodFailure:
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 3: Successfully download the uploaded objects & verify etags")
 
+        bkt_obj_dict2 = bkt_obj_dict.copy()
+        t_t = int(perf_counter_ns())
+        bucket_name = self.bucket_name
+        bkt_op = False
         if CMN_CFG["dtm0_disabled"]:
-            bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
-            object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+            LOGGER.info("Create and list buckets")
             bkt_obj_dict.clear()
-            bkt_obj_dict[bucket3] = object3
-            LOGGER.info("Step 4: Perform copy of %s from already created/uploaded %s to %s "
-                        "and verify copy object etags",
-                        self.object_name, self.bucket_name, bucket3)
-            resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
-                                                      bucket_name=self.bucket_name,
-                                                      object_name=self.object_name,
-                                                      bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
-                                                      bkt_op=False)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 4: Performed copy of %s from already created/uploaded %s to %s and "
-                        "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+            for cnt in range(bkt_cnt):
+                bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
+            bucket_name = f"ha-mp-bkt-{t_t}-2"
+            bkt_op = True
+        else:
+            for idx, bkt in enumerate(bkt_obj_dict):
+                bkt_obj_dict[bkt] = f"ha-obj{idx}-{t_t}"
 
-            LOGGER.info("Step 5: Download the uploaded %s on %s & verify etags.", object3, bucket3)
-            resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+        LOGGER.info("Step 4: Perform copy object from %s bucket to other buckets verify copy object"
+                    " etags", bucket_name)
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                  bucket_name=bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  put_etag=put_etag,
+                                                  bkt_op=bkt_op)
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+        LOGGER.info("Step 4: Performed copy object from %s bucket to other buckets verified copy "
+                    "object etags", bucket_name)
+
+        LOGGER.info("Step 5: Download the copied objects & verify etags.")
+        for bkt, obj in bkt_obj_dict2.items():
+            resp = s3_test_obj.get_object(bucket=bkt, key=obj)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed to match GET-PUT ETAG for "
-                                                          f"object {object3} of bucket {bucket3}.")
-            LOGGER.info("Step 5: Downloaded the uploaded %s on %s & verified etags.",
-                        object3, bucket3)
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {obj} of bucket "
+                                                          f"{bkt}.")
+        LOGGER.info("Step 5: Downloaded copied objects & verify etags.")
 
         LOGGER.info("COMPLETED: Test to Verify copy object when all K data pods are failed.")
 
@@ -1934,7 +1943,6 @@ class TestMultiDataPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Not supported in RGW yet")
     @pytest.mark.tags("TEST-35786")
     def test_copy_object_during_kpods_down(self):
         """
@@ -2005,7 +2013,7 @@ class TestMultiDataPodFailure:
                     "verify cluster & remaining pods status", self.kvalue)
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S, kvalue=self.kvalue)
+            down_method=const.RESTORE_DEPLOYMENT_K8S, kvalue=self.kvalue, event=event)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         for pod_name in resp[1].keys():
@@ -2064,31 +2072,42 @@ class TestMultiDataPodFailure:
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 5: Successfully download the uploaded objects & verify etags")
 
+        bkt_obj_dict2 = bkt_obj_dict.copy()
+        t_t = int(perf_counter_ns())
+        bucket_name = self.bucket_name
+        bkt_op = False
         if CMN_CFG["dtm0_disabled"]:
-            bucket3 = f"ha-bkt3-{int((perf_counter_ns()))}"
-            object3 = f"ha-obj3-{int((perf_counter_ns()))}"
+            LOGGER.info("Create and list buckets")
             bkt_obj_dict.clear()
-            bkt_obj_dict[bucket3] = object3
-            LOGGER.info("Step 6: Perform copy of %s from already created/uploaded %s to %s "
-                        "and verify copy object etags",
-                        self.object_name, self.bucket_name, bucket3)
-            resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
-                                                      bucket_name=self.bucket_name,
-                                                      object_name=self.object_name,
-                                                      bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
-                                                      bkt_op=False)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 6: Performed copy of %s from already created/uploaded %s to %s and "
-                        "verified copy object etags", self.object_name, self.bucket_name, bucket3)
+            for cnt in range(bkt_cnt):
+                bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
+            bucket_name = f"ha-mp-bkt-{t_t}-2"
+            bkt_op = True
+        else:
+            for idx, bkt in enumerate(bkt_obj_dict):
+                bkt_obj_dict[bkt] = f"ha-obj{idx}-{t_t}"
 
-            LOGGER.info("Step 7: Download the uploaded %s on %s & verify etags.", object3, bucket3)
-            resp = s3_test_obj.get_object(bucket=bucket3, key=object3)
+        LOGGER.info("Step 6: Perform copy object from %s bucket to other buckets verify copy object"
+                    " etags", bucket_name)
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                  bucket_name=bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  put_etag=put_etag,
+                                                  bkt_op=bkt_op)
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+        LOGGER.info("Step 6: Performed copy object from %s bucket to other buckets verified copy "
+                    "object etags", bucket_name)
+
+        LOGGER.info("Step 7: Download the copied objects & verify etags.")
+        for bkt, obj in bkt_obj_dict2.items():
+            resp = s3_test_obj.get_object(bucket=bkt, key=obj)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed to match GET-PUT ETAG for "
-                                                          f"object {object3} of bucket {bucket3}.")
-            LOGGER.info("Step 7: Downloaded the uploaded %s on %s & verified etags.",
-                        object3, bucket3)
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {obj} of bucket "
+                                                          f"{bkt}.")
+        LOGGER.info("Step 7: Downloaded copied objects & verify etags.")
 
         LOGGER.info("COMPLETED: Verify copy object during data pods failure till K pods.")
 

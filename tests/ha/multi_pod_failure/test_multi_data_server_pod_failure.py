@@ -184,8 +184,7 @@ class TestMultiDataServerPodFailure:
                 assert_utils.assert_true(resp, "Interface is still not up.")
         if os.path.exists(self.test_dir_path):
             sysutils.remove_dirs(self.test_dir_path)
-        # TODO: As cluster restart is not supported until F22A, Need to redeploy cluster after
-        #  every test
+        # TODO: Will need DTM support for pod restart and recovery so need to redeploy
         if self.deploy:
             LOGGER.info("Cleanup: Destroying the cluster ")
             resp = self.deploy_lc_obj.destroy_setup(self.node_master_list[0],
