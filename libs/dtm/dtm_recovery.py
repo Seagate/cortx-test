@@ -254,7 +254,6 @@ class DTMRecoveryTestLib:
                 self.set_proc_restart_duration(master_node, pod_selected, container, 0)
             except (ValueError, IOError) as ex:
                 self.log.error("Exception Occurred during killing process : %s", ex)
-                time.sleep(20)
                 self.set_proc_restart_duration(master_node, pod_selected, container, 0)
                 return False
 
