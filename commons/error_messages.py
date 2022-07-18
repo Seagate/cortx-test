@@ -57,8 +57,7 @@ RGW_ERR_CPY_IF_MATCH_FALSE  = ("An error occurred (PreconditionFailed) when call
 RGW_ERR_CPY_IF_NONE_MATCH_FALSE  = ("An error occurred (304) when calling the CopyObject "
                                      "operation : Not Modified")
 RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE = ("An error occurred (304) when calling the CopyObject "
-                                    "operation: "
-                                   "Not Modified")
+                                    "operation: Not Modified")
 RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE = ("An error occurred (PreconditionFailed) when calling the "
                                      "CopyObject operation: Unknown")
 RGW_HEAD_OBJ_ERR = "An error occurred (404) when calling the HeadObject operation: Not Found"
