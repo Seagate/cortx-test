@@ -227,6 +227,7 @@ class DTMRecoveryTestLib:
         :param restart_cnt: Count to restart process from randomly selected pod (Restart once
         previously restarted process recovers)
         :param proc_restart_delay: Delay in seconds to restart the process after killing it.
+        return : boolean
         """
 
         self.log.info("Get process IDs of %s", process)

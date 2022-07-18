@@ -123,7 +123,8 @@ class TestSingleProcessRestart:
         if not os.path.exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
 
-        self.log.info("Edit deployment file to add sleep(0) to m0d setup command of all data pods.")
+        self.log.info("Edit deployment file to append conditional sleep command to m0d setup "
+                      "command of all data pods.")
         resp = self.master_node_list[0].get_deployment_name(POD_NAME_PREFIX)
         for each in resp:
             self.log.info("Editing Deployment for %s", each)

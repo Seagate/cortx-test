@@ -562,7 +562,6 @@ class LogicalNode(Host):
         log.info("Container selected : %s", container)
         return pod_selected, container
 
-
     def restart_container_in_pod(self, pod_name, container_name):
         """Restarts a container within a pod. Prefer pod restart for single container pods."""
         raise NotImplementedError()
