@@ -51,7 +51,6 @@ from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -2266,39 +2265,38 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
-    @pytest.mark.tags("TEST-1")
+    @pytest.mark.tags("TEST-44750")
     @CTFailOn(error_handler)
-    def test_1(self):
+    def test_44750(self):
         """
-        Copy object Conditional params: All true"""
+        Copy object Conditional params: All true for simple object copy"""
         LOGGER.info(
             "STARTED: Copy simple object with all conditional headers as true")
         LOGGER.info("Step 1: Upload simple object to source bucket")
-        resp = system_utils.create_file(
-            fpath=self.file_path, count=10, b_size="1M")
+        resp = system_utils.create_file(fpath=self.file_path, count=10, b_size="1M")
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        status, put_etag = self.create_bucket_put_object(
-            self.s3_obj, self.bucket_name1, self.object_name1, self.file_path)
+        status, put_etag = self.create_bucket_put_object(self.s3_obj, self.bucket_name1,
+                                                         self.object_name1, self.file_path)
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Put object ETag: %s", put_etag)
         obj_list = []
         LOGGER.info("Step 2: Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(
-                self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True)")
-        status, response = self.s3_obj.copy_object(
-                self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2 + "_im",
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2 + "_im",
                 CopySourceIfMatch=response[1]["ETag"])
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_im")
         LOGGER.info("Step 4: Copy object to different bucket with condition"
                     "x-amz-copy-source-if-none-match (True)")
-        status, response = self.s3_obj.copy_object(
-            self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2 + "_inm",
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2 + "_inm",
             CopySourceIfNoneMatch=response[1]["ETag"]+"_")
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_inm")
@@ -2307,30 +2305,30 @@ class TestCopyObjects:
         date1 = response[1]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
         pre_date= date1 - timedelta(days=1)
-        status, response = self.s3_obj.copy_object(
-            self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2 + "_ims",
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2 + "_ims",
             CopySourceIfModifiedSince=pre_date)
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_ims")
         LOGGER.info("Step 6: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-unmodified-since (True)")
-        status, response = self.s3_obj.copy_object(
-            self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2 + "_iums",
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2 + "_iums",
             CopySourceIfUnmodifiedSince=date1)
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_iums")
         status, response = self.s3_obj.object_list(self.bucket_name2)
         assert_utils.assert_list_equal(obj_list, response)
-        LOGGER.info("ENDED: Copy object with all conditional headers as true")
+        LOGGER.info("ENDED: Copy simple object with all conditional headers as true")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
-    @pytest.mark.tags("TEST-2")
+    @pytest.mark.tags("TEST-44752")
     @CTFailOn(error_handler)
-    def test_2(self):
+    def test_44752(self):
         """
-        Copy object Conditional params: All true"""
+        Copy object Conditional params: All true for multipart object copy"""
         LOGGER.info(
             "STARTED: Copy multipart object with all conditional headers as true")
         _, response = self.s3_obj.create_bucket(self.bucket_name1)
@@ -2355,8 +2353,8 @@ class TestCopyObjects:
         obj_list.append(self.object_name2 + "_im")
         LOGGER.info("Step 4: Copy object to different bucket with condition"
                     "x-amz-copy-source-if-none-match (True)")
-        status, response = self.s3_obj.copy_object(
-            self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2 + "_inm",
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2 + "_inm",
             CopySourceIfNoneMatch=response[1]["ETag"]+"_")
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_inm")
@@ -2365,15 +2363,15 @@ class TestCopyObjects:
         date1 = response[1]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
         pre_date= date1 - timedelta(days=1)
-        status, response = self.s3_obj.copy_object(
-            self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2 + "_ims",
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2 + "_ims",
             CopySourceIfModifiedSince=pre_date)
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_ims")
         LOGGER.info("Step 6: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-unmodified-since (True)")
-        status, response = self.s3_obj.copy_object(
-            self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2 + "_iums",
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2 + "_iums",
             CopySourceIfUnmodifiedSince=date1)
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_iums")
@@ -2385,24 +2383,23 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
-    @pytest.mark.tags("TEST-3")
+    @pytest.mark.tags("TEST-44753")
     @CTFailOn(error_handler)
-    def test_3(self):
+    def test_44753(self):
         """
-        Copy object Conditional params: All false"""
+        Copy object Conditional params: All false for simple object copy"""
         LOGGER.info("STARTED: Copy simple object with all conditional headers as false")
         LOGGER.info("Step 1: Upload simple object to source bucket")
-        resp = system_utils.create_file(
-            fpath=self.file_path, count=10, b_size="1M")
+        resp = system_utils.create_file(fpath=self.file_path, count=10, b_size="1M")
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        status, put_etag = self.create_bucket_put_object(
-            self.s3_obj, self.bucket_name1, self.object_name1, self.file_path)
+        status, put_etag = self.create_bucket_put_object(self.s3_obj, self.bucket_name1,
+                                                         self.object_name1, self.file_path)
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info("Step 2: Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(
-                self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         LOGGER.info("Step 3: Copy object to different bucket with condition "                             
                     "x-amz-copy-source-if-match (False)")
@@ -2431,7 +2428,8 @@ class TestCopyObjects:
         post_date = date1 + timedelta(days=1)
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                       self.bucket_name2, self.object_name2 + "_ims",
+                                                       self.bucket_name2,
+                                                       self.object_name2 + "_ims",
                                                         CopySourceIfModifiedSince=post_date)
             assert_utils.assert_false(status, response)
         except CTException as error:
@@ -2440,8 +2438,8 @@ class TestCopyObjects:
                     "x-amz-copy-source-if-unmodified-since (False)")
         try:
             status, response = self.s3_obj.copy_object(
-                self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2 + "_iums",
-                CopySourceIfUnmodifiedSince=pre_date)
+                self.bucket_name1, self.object_name1, self.bucket_name2,
+                self.object_name2 + "_iums", CopySourceIfUnmodifiedSince=pre_date)
             assert_utils.assert_false(status, response)
         except CTException as error:
             assert_utils.assert_in(errmsg.RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE, error.message,
@@ -2451,13 +2449,12 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
-    @pytest.mark.tags("TEST-4")
+    @pytest.mark.tags("TEST-44754")
     @CTFailOn(error_handler)
-    def test_4(self):
+    def test_44754(self):
         """
-        Copy object Conditional params: All false"""
-        LOGGER.info(
-            "STARTED: Copy multipart object with all conditional headers as true")
+        Copy object Conditional params: All false for multipart object copy"""
+        LOGGER.info("STARTED: Copy multipart object with all conditional headers as true")
         _, response = self.s3_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(response[0], response[1])
         LOGGER.info("Step 2: Upload multipart object to source bucket")
@@ -2505,10 +2502,10 @@ class TestCopyObjects:
         LOGGER.info("Step 6: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-unmodified-since (False)")
         try:
-            status, response = self.s3_obj.copy_object(
-                self.bucket_name1, self.object_name1, self.bucket_name2,
-                self.object_name2 + "_iums",
-                CopySourceIfUnmodifiedSince=pre_date)
+            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                       self.bucket_name2,
+                                                       self.object_name2 + "_iums",
+                                                       CopySourceIfUnmodifiedSince=pre_date)
             assert_utils.assert_false(status, response)
         except CTException as error:
             assert_utils.assert_in(errmsg.RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE, error.message,
@@ -2518,25 +2515,23 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
-    @pytest.mark.tags("TEST-5")
+    @pytest.mark.tags("TEST-44755 ")
     @CTFailOn(error_handler)
-    def test_5(self):
-        """
-        Copy object Conditional params: exceptions per aws"""
+    def test_44755 (self):
+        """ Copy object Conditional params: exceptions per aws for simple and multipart copy """
         LOGGER.info("STARTED: Test to check exceptions for certain conditions  to copy simple and "
                     "multipart objects")
         LOGGER.info("Step 1: Upload simple object to source bucket")
-        resp = system_utils.create_file(
-            fpath=self.file_path, count=10, b_size="1M")
+        resp = system_utils.create_file(fpath=self.file_path, count=10, b_size="1M")
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        status, put_etag = self.create_bucket_put_object(
-            self.s3_obj, self.bucket_name1, self.object_name1, self.file_path)
+        status, put_etag = self.create_bucket_put_object(self.s3_obj, self.bucket_name1,
+                                                         self.object_name1, self.file_path)
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info("Step 2: Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(
-            self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         date1 = response[1]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
@@ -2608,26 +2603,24 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
-    @pytest.mark.tags("TEST-6")
+    @pytest.mark.tags("TEST-44756")
     @CTFailOn(error_handler)
-    def test_6(self):
-        """
-        Copy object Conditional params: x-amz-copy-source-if-match and x-amz-copy-source-if-
-        modified-since"""
+    def test_44756(self):
+        """ Copy object Conditional params: x-amz-copy-source-if-match and x-amz-copy-source-if-
+        modified-since """
         LOGGER.info("STARTED: Test to check exceptions for certain conditions  to copy simple and "
                     "multipart objects")
         LOGGER.info("Step 1: Upload simple object to source bucket")
-        resp = system_utils.create_file(
-            fpath=self.file_path, count=10, b_size="1M")
+        resp = system_utils.create_file(fpath=self.file_path, count=10, b_size="1M")
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        status, put_etag = self.create_bucket_put_object(
-            self.s3_obj, self.bucket_name1, self.object_name1, self.file_path)
+        status, put_etag = self.create_bucket_put_object(self.s3_obj, self.bucket_name1,
+                                                         self.object_name1, self.file_path)
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info("Step 2: Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(
-            self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         date1 = response[1]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
@@ -2699,27 +2692,25 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
-    @pytest.mark.tags("TEST-7")
+    @pytest.mark.tags("TEST-44757")
     @CTFailOn(error_handler)
-    def test_7(self):
-        """
-        Copy object Conditional params: x-amz-copy-source-if-match and
+    def test_44757(self):
+        """ Copy object Conditional params: x-amz-copy-source-if-match and
         x-amz-copy-source-if-unmodified-since"""
         LOGGER.info("STARTED: Test to validate the combinations of conditions with "
                     "x-amz-copy-source-if-match and x-amz-copy-source-if-unmodified-since for "
                     "copying simple and multipart object")
         LOGGER.info("Step 1: Upload simple object to source bucket")
-        resp = system_utils.create_file(
-            fpath=self.file_path, count=10, b_size="1M")
+        resp = system_utils.create_file(fpath=self.file_path, count=10, b_size="1M")
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        status, put_etag = self.create_bucket_put_object(
-            self.s3_obj, self.bucket_name1, self.object_name1, self.file_path)
+        status, put_etag = self.create_bucket_put_object(self.s3_obj, self.bucket_name1,
+                                                         self.object_name1, self.file_path)
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info("Step 2: Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(
-            self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         date1 = response[1]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
@@ -2817,26 +2808,25 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
-    @pytest.mark.tags("TEST-8")
+    @pytest.mark.tags("TEST-44758")
     @CTFailOn(error_handler)
-    def test_8(self):
+    def test_44758(self):
         """ Copy object Conditional params: x-amz-copy-source-if-none-match and
-        x-amz-copy-source-if-modified-since"""
+        x-amz-copy-source-if-modified-since """
         LOGGER.info("STARTED: Test to validate the combinations of conditions with "
                     "x-amz-copy-source-if-none-match and x-amz-copy-source-if-modified-since for "
                     "copying simple and multipart object")
         LOGGER.info("Step 1: Upload simple object to source bucket")
-        resp = system_utils.create_file(
-            fpath=self.file_path, count=10, b_size="1M")
+        resp = system_utils.create_file(fpath=self.file_path, count=10, b_size="1M")
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        status, put_etag = self.create_bucket_put_object(
-            self.s3_obj, self.bucket_name1, self.object_name1, self.file_path)
+        status, put_etag = self.create_bucket_put_object(self.s3_obj, self.bucket_name1,
+                                                         self.object_name1, self.file_path)
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info("Step 2: Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(
-            self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         date1 = response[1]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
@@ -2938,26 +2928,25 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
-    @pytest.mark.tags("TEST-9")
+    @pytest.mark.tags("TEST-44767")
     @CTFailOn(error_handler)
-    def test_9(self):
+    def test_44767(self):
         """ Copy object Conditional params: x-amz-copy-source-if-none-match and
         x-amz-copy-source-if-unmodified-since"""
         LOGGER.info("STARTED: Test to validate the combinations of conditions with "
                     "x-amz-copy-source-if-none-match and x-amz-copy-source-if-unmodified-since for "
                     "copying simple and multipart object")
         LOGGER.info("Step 1: Upload simple object to source bucket")
-        resp = system_utils.create_file(
-            fpath=self.file_path, count=10, b_size="1M")
+        resp = system_utils.create_file(fpath=self.file_path, count=10, b_size="1M")
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        status, put_etag = self.create_bucket_put_object(
-            self.s3_obj, self.bucket_name1, self.object_name1, self.file_path)
+        status, put_etag = self.create_bucket_put_object(self.s3_obj, self.bucket_name1,
+                                                         self.object_name1, self.file_path)
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info("Step 2: Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(
-            self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                                   self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         date1 = response[1]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
