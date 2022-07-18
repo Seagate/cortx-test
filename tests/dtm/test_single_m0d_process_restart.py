@@ -181,11 +181,13 @@ class TestSingleProcessRestart:
         proc_read_op.start()
 
         self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
-        resp_proc = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                            health_obj=self.health_obj,
-                                                            pod_prefix=const.POD_NAME_PREFIX,
-                                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                            process=self.m0d_process, check_proc_state=True)
+        resp_proc = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True)
 
         self.log.info("Step 4: Wait for Read Operation to complete.")
         if proc_read_op.is_alive():
@@ -222,11 +224,13 @@ class TestSingleProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 2 : Perform Single m0d Process Restart During Write Operations")
-        resp_proc = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                            health_obj=self.health_obj,
-                                                            pod_prefix=const.POD_NAME_PREFIX,
-                                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                            process=self.m0d_process, check_proc_state=True)
+        resp_proc = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True)
 
         self.log.info("Step 3: Wait for Write Operation to complete.")
         if proc_write_op.is_alive():
@@ -274,11 +278,13 @@ class TestSingleProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 3: Perform Single m0d Process Restart During Delete Operations")
-        resp_proc = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                            health_obj=self.health_obj,
-                                                            pod_prefix=const.POD_NAME_PREFIX,
-                                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                            process=self.m0d_process, check_proc_state=True)
+        resp_proc = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True)
 
         self.log.info("Step 4: Wait for Delete Operation to complete.")
         if proc_del_op.is_alive():
@@ -349,7 +355,8 @@ class TestSingleProcessRestart:
                                                        health_obj=self.health_obj,
                                                        pod_prefix=rc_datapod,
                                                        container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                       process=self.m0d_process, check_proc_state=True)
+                                                       process=self.m0d_process,
+                                                       check_proc_state=True)
         event.clear()
         thread.join()
         self.log.info("Thread has joined.")
@@ -400,7 +407,8 @@ class TestSingleProcessRestart:
                                                        health_obj=self.health_obj,
                                                        pod_prefix=const.POD_NAME_PREFIX,
                                                        container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                       process=self.m0d_process, check_proc_state=True)
+                                                       process=self.m0d_process,
+                                                       check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 1: m0d restarted and recovered successfully")
 
@@ -442,13 +450,14 @@ class TestSingleProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 3 : Perform Single m0d Process Restart During Read Operations")
-        resp_proc = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                            health_obj=self.health_obj,
-                                                            pod_prefix=const.POD_NAME_PREFIX,
-                                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                            process=self.m0d_process, check_proc_state=True,
-                                                            proc_restart_delay=self.test_cfg[
-                                                     'm0d_restart_continuous_ios_delay'])
+        resp_proc = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True,
+            proc_restart_delay=self.test_cfg['m0d_restart_continuous_ios_delay'])
 
         self.log.info("Step 4: Wait for READ Operation to complete.")
         if proc_read_op.is_alive():
@@ -489,13 +498,14 @@ class TestSingleProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 3 : Perform Single m0d Process Restart During Write Operations")
-        resp_proc = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                            health_obj=self.health_obj,
-                                                            pod_prefix=const.POD_NAME_PREFIX,
-                                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                            process=self.m0d_process, check_proc_state=True,
-                                                            proc_restart_delay=self.test_cfg[
-                                                     'm0d_restart_continuous_ios_delay'])
+        resp_proc = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True,
+            proc_restart_delay=self.test_cfg['m0d_restart_continuous_ios_delay'])
 
         self.log.info("Step 4: Wait for Write Operation to complete.")
         if proc_write_op.is_alive():
@@ -542,13 +552,14 @@ class TestSingleProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 3 : Perform Single m0d Process Restart During Delete Operations")
-        resp_proc = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                            health_obj=self.health_obj,
-                                                            pod_prefix=const.POD_NAME_PREFIX,
-                                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                            process=self.m0d_process, check_proc_state=True,
-                                                            proc_restart_delay=self.test_cfg[
-                                                     'm0d_restart_continuous_ios_delay'])
+        resp_proc = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True,
+            proc_restart_delay=self.test_cfg['m0d_restart_continuous_ios_delay'])
 
         self.log.info("Step 4: Wait for DELETE Operation to complete.")
         if proc_read_op.is_alive():
@@ -607,7 +618,8 @@ class TestSingleProcessRestart:
                                                        health_obj=self.health_obj,
                                                        pod_prefix=const.POD_NAME_PREFIX,
                                                        container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                       process=self.m0d_process, check_proc_state=True)
+                                                       process=self.m0d_process,
+                                                       check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 3: m0d restarted and recovered successfully")
 
@@ -675,14 +687,14 @@ class TestSingleProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 4: Perform Single m0d Process Restart During Write/Read Operations")
-        resp_proc = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                            health_obj=self.health_obj,
-                                                            pod_prefix=const.POD_NAME_PREFIX,
-                                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                            process=self.m0d_process,
-                                                            check_proc_state=True,
-                                                            proc_restart_delay=
-                                                 self.test_cfg['m0d_restart_continuous_ios_delay'])
+        resp_proc = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True,
+            proc_restart_delay=self.test_cfg['m0d_restart_continuous_ios_delay'])
 
         self.log.info("Step 5: Check if all the operations were successful")
         write_during_restart = None
@@ -776,15 +788,14 @@ class TestSingleProcessRestart:
         time.sleep(self.delay)
         self.log.info(
             "Step 4: Perform Single m0d Process Restart During Write/Read/Delete Operations")
-        resp_proc = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                       health_obj=self.health_obj,
-                                                       pod_prefix=const.POD_NAME_PREFIX,
-                                                       container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                       process=self.m0d_process,
-                                                       check_proc_state=True,
-                                                       proc_restart_delay=
-                                            self.test_cfg['m0d_restart_continuous_ios_delay']
-                                                       )
+        resp_proc = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True,
+            proc_restart_delay=self.test_cfg['m0d_restart_continuous_ios_delay'])
 
         self.log.info("Step 5: Check if all the operations were successful")
         write_during_restart = None
@@ -831,12 +842,13 @@ class TestSingleProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 3 : Perform Single m0d Process Restart during overwrite ")
-        resp_proc = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                            health_obj=self.health_obj,
-                                                            pod_prefix=const.POD_NAME_PREFIX,
-                                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                            process=self.m0d_process,
-                                                            check_proc_state=True)
+        resp_proc = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True)
 
         self.log.info("Step 4: Wait for Overwrite Operation to complete.")
         if proc_overwrite_op.is_alive():
@@ -936,7 +948,8 @@ class TestSingleProcessRestart:
                                                        health_obj=self.health_obj,
                                                        pod_prefix=const.POD_NAME_PREFIX,
                                                        container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                       process=self.m0d_process, check_proc_state=True)
+                                                       process=self.m0d_process,
+                                                       check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 3: Perform Copy Object to bucket-2, download and verify on copied "
                       "Objects")
@@ -996,11 +1009,13 @@ class TestSingleProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 3: Perform Single m0d Process Restart During Copy Object Operations")
-        resp_proc = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                            health_obj=self.health_obj,
-                                                            pod_prefix=const.POD_NAME_PREFIX,
-                                                            container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                            process=self.m0d_process, check_proc_state=True)
+        resp_proc = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True)
 
         self.log.info("Step 4: Wait for copy object to finish")
         if proc_cp_op.is_alive():
@@ -1056,39 +1071,39 @@ class TestSingleProcessRestart:
         time.sleep(self.delay)
         self.log.info("Step 3 : Perform RGW Process Restarts for %s iteration during IO operations",
                       rgw_restarts)
-        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                       health_obj=self.health_obj,
-                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                                       container_prefix=const.RGW_CONTAINER_NAME,
-                                                       process=self.rgw_process,
-                                                       check_proc_state=True,
-                                                       restart_cnt=rgw_restarts,
-                                                       proc_restart_delay=self.test_cfg['test_41245'][
-                                                'rgw_delay_before'])
+        resp = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+            container_prefix=const.RGW_CONTAINER_NAME,
+            process=self.rgw_process,
+            check_proc_state=True,
+            restart_cnt=rgw_restarts,
+            proc_restart_delay=self.test_cfg['test_41245']['rgw_delay_before'])
         assert_utils.assert_true(resp, "Failure observed during rgw process restart/recovery")
 
         self.log.info("Step 4 : Perform single m0d Process Restarts during IO operations")
-        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                       health_obj=self.health_obj,
-                                                       pod_prefix=const.POD_NAME_PREFIX,
-                                                       container_prefix=const.MOTR_CONTAINER_PREFIX,
-                                                       process=self.m0d_process,
-                                                       check_proc_state=True,
-                                                       proc_restart_delay=self.test_cfg['test_41245'][
-                                                'm0d_delay'])
+        resp = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True,
+            proc_restart_delay=self.test_cfg['test_41245']['m0d_delay'])
         assert_utils.assert_true(resp, "Failure observed during m0d process restart/recovery")
 
         self.log.info("Step 5 : Perform RGW Process Restarts for %s iteration during IO operations",
                       rgw_restarts)
-        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
-                                                       health_obj=self.health_obj,
-                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                                       container_prefix=const.RGW_CONTAINER_NAME,
-                                                       process=self.rgw_process,
-                                                       check_proc_state=True,
-                                                       restart_cnt=rgw_restarts,
-                                                       proc_restart_delay=self.test_cfg['test_41245'][
-                                                'rgw_delay_after'])
+        resp = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.SERVER_POD_NAME_PREFIX,
+            container_prefix=const.RGW_CONTAINER_NAME,
+            process=self.rgw_process,
+            check_proc_state=True,
+            restart_cnt=rgw_restarts,
+            proc_restart_delay=self.test_cfg['test_41245']['rgw_delay_after'])
         assert_utils.assert_true(resp, "Failure observed during rgw process restart/recovery")
 
         self.log.info("Step 6: Check if IO operations triggered in step 2 completed successfully")
