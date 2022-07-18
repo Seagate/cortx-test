@@ -918,7 +918,7 @@ class TestMultiServerPodFailure:
                     "performed multipart upload for %s size object in %s parts with every data "
                     "server shutdown pod shutdown", self.kvalue, file_size * const.Sizes.MB,
                     total_parts)
-        LOGGER.info("Step 4: Upload remaining %s parts")
+        LOGGER.info("Step 4: Upload remaining parts")
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
@@ -2153,6 +2153,7 @@ class TestMultiServerPodFailure:
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"WRITEs logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"WRITEs logs which contain pass: {resp[1]}")
         LOGGER.info("Step 3.1: Verified status for In-flight WRITEs while %s server pod "
@@ -2170,6 +2171,7 @@ class TestMultiServerPodFailure:
         assert_utils.assert_false(len(resp[1]),
                                   f"READs/VerifyDI logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"READs/VerifyDI logs which contain pass: {resp[1]}")
         LOGGER.info("Step 3.2: Verified status for In-flight READs/VerifyDI while %s "
