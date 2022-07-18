@@ -1438,7 +1438,7 @@ class TestDataPodRestart:
                 self.test_prefix = 'test-34091-restart'
                 resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_rst.values())[0],
                                                             log_prefix=self.test_prefix,
-                                                            skipcleanup=True)
+                                                            skipcleanup=True, setup_s3bench=False)
                 assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info("Step 8: Successfully created IAM user and multiple buckets and ran "
                             "IOs")
@@ -1553,7 +1553,7 @@ class TestDataPodRestart:
                 self.test_prefix = 'test-34090-restart'
                 resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_rst.values())[0],
                                                             log_prefix=self.test_prefix,
-                                                            skipcleanup=True)
+                                                            skipcleanup=True, setup_s3bench=False)
                 assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info("Step 8: Successfully created IAM user and multiple buckets and ran "
                             "IOs")
