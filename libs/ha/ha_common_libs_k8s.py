@@ -1813,3 +1813,26 @@ class HAK8s:
         LOGGER.info("Running command %s", get_cmd)
         resp = system_utils.execute_cmd(get_cmd)
         return resp
+
+    def dnld_obj_verify_chcksm(self, s3_test_obj, bucket, obj, download_path, upload_checksum):
+        """
+        Function to download the object and verify its checksum
+        :param s3_test_obj: Object of the s3 test lib
+        :param bucket: Name of the bucket
+        :param obj: Name of the object
+        :param download_path: Path to which object is to be downloaded
+        :param upload_checksum: Checksum of uploaded object
+        :return: Tuple (bool, string)
+        """
+        LOGGER.info("Download object %s from bucket %s", obj, bucket)
+        resp = s3_test_obj.object_download(bucket, obj, download_path)
+        LOGGER.info("Download object response: %s", resp)
+        if not resp[0]:
+            return resp
+        download_checksum = self.cal_compare_checksum(file_list=[download_path], compare=False)[0]
+        if upload_checksum != download_checksum:
+            LOGGER.info("Failed to match checksums. \nUpload checksum:%s Download checksum: %s",
+                        upload_checksum, download_checksum)
+            return False, download_checksum
+        LOGGER.info("Successfully downloaded the object and verified the checksum")
+        return True, download_checksum
