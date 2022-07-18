@@ -23,7 +23,6 @@ import os
 import logging
 import time
 from http import HTTPStatus
-import random
 import pandas
 import pytest
 from commons import configmanager
