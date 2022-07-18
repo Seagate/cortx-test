@@ -1105,9 +1105,7 @@ class TestSystemCapacityFixedPlacement():
         cls.skey = ""
         cls.s3_user = ""
         cls.bucket = ""
-        cls.row_temp = "N{} failure"
         cls.node_list = []
-        cls.host_list = []
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.io_bucket_name = f"iobkt1-copyobject-{time.perf_counter_ns()}"
         cls.s3_obj = s3_test_lib.S3TestLib()
@@ -1117,16 +1115,6 @@ class TestSystemCapacityFixedPlacement():
             cls.node_list.append(LogicalNode(hostname=node["hostname"],
                                                  username=node["username"],
                                                  password=node["password"]))
-            host = node["hostname"]
-            cls.host_list.append(host)
-        cls.log.info("Worker node List: %s", cls.host_list)
-        cls.num_worker = len(cls.host_list)
-        cls.log.info("Number of workers detected: %s", cls.num_worker)
-        cls.nd_obj = LogicalNode(hostname=CMN_CFG["nodes"][0]["hostname"],
-                                 username=CMN_CFG["nodes"][0]["username"],
-                                 password=CMN_CFG["nodes"][0]["password"])
-
-        cls.log.debug("Node object list : %s", cls.nd_obj)
         cls.restore_pod = None
         cls.restore_method = RESTORE_SCALE_REPLICAS
         cls.deployment_name = []
@@ -1143,7 +1131,6 @@ class TestSystemCapacityFixedPlacement():
         else:
             cls.log.info("Failed to get parity value, will use 1.")
             cls.kvalue = 1
-        cls.cap_df = pandas.DataFrame()
         cls.aligned_size = 4 * cls.nvalue
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.err_margin = (cls.nvalue/(cls.nvalue+cls.kvalue))*100 + 1
@@ -1175,7 +1162,6 @@ class TestSystemCapacityFixedPlacement():
                       self.bucket, self.akey, self.skey)
         assert s3_misc.create_bucket(self.bucket, self.akey, self.skey), "Failed to create bucket."
 
-        self.cap_df = pandas.DataFrame()
         total_written = s3_misc.get_total_used(self.akey, self.skey)
 
         self.log.info("[Start] Start some IOs")
