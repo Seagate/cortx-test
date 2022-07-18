@@ -1343,7 +1343,7 @@ class TestSystemCapacityFixedPlacement():
 
             result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
                 test_cfg["err_margin"], total_written)
-            assert result[0], result[1] + f"for {failure_cnt} failures"
+            assert result[0], f"{result[1]} for {failure_cnt} failures"
         self.deploy = True
 
     # pylint: disable-msg=too-many-statements
@@ -1445,7 +1445,7 @@ class TestSystemCapacityFixedPlacement():
 
             result = self.csm_obj.verify_bytecount_all(resp, failure_cnt, self.kvalue,
                 test_cfg["err_margin"], total_written)
-            assert result[0], result[1] + f"for {failure_cnt} failures"
+            assert result[0], f"{result[1]} for {failure_cnt} failures"
         self.deploy = True
 
     # pylint: disable-msg=too-many-statements
@@ -1549,6 +1549,6 @@ class TestSystemCapacityFixedPlacement():
 
             result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
                 self.err_margin, total_written)
-            assert result[0], result[1] + f"for {failure_cnt} failures"
+            assert result[0], f"{result[1]} for {failure_cnt} failures"
 
         self.deploy = True
