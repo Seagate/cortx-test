@@ -1279,11 +1279,8 @@ class TestSystemCapacityFixedPlacement():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_44342"]
-        cap_df = pandas.DataFrame()
         resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
         total_written = s3_misc.get_total_used(self.akey, self.skey)
-        new_row = pandas.Series(data=resp, name='Nofail')
-        cap_df = cap_df.append(new_row, ignore_index=False)
 
         result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
             critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
@@ -1310,9 +1307,6 @@ class TestSystemCapacityFixedPlacement():
             self.log.info("[End] Sleep %s", self.update_seconds)
 
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
-            index = deploy_name + "offline"
-            new_row = pandas.Series(data=resp, name=index)
-            cap_df = cap_df.append(new_row, ignore_index=False)
 
             result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
                 test_cfg["err_margin"], total_written)
@@ -1337,9 +1331,6 @@ class TestSystemCapacityFixedPlacement():
             self.log.info("[End] Sleep %s", self.update_seconds)
 
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
-            index = deploy_name + "online"
-            new_row = pandas.Series(data=resp, name=index)
-            cap_df = cap_df.append(new_row, ignore_index=False)
 
             result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
                 test_cfg["err_margin"], total_written)
@@ -1360,11 +1351,8 @@ class TestSystemCapacityFixedPlacement():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_44345"]
-        cap_df = pandas.DataFrame()
         resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
         total_written = s3_misc.get_total_used(self.akey, self.skey)
-        new_row = pandas.Series(data=resp, name='Nofail')
-        cap_df = cap_df.append(new_row, ignore_index=False)
 
         result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
             critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
@@ -1391,9 +1379,6 @@ class TestSystemCapacityFixedPlacement():
             self.log.info("[End] Sleep %s", self.update_seconds)
 
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
-            index = deploy_name + "offline"
-            new_row = pandas.Series(data=resp, name=index)
-            cap_df = cap_df.append(new_row, ignore_index=False)
 
             result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
                 test_cfg["err_margin"], total_written)
@@ -1412,9 +1397,6 @@ class TestSystemCapacityFixedPlacement():
                 self.log.info("[End] Sleep %s", self.update_seconds)
 
                 resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
-                index = deploy_name + "offline"
-                new_row = pandas.Series(data=resp, name=index)
-                cap_df = cap_df.append(new_row, ignore_index=False)
 
                 result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt,
                                 self.kvalue, test_cfg["err_margin"], total_written)
@@ -1439,9 +1421,6 @@ class TestSystemCapacityFixedPlacement():
             self.log.info("[End] Sleep %s", self.update_seconds)
 
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
-            index = deploy_name + "online"
-            new_row = pandas.Series(data=resp, name=index)
-            cap_df = cap_df.append(new_row, ignore_index=False)
 
             result = self.csm_obj.verify_bytecount_all(resp, failure_cnt, self.kvalue,
                 test_cfg["err_margin"], total_written)
@@ -1461,11 +1440,8 @@ class TestSystemCapacityFixedPlacement():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        cap_df = pandas.DataFrame()
         resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
         total_written = s3_misc.get_total_used(self.akey, self.skey)
-        new_row = pandas.Series(data=resp, name='Nofail')
-        cap_df = cap_df.append(new_row, ignore_index=False)
 
         result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
             critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
@@ -1492,9 +1468,6 @@ class TestSystemCapacityFixedPlacement():
             self.log.info("[End] Sleep %s", self.update_seconds)
 
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
-            index = deploy_name + "offline"
-            new_row = pandas.Series(data=resp, name=index)
-            cap_df = cap_df.append(new_row, ignore_index=False)
 
             result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
                 self.err_margin, total_written)
@@ -1516,9 +1489,6 @@ class TestSystemCapacityFixedPlacement():
                 self.log.info("[End] Sleep %s", self.update_seconds)
 
                 resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
-                index = deploy_name + "offline"
-                new_row = pandas.Series(data=resp, name=index)
-                cap_df = cap_df.append(new_row, ignore_index=False)
 
                 result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt,
                          self.kvalue, self.err_margin, total_written)
@@ -1543,9 +1513,6 @@ class TestSystemCapacityFixedPlacement():
             self.log.info("[End] Sleep %s", self.update_seconds)
 
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
-            index = deploy_name + "online"
-            new_row = pandas.Series(data=resp, name=index)
-            cap_df = cap_df.append(new_row, ignore_index=False)
 
             result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
                 self.err_margin, total_written)
