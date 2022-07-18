@@ -553,11 +553,12 @@ class LogicalNode(Host):
         return pod_selected,container_selected
         """
         pod_list = self.get_all_pods(pod_prefix=pod_prefix)
-        pod_selected = pod_list[random.randint(0, len(pod_list) - 1)]
+        sys_random = random.SystemRandom()
+        pod_selected = pod_list[sys_random.randint(0, len(pod_list) - 1)]
         log.info("Pod selected : %s", pod_selected)
         container_list = self.get_container_of_pod(pod_name=pod_selected,
                                                           container_prefix=container_prefix)
-        container = container_list[random.randint(0, len(container_list) - 1)]
+        container = container_list[sys_random.randint(0, len(container_list) - 1)]
         log.info("Container selected : %s", container)
         return pod_selected, container
 
