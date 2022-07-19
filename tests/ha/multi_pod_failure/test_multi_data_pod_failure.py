@@ -1,4 +1,4 @@
-#!/usr/bin/python # pylint: disable=C0302
+#!/usr/bin/python # pylint: disable=too-many-lines
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -54,8 +54,8 @@ from libs.s3.s3_test_lib import S3TestLib
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=R0902
-# pylint: disable=R0904
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-public-methods
 class TestMultiDataPodFailure:
     """
     Test suite for Multiple (K) Data Pods Failure
@@ -1791,7 +1791,6 @@ class TestMultiDataPodFailure:
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 3: Successfully download the uploaded objects & verify etags")
 
-        bkt_obj_dict2 = bkt_obj_dict.copy()
         t_t = int(perf_counter_ns())
         bucket_name = self.bucket_name
         bkt_op = False
@@ -1819,7 +1818,7 @@ class TestMultiDataPodFailure:
                     "object etags", bucket_name)
 
         LOGGER.info("Step 5: Download the copied objects & verify etags.")
-        for bkt, obj in bkt_obj_dict2.items():
+        for bkt, obj in bkt_obj_dict.items():
             resp = s3_test_obj.get_object(bucket=bkt, key=obj)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
@@ -2072,7 +2071,6 @@ class TestMultiDataPodFailure:
                                                           "Put and Get Etag mismatch")
         LOGGER.info("Step 5: Successfully download the uploaded objects & verify etags")
 
-        bkt_obj_dict2 = bkt_obj_dict.copy()
         t_t = int(perf_counter_ns())
         bucket_name = self.bucket_name
         bkt_op = False
@@ -2100,7 +2098,7 @@ class TestMultiDataPodFailure:
                     "object etags", bucket_name)
 
         LOGGER.info("Step 7: Download the copied objects & verify etags.")
-        for bkt, obj in bkt_obj_dict2.items():
+        for bkt, obj in bkt_obj_dict.items():
             resp = s3_test_obj.get_object(bucket=bkt, key=obj)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
