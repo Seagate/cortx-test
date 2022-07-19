@@ -147,7 +147,7 @@ class TestSystemCapacity():
         self.log.info("[Start] Start some IOs")
         obj = f"object{self.s3_user}{time.time_ns()}.txt"
         self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, self.aligned_size,
-                        self.bucket)
+                      self.bucket)
         resp = s3_misc.create_put_objects(
             obj, self.bucket, self.akey, self.skey, object_size=self.aligned_size)
         assert resp, "Put object Failed"
@@ -162,8 +162,9 @@ class TestSystemCapacity():
         new_write = self.aligned_size * 1024 * 1024
         total_written += new_write
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=self.err_margin, total=total_written)
         assert result[0], result[1]
         self.log.info("[END] Setup Method")
 
@@ -184,7 +185,7 @@ class TestSystemCapacity():
 
         if self.s3_cleanup:
             self.log.info("Deleting bucket %s & associated objects", self.bucket)
-            resp = s3_misc.delete_all_buckets(self.akey,self.skey)
+            resp = s3_misc.delete_all_buckets(self.akey, self.skey)
             assert resp, "Delete all buckets and object failed."
             self.log.info("Deleting S3 account %s created in setup", self.s3_user)
             resp = self.csm_obj.delete_s3_account_user(self.s3_user)
@@ -194,7 +195,7 @@ class TestSystemCapacity():
             bundle_dir = os.path.join(LOG_DIR, "latest", "support_bundle")
             self.log.info("Support bundle dir : %s", bundle_dir)
             resp = sb.collect_support_bundle_k8s(local_dir_path=bundle_dir,
-                                                scripts_path=K8S_SCRIPTS_PATH)
+                                                 scripts_path=K8S_SCRIPTS_PATH)
 
         self.deploy = True
         if self.deploy:
@@ -215,7 +216,7 @@ class TestSystemCapacity():
 
             self.log.info("Cleanup: Deploying the Cluster")
             resp_cls = self.deploy_lc_obj.deploy_cluster(self.master,
-                                                            K8S_SCRIPTS_PATH)
+                                                         K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp_cls[0], resp_cls[1])
             self.log.info("Cleanup: Cluster deployment successfully")
 
@@ -249,8 +250,10 @@ class TestSystemCapacity():
         new_row = pandas.Series(data=resp, name='Nofail')
         cap_df = cap_df.append(new_row, ignore_index=False)
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=test_cfg["err_margin"],
+            total=total_written)
         assert result[0], result[1]
 
         self.log.info("[START] Failure loop")
@@ -278,8 +281,8 @@ class TestSystemCapacity():
             new_row = pandas.Series(data=resp, name=index)
             cap_df = cap_df.append(new_row, ignore_index=False)
 
-            result = self.csm_obj.verify_bytecount_all(resp,failure_cnt, self.kvalue,
-                test_cfg["err_margin"], total_written)
+            result = self.csm_obj.verify_bytecount_all(resp, failure_cnt, self.kvalue,
+                                                       test_cfg["err_margin"], total_written)
             assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
@@ -293,7 +296,7 @@ class TestSystemCapacity():
             self.log.info("Successfully restored pod by %s way", self.restore_method)
             self.failed_pod.remove(deploy_name)
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
-            failure_cnt -=1
+            failure_cnt -= 1
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
@@ -304,8 +307,8 @@ class TestSystemCapacity():
             new_row = pandas.Series(data=resp, name=index)
             cap_df = cap_df.append(new_row, ignore_index=False)
 
-            result = self.csm_obj.verify_bytecount_all(resp,failure_cnt, self.kvalue,
-                test_cfg["err_margin"], total_written)
+            result = self.csm_obj.verify_bytecount_all(resp, failure_cnt, self.kvalue,
+                                                       test_cfg["err_margin"], total_written)
             assert result[0], result[1] + f"for {failure_cnt} failures"
         self.deploy = True
 
@@ -331,8 +334,10 @@ class TestSystemCapacity():
         cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, resp["healthy"])
         self.log.debug("Collected data frame : %s", cap_df.to_string())
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=test_cfg["err_margin"],
+            total=total_written)
         assert result[0], result[1]
 
         self.log.info("[START] Failure loop")
@@ -356,15 +361,17 @@ class TestSystemCapacity():
             self.log.info("[End] Sleep %s", self.update_seconds)
 
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
-            result = self.csm_obj.verify_degraded_capacity(resp, healthy=0, degraded=None,
-            critical=None, damaged=None, err_margin=test_cfg["err_margin"], total=total_written)
+            result = self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=None, damaged=None,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             assert result[0], result[1]
 
             new_write = self.aligned_size * failure_cnt
             self.log.info("[Start] Start some IOs")
             obj = f"object{self.s3_user}{time.time_ns()}.txt"
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, new_write,
-                            self.bucket)
+                          self.bucket)
             try:
                 resp = s3_misc.create_put_objects(
                     obj, self.bucket, self.akey, self.skey, object_size=new_write)
@@ -388,7 +395,7 @@ class TestSystemCapacity():
 
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
-                self.kvalue, test_cfg["err_margin"])
+                                                          self.kvalue, test_cfg["err_margin"])
             assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
@@ -402,13 +409,13 @@ class TestSystemCapacity():
             self.log.info("Successfully restored pod by %s way", self.restore_method)
             self.failed_pod.remove(deploy_name)
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
-            failure_cnt -=1
+            failure_cnt -= 1
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
             self.log.info("[Start] Sleep %s", self.update_seconds)
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
-                self.kvalue, test_cfg["err_margin"])
+                                                          self.kvalue, test_cfg["err_margin"])
             assert result[0], result[1] + f"for {failure_cnt} failures"
         assert self.csm_obj.verify_checksum(cap_df)
         self.deploy = True
@@ -436,8 +443,10 @@ class TestSystemCapacity():
         cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, resp["healthy"])
         self.log.debug("Collected data frame : %s", cap_df.to_string())
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=test_cfg["err_margin"],
+            total=total_written)
         assert result[0], result[1]
 
         self.log.info("[START] Failure loop")
@@ -460,7 +469,7 @@ class TestSystemCapacity():
             self.log.info("[Start] Start some IOs")
             obj = f"object{self.s3_user}{time.time_ns()}.txt"
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, new_write,
-                            self.bucket)
+                          self.bucket)
             try:
                 self.log.info("[START] Create S3 account")
                 resp = self.csm_obj.create_s3_account()
@@ -504,7 +513,7 @@ class TestSystemCapacity():
 
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
-                self.kvalue, test_cfg["err_margin"])
+                                                          self.kvalue, test_cfg["err_margin"])
             assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
@@ -524,7 +533,7 @@ class TestSystemCapacity():
             self.log.info("[Start] Sleep %s", self.update_seconds)
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
-                self.kvalue, test_cfg["err_margin"])
+                                                          self.kvalue, test_cfg["err_margin"])
             assert result[0], result[1] + f"for {failure_cnt} failures"
         assert self.csm_obj.verify_checksum(cap_df)
         self.deploy = True
@@ -566,8 +575,9 @@ class TestSystemCapacity():
         cap_df = cap_df.append(new_row, ignore_index=False)
         cap_df["csum"] = csum
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=self.err_margin, total=total_written)
         assert result[0], result[1]
 
         self.log.info("[Start] Stop Cluster")
@@ -595,8 +605,9 @@ class TestSystemCapacity():
         new_row = pandas.Series(data=resp, name='AfterClusterRestart')
         cap_df = cap_df.append(new_row, ignore_index=False)
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=self.err_margin, total=total_written)
         assert result[0], result[1]
 
         csum = s3_misc.get_object_checksum(obj, self.bucket, self.akey, self.skey)
@@ -605,7 +616,7 @@ class TestSystemCapacity():
         result = (cap_df.loc["AfterClusterRestart"] == cap_df.loc["BeforeClusterRestart"]).all()
         self.log.info("Check the cluster value before and after restart are same")
         assert result, "Values are not consistent."
-        self.deploy=True
+        self.deploy = True
 
     # pylint: disable=broad-except
     # pylint: disable=too-many-statements
@@ -630,8 +641,10 @@ class TestSystemCapacity():
         cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, resp["healthy"])
         self.log.debug("Collected data frame : %s", cap_df.to_string())
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=test_cfg["err_margin"],
+            total=total_written)
         assert result[0], result[1]
 
         self.log.info("[START] Failure loop")
@@ -656,15 +669,17 @@ class TestSystemCapacity():
 
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
 
-            result = self.csm_obj.verify_degraded_capacity(resp, healthy=0, degraded=None,
-            critical=None, damaged=None, err_margin=test_cfg["err_margin"], total=total_written)
+            result = self.csm_obj.verify_degraded_capacity(
+                resp, healthy=0, degraded=None, critical=None, damaged=None,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             assert result[0], result[1]
 
             new_write = self.aligned_size * failure_cnt
             self.log.info("[Start] Start some IOs")
             obj = f"object{self.s3_user}{time.time_ns()}.txt"
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, new_write,
-                            self.bucket)
+                          self.bucket)
             try:
                 resp = s3_misc.create_put_objects(
                     obj, self.bucket, self.akey, self.skey, object_size=new_write)
@@ -687,7 +702,7 @@ class TestSystemCapacity():
 
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
-                self.kvalue, test_cfg["err_margin"])
+                                                          self.kvalue, test_cfg["err_margin"])
             assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
@@ -701,13 +716,13 @@ class TestSystemCapacity():
             self.log.info("Successfully restored pod by %s way", self.restore_method)
             self.failed_pod.remove(deploy_name)
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
-            failure_cnt -=1
+            failure_cnt -= 1
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
             self.log.info("[Start] Sleep %s", self.update_seconds)
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
-                self.kvalue, test_cfg["err_margin"])
+                                                          self.kvalue, test_cfg["err_margin"])
             assert result[0], result[1] + f"for {failure_cnt} failures"
         self.deploy = True
 
@@ -734,8 +749,10 @@ class TestSystemCapacity():
         cap_df = self.csm_obj.append_df(cap_df, self.failed_pod, resp["healthy"])
         self.log.debug("Collected data frame : %s", cap_df.to_string())
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=test_cfg["err_margin"],
+            total=total_written)
         assert result[0], result[1]
 
         self.log.info("[START] Failure loop")
@@ -759,7 +776,7 @@ class TestSystemCapacity():
             self.log.info("[Start] Start some IOs")
             obj = f"object{self.s3_user}{time.time_ns()}.txt"
             self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, new_write,
-                            self.bucket)
+                          self.bucket)
             try:
                 resp = s3_misc.create_put_objects(
                     obj, self.bucket, self.akey, self.skey, object_size=new_write)
@@ -783,7 +800,7 @@ class TestSystemCapacity():
 
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
-                self.kvalue, test_cfg["err_margin"])
+                                                          self.kvalue, test_cfg["err_margin"])
             assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
@@ -797,13 +814,13 @@ class TestSystemCapacity():
             self.log.info("Successfully restored pod by %s way", self.restore_method)
             self.failed_pod.remove(deploy_name)
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
-            failure_cnt -=1
+            failure_cnt -= 1
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
             self.log.info("[Start] Sleep %s", self.update_seconds)
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
-                self.kvalue, test_cfg["err_margin"])
+                                                          self.kvalue, test_cfg["err_margin"])
             assert result[0], result[1] + f"for {failure_cnt} failures"
         assert self.csm_obj.verify_checksum(cap_df)
         self.deploy = True
@@ -1010,8 +1027,10 @@ class TestSystemCapacity():
         cap_df = self.csm_obj.append_df(self.cap_df, self.failed_pod, resp["healthy"])
         self.log.debug("Collected data frame : %s", cap_df.to_string())
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=test_cfg["err_margin"],
+            total=total_written)
         assert result[0], result[1]
 
         self.log.info("[START] loop")
@@ -1033,18 +1052,18 @@ class TestSystemCapacity():
             self.log.info("[Start] Start some IOs")
             bucket = f"test39923buck{time.time_ns()}"
             resp = s3bench(
-                        self.akey,
-                        self.skey,
-                        bucket=bucket,
-                        end_point=S3_CFG["s3_url"],
-                        num_clients=test_cfg["num_clients"],
-                        num_sample=test_cfg["num_sample"],
-                        obj_name_pref=test_cfg["obj_name_pref"],
-                        obj_size=test_cfg["obj_size"],
-                        duration=test_cfg["duration"],
-                        log_file_prefix=test_case_name,
-                        validate_certs=S3_CFG["validate_certs"],
-                        skip_cleanup=True)
+                self.akey,
+                self.skey,
+                bucket=bucket,
+                end_point=S3_CFG["s3_url"],
+                num_clients=test_cfg["num_clients"],
+                num_sample=test_cfg["num_sample"],
+                obj_name_pref=test_cfg["obj_name_pref"],
+                obj_size=test_cfg["obj_size"],
+                duration=test_cfg["duration"],
+                log_file_prefix=test_case_name,
+                validate_certs=S3_CFG["validate_certs"],
+                skip_cleanup=True)
             self.log.info(resp)
             assert os.path.exists(resp[1]), "Log file not found."
             self.log.info("[End] Start some IOs")
@@ -1053,11 +1072,12 @@ class TestSystemCapacity():
             time.sleep(self.update_seconds)
             self.log.info("[End] Sleep %s", self.update_seconds)
 
-            _, new_write = s3_misc.get_objects_size_bucket(bucket,self.akey,self.skey)
+            _, new_write = s3_misc.get_objects_size_bucket(bucket, self.akey, self.skey)
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
-            result = self.csm_obj.verify_degraded_capacity(resp, healthy=new_write,
-                degraded=total_written, critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                total=total_written+new_write)
+            result = self.csm_obj.verify_degraded_capacity(
+                resp, healthy=new_write, degraded=total_written, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written + new_write)
             assert result, "Degraded byte check failed"
 
             total_written += new_write
@@ -1074,9 +1094,10 @@ class TestSystemCapacity():
             time.sleep(self.update_seconds)
             self.log.info("[Start] Sleep %s", self.update_seconds)
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
-            result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written,
-                            degraded=0, critical=0, damaged=0, err_margin=test_cfg["err_margin"],
-                            total=total_written)
+            result = self.csm_obj.verify_degraded_capacity(
+                resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+                err_margin=test_cfg["err_margin"],
+                total=total_written)
             assert result[0], result[1]
             # Uncomment next lines and remove break when CORTX-32322 is fixed.
             #resp = s3_misc.delete_all_buckets(self.akey,self.skey)
@@ -1084,6 +1105,7 @@ class TestSystemCapacity():
             break
         self.log.info("[END] completed")
         self.deploy = True
+
 
 class TestSystemCapacityFixedPlacement():
     """System Capacity Testsuite"""
@@ -1104,22 +1126,13 @@ class TestSystemCapacityFixedPlacement():
         cls.skey = ""
         cls.s3_user = ""
         cls.bucket = ""
-        cls.node_list = []
         cls.num_nodes = len(CMN_CFG["nodes"])
-        cls.io_bucket_name = f"iobkt1-copyobject-{time.perf_counter_ns()}"
-        cls.s3_obj = s3_test_lib.S3TestLib()
         cls.ha_obj = HAK8s()
-        for node in CMN_CFG["nodes"]:
-            cls.log.debug("Worker node : %s", node["hostname"])
-            cls.node_list.append(LogicalNode(hostname=node["hostname"],
-                                                 username=node["username"],
-                                                 password=node["password"]))
         cls.restore_pod = None
         cls.restore_method = RESTORE_SCALE_REPLICAS
         cls.deployment_name = []
         cls.failed_pod = []
         cls.deployment_backup = None
-        cls.fail_cnt = 0
         cls.deploy_list = cls.csm_obj.master.get_deployment_name(cls.num_nodes)
         cls.update_seconds = cls.csm_conf["update_seconds"]
         cls.log.info("Get the value of K for the given cluster.")
@@ -1166,7 +1179,7 @@ class TestSystemCapacityFixedPlacement():
         self.log.info("[Start] Start some IOs")
         obj = f"object{self.s3_user}{time.time_ns()}.txt"
         self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj, self.aligned_size,
-                        self.bucket)
+                      self.bucket)
         resp = s3_misc.create_put_objects(
             obj, self.bucket, self.akey, self.skey, object_size=self.aligned_size)
         assert resp, "Put object Failed"
@@ -1181,8 +1194,9 @@ class TestSystemCapacityFixedPlacement():
         new_write = self.aligned_size * 1024 * 1024
         total_written += new_write
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=self.err_margin, total=total_written)
         assert result[0], result[1]
         self.log.info("[END] Setup Method")
 
@@ -1203,7 +1217,7 @@ class TestSystemCapacityFixedPlacement():
 
         if self.s3_cleanup:
             self.log.info("Deleting bucket %s & associated objects", self.bucket)
-            resp = s3_misc.delete_all_buckets(self.akey,self.skey)
+            resp = s3_misc.delete_all_buckets(self.akey, self.skey)
             assert resp, "Delete all buckets and object failed."
             self.log.info("Deleting S3 account %s created in setup", self.s3_user)
             resp = self.csm_obj.delete_s3_account_user(self.s3_user)
@@ -1213,13 +1227,13 @@ class TestSystemCapacityFixedPlacement():
             bundle_dir = os.path.join(LOG_DIR, "latest", "support_bundle")
             self.log.info("Support bundle dir : %s", bundle_dir)
             resp = sb.collect_support_bundle_k8s(local_dir_path=bundle_dir,
-                                                scripts_path=K8S_SCRIPTS_PATH)
+                                                 scripts_path=K8S_SCRIPTS_PATH)
 
         self.deploy = True
         if self.deploy:
             self.log.info("Cleanup: Destroying the cluster ")
             resp = self.deploy_lc_obj.destroy_setup(self.csm_obj.master, self.node_list,
-                             K8S_SCRIPTS_PATH)
+                                                    K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Cleanup: Cluster destroyed successfully")
 
@@ -1235,7 +1249,7 @@ class TestSystemCapacityFixedPlacement():
 
             self.log.info("Cleanup: Deploying the Cluster")
             resp_cls = self.deploy_lc_obj.deploy_cluster(self.csm_obj.master,
-                                                            K8S_SCRIPTS_PATH)
+                                                         K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp_cls[0], resp_cls[1])
             self.log.info("Cleanup: Cluster deployment successfully")
 
@@ -1267,8 +1281,10 @@ class TestSystemCapacityFixedPlacement():
         resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
         total_written = s3_misc.get_total_used(self.akey, self.skey)
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=test_cfg["err_margin"],
+            total=total_written)
         assert result[0], result[1]
 
         self.log.info("[START] Failure loop")
@@ -1293,8 +1309,8 @@ class TestSystemCapacityFixedPlacement():
 
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
 
-            result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
-                test_cfg["err_margin"], total_written)
+            result = self.csm_obj.verify_bytecount_fixed_placement(
+                resp, failure_cnt, self.kvalue, test_cfg["err_margin"], total_written)
             assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
@@ -1309,7 +1325,7 @@ class TestSystemCapacityFixedPlacement():
             self.log.info("Successfully restored pod by %s way", self.restore_method)
             self.failed_pod.remove(deploy_name)
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
-            failure_cnt -=1
+            failure_cnt -= 1
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
@@ -1317,8 +1333,8 @@ class TestSystemCapacityFixedPlacement():
 
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
 
-            result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
-                test_cfg["err_margin"], total_written)
+            result = self.csm_obj.verify_bytecount_fixed_placement(
+                resp, failure_cnt, self.kvalue, test_cfg["err_margin"], total_written)
             assert result[0], f"{result[1]} for {failure_cnt} failures"
         self.deploy = True
 
@@ -1339,8 +1355,10 @@ class TestSystemCapacityFixedPlacement():
         resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
         total_written = s3_misc.get_total_used(self.akey, self.skey)
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=test_cfg["err_margin"], total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=test_cfg["err_margin"],
+            total=total_written)
         assert result[0], result[1]
 
         self.log.info("[START] Failure loop")
@@ -1365,15 +1383,15 @@ class TestSystemCapacityFixedPlacement():
 
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
 
-            result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
-                test_cfg["err_margin"], total_written)
+            result = self.csm_obj.verify_bytecount_fixed_placement(
+                resp, failure_cnt, self.kvalue, test_cfg["err_margin"], total_written)
             assert result[0], result[1]
-            if failure_cnt<=self.kvalue:
+            if failure_cnt <= self.kvalue:
                 obj = f"object{self.s3_user}{time.time_ns()}.txt"
                 self.log.info("Perform %s of %s MB write in the bucket: %s", obj,
-                      self.aligned_size, self.bucket)
+                              self.aligned_size, self.bucket)
                 resp = s3_misc.create_put_objects(
-                  obj, self.bucket, self.akey, self.skey, object_size=self.aligned_size)
+                    obj, self.bucket, self.akey, self.skey, object_size=self.aligned_size)
                 assert resp, "Put object Failed"
                 total_written = total_written + self.aligned_size
 
@@ -1383,8 +1401,8 @@ class TestSystemCapacityFixedPlacement():
 
                 resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
 
-                result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt,
-                                self.kvalue, test_cfg["err_margin"], total_written)
+                result = self.csm_obj.verify_bytecount_fixed_placement(
+                    resp, failure_cnt, self.kvalue, test_cfg["err_margin"], total_written)
                 assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
@@ -1399,7 +1417,7 @@ class TestSystemCapacityFixedPlacement():
             self.log.info("Successfully restored pod by %s way", self.restore_method)
             self.failed_pod.remove(deploy_name)
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
-            failure_cnt -=1
+            failure_cnt -= 1
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
@@ -1408,7 +1426,7 @@ class TestSystemCapacityFixedPlacement():
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
 
             result = self.csm_obj.verify_bytecount_all(resp, failure_cnt, self.kvalue,
-                test_cfg["err_margin"], total_written)
+                                                       test_cfg["err_margin"], total_written)
             assert result[0], f"{result[1]} for {failure_cnt} failures"
         self.deploy = True
 
@@ -1428,8 +1446,9 @@ class TestSystemCapacityFixedPlacement():
         resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
         total_written = s3_misc.get_total_used(self.akey, self.skey)
 
-        result = self.csm_obj.verify_degraded_capacity(resp, healthy=total_written, degraded=0,
-            critical=0, damaged=0, err_margin=self.err_margin, total=total_written)
+        result = self.csm_obj.verify_degraded_capacity(
+            resp, healthy=total_written, degraded=0, critical=0, damaged=0,
+            err_margin=self.err_margin, total=total_written)
         assert result[0], result[1]
 
         self.log.info("[START] Failure loop")
@@ -1455,17 +1474,17 @@ class TestSystemCapacityFixedPlacement():
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
 
             result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
-                self.err_margin, total_written)
+                                                                   self.err_margin, total_written)
             assert result[0], result[1]
-            if failure_cnt<=self.kvalue:
+            if failure_cnt <= self.kvalue:
                 odd_multiplier = self.csm_obj.random_gen.randrange(3, 20, 2)
                 unaligned_size = self.aligned_size + odd_multiplier
                 obj = f"object{self.s3_user}{time.time_ns()}.txt"
                 self.log.info("Verify Perform %s of %s MB write in the bucket: %s", obj,
                               self.aligned_size,
-                        self.bucket)
+                              self.bucket)
                 resp = s3_misc.create_put_objects(
-                  obj, self.bucket, self.akey, self.skey, object_size=unaligned_size)
+                    obj, self.bucket, self.akey, self.skey, object_size=unaligned_size)
                 assert resp, "Put object Failed"
                 total_written = total_written + self.aligned_size
 
@@ -1475,8 +1494,8 @@ class TestSystemCapacityFixedPlacement():
 
                 resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
 
-                result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt,
-                         self.kvalue, self.err_margin, total_written)
+                result = self.csm_obj.verify_bytecount_fixed_placement(
+                    resp, failure_cnt, self.kvalue, self.err_margin, total_written)
                 assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
@@ -1491,7 +1510,7 @@ class TestSystemCapacityFixedPlacement():
             self.log.info("Successfully restored pod by %s way", self.restore_method)
             self.failed_pod.remove(deploy_name)
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
-            failure_cnt -=1
+            failure_cnt -= 1
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
@@ -1500,7 +1519,7 @@ class TestSystemCapacityFixedPlacement():
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
 
             result = self.csm_obj.verify_bytecount_fixed_placement(resp, failure_cnt, self.kvalue,
-                self.err_margin, total_written)
+                                                                   self.err_margin, total_written)
             assert result[0], f"{result[1]} for {failure_cnt} failures"
 
         self.deploy = True
