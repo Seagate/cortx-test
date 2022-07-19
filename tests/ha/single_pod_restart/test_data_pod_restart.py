@@ -944,7 +944,7 @@ class TestDataPodRestart:
                                                           f"Etag for object {obj} of bucket "
                                                           f"{bkt}.")
         LOGGER.info("Step 6: Downloaded copied objects & verify etags.")
-        bkt_obj_dict2 = bkt_obj_dict.copy()
+
         t_t = int(perf_counter_ns())
         bucket_name = self.bucket_name
         bkt_op = False
@@ -969,7 +969,7 @@ class TestDataPodRestart:
         LOGGER.info("Step 7: Performed copy object from already created/uploaded %s bucket to other"
                     " buckets verified copy object etags", self.bucket_name)
         LOGGER.info("Step 8: Download the copied objects & verify etags.")
-        for bkt, obj in bkt_obj_dict2.items():
+        for bkt, obj in bkt_obj_dict.items():
             resp = s3_test_obj.get_object(bucket=bkt, key=obj)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
@@ -1916,7 +1916,6 @@ class TestDataPodRestart:
                                                           f"Get Etag mismatch")
         LOGGER.info("Step 7: Successfully downloaded the object and verified the checksum")
 
-        bkt_obj_dict2 = bkt_obj_dict.copy()
         t_t = int(perf_counter_ns())
         bucket_name = self.bucket_name
         bkt_op = False
@@ -1944,7 +1943,7 @@ class TestDataPodRestart:
                     "object etags", bucket_name)
 
         LOGGER.info("Step 9: Download the copied objects & verify etags.")
-        for bkt, obj in bkt_obj_dict2.items():
+        for bkt, obj in bkt_obj_dict.items():
             resp = s3_test_obj.get_object(bucket=bkt, key=obj)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
