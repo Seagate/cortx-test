@@ -366,4 +366,4 @@ class TestCorruptDataDetection:
         resp = self.m0cp_corrupt_parity_m0cat(layout_ids, bsize_list, count_list, offsets)
         assert_utils.assert_true(resp)
         logger.info("Step 2: Successfully performed m0cp and corrupt the parity block")
-        logger.info("ENDED: Test Parity corruption in degraded mode - aligned")
+        logger.info(f"ENDED: {test_prefix}Test Parity corruption in degraded mode - aligned")
