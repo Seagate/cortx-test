@@ -2270,8 +2270,7 @@ class TestCopyObjects:
     def test_44750(self):
         """
         Copy object Conditional params: All true for simple object copy"""
-        LOGGER.info(
-            "STARTED: Copy simple object with all conditional headers as true")
+        LOGGER.info("STARTED: Copy simple object with all conditional headers as true")
         LOGGER.info("Step 1: Upload simple object to source bucket")
         resp = system_utils.create_file(fpath=self.file_path, count=10, b_size="1M")
         LOGGER.info(resp)
@@ -2281,40 +2280,43 @@ class TestCopyObjects:
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Put object ETag: %s", put_etag)
         obj_list = []
+        response = self.s3_obj.create_bucket(self.bucket_name2)
+        assert_utils.assert_true(response[0], response[1])
         LOGGER.info("Step 2: Copy object to different bucket")
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                    self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2)
+        etag = response["CopyObjectResult"]["ETag"]
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True)")
-        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                   self.bucket_name2, self.object_name2 + "_im",
-                CopySourceIfMatch=response[1]["ETag"])
-        assert_utils.assert_true(status, response)
+        status, resp = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
+                                               self.bucket_name2, self.object_name2+"_im",
+                                               CopySourceIfMatch=etag)
+        assert_utils.assert_true(status, resp)
         obj_list.append(self.object_name2 + "_im")
         LOGGER.info("Step 4: Copy object to different bucket with condition"
                     "x-amz-copy-source-if-none-match (True)")
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                   self.bucket_name2, self.object_name2 + "_inm",
-            CopySourceIfNoneMatch=response[1]["ETag"]+"_")
+                                                   self.bucket_name2, self.object_name2+"_inm",
+                                                    CopySourceIfNoneMatch=etag+"_")
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_inm")
         LOGGER.info("Step 5: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-modified-since (True)")
-        date1 = response[1]["LastModified"]
+        date1 = response["CopyObjectResult"]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
         pre_date= date1 - timedelta(days=1)
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                   self.bucket_name2, self.object_name2 + "_ims",
-            CopySourceIfModifiedSince=pre_date)
+                                                   self.bucket_name2, self.object_name2+"_ims",
+                                                   CopySourceIfModifiedSince=pre_date)
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_ims")
         LOGGER.info("Step 6: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-unmodified-since (True)")
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                   self.bucket_name2, self.object_name2 + "_iums",
-            CopySourceIfUnmodifiedSince=date1)
+                                                   self.bucket_name2, self.object_name2+"_iums",
+                                                   CopySourceIfUnmodifiedSince=date1)
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_iums")
         status, response = self.s3_obj.object_list(self.bucket_name2)
@@ -2331,7 +2333,7 @@ class TestCopyObjects:
         Copy object Conditional params: All true for multipart object copy"""
         LOGGER.info(
             "STARTED: Copy multipart object with all conditional headers as true")
-        _, response = self.s3_obj.create_bucket(self.bucket_name1)
+        response = self.s3_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(response[0], response[1])
         LOGGER.info("Step 2: Upload multipart object to source bucket")
         res = self.s3mp_test_obj.complete_multipart_upload_with_di(self.bucket_name,
@@ -2344,35 +2346,36 @@ class TestCopyObjects:
                                                    self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2)
+        etag = response["CopyObjectResult"]["ETag"]
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True)")
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                   self.bucket_name2, self.object_name2 + "_im",
-                CopySourceIfMatch=response[1]["ETag"])
+                                                   self.bucket_name2, self.object_name2+"_im",
+                                                   CopySourceIfMatch=etag)
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_im")
         LOGGER.info("Step 4: Copy object to different bucket with condition"
                     "x-amz-copy-source-if-none-match (True)")
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                   self.bucket_name2, self.object_name2 + "_inm",
-            CopySourceIfNoneMatch=response[1]["ETag"]+"_")
+                                                   self.bucket_name2, self.object_name2+"_inm",
+                                                   CopySourceIfNoneMatch=etag+"_")
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_inm")
         LOGGER.info("Step 5: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-modified-since (True)")
-        date1 = response[1]["LastModified"]
+        date1 = response["CopyObjectResult"]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
         pre_date= date1 - timedelta(days=1)
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                   self.bucket_name2, self.object_name2 + "_ims",
-            CopySourceIfModifiedSince=pre_date)
+                                                   self.bucket_name2, self.object_name2+"_ims",
+                                                   CopySourceIfModifiedSince=pre_date)
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_ims")
         LOGGER.info("Step 6: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-unmodified-since (True)")
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                   self.bucket_name2, self.object_name2 + "_iums",
-            CopySourceIfUnmodifiedSince=date1)
+                                                   self.bucket_name2, self.object_name2+"_iums",
+                                                   CopySourceIfUnmodifiedSince=date1)
         assert_utils.assert_true(status, response)
         obj_list.append(self.object_name2 + "_iums")
         status, response = self.s3_obj.object_list(self.bucket_name2)
@@ -2401,12 +2404,13 @@ class TestCopyObjects:
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                    self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
+        etag = response["CopyObjectResult"]["ETag"]
         LOGGER.info("Step 3: Copy object to different bucket with condition "                             
                     "x-amz-copy-source-if-match (False)")
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                       self.bucket_name2, self.object_name2 + "_im",
-                                                       CopySourceIfMatch=response[1]["ETag"] + "_")
+                                                       self.bucket_name2, self.object_name2+"_im",
+                                                       CopySourceIfMatch=etag+"_")
             assert_utils.assert_false(status, response)
         except CTException as error:
             assert_utils.assert_in(errmsg.RGW_ERR_CPY_IF_MATCH_FALSE, error.message, error)
@@ -2415,21 +2419,21 @@ class TestCopyObjects:
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                        self.bucket_name2,
-                                                       self.object_name2 + "_inm",
-                                                        CopySourceIfNoneMatch=response[1]["ETag"])
+                                                       self.object_name2+"_inm",
+                                                       CopySourceIfNoneMatch=etag)
             assert_utils.assert_false(status, response)
         except CTException as error:
             assert_utils.assert_in(errmsg.RGW_ERR_CPY_IF_NONE_MATCH_FALSE, error.message, error)
         LOGGER.info("Step 5: Copy object to different bucket with condition "                             
                     "x-amz-copy-source-if-modified-since (False)")
-        date1 = response[1]["LastModified"]
+        date1 = response["CopyObjectResult"]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
         pre_date = date1 - timedelta(days=1)
         post_date = date1 + timedelta(days=1)
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                        self.bucket_name2,
-                                                       self.object_name2 + "_ims",
+                                                       self.object_name2+"_ims",
                                                         CopySourceIfModifiedSince=post_date)
             assert_utils.assert_false(status, response)
         except CTException as error:
@@ -2466,12 +2470,13 @@ class TestCopyObjects:
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                    self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
+        etag = response["CopyObjectResult"]["ETag"]
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (False)")
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                       self.bucket_name2, self.object_name2 + "_im",
-                                                       CopySourceIfMatch=response[1]["ETag"] + "_")
+                                                       self.bucket_name2, self.object_name2+"_im",
+                                                       CopySourceIfMatch=etag+"_")
             assert_utils.assert_false(status, response)
         except CTException as error:
             assert_utils.assert_in(errmsg.RGW_ERR_CPY_IF_MATCH_FALSE, error.message, error)
@@ -2480,21 +2485,20 @@ class TestCopyObjects:
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                        self.bucket_name2,
-                                                       self.object_name2 + "_inm",
-                                                       CopySourceIfNoneMatch=response[1]["ETag"])
+                                                       self.object_name2+"_inm",
+                                                       CopySourceIfNoneMatch=etag)
             assert_utils.assert_false(status, response)
         except CTException as error:
             assert_utils.assert_in(errmsg.RGW_ERR_CPY_IF_NONE_MATCH_FALSE, error.message, error)
         LOGGER.info("Step 5: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-modified-since (False)")
-        date1 = response[1]["LastModified"]
+        date1 = response["CopyObjectResult"]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
         pre_date = date1 - timedelta(days=1)
         post_date = date1 + timedelta(days=1)
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                       self.bucket_name2,
-                                                       self.object_name2 + "_ims",
+                                                       self.bucket_name2, self.object_name2+"_ims",
                                                        CopySourceIfModifiedSince=post_date)
             assert_utils.assert_false(status, response)
         except CTException as error:
@@ -2503,8 +2507,7 @@ class TestCopyObjects:
                     "x-amz-copy-source-if-unmodified-since (False)")
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                       self.bucket_name2,
-                                                       self.object_name2 + "_iums",
+                                                       self.bucket_name2, self.object_name2+"_iums",
                                                        CopySourceIfUnmodifiedSince=pre_date)
             assert_utils.assert_false(status, response)
         except CTException as error:
@@ -2533,17 +2536,18 @@ class TestCopyObjects:
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                    self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
-        date1 = response[1]["LastModified"]
+        date1 = response["CopyObjectResult"]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
         pre_date = date1 - timedelta(days=1)
+        etag = response["CopyObjectResult"]["ETag"]
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-unmodified-since ("
                     "False)")
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                       self.bucket_name2, self.object_name2 +
-                                                       "_im_us",
-                                                       CopySourceIfMatch=response[1]["ETag"],
+                                                       self.bucket_name2,
+                                                       self.object_name2+"_im_us",
+                                                       CopySourceIfMatch=etag,
                                                        CopySourceIfUnmodifiedSince=pre_date)
             assert_utils.assert_true(status, response)
         except CTException as error:
@@ -2553,9 +2557,9 @@ class TestCopyObjects:
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                        self.bucket_name2,
-                                                       self.object_name2 + "_ims_nm",
+                                                       self.object_name2+"_ims_nm",
                                                        CopySourceIfModifiedSince=pre_date,
-                                                       CopySourceIfNoneMatch=response[1]["ETag"])
+                                                       CopySourceIfNoneMatch=etag)
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
@@ -2563,23 +2567,23 @@ class TestCopyObjects:
                                    error)
         LOGGER.info("Step 5: Upload multipart object to bucket")
         res = self.s3mp_test_obj.complete_multipart_upload_with_di(self.bucket_name,
-                                                                   self.object_name1 + "mpu",
+                                                                   self.object_name1+"mpu",
                                                                    self.file_path, total_parts=2,
                                                                    file_size=10)
         LOGGER.info("Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
-                                                   self.bucket_name2, self.object_name2 + "mpu1")
-        date2 = response[1]["LastModified"]
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu",
+                                                   self.bucket_name2, self.object_name2+"mpu1")
+        date2 = response["CopyObjectResult"]["LastModified"]
         date2 = datetime.strptime(date2, '%b %d %Y')
         pre_date = date2 - timedelta(days=1)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-unmodified-since ("
                     "False)")
         try:
-            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
+            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu",
                                                        self.bucket_name2,
-                                                       self.object_name2 + "mpu_im_us",
-                                                       CopySourceIfMatch=response[1]["ETag"],
+                                                       self.object_name2+"mpu_im_us",
+                                                       CopySourceIfMatch=etag,
                                                        CopySourceIfUnmodifiedSince=pre_date)
             assert_utils.assert_true(status, response)
         except CTException as error:
@@ -2587,11 +2591,11 @@ class TestCopyObjects:
         LOGGER.info("Step 4: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "modified-since (True) and x-amz-copy-source-if-none-match (False)")
         try:
-            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
+            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu",
                                                        self.bucket_name2,
-                                                       self.object_name2 + "mpu_ims_nm",
+                                                       self.object_name2+"mpu_ims_nm",
                                                        CopySourceIfModifiedSince=pre_date,
-                                                       CopySourceIfNoneMatch=response[1]["ETag"])
+                                                       CopySourceIfNoneMatch=etag)
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
@@ -2622,17 +2626,18 @@ class TestCopyObjects:
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                    self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
-        date1 = response[1]["LastModified"]
+        date1 = response["CopyObjectResult"]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
         pre_date = date1 - timedelta(days=1)
+        etag = response["CopyObjectResult"]["ETag"]
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-unmodified-since ("
                     "False)")
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                       self.bucket_name2, self.object_name2 +
-                                                       "_im_us",
-                                                       CopySourceIfMatch=response[1]["ETag"],
+                                                       self.bucket_name2,
+                                                       self.object_name2+"_im_us",
+                                                       CopySourceIfMatch=etag,
                                                        CopySourceIfUnmodifiedSince=pre_date)
             assert_utils.assert_true(status, response)
         except CTException as error:
@@ -2644,7 +2649,7 @@ class TestCopyObjects:
                                                        self.bucket_name2,
                                                        self.object_name2 + "_ims_nm",
                                                        CopySourceIfModifiedSince=pre_date,
-                                                       CopySourceIfNoneMatch=response[1]["ETag"])
+                                                       CopySourceIfNoneMatch=etag)
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
@@ -2652,13 +2657,13 @@ class TestCopyObjects:
                                    error)
         LOGGER.info("Step 5: Upload multipart object to bucket")
         res = self.s3mp_test_obj.complete_multipart_upload_with_di(self.bucket_name,
-                                                                   self.object_name1 + "mpu",
+                                                                   self.object_name1+"mpu",
                                                                    self.file_path, total_parts=2,
                                                                    file_size=10)
         LOGGER.info("Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
-                                                   self.bucket_name2, self.object_name2 + "mpu1")
-        date2 = response[1]["LastModified"]
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu",
+                                                   self.bucket_name2, self.object_name2+"mpu1")
+        date2 = response["CopyObjectResult"]["LastModified"]
         date2 = datetime.strptime(date2, '%b %d %Y')
         pre_date = date2 - timedelta(days=1)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
@@ -2667,8 +2672,8 @@ class TestCopyObjects:
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
                                                        self.bucket_name2,
-                                                       self.object_name2 + "mpu_im_us",
-                                                       CopySourceIfMatch=response[1]["ETag"],
+                                                       self.object_name2+"mpu_im_us",
+                                                       CopySourceIfMatch=etag,
                                                        CopySourceIfUnmodifiedSince=pre_date)
             assert_utils.assert_true(status, response)
         except CTException as error:
@@ -2712,18 +2717,19 @@ class TestCopyObjects:
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                    self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
-        date1 = response[1]["LastModified"]
+        date1 = response["CopyObjectResult"]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
         pre_date = date1 - timedelta(days=1)
         post_date = date1 + timedelta(days=1)
+        etag = response["CopyObjectResult"]["ETag"]
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-unmodified-since ("
                     "True)")
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                       self.bucket_name2, self.object_name2 +
-                                                       "_imt_umst",
-                                                       CopySourceIfMatch=response[1]["ETag"],
+                                                       self.bucket_name2,
+                                                       self.object_name2 + "_imt_umst",
+                                                       CopySourceIfMatch=etag,
                                                        CopySourceIfUnModifiedSince=post_date)
             assert_utils.assert_true(status, response)
         except CTException as error:
@@ -2735,7 +2741,7 @@ class TestCopyObjects:
                                                        self.bucket_name2,
                                                        self.object_name2 + "_imf_umst",
                                                        CopySourceIfUnModifiedSince=pre_date,
-                                                       CopySourceIfMatch=response[1]["ETag"] + "_")
+                                                       CopySourceIfMatch=etag+"_")
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
@@ -2747,20 +2753,20 @@ class TestCopyObjects:
                                                        self.bucket_name2,
                                                        self.object_name2 + "_imf_umsf",
                                                        CopySourceIfUnModifiedSince=post_date,
-                                                       CopySourceIfMatch=response[1]["ETag"] + "_")
+                                                       CopySourceIfMatch=etag+"_")
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
             assert_utils.assert_in(errmsg.RGW_ERR_CPY_IF_MATCH_FALSE, error.message, error)
         LOGGER.info("Step 6: Upload multipart object to bucket")
         res = self.s3mp_test_obj.complete_multipart_upload_with_di(self.bucket_name,
-                                                                   self.object_name1 + "mpu",
+                                                                   self.object_name1+"mpu",
                                                                    self.file_path, total_parts=2,
                                                                    file_size=10)
         LOGGER.info("Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
-                                                   self.bucket_name2, self.object_name2 + "mpu1")
-        date2 = response[1]["LastModified"]
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu",
+                                                   self.bucket_name2, self.object_name2+"mpu1")
+        date2 = response["CopyObjectResult"]["LastModified"]
         date2 = datetime.strptime(date2, '%b %d %Y')
         pre_date = date2 - timedelta(days=1)
         post_date = date2 + timedelta(days=1)
@@ -2768,11 +2774,10 @@ class TestCopyObjects:
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-unmodified-since ("
                     "True)")
         try:
-            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 +
-                                                       "mpu1",
-                                                       self.bucket_name2, self.object_name2 +
-                                                       "mpu_imt_umst",
-                                                       CopySourceIfMatch=response[1]["ETag"],
+            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu1",
+                                                       self.bucket_name2,
+                                                       self.object_name2+"mpu_imt_umst",
+                                                       CopySourceIfMatch=etag,
                                                        CopySourceIfUnModifiedSince=post_date)
             assert_utils.assert_true(status, response)
         except CTException as error:
@@ -2780,11 +2785,11 @@ class TestCopyObjects:
         LOGGER.info("Step 8: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "match (False) and x-amz-copy-source-if-unmodified-since (True)")
         try:
-            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
+            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu",
                                                        self.bucket_name2,
-                                                       self.object_name2 + "mpu_imf_umst",
+                                                       self.object_name2+"mpu_imf_umst",
                                                        CopySourceIfUnModifiedSince=pre_date,
-                                                       CopySourceIfMatch=response[1]["ETag"] + "_")
+                                                       CopySourceIfMatch=etag+"_")
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
@@ -2828,19 +2833,19 @@ class TestCopyObjects:
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                    self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
-        date1 = response[1]["LastModified"]
+        date1 = response["CopyObjectResult"]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
         pre_date = date1 - timedelta(days=1)
         post_date = date1 + timedelta(days=1)
+        etag = response["CopyObjectResult"]["ETag"]
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-none-match (True) and "
                     "x-amz-copy-source-if-modified-since (True)")
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                       self.bucket_name2, self.object_name2 +
-                                                       "_inmt_mst",
-                                                       CopySourceIfNoneMatch=response[1]["ETag"]
-                                                                             + "_",
+                                                       self.bucket_name2,
+                                                       self.object_name2+"_inmt_mst",
+                                                       CopySourceIfNoneMatch=etag+"_",
                                                        CopySourceIfModifiedSince=pre_date)
             assert_utils.assert_true(status, response)
         except CTException as error:
@@ -2850,10 +2855,9 @@ class TestCopyObjects:
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                        self.bucket_name2,
-                                                       self.object_name2 + "_inmt_msf",
+                                                       self.object_name2+"_inmt_msf",
                                                        CopySourceIfModifiedSince=pre_date,
-                                                       CopySourceIfNoneMatch=response[1]["ETag"] +
-                                                                           "_")
+                                                       CopySourceIfNoneMatch=etag+"_")
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
@@ -2863,22 +2867,22 @@ class TestCopyObjects:
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                        self.bucket_name2,
-                                                       self.object_name2 + "_inmf_msf",
+                                                       self.object_name2+"_inmf_msf",
                                                        CopySourceIfModifiedSince=post_date,
-                                                       CopySourceIfNoneMatch=response[1]["ETag"])
+                                                       CopySourceIfNoneMatch=etag)
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
             assert_utils.assert_in(errmsg.RGW_ERR_CPY_IF_NONE_MATCH_FALSE, error.message, error)
         LOGGER.info("Step 6: Upload multipart object to bucket")
         res = self.s3mp_test_obj.complete_multipart_upload_with_di(self.bucket_name,
-                                                                   self.object_name1 + "mpu",
+                                                                   self.object_name1+"mpu",
                                                                    self.file_path, total_parts=2,
                                                                    file_size=10)
         LOGGER.info("Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
-                                                   self.bucket_name2, self.object_name2 + "mpu1")
-        date2 = response[1]["LastModified"]
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu",
+                                                   self.bucket_name2, self.object_name2+"mpu1")
+        date2 = response["CopyObjectResult"]["LastModified"]
         date2 = datetime.strptime(date2, '%b %d %Y')
         pre_date = date2 - timedelta(days=1)
         post_date = date2 + timedelta(days=1)
@@ -2886,12 +2890,11 @@ class TestCopyObjects:
                     "x-amz-copy-source-if-none-match (True) and "
                     "x-amz-copy-source-if-modified-since (True)")
         try:
-            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 +
-                                                       "mpu",
-                                                       self.bucket_name2, self.object_name2 +
-                                                       "_inmt_mst",
-                                                       CopySourceIfNoneMatch=response[1]["ETag"]
-                                                                             + "_",
+            status, response = self.s3_obj.copy_object(self.bucket_name1,
+                                                       self.object_name1+"mpu",
+                                                       self.bucket_name2,
+                                                       self.object_name2+"_inmt_mst",
+                                                       CopySourceIfNoneMatch=etag+"_",
                                                        CopySourceIfModifiedSince=pre_date)
             assert_utils.assert_true(status, response)
         except CTException as error:
@@ -2899,12 +2902,11 @@ class TestCopyObjects:
         LOGGER.info("Step 8: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (True) and x-amz-copy-source-if-modified-since (False)")
         try:
-            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
+            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu",
                                                        self.bucket_name2,
-                                                       self.object_name2 + "_inmt_msf",
+                                                       self.object_name2+"_inmt_msf",
                                                        CopySourceIfModifiedSince=pre_date,
-                                                       CopySourceIfNoneMatch=response[1]["ETag"] +
-                                                                             "_")
+                                                       CopySourceIfNoneMatch=etag+"_")
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
@@ -2948,19 +2950,19 @@ class TestCopyObjects:
         status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                    self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
-        date1 = response[1]["LastModified"]
+        date1 = response["CopyObjectResult"]["LastModified"]
         date1 = datetime.strptime(date1, '%b %d %Y')
         pre_date = date1 - timedelta(days=1)
         post_date = date1 + timedelta(days=1)
+        etag = response["CopyObjectResult"]["ETag"]
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-none-match (True) and "
                     "x-amz-copy-source-if-unmodified-since (True)")
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                       self.bucket_name2, self.object_name2 +
-                                                       "_inmt_umst",
-                                                       CopySourceIfNoneMatch=response[1]["ETag"]
-                                                                             + "_",
+                                                       self.bucket_name2,
+                                                       self.object_name2 + "_inmt_umst",
+                                                       CopySourceIfNoneMatch=etag+"_",
                                                        CopySourceIfUnModifiedSince=post_date)
             assert_utils.assert_true(status, response)
         except CTException as error:
@@ -2970,10 +2972,9 @@ class TestCopyObjects:
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                        self.bucket_name2,
-                                                       self.object_name2 + "_inmt_umsf",
+                                                       self.object_name2+"_inmt_umsf",
                                                        CopySourceIfUnModifiedSince=pre_date,
-                                                       CopySourceIfNoneMatch=response[1]["ETag"] +
-                                                                             "_")
+                                                       CopySourceIfNoneMatch=etag+"_")
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
@@ -2983,9 +2984,9 @@ class TestCopyObjects:
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                        self.bucket_name2,
-                                                       self.object_name2 + "_inmf_umst",
+                                                       self.object_name2+"_inmf_umst",
                                                        CopySourceIfUnModifiedSince=post_date,
-                                                       CopySourceIfNoneMatch=response[1]["ETag"])
+                                                       CopySourceIfNoneMatch=etag)
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
@@ -2995,22 +2996,22 @@ class TestCopyObjects:
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1,
                                                        self.bucket_name2,
-                                                       self.object_name2 + "_inmf_umsf",
+                                                       self.object_name2+"_inmf_umsf",
                                                        CopySourceIfUnModifiedSince=pre_date,
-                                                       CopySourceIfNoneMatch=response[1]["ETag"])
+                                                       CopySourceIfNoneMatch=etag)
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
             assert_utils.assert_in(errmsg.RGW_ERR_CPY_IF_NONE_MATCH_FALSE, error.message, error)
         LOGGER.info("Step 7: Upload multipart object to bucket")
         res = self.s3mp_test_obj.complete_multipart_upload_with_di(self.bucket_name,
-                                                                   self.object_name1 + "mpu",
+                                                                   self.object_name1+"mpu",
                                                                    self.file_path, total_parts=2,
                                                                    file_size=10)
         LOGGER.info("Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
-                                                   self.bucket_name2, self.object_name2 + "mpu1")
-        date2 = response[1]["LastModified"]
+        status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu",
+                                                   self.bucket_name2, self.object_name2+"mpu1")
+        date2 = response["CopyObjectResult"]["LastModified"]
         date2 = datetime.strptime(date2, '%b %d %Y')
         pre_date = date2 - timedelta(days=1)
         post_date = date2 + timedelta(days=1)
@@ -3018,11 +3019,10 @@ class TestCopyObjects:
                     "x-amz-copy-source-if-none-match (True) and "
                     "x-amz-copy-source-if-unmodified-since (True)")
         try:
-            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
-                                                       self.bucket_name2, self.object_name2 +
-                                                       "mpu_inmt_umst",
-                                                       CopySourceIfNoneMatch=response[1]["ETag"]
-                                                                             + "_",
+            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu",
+                                                       self.bucket_name2,
+                                                       self.object_name2+"mpu_inmt_umst",
+                                                       CopySourceIfNoneMatch=etag+"_",
                                                        CopySourceIfUnModifiedSince=post_date)
             assert_utils.assert_true(status, response)
         except CTException as error:
@@ -3030,12 +3030,11 @@ class TestCopyObjects:
         LOGGER.info("Step 9: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (True) and x-amz-copy-source-if-unmodified-since (False)")
         try:
-            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
+            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu",
                                                        self.bucket_name2,
-                                                       self.object_name2 + "mpu_inmt_umsf",
+                                                       self.object_name2+"mpu_inmt_umsf",
                                                        CopySourceIfUnModifiedSince=pre_date,
-                                                       CopySourceIfNoneMatch=response[1]["ETag"] +
-                                                                             "_")
+                                                       CopySourceIfNoneMatch=etag+"_")
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
@@ -3045,9 +3044,9 @@ class TestCopyObjects:
         try:
             status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
                                                        self.bucket_name2,
-                                                       self.object_name2 + "mpu_inmf_umst",
+                                                       self.object_name2+"mpu_inmf_umst",
                                                        CopySourceIfUnModifiedSince=post_date,
-                                                       CopySourceIfNoneMatch=response[1]["ETag"])
+                                                       CopySourceIfNoneMatch=etag)
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
@@ -3055,11 +3054,11 @@ class TestCopyObjects:
         LOGGER.info("Step 11: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (False) and x-amz-copy-source-if-unmodified-since (False)")
         try:
-            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1 + "mpu",
+            status, response = self.s3_obj.copy_object(self.bucket_name1, self.object_name1+"mpu",
                                                        self.bucket_name2,
-                                                       self.object_name2 + "mpu_inmf_umsf",
+                                                       self.object_name2+"mpu_inmf_umsf",
                                                        CopySourceIfUnModifiedSince=pre_date,
-                                                       CopySourceIfNoneMatch=response[1]["ETag"])
+                                                       CopySourceIfNoneMatch=etag)
             assert_utils.assert_false(status, response)
         except CTException as error:
             LOGGER.error(error.message)
