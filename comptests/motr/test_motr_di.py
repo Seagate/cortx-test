@@ -388,6 +388,7 @@ class TestCorruptDataDetection:
         bsize_list = ["1M"]
         layout_ids = ["9"]
         offsets = [0]
+
         test_prefix = "test-41747"
         logger.info(f"STARTED: {test_prefix} Test Parity corruption - aligned")
         logger.info("Step 1: Perform m0cp and corrupt the parity block")
