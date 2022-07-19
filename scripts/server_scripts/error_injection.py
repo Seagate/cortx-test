@@ -154,6 +154,7 @@ btreeType = {b'01': 'M0_BBT_INVALID', b'02': 'M0_BBT_BALLOC_GROUP_EXTENTS',
 
 BeBnodeTypeKeys = {}
 
+
 def RecordOffset(record, i, size):
     if record in recordDict.keys():
         recordDict[record].append(i)
@@ -163,6 +164,7 @@ def RecordOffset(record, i, size):
             BeBnodeTypeKeys[i] = [bliType, btNumActiveKey]
     else:
         recordDict['EXTRA'].append(i)
+
 
 def ReadTypeSize(byte):  # Ex: 0001(ver) 0009(type) 00003dd8(size)
     # ver = byte[:4]   # .ot_version = src->hd_bits >> 48,
@@ -184,6 +186,7 @@ def EditMetadata(offset):
         wbfr.seek(offset)
         wbfr.flush()
 
+
 def EditEmapMetadata(emap_rec_full, offset, crc_offset):
     """Edit emap metadata with the fixed pattern of 0x1111222244443333."""
     with open(filename, 'r+b') as wbfr:
@@ -201,6 +204,7 @@ def EditEmapMetadata(emap_rec_full, offset, crc_offset):
         wbfr.flush()
         wbfr.seek(offset)
         wbfr.flush()
+
 
 def ReadMetadata(offset):
     """Verifies that meta-data contains the valid footer at the given offset."""
@@ -226,6 +230,7 @@ def ReadCompleteRecord(offset):
     curr_record = [ hex(int(i, 16)) for i in curr_record]
     return curr_record, offset # Return record data and footer offset
 
+
 def ReadCompleteRecordIncCRC(offset):
     """Function read complete record starting after header and until footer for record."""
     curr_record = []
@@ -243,6 +248,7 @@ def ReadCompleteRecordIncCRC(offset):
     # curr_record = [ hex(int(i, 16)) for i in curr_record]
     return curr_record, offset # Return record data and footer offset
 
+
 def m0_hash_fnc_fnv1(buffer, length):
     ptr = buffer
     val = 14695981039346656037
@@ -256,6 +262,7 @@ def m0_hash_fnc_fnv1(buffer, length):
             val = val & mask
     return val
 
+
 def ComputeCRC(string_list, list_len):
     result = []
     for i in range(list_len):
@@ -264,6 +271,7 @@ def ComputeCRC(string_list, list_len):
             result.append(j)
     val = m0_hash_fnc_fnv1(result,len(result))
     return val
+
 
 def ReadBeBNode(offset):
     """Reads BeNode data."""
