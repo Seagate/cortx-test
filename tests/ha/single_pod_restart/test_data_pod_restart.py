@@ -2927,7 +2927,7 @@ class TestDataPodRestart:
         thread.start()
         # TODO Need to update timing once we get stability in degraded IOs performance
         time.sleep(HA_CFG["common_params"]["degraded_wait_delay"])
-        LOGGER.info("Step 3: Successfully started READs and verified DI on the written data in "
+        LOGGER.info("Step 3: Successfully started READs and verify DI on the written data in "
                     "background")
         LOGGER.info("Step 4: Starting pod again by creating deployment using %s method",
                     self.restore_method)
@@ -2943,6 +2943,7 @@ class TestDataPodRestart:
         LOGGER.info("Step 4: Successfully started the pod using %s method and cluster is online",
                     self.restore_method)
         self.restore_pod = False
+        LOGGER.info("Step 5: Check read/verify running in background.")
         event.clear()
         thread.join()
         LOGGER.debug("Event is cleared and thread has joined.")
@@ -2967,9 +2968,9 @@ class TestDataPodRestart:
         resp = self.ha_obj.check_s3bench_log(file_paths=bkgrd_logs)
         assert_utils.assert_false(len(resp[1]), "Background Logs which contain failures:"
                                                 f" {resp[1]}")
-        LOGGER.info("Step 6: Successfully completed READs and verified DI on the written data in "
+        LOGGER.info("Step 5: Successfully completed READs and verified DI on the written data in "
                     "background during pod restart using %s method", self.restore_method)
-        LOGGER.info("Step 7: Perform WRITEs/READs/Verify with variable object sizes after pod "
+        LOGGER.info("Step 6: Perform WRITEs/READs/Verify with variable object sizes after pod "
                     "restarted.")
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Create new IAM user, buckets and run IOs")
@@ -2984,5 +2985,5 @@ class TestDataPodRestart:
                                                     log_prefix=self.test_prefix, skipcleanup=True,
                                                     setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed WRITEs/READs/Verify with variable sizes objects.")
+        LOGGER.info("Step 6: Performed WRITEs/READs/Verify with variable sizes objects.")
         LOGGER.info("ENDED: Test to verify continuous READs during data pod restart.")
