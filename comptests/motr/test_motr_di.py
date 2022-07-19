@@ -222,7 +222,6 @@ class TestCorruptDataDetection:
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
         node_pod_dict = self.motr_obj.get_node_pod_dict()
-        motr_client_num = self.motr_obj.get_number_of_motr_clients()
         object_id = (
             str(self.system_random.randint(1, 1024 * 1024))
             + ":"
@@ -366,7 +365,7 @@ class TestCorruptDataDetection:
         resp = self.m0cp_corrupt_parity_m0cat(layout_ids, bsize_list, count_list, offsets)
         assert_utils.assert_true(resp)
         logger.info("Step 2: Successfully performed m0cp and corrupt the parity block")
-        logger.info("ENDED: Test Parity corruption in degraded mode - aligned")
+        logger.info(f"ENDED: {test_prefix}Test Parity corruption in degraded mode - aligned")
 
     @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.tags("TEST-41747")
