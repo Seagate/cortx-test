@@ -101,7 +101,7 @@ class TestCorruptDataDetection:
         cls.motr_corruption_obj = MotrCorruptionAdapter(
             CMN_CFG,
         )
-        cls.dtm_obj = DTMRecoveryTestLib(self.access_key, self.secret_key, max_attempts=0)
+        cls.dtm_obj = DTMRecoveryTestLib(cls.access_key, cls.secret_key, max_attempts=0)
         cls.master_node_list = []
         cls.health_obj = Health(
             cls.master_node_list[0].hostname,
