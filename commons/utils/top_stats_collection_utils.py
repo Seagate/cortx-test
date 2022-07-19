@@ -20,14 +20,14 @@
 """Methods to collect top command stats from server"""
 
 import logging
+import os.path
 from multiprocessing import Process
 
 from commons.commands import KILL_CMD
-from commons.constants import PROFILE_FILE_PATH
-from commons.constants import COLLECTION_SCRIPT_PATH
 from commons.constants import COLLECTION_FILE
+from commons.constants import COLLECTION_SCRIPT_PATH
 from commons.constants import PROFILE_FILE
-from commons.constants import TOP_STAT_PROC
+from commons.constants import PROFILE_FILE_PATH
 from commons.helpers.pods_helper import LogicalNode
 
 # check and set pytest logging level as Globals.LOG_LEVEL
@@ -74,14 +74,44 @@ class TopStatsCollection:
         resp = self.master_node_list[0].copy_file_to_remote(COLLECTION_SCRIPT_PATH, COLLECTION_FILE)
         if not resp[0]:
             return resp[0]
+        self.master_node_list[0].apply_k8s_deployment(PROFILE_FILE)
+        if not resp[0]:
+            return resp[0]
         cmd = f"chmod +x {COLLECTION_FILE} && ./{COLLECTION_FILE} {dir_path}"
         proc = Process(target=self.exe_cmd, args=(self.master_node_list[0], cmd))
         proc.start()
         return True
 
-    def stop_collection(self):
+    def stop_collection(self, dir_path):
         """function to get pid and kill it on server"""
 
-        res = self.master_node_list[0].execute_cmd("echo $(pgrep {})".format(TOP_STAT_PROC))
-        LOGGER.info(f'{TOP_STAT_PROC} PID {res}')
-        self.master_node_list[0].execute_cmd(cmd=KILL_CMD.format(res))
+        cmd = f'pgrep "/bin/sh ./{COLLECTION_FILE} {dir_path}" -fx'
+        pids = str(self.master_node_list[0].execute_cmd(f"echo $({cmd})"))
+        LOGGER.debug("pids of processes %s", pids)
+        list_pids = pids.split()
+        res = []
+        for pid in list_pids:
+            res.append(''.join(filter(lambda j: j.isdigit(), pid)))
+        LOGGER.debug("list of pids %s", res)
+        if not res:
+            LOGGER.info("Process IDs of cmd %s is empty", cmd)
+            return False
+        for pid in res:
+            self.master_node_list[0].execute_cmd(cmd=KILL_CMD.format(pid))
+        return True
+
+    def copy_remove_files_from_remote(self, dir_path, local_path):
+        """
+        function to copy files from dir and remove dir from remote
+        """
+        ls_dir = self.master_node_list[0].list_dir(remote_path=dir_path)
+        LOGGER.debug("ls of remote dir %s", ls_dir)
+        for file in ls_dir:
+            resp = self.master_node_list[0].copy_file_to_local(os.path.join(dir_path, file),
+                                                               os.path.join(local_path, file))
+            if not resp:
+                LOGGER.info("copy of file %s failed", file)
+                return resp
+        LOGGER.debug("removing dir from path of remote %s", dir_path)
+        resp = self.master_node_list[0].delete_dir_sftp(dpath=dir_path)
+        return resp

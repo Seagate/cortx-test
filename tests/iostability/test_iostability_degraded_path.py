@@ -51,7 +51,6 @@ class TestIOWorkloadDegradedPath:
         """Setup class."""
 
         cls.log = logging.getLogger(__name__)
-        cls.remote_dir_path = "/root/stats/"
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.master_node_list = []
         cls.worker_node_list = []
@@ -110,7 +109,7 @@ class TestIOWorkloadDegradedPath:
         resp = self.proc_path.validate_collection()
         assert_utils.assert_true(resp[0], resp[1])
         resp = self.top_stats.collect_stats(dir_path=self.remote_dir_path)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp)
         self.test_completed = False
         self.log.info("Setup Method Ended")
 
@@ -134,11 +133,9 @@ class TestIOWorkloadDegradedPath:
         self.log.info("Copy files to client")
         resp = self.proc_path.get_stat_files_to_local()
         self.log.debug("Resp : %s", resp)
-        self.top_stats.stop_collection()
-        resp = self.master_node_list[0].copy_file_to_local(remote_path=self.remote_dir_path,
-                                                           local_path=path)
+        resp = self.top_stats.stop_collection(dir_path=self.remote_dir_path)
         assert_utils.assert_true(resp)
-        resp = self.master_node_list[0].delete_dir_sftp(dpath=self.remote_dir_path)
+        resp = self.top_stats.copy_remove_files_from_remote(self.remote_dir_path, path)
         assert_utils.assert_true(resp)
         self.log.info("Teardown method ended.")
 

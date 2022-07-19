@@ -107,7 +107,7 @@ class TestIOWorkload:
         resp = self.proc_path.validate_collection()
         assert_utils.assert_true(resp[0], resp[1])
         resp = self.top_stats.collect_stats(dir_path=self.remote_dir_path)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp)
         self.test_completed = False
         self.log.info("Setup Method Ended")
 
@@ -132,11 +132,9 @@ class TestIOWorkload:
         resp = self.proc_path.get_stat_files_to_local()
         self.log.debug("Resp : %s", resp)
         self.log.info("Stop top cmd collection")
-        self.top_stats.stop_collection()
-        resp = self.master_node_list[0].copy_file_to_local(remote_path=self.remote_dir_path,
-                                                           local_path=path)
+        resp = self.top_stats.stop_collection(dir_path=self.remote_dir_path)
         assert_utils.assert_true(resp)
-        resp = self.master_node_list[0].delete_dir_sftp(dpath=self.remote_dir_path)
+        resp = self.top_stats.copy_remove_files_from_remote(self.remote_dir_path, path)
         assert_utils.assert_true(resp)
         self.log.info("Teardown method ended.")
 
