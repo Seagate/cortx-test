@@ -53,7 +53,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=R0902
-# 4pylint: disable=R090
+# pylint: disable=R0904
 class TestMultiServerPodFailure:
     """
     Test suite for Multiple Server Pods Failure
