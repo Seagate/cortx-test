@@ -194,6 +194,8 @@ class TestMultiDataPodFailureAPI:
 
         LOGGER.info("Done: Teardown completed.")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35793")
@@ -297,6 +299,8 @@ class TestMultiDataPodFailureAPI:
         LOGGER.info("ENDED: Test chunk upload during k data pods going down by delete "
                     "deployment (unsafe)")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35785")
@@ -398,6 +402,8 @@ class TestMultiDataPodFailureAPI:
         LOGGER.info("Step 5: Downloaded copied objects & verify etags.")
         LOGGER.info("COMPLETED: Test to Verify copy object when all K data pods are failed.")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35782")
@@ -504,6 +510,9 @@ class TestMultiDataPodFailureAPI:
         LOGGER.info("Step 4: Did multipart upload & downloaded the object & verified the checksum.")
         LOGGER.info("COMPLETED: Test to verify multipart upload after all K data pods are failed.")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable=too-many-branches
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35786")
@@ -660,6 +669,8 @@ class TestMultiDataPodFailureAPI:
         LOGGER.info("Step 7: Downloaded copied objects & verify etags.")
         LOGGER.info("COMPLETED: Verify copy object during data pods failure till K pods.")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35783")
@@ -814,6 +825,8 @@ class TestMultiDataPodFailureAPI:
         LOGGER.info("ENDED: Test to verify partial multipart upload after each data pod is "
                     "failed till K data pods and complete upload after all K data pods are failed")
 
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35784")
