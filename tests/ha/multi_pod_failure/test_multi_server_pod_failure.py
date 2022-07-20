@@ -1,4 +1,4 @@
-#!/usr/bin/python # pylint: disable=C0302
+#!/usr/bin/python # pylint: disable=too-many-lines
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -52,8 +52,8 @@ from libs.s3.s3_test_lib import S3TestLib
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable=R0902
-# 4pylint: disable=R090
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-public-methods
 class TestMultiServerPodFailure:
     """
     Test suite for Multiple Server Pods Failure
