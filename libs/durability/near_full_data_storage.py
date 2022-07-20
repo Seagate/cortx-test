@@ -200,7 +200,6 @@ class NearFullStorage:
             delete_list.append(bucket_info)
             workload_info_list.remove(bucket_info)
         LOGGER.info("Deleting buckets : %s", delete_list)
-       
         LOGGER.debug("Number of available buckets : %s", len(workload_info_list))
         resp = self.perform_operations_on_pre_written_data(
             s3userinfo=s3userinfo,
