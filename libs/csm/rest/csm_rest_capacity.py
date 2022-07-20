@@ -388,3 +388,30 @@ class SystemCapacity(RestTestLib):
                 else:
                     self.log.error("Check for %s object in %s bucket incorrect.", obj, bucket)
         return checksum_match
+
+    def verify_bytecount_fixed_placement(self, resp, failure_cnt, kvalue, err_margin,
+                             total_written):
+        """
+        Verify degraded, critical, damaged bytecount in the resp.
+        """
+        if failure_cnt == 0:
+            self.log.info("Checking for %s equal to 0", failure_cnt)
+            result = self.verify_degraded_capacity(resp, healthy=total_written,
+            degraded=0, critical=0, damaged=0, err_margin=err_margin,
+            total=total_written)
+        elif failure_cnt < kvalue:
+            self.log.info("Checking for %s less than K value", failure_cnt)
+            result = self.verify_degraded_capacity(resp, healthy=0,
+            degraded=total_written, critical=0, damaged=0, err_margin=err_margin,
+            total=total_written)
+        elif failure_cnt == kvalue:
+            self.log.info("Checking for %s equal to K value", failure_cnt)
+            result = self.verify_degraded_capacity(resp, healthy=0,
+            degraded=0, critical=total_written, damaged=0, err_margin=err_margin,
+            total=total_written)
+        else:
+            self.log.info("Checking for %s greater than K value", failure_cnt)
+            result = self.verify_degraded_capacity(resp, healthy=0,
+            degraded=0, critical=0, damaged=total_written, err_margin=err_margin,
+            total=total_written)
+        return result
