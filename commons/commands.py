@@ -239,6 +239,8 @@ CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{{print $1}}'"
 CMD_GET_IP_IFACE = "/sbin/ifconfig \"{}\" | awk '/inet / {{print $2}}'"
 CMD_HOSTS = "cat /etc/hosts"
 CMD_GET_NETMASK = "ifconfig | grep \"{}\" | awk '{{print $4}}'"
+CMD_DMESGS = "dmesg > {}"
+CMD_JOURNALCTL = "journalctl > {}"
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
 CMD_LSBLK_SIZE = "lsblk -r |grep disk| awk '{print $4}'"
@@ -522,6 +524,7 @@ K8S_GET_SVC_JSON = "kubectl get svc -o json"
 K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
+K8S_APPLY_YAML_CONFIG = 'kubectl apply -f {}'
 GET_STATS = "consul kv get -recurse stats"
 GET_BYTECOUNT = "consul kv get -recurse bytecount"
 

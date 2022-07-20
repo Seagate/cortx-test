@@ -4,3 +4,6 @@ rgw_delay_restarts: 30
 
 # count to retry IOs from client side
 io_retry_count: 6
+
+#file_path for delay in setup command
+delay_file_path: '/etc/cortx/proc_delay'

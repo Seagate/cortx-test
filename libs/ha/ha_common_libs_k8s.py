@@ -1353,7 +1353,7 @@ class HAK8s:
         return resp
 
     def delete_kpod_with_shutdown_methods(self, master_node_obj, health_obj,
-                                          pod_prefix=None, kvalue=1,
+                                          pod_prefix=None, kvalue=1, delete_pod=None,
                                           down_method=common_const.RESTORE_SCALE_REPLICAS,
                                           event=None, event_set_clr=None):
         """
@@ -1364,6 +1364,7 @@ class HAK8s:
         :param pod_prefix: Pod prefix to be deleted (Expected List type)
         :param down_method: Pod shutdown/delete method.
         :param kvalue: Number of pod to be shutdown/deleted.
+        :param delete_pod: pod name to be deleted (optional)
         :param event_set_clr: Thread event set-clear flag reference when s3bench workload
         execution miss the event set-clear time window
         :param event: Thread event to set/clear before/after pods/nodes
@@ -1378,10 +1379,13 @@ class HAK8s:
                     "hostname": None}
         delete_pods = list()
         remaining = list()
-        for ptype in pod_prefix:
-            pod_list = master_node_obj.get_all_pods(pod_prefix=ptype)
-            # Get the list of Kvalue pods to be deleted for given pod_prefix list
-            delete_pods.extend(random.sample(pod_list, kvalue))
+        if delete_pod is not None:
+            delete_pods.extend(delete_pod)
+        else:
+            for ptype in pod_prefix:
+                pod_list = master_node_obj.get_all_pods(pod_prefix=ptype)
+                # Get the list of Kvalue pods to be deleted for given pod_prefix list
+                delete_pods.extend(random.sample(pod_list, kvalue))
 
         LOGGER.info("Get the list of all pods of total pod types.")
         for ptype in total_pod_type:
@@ -1813,3 +1817,26 @@ class HAK8s:
         LOGGER.info("Running command %s", get_cmd)
         resp = system_utils.execute_cmd(get_cmd)
         return resp
+
+    def dnld_obj_verify_chcksm(self, s3_test_obj, bucket, obj, download_path, upload_checksum):
+        """
+        Function to download the object and verify its checksum
+        :param s3_test_obj: Object of the s3 test lib
+        :param bucket: Name of the bucket
+        :param obj: Name of the object
+        :param download_path: Path to which object is to be downloaded
+        :param upload_checksum: Checksum of uploaded object
+        :return: Tuple (bool, string)
+        """
+        LOGGER.info("Download object %s from bucket %s", obj, bucket)
+        resp = s3_test_obj.object_download(bucket, obj, download_path)
+        LOGGER.info("Download object response: %s", resp)
+        if not resp[0]:
+            return resp
+        download_checksum = self.cal_compare_checksum(file_list=[download_path], compare=False)[0]
+        if upload_checksum != download_checksum:
+            LOGGER.info("Failed to match checksums. \nUpload checksum:%s Download checksum: %s",
+                        upload_checksum, download_checksum)
+            return False, download_checksum
+        LOGGER.info("Successfully downloaded the object and verified the checksum")
+        return True, download_checksum

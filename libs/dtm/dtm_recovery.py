@@ -28,8 +28,11 @@ import re
 import secrets
 import time
 
+import yaml
+
 from commons import constants as const
 from commons.exceptions import CTException
+from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
 from config import CMN_CFG
@@ -92,7 +95,7 @@ class DTMRecoveryTestLib:
         for iter_cnt in range(loop):
             self.log.info("Iteration count: %s", iter_cnt)
             self.log.info("Perform Write Operations : ")
-            bucket_name = bucket_prefix + str(int(time.time()))
+            bucket_name = bucket_prefix + str(int(time.time_ns()))
             if created_bucket:
                 bucket_name = created_bucket[iter_cnt]
             object_size = self.system_random.choice(obj_size_list) if obj_size is None else obj_size
@@ -190,10 +193,28 @@ class DTMRecoveryTestLib:
         else:
             queue.put([False, "Workload failed."])
 
+    def set_proc_restart_duration(self, master_node, pod, container, delay,
+                                  file_path=DTM_CFG['delay_file_path']):
+        """
+        Set the process restart delay in '/etc/cortx/proc_delay'
+        This is set to control the time interval for process to restart after killing it.
+        :param master_node: Master node object
+        :param pod: Pod Selected
+        :param container: Container Selected
+        :param delay: interval for process to restart after killing it.(in Seconds)
+        :param file_path: File path within the container
+        """
+        local_path = '/root/proc_delay'
+        self.log.info("Modify the restart delay to %s", delay)
+        master_node.write_file(local_path, str(delay))
+        master_node.copy_file_to_container(local_path, pod, file_path, container)
+
     # pylint: disable-msg=too-many-locals
-    def process_restart(self, master_node, health_obj, pod_prefix, container_prefix, process,
-                        check_proc_state: bool = False, proc_state: str =
-                        const.DTM_RECOVERY_STATE, restart_cnt: int = 1):
+    def process_restart_with_delay(self, master_node, health_obj, pod_prefix, container_prefix,
+                                   process,
+                                   check_proc_state: bool = False, proc_state: str =
+                                   const.DTM_RECOVERY_STATE, restart_cnt: int = 1,
+                                   proc_restart_delay: int = 600):
         """
         Restart specified Process of specific pod and container
         :param master_node: Master node object
@@ -205,7 +226,10 @@ class DTMRecoveryTestLib:
         :param proc_state: Expected state of the process
         :param restart_cnt: Count to restart process from randomly selected pod (Restart once
         previously restarted process recovers)
+        :param proc_restart_delay: Delay in seconds to restart the process after killing it.
+        return : boolean
         """
+
         self.log.info("Get process IDs of %s", process)
         resp = self.get_process_ids(health_obj=health_obj, process=process)
         if not resp[0]:
@@ -214,18 +238,24 @@ class DTMRecoveryTestLib:
         delay = resp[2]
         for i_i in range(restart_cnt):
             self.log.info("Restarting %s process for %s time", process, i_i + 1)
-            pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
-            pod_selected = pod_list[random.randint(0, len(pod_list) - 1)]
-            self.log.info("Pod selected for %s process restart : %s", process, pod_selected)
-            container_list = master_node.get_container_of_pod(pod_name=pod_selected,
-                                                              container_prefix=container_prefix)
-            container = container_list[random.randint(0, len(container_list) - 1)]
-            self.log.info("Container selected : %s", container)
-            self.log.info("Perform %s restart", process)
-            resp = master_node.kill_process_in_container(pod_name=pod_selected,
-                                                         container_name=container,
-                                                         process_name=process)
-            self.log.debug("Resp : %s", resp)
+            self.log.info("Selecting Pod and container for restart")
+            pod_selected, container = master_node.select_random_pod_container(pod_prefix,
+                                                                              container_prefix)
+            self.set_proc_restart_duration(master_node, pod_selected, container, proc_restart_delay)
+            try:
+                self.log.info("Kill %s from %s pod %s container ", process, pod_selected, container)
+                resp = master_node.kill_process_in_container(pod_name=pod_selected,
+                                                             container_name=container,
+                                                             process_name=process)
+                self.log.debug("Resp : %s", resp)
+                self.log.info("Sleep till %s", proc_restart_delay)
+                # added 20 seconds delay for container to restart.
+                time.sleep(proc_restart_delay + 20)
+                self.set_proc_restart_duration(master_node, pod_selected, container, 0)
+            except (ValueError, IOError) as ex:
+                self.log.error("Exception Occurred during killing process : %s", ex)
+                self.set_proc_restart_duration(master_node, pod_selected, container, 0)
+                return False
 
             self.log.info("Polling hctl status to check if all services are online")
             resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=300)
@@ -240,7 +270,6 @@ class DTMRecoveryTestLib:
                 if not resp:
                     self.log.error("Failed during polling status of process")
                     return False
-
                 self.log.info("Process %s restarted successfully", process)
 
             if restart_cnt > 1:
@@ -411,3 +440,47 @@ class DTMRecoveryTestLib:
             que.put([False, f"Copy Object operation failed for {failed_obj_name}"])
         else:
             que.put([True, "Copy Object operation successful"])
+
+    def edit_deployments_for_delay(self, master_node: LogicalNode, deployment_name, service_name):
+        """
+        Edit deployment for Specified pod and service.
+        Append the sleep command for controlled restart of test.
+        :param master_node: Logical node object for Master node
+        :param deployment_name: Deployment name retrieved from kubectl get deployment
+        :param service_name: Service name whose start command is to be modified.
+        :return Tuple
+        """
+        self.log.info("Modifying deployment for %s pod and %s service", deployment_name,
+                      service_name)
+        delay_file = DTM_CFG['delay_file_path']
+        cmd = f"/bin/bash -c '[ -e {delay_file} ] && sleep $(cat {delay_file})';"
+        update_done = False
+        resp = master_node.backup_deployment(deployment_name)
+        if not resp[0]:
+            return resp
+        remote_path = resp[1]
+
+        # modify deployment
+        local_path = os.path.join("/root", f'{deployment_name}.yaml')
+        master_node.copy_file_to_local(remote_path=remote_path, local_path=local_path)
+        with open(local_path) as soln:
+            conf = yaml.safe_load(soln)
+            for each in conf['spec']['template']['spec']['containers']:
+                if service_name in each['args'][1]:
+                    if cmd not in each['args'][1]:
+                        new_cmd = each['args'][1] + '; ' + cmd
+                        each['args'][1] = new_cmd
+                    update_done = True
+        if not update_done:
+            return False, f"Could not find {service_name} service in {deployment_name}."
+
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(local_path, 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False, sort_keys=False, Dumper=noalias_dumper)
+            soln.close()
+        master_node.copy_file_to_remote(local_path, remote_path)
+        os.remove(local_path)
+        self.log.info("Apply Deployment")
+        resp = master_node.apply_k8s_deployment(remote_path)
+        return resp

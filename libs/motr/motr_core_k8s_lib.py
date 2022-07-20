@@ -50,6 +50,7 @@ class MotrCoreK8s():
     def __init__(self):
         self.profile_fid = None
         self.cortx_node_list = None
+        self.master_node_list = []
         self.worker_node_list = []
         self.worker_node_objs = []
         for node in range(len(CMN_CFG["nodes"])):
@@ -60,6 +61,7 @@ class MotrCoreK8s():
                 self.node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
                                             username=CMN_CFG["nodes"][node]["username"],
                                             password=CMN_CFG["nodes"][node]["password"])
+                self.master_node_list.append(self.node_obj)
                 self.health_obj = Health(hostname=CMN_CFG["nodes"][node]["hostname"],
                                          username=CMN_CFG["nodes"][node]["username"],
                                          password=CMN_CFG["nodes"][node]["password"])
@@ -72,6 +74,7 @@ class MotrCoreK8s():
         self.node_dict = self._get_cluster_info
         self.node_pod_dict = self.get_node_pod_dict()
         self.ha_obj = HAK8s()
+
 
     @property
     def _get_cluster_info(self):
@@ -311,7 +314,7 @@ class MotrCoreK8s():
             hax_ep=node_dict["hax_ep"],
             fid=node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
             prof_fid=self.profile_fid, bsize=b_size.lower(),
-            count=count, obj=obj, layout=layout, offset=offset, file=file)
+            count=count, obj=obj, layout=layout, off=offset, file=file)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
@@ -401,7 +404,7 @@ class MotrCoreK8s():
         assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
 
-    def md5sum_cmd(self, file1, file2, node):
+    def md5sum_cmd(self, file1, file2, node, **kwargs):
         """
         MD5SUM command creation
 
@@ -409,7 +412,7 @@ class MotrCoreK8s():
         :file2: second file
         :node: compare files on which node
         """
-
+        flag = kwargs.get("flag", None)
         cmd = common_cmd.MD5SUM.format(file1, file2)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
@@ -417,9 +420,12 @@ class MotrCoreK8s():
                                                          f"-- {cmd}", decode=True)
         log.info("MD5SUM Resp: %s", resp)
         chksum = resp.split()
-        assert_utils.assert_equal(chksum[0], chksum[2], f'Failed {cmd}, Checksum did not match')
+        if flag:
+            assert_utils.assert_not_equal(chksum[0], chksum[1], f'{cmd}, Checksum did not match')
+        else:
+            assert_utils.assert_equal(chksum[0], chksum[2], f'Failed {cmd}, Checksum did not match')
 
-        assert_utils.assert_not_in("ERROR" or "Error", resp,
+            assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
 
     def get_md5sum(self, file, node):
@@ -690,3 +696,11 @@ class MotrCoreK8s():
         except (OSError, AssertionError, IOError) as exc:
             return_dict[cortx_node] = exc
             return return_dict
+
+    def close_connections(self):
+        """Close connections to target nodes."""
+        if CMN_CFG["product_family"] in ('LR', 'LC') and \
+                CMN_CFG["product_type"] == 'K8S':
+            for conn in self.master_node_list + self.worker_node_list:
+                if isinstance(conn, LogicalNode):
+                    conn.disconnect()

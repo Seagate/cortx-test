@@ -32,6 +32,7 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import support_bundle_utils as sb
 from commons.constants import RESTORE_SCALE_REPLICAS, K8S_SCRIPTS_PATH, K8S_PRE_DISK
+from commons.constants import POD_NAME_PREFIX
 from commons.params import LOG_DIR
 from config import CMN_CFG
 from config.s3 import S3_CFG
@@ -99,7 +100,7 @@ class TestSystemCapacity():
         cls.failed_pod = []
         cls.deployment_backup = None
         cls.fail_cnt = 0
-        cls.deploy_list = cls.master.get_deployment_name(cls.num_nodes)
+        cls.deploy_list = cls.master.get_deployment_name(POD_NAME_PREFIX)
         cls.update_seconds = cls.csm_conf["update_seconds"]
         cls.log.info("Get the value of K for the given cluster.")
         resp = cls.ha_obj.get_config_value(cls.master)
