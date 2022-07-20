@@ -50,6 +50,7 @@ from config.s3 import S3_CFG
 from conftest import LOG_DIR
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
@@ -92,6 +93,7 @@ class TestSingleProcessRestart:
         cls.system_random = secrets.SystemRandom()
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "DTMTestData")
         cls.delay = cls.test_cfg['delay']
+        cls.deploy_lc_obj = ProvDeployK8sCortxLib()
 
     def setup_method(self):
         """Setup Method"""
@@ -105,7 +107,7 @@ class TestSingleProcessRestart:
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
         self.bucket_name = f"dps-bkt-{self.random_time}"
         self.object_name = f"dps-obj-{self.random_time}"
-        self.deploy = False
+        self.deploy = True
         self.iam_user = dict()
         self.log.info("Create IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
@@ -152,7 +154,36 @@ class TestSingleProcessRestart:
             assert_utils.assert_true(resp[0], resp[1])
         if os.path.exists(self.test_dir_path):
             system_utils.remove_dirs(self.test_dir_path)
-        # TODO : Redeploy setup after test completion.
+
+        if self.deploy and self.test_completed:
+            self.log.info("Cleanup: Destroying the cluster ")
+            resp = self.deploy_lc_obj.destroy_setup(self.master_node_list[0],
+                                                    self.worker_node_list,
+                                                    const.K8S_SCRIPTS_PATH)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info("Cleanup: Cluster destroyed successfully")
+
+            self.log.info("Cleanup: Setting prerequisite")
+            self.deploy_lc_obj.execute_prereq_cortx(self.master_node_list[0],
+                                                    const.K8S_SCRIPTS_PATH,
+                                                    const.K8S_PRE_DISK)
+            for node in self.worker_node_list:
+                self.deploy_lc_obj.execute_prereq_cortx(node, const.K8S_SCRIPTS_PATH,
+                                                        const.K8S_PRE_DISK)
+            self.log.info("Cleanup: Prerequisite set successfully")
+
+            self.log.info("Cleanup: Deploying the Cluster")
+            resp_cls = self.deploy_lc_obj.deploy_cluster(self.master_node_list[0],
+                                                         const.K8S_SCRIPTS_PATH)
+            assert_utils.assert_true(resp_cls[0], resp_cls[1])
+            self.log.info("Cleanup: Cluster deployment successfully")
+
+        self.log.info("Cleanup: Check cluster status")
+        resp = self.ha_obj.poll_cluster_status(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Cleanup: Cluster status checked successfully")
+        self.log.info("Done: Teardown completed.")
+
 
     @pytest.mark.lc
     @pytest.mark.dtm
