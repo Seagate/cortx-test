@@ -123,20 +123,20 @@ class TestSingleProcessRestart:
         if not os.path.exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
 
-        self.log.info("Edit deployment file to append conditional sleep command to m0d setup "
-                      "command of all data pods.")
-        resp = self.master_node_list[0].get_deployment_name(POD_NAME_PREFIX)
-        for each in resp:
-            self.log.info("Editing Deployment for %s", each)
-            resp = self.dtm_obj.edit_deployments_for_delay(self.master_node_list[0], each, M0D_SVC)
-            assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Edit deployment done for all data pods")
-        self.log.info("Sleep of %s secs", self.test_cfg['edit_deployment_delay'])
-        time.sleep(self.test_cfg['edit_deployment_delay'])
-        self.log.info("Check the overall status of the cluster.")
-        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Cluster status is online.")
+        # self.log.info("Edit deployment file to append conditional sleep command to m0d setup "
+        #               "command of all data pods.")
+        # resp = self.master_node_list[0].get_deployment_name(POD_NAME_PREFIX)
+        # for each in resp:
+        #     self.log.info("Editing Deployment for %s", each)
+        #     resp = self.dtm_obj.edit_deployments_for_delay(self.master_node_list[0], each, M0D_SVC)
+        #     assert_utils.assert_true(resp[0], resp[1])
+        # self.log.info("Edit deployment done for all data pods")
+        # self.log.info("Sleep of %s secs", self.test_cfg['edit_deployment_delay'])
+        # time.sleep(self.test_cfg['edit_deployment_delay'])
+        # self.log.info("Check the overall status of the cluster.")
+        # resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        # assert_utils.assert_true(resp[0], resp[1])
+        # self.log.info("Cluster status is online.")
 
     def teardown_method(self):
         """Teardown class method."""
@@ -146,7 +146,7 @@ class TestSingleProcessRestart:
             resp = support_bundle_utils.collect_support_bundle_k8s(
                 local_dir_path=path, scripts_path=const.K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
-        if self.iam_user:
+        if self.iam_user and self.test_completed:
             self.log.info("Cleanup: Deleting objects created during test.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.iam_user, True)
             assert_utils.assert_true(resp[0], resp[1])

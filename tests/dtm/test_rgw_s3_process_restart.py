@@ -148,7 +148,7 @@ class TestRGWProcessRestart:
             resp = support_bundle_utils.collect_support_bundle_k8s(
                 local_dir_path=path, scripts_path=const.K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
-        if self.iam_user:
+        if self.iam_user and self.test_completed:
             self.log.info("Cleanup: Cleaning created IAM users and buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.iam_user)
             assert_utils.assert_true(resp[0], resp[1])

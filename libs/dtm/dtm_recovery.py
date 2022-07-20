@@ -469,6 +469,8 @@ class DTMRecoveryTestLib:
                 if service_name in each['args'][1]:
                     if cmd not in each['args'][1]:
                         new_cmd = each['args'][1] + '; ' + cmd
+                        if service_name == 'rgw':
+                            new_cmd = each['args'][1] + ' ' + cmd
                         each['args'][1] = new_cmd
                     update_done = True
         if not update_done:
