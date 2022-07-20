@@ -24,9 +24,9 @@ import logging
 import random
 import time
 
+from commons.constants import MB
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
-from commons.constants import MB
 from config import CMN_CFG
 from config import DURABILITY_CFG
 from config.s3 import S3_CFG
@@ -40,6 +40,10 @@ class NearFullStorage:
     """
     This class contains common utility methods to create pre filled near full storage.
     """
+
+    def __init__(self, max_retries=None, timeout=None):
+        self.max_retries = max_retries
+        self.http_client_timeout  = timeout
 
     @staticmethod
     def get_user_data_space_in_bytes(master_obj: LogicalNode, memory_percent: int) -> tuple:
@@ -78,8 +82,8 @@ class NearFullStorage:
                     current_usage_per, memory_percent)
         return True, 0
 
-    @staticmethod
-    def perform_near_full_sys_writes(s3userinfo, user_data_writes, bucket_prefix: str,
+    # pylint: disable=too-many-locals
+    def perform_near_full_sys_writes(self, s3userinfo, user_data_writes, bucket_prefix: str,
                                      **kwargs) -> tuple:
         """
         Perform write operation till the memory is filled to given percentage
@@ -94,7 +98,7 @@ class NearFullStorage:
         """
         client = kwargs.get("client", 10)
         bucket_list = kwargs.get('bucket_list', None)
-        workload = copy.deepcopy(DURABILITY_CFG['full_sys_writes']['vm_workload']) # in mb
+        workload = copy.deepcopy(DURABILITY_CFG['full_sys_writes']['vm_workload'])  # in mb
         if CMN_CFG["setup_type"] == "HW":
             workload.extend(DURABILITY_CFG['full_sys_writes']['extended_hw_workload'])
 
@@ -123,7 +127,10 @@ class NearFullStorage:
                                        skip_cleanup=True, duration=None,
                                        log_file_prefix=f"write_workload_{obj_size}b",
                                        end_point=S3_CFG["s3_url"],
-                                       validate_certs=S3_CFG["validate_certs"])
+                                       validate_certs=S3_CFG["validate_certs"],
+                                       max_retries=self.max_retries,
+                                       httpclientimeout=self.http_client_timeout
+                                       )
                 LOGGER.info("Workload: %s objects of %s with %s parallel clients ", samples,
                             obj_size, temp_client)
                 LOGGER.info("Log Path %s", resp[1])
@@ -137,10 +144,10 @@ class NearFullStorage:
                 continue
         return True, return_list
 
-    @staticmethod
-    def perform_operations_on_pre_written_data(s3userinfo: dict, workload_info: list,
-                                         skipread: bool = True, validate: bool = True,
-                                         skipcleanup: bool = False):
+    # pylint: disable=too-many-arguments
+    def perform_operations_on_pre_written_data(self, s3userinfo: dict, workload_info: list,
+                                               skipread: bool = True, validate: bool = True,
+                                               skipcleanup: bool = False):
         """
         Perform Read/Validate/Delete operations on the workload info using s3bench
         :param s3userinfo: S3user dictionary with access/secret key
@@ -163,7 +170,10 @@ class NearFullStorage:
                                    validate=validate,
                                    log_file_prefix=f"read_workload_{each['obj_size']}b",
                                    end_point=S3_CFG["s3_url"],
-                                   validate_certs=S3_CFG["validate_certs"])
+                                   validate_certs=S3_CFG["validate_certs"],
+                                   max_retries=self.max_retries,
+                                   httpclientimeout=self.http_client_timeout
+                                   )
             LOGGER.info("Workload: %s objects of %s with %s parallel clients ", each['num_sample'],
                         each['obj_size'], each['num_clients'])
             LOGGER.info("Log Path %s", resp[1])
@@ -172,8 +182,7 @@ class NearFullStorage:
                               f" Please read log file {resp[1]}"
         return True, "S3bench workload successful"
 
-    @staticmethod
-    def delete_workload(workload_info_list: list, s3userinfo: dict, delete_percent: int):
+    def delete_workload(self, workload_info_list: list, s3userinfo: dict, delete_percent: int):
         """
         Delete specified percent of buckets(with written data) from workload info list.
         :param workload_info_list: Workload info list returned after write operation
@@ -192,7 +201,7 @@ class NearFullStorage:
             workload_info_list.remove(bucket_info)
         LOGGER.info("Deleting buckets : %s", delete_list)
         LOGGER.debug("Number of available buckets : %s", len(workload_info_list))
-        resp = NearFullStorage.perform_operations_on_pre_written_data(
+        resp = self.perform_operations_on_pre_written_data(
             s3userinfo=s3userinfo,
             workload_info=delete_list,
             skipread=False,
@@ -206,9 +215,8 @@ class NearFullStorage:
         return resp
 
     # pylint: disable=too-many-arguments
-    @staticmethod
-    def perform_write_to_fill_system_percent(master_node: LogicalNode, write_per: int, s3userinfo,
-                                             bucket_prefix, clients, bucket_list=None):
+    def perform_write_to_fill_system_percent(self, master_node: LogicalNode, write_per: int,
+                                             s3userinfo, bucket_prefix, clients, bucket_list=None):
         """
         Retrieve user data space to attain specific percent of near full storage.
         :param master_node: Master node object
@@ -220,8 +228,8 @@ class NearFullStorage:
         :return Tuple(boolean,Union(str,dict))
         """
         LOGGER.info("Perform Write operation to fill %s percent disk capacity", write_per)
-        resp = NearFullStorage.get_user_data_space_in_bytes(master_obj=master_node,
-                                                            memory_percent=write_per)
+        resp = self.get_user_data_space_in_bytes(master_obj=master_node,
+                                                 memory_percent=write_per)
         if not resp[0]:
             return resp
 
@@ -229,7 +237,7 @@ class NearFullStorage:
             LOGGER.warning("No bytes to be written to fill %s capacity", write_per)
             return True, None
 
-        resp = NearFullStorage.perform_near_full_sys_writes(
+        resp = self.perform_near_full_sys_writes(
             s3userinfo=s3userinfo,
             user_data_writes=resp[1],
             bucket_prefix=bucket_prefix,
