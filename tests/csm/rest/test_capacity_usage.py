@@ -1232,7 +1232,7 @@ class TestSystemCapacityFixedPlacement():
         self.deploy = True
         if self.deploy:
             self.log.info("Cleanup: Destroying the cluster ")
-            resp = self.deploy_lc_obj.destroy_setup(self.csm_obj.master, self.node_list,
+            resp = self.deploy_lc_obj.destroy_setup(self.csm_obj.master, self.csm_obj.worker_list,
                                                     K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Cleanup: Cluster destroyed successfully")
@@ -1242,7 +1242,7 @@ class TestSystemCapacityFixedPlacement():
                                                     K8S_SCRIPTS_PATH,
                                                     K8S_PRE_DISK)
 
-            for node in self.node_list:
+            for node in self.csm_obj.worker_list:
                 self.deploy_lc_obj.execute_prereq_cortx(node, K8S_SCRIPTS_PATH,
                                                         K8S_PRE_DISK)
             self.log.info("Cleanup: Prerequisite set successfully")
