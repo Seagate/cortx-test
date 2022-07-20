@@ -235,7 +235,8 @@ class TestIOWorkload:
             loop += 1
             write_per = write_per + write_percent_per_iter
             self.log.info("Write percentage per iteration : %s", write_percent_per_iter)
-            self.log.info("Write percentage to be written in this iteration: %s", write_per)
+            self.log.info("Storage percentage filled to be expected of total storage in this "
+                          "iteration: %s", write_per)
             if write_per < max_cluster_capacity_percent:
                 # Write data to fill cluster upto "write_per" percent
                 resp = NearFullStorage.perform_write_to_fill_system_percent(
@@ -256,17 +257,23 @@ class TestIOWorkload:
                     resp = NearFullStorage.delete_workload(workload_info_list, self.s3userinfo,
                                                            delete_percent_per_iter)
                     assert_utils.assert_true(resp[0], resp[1])
-
+                    write_per = write_per - delete_percent_per_iter
                 else:
                     self.log.warning("No buckets available to perform read,validate,delete"
                                      " operations %s", workload_info_list)
             else:
                 self.log.info("Write percentage(%s) exceeding the max cluster capacity(%s)",
                               write_per, max_cluster_capacity_percent)
-                self.log.info("Deleting all the written data.")
-                resp = NearFullStorage.delete_workload(workload_info_list, self.s3userinfo, 100)
-                assert_utils.assert_true(resp[0], resp[1])
-                self.log.info("Deletion completed.")
+                if len(workload_info_list) > 0:
+                    self.log.info("Deleting all the written data.")
+                    resp = NearFullStorage.delete_workload(workload_info_list, self.s3userinfo, 100)
+                    assert_utils.assert_true(resp[0], resp[1])
+                    self.log.info("Deletion completed.")
+                    write_per = 0
+                else:
+                    self.log.warning("No buckets available to perform read,validate,delete"
+                                     " operations %s", workload_info_list)
+                    assert False, "Specified Max capacity already attained."
 
         self.test_completed = True
         self.log.info(
