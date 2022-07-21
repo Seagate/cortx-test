@@ -453,7 +453,6 @@ SB_POD_PREFIX_AND_COMPONENT_LIST = {POD_NAME_PREFIX: ["hare", "motr", "utils"],
                                     CONTROL_POD_NAME_PREFIX: ["csm", "utils"],
                                     HA_POD_NAME_PREFIX: ["utils"]}
 SB_EXTRACTED_PATH = "/etc/cortx/log/"
-SB_PREFIX = "logs-cortx-cloud-"
 
 # K8s env
 K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
