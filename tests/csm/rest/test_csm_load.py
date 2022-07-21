@@ -409,3 +409,51 @@ class TestCsmLoad():
                                                                    "statistics.json"))
         assert err_cnt == 0, f"{err_cnt} of {total_cnt} requests have failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44782')
+    def test_44782(self):
+        """
+        Verify max allowed CSM user limit
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_44782"]
+        jmx_file = "CSM_create_max_manage_users.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+
+        request_usage = test_cfg["request_usage"]
+        total_requests = test_cfg["total_requests"]
+
+        loop = total_requests // request_usage
+        req_in_loops = request_usage * loop
+        req_last = total_requests - req_in_loops
+
+        self.log.info("request_usage = %s", request_usage)
+        self.log.info("Total Requests = %s", total_requests)
+        self.log.info("Loop = %s", loop)
+        self.log.info("Req_in_loops = %s", req_in_loops)
+        self.log.info("Req_last = %s", req_last)
+        self.log.info("Run intital batch of create csm users")
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file,
+            threads=request_usage,
+            rampup=test_cfg["rampup"],
+            loop=loop)
+        assert result, "Errors reported in the Jmeter execution"
+
+        self.log.info("Run last batch of create csm users")
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file,
+            threads=req_last,
+            rampup=test_cfg["rampup"],
+            loop=1)
+        assert result, "Errors reported in the Jmeter execution"
+
+        #TODO: List users to verify if 100 users are present(99 csm+1 admin)
+        #Create one more user and check for 403 forbidden
+        #Delete all created users
+        self.log.info("##### Test completed -  %s #####", test_case_name)
