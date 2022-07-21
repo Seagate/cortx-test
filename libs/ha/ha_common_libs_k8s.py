@@ -205,8 +205,17 @@ class HAK8s:
                         obj_list = s3_del.object_list(_bucket)
                         LOGGER.debug("List of object response for %s bucket is %s", _bucket,
                                      obj_list)
-                        response = s3_del.delete_multiple_objects(_bucket, obj_list[1], quiet=True)
-                        LOGGER.debug("Delete multiple objects response %s", response)
+                        obj_list = obj_list[1]
+                        while len(obj_list):
+                            if len(obj_list) > 1000:
+                                s3_del.delete_multiple_objects(_bucket,
+                                                            obj_list=obj_list[0:1000],quiet=True)
+                                obj_list = obj_list[1000:]
+                            else:
+                                s3_del.delete_multiple_objects(bucket_name=_bucket,
+                                                               obj_list=obj_list,quiet=True)
+                                obj_list = []
+                        LOGGER.debug("Delete all object from bucket %s completed", _bucket)
                 return True, "Successfully performed Objects Delete operation"
             for details in s3_data.values():
                 s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
