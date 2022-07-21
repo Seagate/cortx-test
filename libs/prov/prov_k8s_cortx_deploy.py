@@ -680,11 +680,11 @@ class ProvDeployK8sCortxLib:
             storage = []
             for cvg in range(0, cvg_count):
                 cvg_dict = {}
-                metadata_schema_upd = {'device': metadata_devices[cvg], 'size': size_metadata}
+                metadata_schema_upd = {'path': metadata_devices[cvg], 'size': size_metadata}
                 data_schema = []
                 for disk in range(0, data_disk_per_cvg):
                     disk_schema_upd = \
-                        {'device': data_devices[cvg][disk], 'size': size_data_disk}
+                        {'path': data_devices[cvg][disk], 'size': size_data_disk}
                     data_schema.append(disk_schema_upd)
                 c_device_schema = {'metadata': metadata_schema_upd, 'data': data_schema}
                 key_cvg_devices = {'devices': c_device_schema}
