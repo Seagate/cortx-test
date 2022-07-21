@@ -219,15 +219,15 @@ k8s_cortx_deploy:
         mem: '1Gi'
         cpu: '250m'
       limits:
-        mem: '3Gi'
+        mem: '2Gi'
         cpu: '1000m'
     zookeeper:
       requests:
         mem: '256Mi'
         cpu: '250m'
       limits:
-        mem: '1Gi'
-        cpu: '1000m'
+        mem: '512Mi'
+        cpu: '500m'
   cortx_resource:
     hax:
       requests:
