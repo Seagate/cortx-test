@@ -216,18 +216,22 @@ def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const
         if "date" in line:
             out = line.split("date:")[1]
             out2 = out.strip()
-            file = cm_const.SB_PREFIX + out2 + ".tgz"
-            LOGGER.info("Support bundle created: %s", file)
-            remote_path = os.path.join(scripts_path, file)
-            local_path = os.path.join(local_dir_path, file)
-            if m_node_obj.path_exists(remote_path):
-                flg = True
-                m_node_obj.copy_file_to_local(remote_path, local_path)
-                break
+            flg = True
+            break
 
     if flg:
-        LOGGER.info("Support bundle %s generated and copied to %s path.",
-                    file, local_dir_path)
+        resp1 = m_node_obj.list_dir(scripts_path)
+        for file in resp1:
+            if out2 in file:
+                LOGGER.info("Support bundle filename:%s", file)
+                remote_path = os.path.join(scripts_path, file)
+                local_path = os.path.join(local_dir_path, file)
+                res = m_node_obj.copy_file_to_local(remote_path, local_path)
+                if res[0]:
+                    LOGGER.info("Support bundle %s generated and copied to %s path.",
+                                file, local_dir_path)
+                break
+
     else:
         LOGGER.info("Support Bundle not generated; response: %s", resp)
     return flg
