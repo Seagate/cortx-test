@@ -414,7 +414,7 @@ class TestProvPodsDeployment:
         assert_utils.assert_true(resp[0])
         self.log.info("Pod list are %s", resp[0])
         self.log.info("Data Pod on %s worker node is %s", len(self.worker_node_list), len(resp))
-        assert_utils.assert_equal(len(resp), 2*len(self.worker_node_list))
+        assert_utils.assert_equal(len(resp), len(self.worker_node_list))
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.SERVER_POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
