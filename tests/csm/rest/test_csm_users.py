@@ -74,6 +74,7 @@ class TestCsmUser():
         if not user_already_present:
             user_already_present = cls.config.setup_csm_users()
             assert user_already_present
+        cls.users_dict = cls.config.get_predefined_csm_user_dict()
         #s3acc_already_present = cls.config.check_predefined_s3account_present()
         #if not s3acc_already_present:
         #    s3acc_already_present = cls.config.setup_csm_s3()
@@ -4655,6 +4656,7 @@ class TestCsmUser():
         self.csm_obj.check_expected_response(response, HTTPStatus.OK)
 
 
+    @pytest.mark.skip(reason="not_in_main_build_yet")
     @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -4668,18 +4670,8 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
-        admin_username = self.csm_obj.config["csm_admin_user"]["username"]
-        admin_password = self.csm_obj.config["csm_admin_user"]["password"]
-        manage_username = self.csm_obj.config["csm_user_manage"]["username"]
-        manage_password = self.csm_obj.config["csm_user_manage"]["password"]
-        monitor_username = self.csm_obj.config["csm_user_monitor"]["username"]
-        monitor_password = self.csm_obj.config["csm_user_monitor"]["password"]
-
-        users_dict = {admin_username:admin_password,manage_username:manage_password,
-                      monitor_username:monitor_password}
-
-        for username, password in users_dict.items():
-            self.log.info("Step 1: Login and Get Header")
+        for username, password in self.users_dict.items():
+            self.log.info("Step 1: Login wtih %s %s and Get Header", username, password)
             header = self.csm_obj.get_headers(username, password)
             self.log.info("Step 2: Store Authorization Token")
             init_token = header['Authorization']
@@ -4688,9 +4680,11 @@ class TestCsmUser():
             self.log.info("Step 4: Store Authorization Token")
             new_token = header['Authorization']
             self.log.info("Step 5: Check Bearer token should be same")
+            self.log.info("init_token = %s new_token = %s ", init_token, new_token)
             assert init_token == new_token
 
 
+    @pytest.mark.skip(reason="not_in_main_build_yet")
     @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -4703,18 +4697,8 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
-        admin_username = self.csm_obj.config["csm_admin_user"]["username"]
-        admin_password = self.csm_obj.config["csm_admin_user"]["password"]
-        manage_username = self.csm_obj.config["csm_user_manage"]["username"]
-        manage_password = self.csm_obj.config["csm_user_manage"]["password"]
-        monitor_username = self.csm_obj.config["csm_user_monitor"]["username"]
-        monitor_password = self.csm_obj.config["csm_user_monitor"]["password"]
-
-        users_dict = {admin_username:admin_password,manage_username:manage_password,
-                      monitor_username:monitor_password}
-
-        for username, password in users_dict.items():
-            self.log.info("Step 1: Login and Get Header")
+        for username, password in self.users_dict.items():
+            self.log.info("Step 1: Login wtih %s %s and Get Header", username, password)
             header = self.csm_obj.get_headers(username, password)
             self.log.info("Step 2: Store Authorization Token")
             init_token = header['Authorization']
@@ -4726,9 +4710,12 @@ class TestCsmUser():
             self.log.info("Step 5: Store Authorization Token")
             new_token = header['Authorization']
             self.log.info("Step 6: Check Bearer token should be different")
+            self.log.info("init_token = %s new_token = %s ", init_token, new_token)
             assert init_token != new_token
 
 
+    @pytest.mark.skip(reason="not_in_main_build_yet")
+    @pytest.mark.prolonged
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4740,19 +4727,10 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
-        admin_username = self.csm_obj.config["csm_admin_user"]["username"]
-        admin_password = self.csm_obj.config["csm_admin_user"]["password"]
-        manage_username = self.csm_obj.config["csm_user_manage"]["username"]
-        manage_password = self.csm_obj.config["csm_user_manage"]["password"]
-        monitor_username = self.csm_obj.config["csm_user_monitor"]["username"]
-        monitor_password = self.csm_obj.config["csm_user_monitor"]["password"]
-        sleep_time = 60 * 60
+        sleep_time = self.csm_obj.config["session_timeout_second"]
 
-        users_dict = {admin_username:admin_password,manage_username:manage_password,
-                      monitor_username:monitor_password}
-
-        for username, password in users_dict.items():
-            self.log.info("Step 1: Login and Get Header")
+        for username, password in self.users_dict.items():
+            self.log.info("Step 1: Login wtih %s %s and Get Header", username, password)
             header = self.csm_obj.get_headers(username, password)
             self.log.info("Step 2: Store Authorization Token")
             init_token = header['Authorization']
@@ -4763,6 +4741,7 @@ class TestCsmUser():
             self.log.info("Step 5: Store Authorization Token")
             new_token = header['Authorization']
             self.log.info("Step 6: Check Bearer token should be different")
+            self.log.info("init_token = %s new_token = %s ", init_token, new_token)
             assert init_token != new_token
 
 
