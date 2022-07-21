@@ -218,7 +218,6 @@ def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const
             out2 = out.strip()
             flg = True
             break
-
     if flg:
         resp1 = m_node_obj.list_dir(scripts_path)
         for file in resp1:
@@ -231,9 +230,10 @@ def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const
                     LOGGER.info("Support bundle %s generated and copied to %s path.",
                                 file, local_dir_path)
                 break
-
+            else:
+                LOGGER.debug("Support Bundle file not found; response: %s", resp1)
     else:
-        LOGGER.info("Support Bundle not generated; response: %s", resp)
+        LOGGER.debug("Support Bundle not generated; response: %s", resp)
     return flg
 
 
