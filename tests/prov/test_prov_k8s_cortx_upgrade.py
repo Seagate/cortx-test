@@ -136,9 +136,9 @@ class TestK8CortxUpgrade:
         resp = self.upgrade_obj.service_upgrade_software(self.master_node_list[0],
                                                          self.upgrade_image)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: Check if installed version is equals to installing version.")
         installed_version = self.upgrade_obj.prov_obj.get_installed_version(
             self.master_node_list[0])
+        LOGGER.info("Step 2 : Upgrade version %s", installed_version)
         LOGGER.info("Step 3 : Check PODs are up and running.")
         resp = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
         assert_utils.assert_true(resp)
@@ -147,7 +147,6 @@ class TestK8CortxUpgrade:
         time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
         resp = self.upgrade_obj.prov_obj.check_service_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Upgraded to version %s", installed_version)
         self.collect_sb = False
         LOGGER.info("Test Completed.")
 
