@@ -352,7 +352,7 @@ class TestSingleProcessRestart:
             self.s3_test_obj.create_bucket(f"bucket-{workload.lower()}-{test_prefix}")
 
         self.log.info("Perform WRITEs/READs-Verify with variable object sizes in background")
-        args = {'s3userinfo': self.iam_user, 'log_prefix': test_prefix,
+        args = {'s3userinfo': self.iam_user['s3_acc'], 'log_prefix': test_prefix,
                 'nclients': self.test_cfg['clients'],
                 'nsamples': self.test_cfg['test_41234']['samples'],
                 'skipcleanup': True, 'output': output, 'setup_s3bench': False}
