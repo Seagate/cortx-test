@@ -342,7 +342,7 @@ class TestSingleProcessRestart:
         event = threading.Event()  # Event to be used to send intimation of m0d restart
         output = Queue()
 
-        test_prefix = 'test-41234'
+        test_prefix = f'test-41234-{time.time_ns()}'
         self.log.info("Create buckets for IOs")
 
         workloads = HA_CFG["s3_bench_workloads"]
