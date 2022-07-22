@@ -4704,7 +4704,7 @@ class TestCsmUser():
             init_token = header['Authorization']
             self.log.info("Step 3: Logout user session")
             response = self.csm_obj.csm_user_logout(header)
-            self.csm_obj.check_expected_response(response, HTTPStatus.OK)
+            assert response.status_code == HTTPStatus.OK, "Status code check failed"
             self.log.info("Step 4: Login Again and Get Header")
             header = self.csm_obj.get_headers(username, password)
             self.log.info("Step 5: Store Authorization Token")
