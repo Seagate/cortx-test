@@ -188,7 +188,7 @@ class TestK8CortxUpgrade:
     def test_41953(self):
         """Verify resume of in progress rolling upgrade."""
         process_list = []
-        self.upgrade_obj.update_solution_file_with_new_image(
+        self.upgrade_obj.update_sol_file_with_new_image(
             self.master_node_list[0], cortx_control_img=self.cortx_control_image,
             cortx_data_img=self.cortx_data_image, cortx_server_img=self.cortx_server_image)
         LOGGER.info("Test Started.")
@@ -233,7 +233,7 @@ class TestK8CortxUpgrade:
     def test_42176(self):
         """Verify resume  functionality of upgrade,when abruptly stopped the upgrade process."""
         process_list = []
-        self.upgrade_obj.update_solution_file_with_new_image(
+        self.upgrade_obj.update_sol_file_with_new_image(
             self.master_node_list[0], cortx_control_img=self.cortx_control_image,
             cortx_data_img=self.cortx_data_image, cortx_server_img=self.cortx_server_image)
         LOGGER.info("Test Started.")
@@ -288,7 +288,7 @@ class TestK8CortxUpgrade:
     def test_42179(self):
         """Verify suspend/resume  functionality of upgrade"""
         process_list = []
-        self.upgrade_obj.update_solution_file_with_new_image(
+        self.upgrade_obj.update_sol_file_with_new_image(
             self.master_node_list[0], cortx_control_img=self.cortx_control_image,
             cortx_data_img=self.cortx_data_image, cortx_server_img=self.cortx_server_image)
         count = 1
@@ -342,6 +342,9 @@ class TestK8CortxUpgrade:
     def test_41951(self):
         """Verify suspend already suspended upgrade."""
         LOGGER.info("Test Started.")
+        self.upgrade_obj.update_sol_file_with_new_image(
+            self.master_node_list[0], cortx_control_img=self.cortx_control_image,
+            cortx_data_img=self.cortx_data_image, cortx_server_img=self.cortx_server_image)
         que = multiprocessing.Queue()
         start_upgrade_proc = multiprocessing.Process(target=self.rolling_upgrade, args=(
             True, que, self.prov_conf["upgrade_start"]))
@@ -399,6 +402,9 @@ class TestK8CortxUpgrade:
     def test_41952(self):
         """Verify start and upgrade status during upgrade."""
         LOGGER.info("Test Started.")
+        self.upgrade_obj.update_sol_file_with_new_image(
+            self.master_node_list[0], cortx_control_img=self.cortx_control_image,
+            cortx_data_img=self.cortx_data_image, cortx_server_img=self.cortx_server_image)
         que = multiprocessing.Queue()
         start_upgrade_proc = multiprocessing.Process(target=self.rolling_upgrade, args=(
             True, que, self.prov_conf["upgrade_start"]))

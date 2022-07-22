@@ -95,7 +95,7 @@ class ProvUpgradeK8sCortxLib:
         resp = node_obj.execute_cmd(upg_disrupt, read_lines=True)
         return resp
 
-    def update_solution_file_with_new_image(self, master_node_obj, **kwargs):
+    def update_sol_file_with_new_image(self, master_node_obj, **kwargs):
         """
         This method is used to retain the original solution.yaml file
         and later update teh file with newer images
