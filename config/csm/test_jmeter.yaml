@@ -31,5 +31,5 @@ test_44257:
   loop: 10
 test_44782:
   request_usage: 30
-  total_requests: 97
+  total_users: 97
   rampup: 1

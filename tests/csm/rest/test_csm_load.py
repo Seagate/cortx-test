@@ -426,14 +426,14 @@ class TestCsmLoad():
         self.log.info("Running jmx script: %s", jmx_file)
 
         request_usage = test_cfg["request_usage"]
-        total_requests = test_cfg["total_requests"]
+        total_users = test_cfg["total_users"]
 
-        loop = total_requests // request_usage
+        loop = total_users // request_usage
         req_in_loops = request_usage * loop
-        req_last = total_requests - req_in_loops
+        req_last = total_users - req_in_loops
 
         self.log.info("request_usage = %s", request_usage)
-        self.log.info("Total Requests = %s", total_requests)
+        self.log.info("Total Requests = %s", total_users)
         self.log.info("Loop = %s", loop)
         self.log.info("Req_in_loops = %s", req_in_loops)
         self.log.info("Req_last = %s", req_last)
