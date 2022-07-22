@@ -172,7 +172,6 @@ class TestK8CortxUpgrade:
             assert_utils.assert_true(resp[0],
                                      "Installed version is same or higher than installing version")
         LOGGER.info("Installing CORTX image version: %s", upgrade_version)
-        # TODO BUG #CORTX-29184
         LOGGER.info("Step 4: Start upgrade.")
         resp = self.upgrade_obj.service_upgrade_software(self.master_node_list[0],
                                                          self.upgrade_image)
