@@ -4681,7 +4681,7 @@ class TestCsmUser():
             new_token = header['Authorization']
             self.log.info("Step 5: Check Bearer token should be same")
             self.log.info("init_token = %s new_token = %s ", init_token, new_token)
-            assert (init_token == new_token),"unexpected token mismatch"
+            assert init_token == new_token, "unexpected token mismatch"
 
 
     @pytest.mark.skip(reason="not_in_main_build_yet")
@@ -4711,7 +4711,7 @@ class TestCsmUser():
             new_token = header['Authorization']
             self.log.info("Step 6: Check Bearer token should be different")
             self.log.info("init_token = %s new_token = %s ", init_token, new_token)
-            assert (init_token != new_token),"unexpected token mismatch"
+            assert init_token != new_token, "unexpected token mismatch"
 
 
     @pytest.mark.skip(reason="not_in_main_build_yet")
@@ -4734,7 +4734,7 @@ class TestCsmUser():
             header = self.csm_obj.get_headers(username, password)
             self.log.info("Step 2: Store Authorization Token")
             init_token = header['Authorization']
-            self.log.info("Step 3: Sleep for an hour for Session timeout")
+            self.log.info("Step 3: Sleep for %s second for Session timeout", sleep_time)
             time.sleep(sleep_time)
             self.log.info("Step 4: Login Again and Get Header")
             header = self.csm_obj.get_headers(username, password)
@@ -4742,7 +4742,7 @@ class TestCsmUser():
             new_token = header['Authorization']
             self.log.info("Step 6: Check Bearer token should be different")
             self.log.info("init_token = %s new_token = %s ", init_token, new_token)
-            assert (init_token != new_token),"unexpected token mismatch"
+            assert init_token != new_token, "unexpected token mismatch"
 
 
     @pytest.mark.lr
