@@ -605,7 +605,6 @@ class ProvDeployK8sCortxLib:
         Param: worker_obj: list of node object
         :returns the filepath and status True
         """
-        # node_list = len(worker_obj)
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             node = conf['solution']['storage_sets'][0]['nodes']

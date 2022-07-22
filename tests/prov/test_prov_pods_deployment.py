@@ -316,7 +316,7 @@ class TestProvPodsDeployment:
     @pytest.mark.tags("TEST-41907")
     def test_41907(self):
         """
-        Test to verify the multi data and server pod being deployed with 1 cvg
+        Test to verify the 1 data and server pod being deployed with 1 cvg
         """
         config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         for config_set in config_list:
@@ -354,7 +354,7 @@ class TestProvPodsDeployment:
     @pytest.mark.tags("TEST-41909")
     def test_41909(self):
         """
-        Test to verify the multi data and server pod being deployed with 2 cvg
+        Test to verify the 2 data and server pod being deployed with 2 cvg
         """
         config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         for config_set in config_list:
@@ -392,7 +392,7 @@ class TestProvPodsDeployment:
     @pytest.mark.tags("TEST-44470")
     def test_44470(self):
         """
-        Test to verify the multi data and server pod being deployed with 1 cvg
+        Test to verify the single data and with 2 server pod being deployed with 1 cvg
         """
         config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         for config_set in config_list:

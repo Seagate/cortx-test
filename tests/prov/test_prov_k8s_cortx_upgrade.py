@@ -127,20 +127,23 @@ class TestK8CortxUpgrade:
     def test_33660(self):
         """Verify CORTX Software upgrade."""
         LOGGER.info("Test Started.")
-        # checkout the k8s repo tag
-        # self.upgrade_obj.prov_obj.prereq_git(self.master_node_list[0], self.git_tag)
-        LOGGER.info("Step 5: Start upgrade.")
+        installed_version = self.upgrade_obj.prov_obj.get_installed_version(
+            self.master_node_list[0])
+        resp = self.prov_conf.generate_and_compare_both_version(self.upgrade_image,
+                                                                installed_version)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Start upgrade.")
         resp = self.upgrade_obj.service_upgrade_software(self.master_node_list[0],
                                                          self.upgrade_image)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Check if installed version is equals to installing version.")
+        LOGGER.info("Step 2: Check if installed version is equals to installing version.")
         installed_version = self.upgrade_obj.prov_obj.get_installed_version(
             self.master_node_list[0])
-        LOGGER.info("Step 7 : Check PODs are up and running.")
+        LOGGER.info("Step 3 : Check PODs are up and running.")
         resp = self.upgrade_obj.prov_obj.check_pods_status(self.master_node_list[0])
-        assert_utils.assert_true(resp[0])
+        assert_utils.assert_true(resp)
         LOGGER.info("All PODs are up and running.")
-        LOGGER.info("Step 8 : Check Cluster health and services.")
+        LOGGER.info("Step 4 : Check Cluster health and services.")
         time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
         resp = self.upgrade_obj.prov_obj.check_service_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
@@ -166,16 +169,16 @@ class TestK8CortxUpgrade:
         LOGGER.info("upgrade_image: %s", self.upgrade_image)
         upgrade_image_version = self.upgrade_image.split(":")[1]
         upgrade_version = upgrade_image_version.split("-")[1]
+        if int(upgrade_version) <= int(installed_version):
+            assert_utils.assert_true(resp[0],
+                                     "Installed version is same or higher than installing version")
         LOGGER.info("Installing CORTX image version: %s", upgrade_version)
-        # TO DO BUG #CORTX-29184
-        LOGGER.info("Step 3: Start upgrade.")
+        # TODO BUG #CORTX-29184
+        LOGGER.info("Step 4: Start upgrade.")
         resp = self.upgrade_obj.service_upgrade_software(self.master_node_list[0],
                                                          self.upgrade_image)
         assert_utils.assert_false(resp[0], resp[1])
 
-        if int(upgrade_version) <= int(installed_version):
-            assert_utils.assert_true(resp[0],
-                                     "Installed version is same or higher than installing version")
         self.collect_sb = False
         LOGGER.info("Test Completed.")
 
@@ -185,7 +188,7 @@ class TestK8CortxUpgrade:
     def test_41953(self):
         """Verify resume of in progress rolling upgrade."""
         process_list = []
-        self.upgrade_obj.retain_solution_file(
+        self.upgrade_obj.update_solution_file_with_new_image(
             self.master_node_list[0], cortx_control_img=self.cortx_control_image,
             cortx_data_img=self.cortx_data_image, cortx_server_img=self.cortx_server_image)
         LOGGER.info("Test Started.")
@@ -230,7 +233,7 @@ class TestK8CortxUpgrade:
     def test_42176(self):
         """Verify resume  functionality of upgrade,when abruptly stopped the upgrade process."""
         process_list = []
-        self.upgrade_obj.retain_solution_file(
+        self.upgrade_obj.update_solution_file_with_new_image(
             self.master_node_list[0], cortx_control_img=self.cortx_control_image,
             cortx_data_img=self.cortx_data_image, cortx_server_img=self.cortx_server_image)
         LOGGER.info("Test Started.")
@@ -285,7 +288,7 @@ class TestK8CortxUpgrade:
     def test_42179(self):
         """Verify suspend/resume  functionality of upgrade"""
         process_list = []
-        self.upgrade_obj.retain_solution_file(
+        self.upgrade_obj.update_solution_file_with_new_image(
             self.master_node_list[0], cortx_control_img=self.cortx_control_image,
             cortx_data_img=self.cortx_data_image, cortx_server_img=self.cortx_server_image)
         count = 1
