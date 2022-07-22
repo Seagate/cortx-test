@@ -40,7 +40,6 @@ Restcall:
   health_resource_endpoint: "/api/v2/system/health/{}"
   cluster_operation_endpoint: "/api/v2/system/management"
   cluster_status_endpoint: "/api/v2/system/management/cluster_status"
-  session_timeout_second: 3600
 
 CliConfig:
   iam_user:
@@ -102,3 +101,4 @@ Restcall_LC:
   percentage_compare: 10
   cluster_operation_endpoint: "/api/v2/system/management"
   version_endpoint: "/api/v2/version/compatibility"
+  session_timeout_second: 3600
