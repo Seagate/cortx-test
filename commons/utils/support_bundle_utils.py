@@ -225,15 +225,11 @@ def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const
                 LOGGER.info("Support bundle filename:%s", file)
                 remote_path = os.path.join(scripts_path, file)
                 local_path = os.path.join(local_dir_path, file)
-                res = m_node_obj.copy_file_to_local(remote_path, local_path)
-                if res[0]:
-                    LOGGER.info("Support bundle %s generated and copied to %s path.",
-                                file, local_dir_path)
-                break
-            else:
-                LOGGER.debug("Support Bundle file not found; response: %s", resp1)
-    else:
-        LOGGER.debug("Support Bundle not generated; response: %s", resp)
+                m_node_obj.copy_file_to_local(remote_path, local_path)
+                LOGGER.info("Support bundle %s generated and copied to %s path",
+                            file, local_dir_path)
+                return flg
+    LOGGER.info("Support Bundle not generated; response: %s", resp)
     return flg
 
 
