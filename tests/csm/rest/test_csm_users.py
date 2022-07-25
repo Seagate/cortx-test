@@ -4657,7 +4657,6 @@ class TestCsmUser():
 
 
     @pytest.mark.skip(reason="not_in_main_build_yet")
-    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4685,7 +4684,6 @@ class TestCsmUser():
 
 
     @pytest.mark.skip(reason="not_in_main_build_yet")
-    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
