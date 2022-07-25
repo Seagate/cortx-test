@@ -131,6 +131,7 @@ class TestMultiDataPodRestart:
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Teardown completed.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34091")
@@ -243,6 +244,7 @@ class TestMultiDataPodRestart:
         LOGGER.info("ENDED: Test to verify IOs in degraded mode and after data pod restart in "
                     "loop (different data pod down every time)")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34090")

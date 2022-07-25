@@ -23,7 +23,6 @@ HA test suite for single data and server Pod restart
 """
 
 import logging
-import os
 import secrets
 import time
 from time import perf_counter_ns
@@ -135,6 +134,7 @@ class TestDataServerPodRestart:
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Teardown completed.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.skip(reason="VM restart getting stuck CORTX-32933")
@@ -250,6 +250,7 @@ class TestDataServerPodRestart:
         LOGGER.info("COMPLETED: Verify IOs before and after data pod restart, "
                     "pod shutdown by making worker node down.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.skip(reason="VM restart getting stuck CORTX-32933")
