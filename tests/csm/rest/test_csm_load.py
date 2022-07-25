@@ -30,6 +30,7 @@ from commons import constants as cons
 from commons import cortxlogging
 from commons.constants import Rest as rest_const
 from commons.constants import SwAlerts as const
+from commons.utils import assert_utils
 from commons.utils import config_utils
 from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
 from libs.csm.csm_setup import CSMConfigsCheck
