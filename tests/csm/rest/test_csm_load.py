@@ -462,8 +462,8 @@ class TestCsmLoad():
         assert response.status_code == const.FORBIDDEN
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
-            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
-            assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
-            assert_utils.assert_equals(response.json()["message"], msg)
+            assert response.json()["error_code"] == resp_error_code, "Error code check failed"
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed" 
+            assert response.json()["message"] == msg, "Message check failed"
         #Delete all created users
         self.log.info("##### Test completed -  %s #####", test_case_name)
