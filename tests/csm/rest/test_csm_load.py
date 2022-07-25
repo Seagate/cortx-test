@@ -28,9 +28,9 @@ import pytest
 
 from commons import constants as cons
 from commons import cortxlogging
+from commons import configmanager
 from commons.constants import Rest as rest_const
 from commons.constants import SwAlerts as const
-from commons.utils import assert_utils
 from commons.utils import config_utils
 from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
 from libs.csm.csm_setup import CSMConfigsCheck
@@ -56,6 +56,8 @@ class TestCsmLoad():
         cls.csm_alert_obj = SystemAlerts(cls.sw_alert_obj.node_utils)
         cls.config_chk = CSMConfigsCheck()
         cls.test_cfgs = config_utils.read_yaml('config/csm/test_jmeter.yaml')[1]
+        cls.rest_resp_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/rest_response_data.yaml")
         cls.config_chk.delete_csm_users()
         user_already_present = cls.config_chk.check_predefined_csm_user_present()
         if not user_already_present:
@@ -411,6 +413,7 @@ class TestCsmLoad():
         assert err_cnt == 0, f"{err_cnt} of {total_cnt} requests have failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -423,6 +426,11 @@ class TestCsmLoad():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.test_cfgs["test_44782"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+        resp_msg_index = test_cfg["message_index"]
+        msg = resp_data[resp_msg_index]
         jmx_file = "CSM_create_max_manage_users.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
 
@@ -463,7 +471,7 @@ class TestCsmLoad():
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
             assert response.json()["error_code"] == resp_error_code, "Error code check failed"
-            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed" 
+            assert response.json()["message_id"] == resp_msg_id, "Message ID check failed"
             assert response.json()["message"] == msg, "Message check failed"
         #Delete all created users
         self.log.info("##### Test completed -  %s #####", test_case_name)
