@@ -454,6 +454,15 @@ class TestCsmLoad():
         assert result, "Errors reported in the Jmeter execution"
 
         #TODO: List users to verify if 100 users are present(99 csm+1 admin)
-        #Create one more user and check for 403 forbidden
+        self.log.info("Create one more user and check for 403 forbidden")
+        response = self.csm_obj.create_csm_user(
+            user_type="valid", user_role="manage")
+        self.log.info("Verifying that user was successfully created")
+        assert response.status_code == const.FORBIDDEN
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying error response...")
+            assert_utils.assert_equals(response.json()["error_code"], resp_error_code)
+            assert_utils.assert_equals(response.json()["message_id"], resp_msg_id)
+            assert_utils.assert_equals(response.json()["message"], msg)
         #Delete all created users
         self.log.info("##### Test completed -  %s #####", test_case_name)

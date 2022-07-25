@@ -33,3 +33,6 @@ test_44782:
   request_usage: 30
   total_users: 97
   rampup: 1
+  error_code: 4104
+  message_id: "PermissionDenied"
+  message_index: 0
