@@ -95,7 +95,7 @@ class ProvUpgradeK8sCortxLib:
         resp = node_obj.execute_cmd(upg_disrupt, read_lines=True)
         return resp
 
-    def retain_solution_file(self, master_node_obj, **kwargs):
+    def update_sol_file_with_new_image(self, master_node_obj, **kwargs):
         """
         This method is used to retain the original solution.yaml file
         and later update teh file with newer images
@@ -109,7 +109,8 @@ class ProvUpgradeK8sCortxLib:
         cortx_data_image = kwargs.get("cortx_data_img", self.cortx_data_upg_image)
         cortx_server_image = kwargs.get("cortx_server_img", self.cortx_server_upg_image)
         git_branch = kwargs.get("git_branch", self.prov_obj.deploy_cfg["prov_branch"])
-        remote_sol_path = self.prov_obj.deploy_cfg["k8s_dir"] + "solution.yaml"
+        remote_sol_path = self.prov_obj.deploy_cfg["k8s_dir"] + \
+                          self.prov_obj.deploy_cfg["solution_file"]
         master_node_obj.copy_file_to_local(remote_path=remote_sol_path,
                                            local_path=self.local_sol_path)
         self.prov_obj.prereq_git(master_node_obj, git_branch)
