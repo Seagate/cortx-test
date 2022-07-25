@@ -68,6 +68,8 @@ class TestContDeployment:
         cls.data_disk_size = os.getenv("DATA_DISK_SIZE", cls.deploy_cfg["data_disk_size"])
         cls.meta_disk_size = os.getenv("METADATA_DISK_SIZE", cls.deploy_cfg["metadata_disk_size"])
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
+        cls.s3_instances_per_node = os.getenv("S3_INSTANCE_PER_NODE",
+                                              cls.deploy_cfg["s3_instances_per_node"])
         cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
         cls.custom_repo_path = os.getenv("CUSTOM_REPO_PATH", cls.deploy_cfg["k8s_dir"])
         cls.namespace = os.getenv("NAMESPACE", cls.deploy_cfg["namespace"])
@@ -176,5 +178,6 @@ class TestContDeployment:
                 self.run_s3bench_workload_flag, run_basic_s3_io_flag=self.run_basic_s3_io_flag,
                 destroy_setup_flag=self.destroy_setup_flag, custom_repo_path=self.custom_repo_path,
                 namespace=self.namespace, report_filepath=self.report_file, data_disk_size=
-                self.data_disk_size, meta_disk_size=self.meta_disk_size)
+                self.data_disk_size, meta_disk_size=self.meta_disk_size,
+                s3_instance=self.s3_instances_per_node)
             iteration = iteration + 1
