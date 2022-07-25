@@ -69,6 +69,7 @@ class TestCsmLoad():
         assert s3acc_already_present
         cls.log.info("[Completed]: Setup class")
         cls.default_cpu_usage = False
+        cls.request_usage = 122 
 
     def setup_method(self):
         """
@@ -186,7 +187,8 @@ class TestCsmLoad():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-22204')
     def test_22204(self):
-        """Test maximum number of different users which can login using CSM REST per second
+        """
+        Test maximum number of different users which can login using CSM REST per second
         using CSM REST
         """
         test_case_name = cortxlogging.get_frame()
@@ -273,6 +275,60 @@ class TestCsmLoad():
             threads=test_cfg["threads"],
             rampup=test_cfg["rampup"],
             loop=loops)
+        assert result, "Errors reported in the Jmeter execution"
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.lc
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44799')
+    def test_44799(self):
+        """
+        Verify max number of IAM users using all the required parameters
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_44799"]
+        jmx_file = "CSM_create_IAM_user_Loaded.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
+        user_data = resp.json()
+        self.log.info("Step 1: List user response : %s", user_data)
+        existing_user = len(user_data['users'])
+        self.log.info("Existing iam users count: %s", existing_user)
+        self.log.info("Max iam users : %s", rest_const.MAX_IAM_USERS)
+        new_iam_users = rest_const.MAX_IAM_USERS - existing_user
+        self.log.info("New users to create: %s", new_iam_users)
+
+        loops = min(new_iam_users,test_cfg["loop"])
+
+        loop = new_iam_users // self.request_usage
+        req_in_loops = self.request_usage * loop
+        req_last = new_iam_users - req_in_loops
+
+        self.log.info("request_usage = %s", self.request_usage)
+        self.log.info("Total Requests = %s", new_iam_users)
+        self.log.info("Loop = %s", loop)
+        self.log.info("Req_in_loops = %s", req_in_loops)
+        self.log.info("Req_last = %s", req_last)
+
+        self.log.info("Run intital batch of create csm users")
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file,
+            threads=self.request_usage,
+            rampup=test_cfg["rampup"],
+            loop=loop)
+        assert result, "Errors reported in the Jmeter execution"
+        self.log.info("Run last batch of create csm users")
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file,
+            threads=req_last,
+            rampup=test_cfg["rampup"],
+            loop=1)
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("##### Test completed -  %s #####", test_case_name)
 

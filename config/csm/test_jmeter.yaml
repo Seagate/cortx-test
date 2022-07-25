@@ -36,3 +36,7 @@ test_44782:
   error_code: 4104
   message_id: "PermissionDenied"
   message_index: 2
+test_44799:
+  threads: 5
+  rampup: 2
+  loop: 10
