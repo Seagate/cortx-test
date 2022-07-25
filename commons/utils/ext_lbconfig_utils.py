@@ -221,7 +221,7 @@ def configure_nodeport_lb(node_obj: LogicalNode, iface: str):
     resp = json.loads(resp)
     flag = False
     for item_data in resp["items"]:
-        if item_data['metadata']["name"] == "cortx-io-svc-0":
+        if item_data['metadata']["name"] == "cortx-server-0":
             for item in item_data['spec']['ports']:
                 if item['port'] == 443:
                     port_https = item["nodePort"]
@@ -265,10 +265,10 @@ def configure_haproxy_rgwlb(m_node: str, username: str, password: str, ext_ip: s
     get_iosvc_data = dict()
     for item_data in resp["items"]:
         if item_data["spec"]["type"] == "LoadBalancer" and \
-                "cortx-io-svc-" in item_data["metadata"]["name"]:
+                "cortx-server-" in item_data["metadata"]["name"]:
             svc = item_data["metadata"]["name"]
             get_iosvc_data[svc] = dict()
-            if svc == "cortx-io-svc-0":
+            if svc == "cortx-server-0":
                 get_iosvc_data[svc].update({iface: master_eth1})
             else:
                 get_iosvc_data[svc].update({iface: worker_eth1.pop()})
