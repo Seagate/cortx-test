@@ -303,34 +303,73 @@ class TestCsmLoad():
         self.log.info("Max iam users : %s", rest_const.MAX_IAM_USERS)
         new_iam_users = rest_const.MAX_IAM_USERS - existing_user
         self.log.info("New users to create: %s", new_iam_users)
+        thread_request = test_cfg["thread_request"] # ( login + create )
+        operation_count = new_iam_users * thread_request
 
-        loops = min(new_iam_users,test_cfg["loop"])
-
-        loop = new_iam_users // self.request_usage
+        loop = operation_count // self.request_usage
         req_in_loops = self.request_usage * loop
-        req_last = new_iam_users - req_in_loops
+        operation_last = operation_count - req_in_loops
+        threads_1 = self.request_usage // thread_request
+        threads_2 = operation_last // thread_request
 
         self.log.info("request_usage = %s", self.request_usage)
-        self.log.info("Total Requests = %s", new_iam_users)
+        self.log.info("Total Operations = %s", operation_count)
+        self.log.info("Total Requests = %s", operation_count // thread_request)
         self.log.info("Loop = %s", loop)
-        self.log.info("Req_in_loops = %s", req_in_loops)
-        self.log.info("Req_last = %s", req_last)
+        self.log.info("Operations in loops = %s", req_in_loops)
+        self.log.info("Request in loops = %s", req_in_loops // thread_request)
+        self.log.info("Operations in last = %s", operation_last)
+        self.log.info("Request in last = %s", operation_last // thread_request)
+        self.log.info("threads_1 = %s", threads_1)
+        self.log.info("threads_2 = %s", threads_2)
 
-        self.log.info("Run intital batch of create csm users")
-        result = self.jmx_obj.run_verify_jmx(
-            jmx_file,
-            threads=self.request_usage,
-            rampup=test_cfg["rampup"],
-            loop=loop)
-        assert result, "Errors reported in the Jmeter execution"
-        self.log.info("Run last batch of create csm users")
-        result = self.jmx_obj.run_verify_jmx(
-            jmx_file,
-            threads=req_last,
-            rampup=test_cfg["rampup"],
-            loop=1)
-        assert result, "Errors reported in the Jmeter execution"
+        self.log.info("Step 2: Create users in parallel")
+        if loop is not 0:
+            self.log.info("Run intital batch of create csm users")
+            result = self.jmx_obj.run_verify_jmx(
+                jmx_file,
+                threads=threads_1,
+                rampup=1,
+                loop=loop)
+            assert result, "Errors reported in the Jmeter execution"
+        if operation_last is not 0:
+            self.log.info("Run last batch of create csm users")
+            result = self.jmx_obj.run_verify_jmx(
+                jmx_file,
+                threads=threads_2,
+                rampup=1,
+                loop=1)
+            assert result, "Errors reported in the Jmeter execution"
+
+        self.log.info("Step 3: Try to Create one more user")
+        result, resp = self.csm_obj.verify_create_iam_user_rgw(user_type="valid",
+                                                            expected_response=HTTPStatus.FORBIDDEN,
+                                                            verify_response=True)
+        assert result, "Able to create IAM user after Limit."
+
+        self.log.info("Step 4: Delete all created users")
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
+        user_data_new = resp.json()
+        init_users = user_data['users']
+        current_users = user_data_new['users']
+        self.log.info("List initial user  : %s", init_users)
+        self.log.info("List current user : %s", current_users)
+        delete_user_list = [ ele for ele in current_users ]
+        for a in init_users:
+            if a in current_users:
+                delete_user_list.remove(a)
+        self.log.info("List user to be deleted %s", delete_user_list)
+        admin_usr = CSM_REST_CFG["csm_admin_user"]["username"]
+        admin_pwd = CSM_REST_CFG["csm_admin_user"]["password"]
+        header = self.csm_obj.get_headers(admin_usr, admin_pwd)
+        for user in delete_user_list:
+            resp = self.csm_obj.delete_iam_user_rgw(user, header)
+            if resp.status_code != HTTPStatus.OK:
+                self.log.error("unable to delete user : %s", user)
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
 
     @pytest.mark.lr
