@@ -2851,7 +2851,7 @@ class TestDataPodFailure:
 
         LOGGER.info("Step 1: Perform WRITEs-READs-Verify with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-39976'
+        self.test_prefix = f'test-39976-{perf_counter_ns()}'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
@@ -2866,14 +2866,14 @@ class TestDataPodFailure:
         if set_type == const.STATEFULSET:
             resp = self.node_master_list[0].get_num_replicas(delete_pod)
             assert_utils.assert_true(resp[0], resp)
-            self.num_replica = resp[1]
+            self.num_replica = int(resp[1])
             num_replica = self.num_replica - 1
 
         LOGGER.info("Step 2: Shutdown random data pod by making replicas=0 and "
                     "verify cluster & remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            delete_pod=delete_pod, num_replica=num_replica)
+            delete_pod=[delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
