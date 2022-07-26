@@ -149,14 +149,14 @@ class LogicalNode(Host):
         """
         try:
             set_type = None
-            if pod_name is None or set_name is None:
-                set_type = const.REPLICASET
+            if set_name:
+                set_type = const.STATEFULSET
             elif pod_name:
                 log.info("Getting set name and set type of pod %s", pod_name)
                 set_type, set_name = self.get_set_type_name(pod_name=pod_name)
                 log.debug("Set type: %s\n Set name: %s", set_type, set_name)
-            elif set_name:
-                set_type = const.STATEFULSET
+            else:
+                set_type = const.REPLICASET
             if set_type == const.REPLICASET:
                 if pod_name:
                     log.info("Getting deploy and replicaset of pod %s", pod_name)
