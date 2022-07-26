@@ -741,14 +741,15 @@ class HAK8s:
         LOGGER.debug("Time taken by cluster restart is %s seconds", int(time.time()) - start_time)
         return resp
 
-    def restore_pod(self, pod_obj, restore_method, restore_params: dict = None, clstr_status=False):
+    def restore_pod(self, pod_obj, restore_method, restore_params: dict = None,
+                    clstr_status=False, num_replica=1):
         """
         Helper function to restore pod based on way_to_restore
         :param pod_obj: Object of master node
         :param restore_method: Restore method to be used depending on shutdown method
         ("scale_replicas", "k8s", "helm")
         :param restore_params: Dict which has parameters required to restore pods
-        :clstr_status: Flag to check cluster status after pod restored
+        :param clstr_status: Flag to check cluster status after pod restored
         :return: Bool, response
         """
         resp = False
@@ -756,7 +757,7 @@ class HAK8s:
         deployment_backup = restore_params.get("deployment_backup", None)
 
         if restore_method == common_const.RESTORE_SCALE_REPLICAS:
-            resp = pod_obj.create_pod_replicas(num_replica=1, deploy=deployment_name)
+            resp = pod_obj.create_pod_replicas(num_replica=num_replica, deploy=deployment_name)
         elif restore_method == common_const.RESTORE_DEPLOYMENT_K8S:
             resp = pod_obj.recover_deployment_k8s(deployment_name=deployment_name,
                                                   backup_path=deployment_backup)
@@ -1355,7 +1356,7 @@ class HAK8s:
     def delete_kpod_with_shutdown_methods(self, master_node_obj, health_obj,
                                           pod_prefix=None, kvalue=1, delete_pod=None,
                                           down_method=common_const.RESTORE_SCALE_REPLICAS,
-                                          event=None, event_set_clr=None):
+                                          event=None, event_set_clr=None, num_replica=0):
         """
         Delete K pods by given shutdown method. Check and verify deleted/remaining pod's services
         status, cluster status
@@ -1368,6 +1369,7 @@ class HAK8s:
         :param event_set_clr: Thread event set-clear flag reference when s3bench workload
         execution miss the event set-clear time window
         :param event: Thread event to set/clear before/after pods/nodes
+        :param num_replica: Number of replicas of the pod to be created
         shutdown with parallel IOs
         return : tuple
         """
@@ -1399,7 +1401,7 @@ class HAK8s:
                 event.set()
             LOGGER.info("Deleting pod %s by %s method", pod, down_method)
             if down_method == common_const.RESTORE_SCALE_REPLICAS:
-                resp = master_node_obj.create_pod_replicas(num_replica=0, pod_name=pod)
+                resp = master_node_obj.create_pod_replicas(num_replica=num_replica, pod_name=pod)
                 if resp[0]:
                     return False, pod_info
                 pod_info[pod] = pod_data.copy()
@@ -1422,7 +1424,7 @@ class HAK8s:
             resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
                                                  hostname=pod_info[pod]['hostname'])
             LOGGER.debug("Response: %s", resp)
-            if not resp[0]:
+            if not resp[0] or False in resp[1]:
                 return False, pod_info
         LOGGER.info("Successfully deleted %s by %s method", delete_pods, down_method)
 

@@ -134,6 +134,7 @@ class TestDataPodFailure:
         if not os.path.exists(self.test_dir_path):
             sysutils.make_dirs(self.test_dir_path)
         self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
+        self.num_replica = 1
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -153,7 +154,8 @@ class TestDataPodFailure:
                                            restore_method=self.restore_method,
                                            restore_params={"deployment_name": self.deployment_name,
                                                            "deployment_backup":
-                                                               self.deployment_backup})
+                                                               self.deployment_backup},
+                                           num_replica=self.num_replica)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} "
                                               "way")
@@ -2855,10 +2857,23 @@ class TestDataPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects.")
 
+        num_replica = 0
+        LOGGER.info("Get pod to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
+        delete_pod = pod_list[-1]
+        LOGGER.info("Pod to be deleted is %s", delete_pod)
+        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
+        if set_type == const.STATEFULSET:
+            resp = self.node_master_list[0].get_num_replicas(delete_pod)
+            assert_utils.assert_true(resp[0], resp)
+            self.num_replica = resp[1]
+            num_replica = self.num_replica - 1
+
         LOGGER.info("Step 2: Shutdown random data pod by making replicas=0 and "
                     "verify cluster & remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0])
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=delete_pod, num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]

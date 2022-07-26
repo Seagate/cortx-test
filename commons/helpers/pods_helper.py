@@ -142,24 +142,44 @@ class LogicalNode(Host):
         Helper function to delete/remove/create pod by changing number of replicas
         :param num_replica: Number of replicas to be scaled
         :param deploy: Name of the deployment of pod
-        :param pod_name: Name of the pod
-        :return: Bool, string (status, deployment name)
+        :param pod_name: Name of the pod (Compulsory param for Statefulset pods, User needs to
+        mention last pod of the Statfulset if set_type is Statefulset)
+        :return: Bool, string
         """
         try:
-            if pod_name:
-                log.info("Getting deploy and replicaset of pod %s", pod_name)
-                resp = self.get_deploy_replicaset(pod_name)
-                deploy = resp[1]
-            log.info("Scaling %s replicas for deployment %s", num_replica, deploy)
-            cmd = commands.KUBECTL_CREATE_REPLICA.format(num_replica, deploy)
-            output = self.execute_cmd(cmd=cmd, read_lines=True)
-            log.info("Response: %s", output)
-            time.sleep(60)
-            log.info("Check if pod of deployment %s exists", deploy)
-            cmd = commands.KUBECTL_GET_POD_DETAILS.format(deploy)
-            output = self.execute_cmd(cmd=cmd, read_lines=True, exc=False)
-            status = True if output else False
-            return status, deploy
+            set_name = None
+            if pod_name is None:
+                set_type = const.REPLICASET
+            else:
+                log.info("Getting set name and set type of pod %s", pod_name)
+                set_type, set_name = self.get_set_type_name(pod_name=pod_name)
+                log.debug("Set type: %s\n Set name: %s", set_type, set_name)
+            if set_type == const.REPLICASET:
+                if pod_name:
+                    log.info("Getting deploy and replicaset of pod %s", pod_name)
+                    resp = self.get_deploy_replicaset(pod_name)
+                    deploy = resp[1]
+                log.info("Scaling %s replicas for deployment %s", num_replica, deploy)
+                cmd = commands.KUBECTL_CREATE_REPLICA.format(num_replica, deploy)
+                output = self.execute_cmd(cmd=cmd, read_lines=True)
+                log.info("Response: %s", output)
+                time.sleep(60)
+                log.info("Check if pod of deployment %s exists", deploy)
+                cmd = commands.KUBECTL_GET_POD_DETAILS.format(deploy)
+                output = self.execute_cmd(cmd=cmd, read_lines=True, exc=False)
+                status = True if output else False
+                return status, deploy
+            elif set_type == const.STATEFULSET:
+                log.info("Scaling %s replicas for statefulset %s", num_replica, set_name)
+                cmd = commands.KUBECTL_CREATE_STATEFULSET_REPLICA.format(set_name, num_replica)
+                output = self.execute_cmd(cmd=cmd, read_lines=True)
+                log.info("Response: %s", output)
+                time.sleep(60)
+                log.info("Check if pod %s exists", pod_name)
+                cmd = commands.KUBECTL_GET_POD_DETAILS.format(pod_name)
+                output = self.execute_cmd(cmd=cmd, read_lines=True, exc=False)
+                status = True if output else False
+                return status, set_name
         except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
                       LogicalNode.create_pod_replicas.__name__, error)
@@ -206,21 +226,33 @@ class LogicalNode(Host):
                       LogicalNode.get_deploy_replicaset.__name__, error)
             return False, error
 
-    def get_num_replicas(self, replicaset):
+    def get_num_replicas(self, pod_name):
         """
         Helper function to get number of desired, current and ready replicas for given replica set
-        :param replicaset: Name of the replica set
+        :param pod_name: Name of the pod
         :return: Bool, str, str, str (Status, Desired replicas, Current replicas, Ready replicas)
         """
         try:
-            log.info("Getting details of replicaset %s", replicaset)
-            cmd = commands.KUBECTL_GET_REPLICASET.format(replicaset)
-            output = self.execute_cmd(cmd=cmd, read_lines=True)
-            log.info("Response: %s", output)
-            output = output[0].split()
-            log.info("Desired replicas: %s \nCurrent replicas: %s \nReady replicas: %s",
-                     output[1], output[2], output[3])
-            return True, output[1], output[2], output[3]
+            log.info("Getting set name and set type of pod %s", pod_name)
+            set_type, set_name = self.get_set_type_name(pod_name=pod_name)
+            log.debug("Set type: %s\n Set name: %s", set_type, set_name)
+            log.info("Getting details of replicaset %s", set_name)
+            if set_type == const.REPLICASET:
+                cmd = commands.KUBECTL_GET_REPLICASET.format(set_name)
+                output = self.execute_cmd(cmd=cmd, read_lines=True)
+                log.info("Response: %s", output)
+                output = output[0].split()
+                log.info("Desired replicas: %s \nCurrent replicas: %s \nReady replicas: %s",
+                         output[1], output[2], output[3])
+                return True, output[1], output[2], output[3]
+            elif set_type == const.STATEFULSET:
+                cmd = commands.KUBECTL_GET_STATEFULSET.format(set_name)
+                output = self.execute_cmd(cmd=cmd, read_lines=True)
+                log.info("Response: %s", output)
+                ready_replicas, desired_replicas = ((output[0].split()[1]).strip().split("/"))
+                log.info("Desired replicas: %s \nReady replicas: %s", desired_replicas,
+                         ready_replicas)
+                return True, ready_replicas, desired_replicas
         except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
                       LogicalNode.get_num_replicas.__name__, error)
@@ -522,7 +554,7 @@ class LogicalNode(Host):
         return: list
         """
         resp_node = self.execute_cmd(cmd=commands.KUBECTL_GET_DEPLOYMENT, read_lines=True,
-                                    exc=False)
+                                     exc=False)
 
         resp = [each.split()[0] for each in resp_node]
         deploy_list = resp
@@ -557,7 +589,7 @@ class LogicalNode(Host):
         pod_selected = pod_list[sys_random.randint(0, len(pod_list) - 1)]
         log.info("Pod selected : %s", pod_selected)
         container_list = self.get_container_of_pod(pod_name=pod_selected,
-                                                          container_prefix=container_prefix)
+                                                   container_prefix=container_prefix)
         container = container_list[sys_random.randint(0, len(container_list) - 1)]
         log.info("Container selected : %s", container)
         return pod_selected, container
@@ -565,3 +597,16 @@ class LogicalNode(Host):
     def restart_container_in_pod(self, pod_name, container_name):
         """Restarts a container within a pod. Prefer pod restart for single container pods."""
         raise NotImplementedError()
+
+    def get_set_type_name(self, pod_name):
+        """
+        Function to get set type (i.e. Replicaset or Statefulset) and set name
+        :param pod_name: Name of the pod
+        :return: str, str
+        """
+        cmd = commands.KUBECTL_DESCRIBE_POD_CMD.format(pod_name)
+        output = self.execute_cmd(cmd=cmd, read_lines=True)
+        output = ([s for s in output if "Controlled By:" in s][0]).strip()
+        set_type, set_name = ((output.split(":")[-1]).strip()).split("/")
+        log.debug("Set type is: %s\n Set name is: %s\n", set_type, set_name)
+        return set_type, set_name

@@ -985,6 +985,14 @@ class Health(Host):
             for pod in pod_list:
                 if hostname is None:
                     hostname = pod_obj.get_pod_hostname(pod_name=pod)
+                resp = pod_obj.get_set_type_name(pod_name=pod)
+                if resp[0] == const.STATEFULSET:
+                    prefix = None
+                    if const.POD_NAME_PREFIX in hostname:
+                        prefix = const.POD_NAME_PREFIX
+                    elif const.SERVER_POD_NAME_PREFIX in hostname:
+                        prefix = const.SERVER_POD_NAME_PREFIX
+                    hostname = hostname + "." + prefix + const.POD_HCTL_POSTFIX
                 for node in hctl_output["nodes"]:
                     if hostname == node["name"]:
                         services = node["svcs"]
