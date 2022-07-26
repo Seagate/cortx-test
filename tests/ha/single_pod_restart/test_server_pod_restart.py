@@ -330,7 +330,7 @@ class TestServerPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-44836")
-    def test_write_after_pod_restart(self):
+    def test_write_after_server_pod_restart(self):
         """
         This test tests WRITEs after server pod restart
         """
