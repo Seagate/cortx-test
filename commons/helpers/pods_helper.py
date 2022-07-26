@@ -137,23 +137,26 @@ class LogicalNode(Host):
 
         return pod_containers
 
-    def create_pod_replicas(self, num_replica, deploy=None, pod_name=None):
+    def create_pod_replicas(self, num_replica, deploy=None, pod_name=None, set_name=None):
         """
         Helper function to delete/remove/create pod by changing number of replicas
         :param num_replica: Number of replicas to be scaled
         :param deploy: Name of the deployment of pod
         :param pod_name: Name of the pod (Compulsory param for Statefulset pods, User needs to
         mention last pod of the Statfulset if set_type is Statefulset)
+        :param set_name: Name of the set (i.e Statefulset or Replicaset)
         :return: Bool, string
         """
         try:
-            set_name = None
-            if pod_name is None:
+            set_type = None
+            if pod_name is None or set_name is None:
                 set_type = const.REPLICASET
-            else:
+            elif pod_name:
                 log.info("Getting set name and set type of pod %s", pod_name)
                 set_type, set_name = self.get_set_type_name(pod_name=pod_name)
                 log.debug("Set type: %s\n Set name: %s", set_type, set_name)
+            elif set_name:
+                set_type = const.STATEFULSET
             if set_type == const.REPLICASET:
                 if pod_name:
                     log.info("Getting deploy and replicaset of pod %s", pod_name)
