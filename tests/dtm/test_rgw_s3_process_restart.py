@@ -743,7 +743,7 @@ class TestRGWProcessRestart:
 
         self.log.info("Step 3c: Start Deletes in new process")
         # delete
-        d_args = {'workload_info': workload_info_list[0], 'queue': que, 'skipread': True,
+        d_args = {'workload_info': workload_info_list[1], 'queue': que, 'skipread': True,
                   'validate': False, 'skipcleanup': False, 'retry': DTM_CFG["io_retry_count"]}
         proc_delete_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
                                                  kwargs=d_args)
