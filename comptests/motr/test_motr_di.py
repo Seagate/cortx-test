@@ -171,12 +171,15 @@ class TestCorruptDataDetection:
             logger.info("Stop: Verify multiple m0cp/cat operation")
 
     # pylint: disable=R0914
+    # Todo: make the fn similar to motr_inject_checksum_corruption
     def m0cp_corrupt_parity_m0cat(self, layout_ids, bsize_list, count_list, offsets) -> bool:
         """
-        Create an object with M0CP, corrupt with M0CP and
-        validate the corruption with md5sum after M0CAT.
+        Create an object with M0CP,
+        Identify the emap blocks corresponding to parity blocks
+        and corrupt single parity block's CKSUM with emap script and
+        validate the corruption M0CAT.
         """
-        logger.info("STARTED: m0cp, corrupt and m0cat workflow")
+        logger.info("STARTED: m0cp, corrupt parity and m0cat workflow")
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
         node_pod_dict = self.motr_obj.get_node_pod_dict()
@@ -188,7 +191,6 @@ class TestCorruptDataDetection:
         )
         for client_num in range(motr_client_num):
             for node in node_pod_dict:
-
                 for b_size, (cnt_c, cnt_u), layout, offset in zip(
                     bsize_list, count_list, layout_ids, offsets
                 ):
@@ -197,16 +199,22 @@ class TestCorruptDataDetection:
                     self.motr_obj.cat_cmd(
                         b_size, cnt_c, object_id, layout, outfile, node, client_num
                     )
-                    self.motr_obj.cp_update_cmd(
-                        b_size=b_size,
-                        count=cnt_u,
-                        obj=object_id,
-                        layout=layout,
-                        file=infile,
-                        node=node,
-                        client_num=client_num,
-                        offset=offset,
-                    )
+                    # Todo: Find the metadata device from solution.yaml - this is softlink of
+                    # /etc/cortx/motr/m0d-xxxxx/db/o/10000000000:\2a something
+                    # This is required as paramater -m to error_injection script
+
+                    # Todo: need to restart m0tr container for taking emap effect
+
+                    # self.motr_obj.cp_update_cmd(
+                    #     b_size=b_size,
+                    #     count=cnt_u,
+                    #     obj=object_id,
+                    #     layout=layout,
+                    #     file=infile,
+                    #     node=node,
+                    #     client_num=client_num,
+                    #     offset=offset,
+                    # )
                     self.motr_obj.cat_cmd(
                         b_size, cnt_c, object_id, layout, outfile, node, client_num
                     )
@@ -218,6 +226,11 @@ class TestCorruptDataDetection:
 
     # pylint: disable=R0914
     def motr_inject_checksum_corruption(self, layout_ids, bsize_list, count_list, offsets):
+        """
+        Create an object with M0CP, identify the emap blocks corresponding to data blocks
+        and corrupt single parity block with emap script and
+        validate the corruption M0CAT.
+        """
         logger.info("STARTED: m0cp, corrupt and m0cat workflow")
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
@@ -343,6 +356,53 @@ class TestCorruptDataDetection:
         bsize_list = ["1M"]
         layout_ids = ["9"]
         offsets = [0]
+        # Check for deployment status using kubectl commands - Taken care in setup stage
+        # Todo: Invoke in degraded mode depends on PR 1732
+        # Todo: Find parity block and corrupt
+        #
+        logger.info("STARTED: Test Parity corruption in degraded mode - aligned")
+        test_prefix = "test-41768"
+
+        logger.info("Step 1: Perform Single m0d Process Restart")
+        resp = self.dtm_obj.process_restart(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True,
+        )
+        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
+        logger.info("Step 1: m0d restarted and recovered successfully")
+
+        logger.info("Step 2: Perform m0cp and corrupt the parity block")
+        resp = self.m0cp_corrupt_parity_m0cat(layout_ids, bsize_list, count_list, offsets)
+        assert_utils.assert_true(resp)
+        logger.info("Step 2: Successfully performed m0cp and corrupt the parity block")
+        logger.info(f"ENDED:{test_prefix} Test Parity corruption in degraded mode - aligned")
+
+    @pytest.mark.skip(reason="Feature Unavailable")
+    @pytest.mark.tags("TEST-45162")
+    @pytest.mark.motr_di
+    def test_corrupt_data_all_du_unaligned(self):
+        """
+        Corrupt each data unit one by one and check Motr is able to detect read error 4MB IO
+        with 1MB Unit Size and N=4 K=2 Unaligned data blocks
+        In the loop for each data unit,
+        Copy motr object with m0cp
+        Read from object with m0cat should throw an error.
+        -s 1m -c 4 -o 1048583 /root/infile -L 9
+        -s 1m -c 1 -o 1048583 /root/myfile -L 9 -u -O 0
+        -o 1048583 -s 1m -c 4 -L 9 /root/dest_myfile
+        """
+        count_list = [["4", "4"]]
+        bsize_list = ["4M"]
+        layout_ids = ["9"]
+        offsets = [0]
+        # Todo: Run the following 4 times for 4 data units after identifying nodes on which
+        #  those are stored
+        self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
+
         # Check for deployment status using kubectl commands - Taken care in setup stage
         # Todo: Invoke in degraded mode depends on PR 1732
         # Todo: Find parity block and corrupt

@@ -40,6 +40,7 @@ from libs.iostability.iostability_lib import IOStabilityLib, send_mail_notificat
 from libs.iostability.logs_collection import ServerOSLogsCollectLib
 from libs.s3 import ACCESS_KEY
 from libs.s3 import SECRET_KEY
+from scripts.s3_bench import s3bench
 
 
 class TestIOWorkload:
@@ -68,7 +69,10 @@ class TestIOWorkload:
         cls.test_cfg = configmanager.get_config_wrapper(fpath="config/iostability_test.yaml")
         cls.setup_type = CMN_CFG["setup_type"]
         cls.test_completed = False
-        cls.iolib = IOStabilityLib()
+        cls.iolib = IOStabilityLib(max_retries=cls.test_cfg['max_retries'],
+                                   timeout=cls.test_cfg['timeout_in_sec'] * 1000)
+        cls.near_full_storage_obj = NearFullStorage(max_retries=cls.test_cfg['max_retries'],
+                                                    timeout=cls.test_cfg['timeout_in_sec'] * 1000)
         cls.duration_in_days = int(os.getenv("DURATION_OF_TEST_IN_DAYS",
                                              cls.test_cfg['happy_path_duration_days']))
 
@@ -83,6 +87,9 @@ class TestIOWorkload:
         cls.start_time = datetime.now()
         cls.mail_notify = None
         cls.s3userinfo = {'accesskey': ACCESS_KEY, 'secretkey': SECRET_KEY}
+        cls.log.info("Setup S3bench")
+        resp = s3bench.setup_s3bench()
+        assert_utils.assert_true(resp)
 
     def setup_method(self):
         """Setup Method"""
@@ -162,16 +169,17 @@ class TestIOWorkload:
         percentage = self.test_cfg['nearfull_storage_percentage']
 
         self.log.info("Step 1: Calculating byte count for required percentage")
-        resp = NearFullStorage.get_user_data_space_in_bytes(master_obj=self.master_node_list[0],
-                                                            memory_percent=percentage)
+        resp = self.near_full_storage_obj.get_user_data_space_in_bytes(
+            master_obj=self.master_node_list[0],
+            memory_percent=percentage)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Need to add %s bytes for required percentage", resp[1])
 
         self.log.info("Step 2: Performing writes till we reach required percentage")
-        ret = NearFullStorage.perform_near_full_sys_writes(s3userinfo=self.s3userinfo,
-                                                           user_data_writes=int(resp[1]),
-                                                           bucket_prefix=bucket_prefix,
-                                                           client=client)
+        ret = self.near_full_storage_obj.perform_near_full_sys_writes(s3userinfo=self.s3userinfo,
+                                                                      user_data_writes=int(resp[1]),
+                                                                      bucket_prefix=bucket_prefix,
+                                                                      client=client)
         assert_utils.assert_true(ret[0], ret[1])
         self.log.debug("Write operation data: %s", ret)
 
@@ -181,7 +189,7 @@ class TestIOWorkload:
         while datetime.now() < end_time:
             loop += 1
             self.log.info("%s remaining time for reading loop", (end_time - datetime.now()))
-            read_ret = NearFullStorage.perform_operations_on_pre_written_data(
+            read_ret = self.near_full_storage_obj.perform_operations_on_pre_written_data(
                 s3userinfo=self.s3userinfo,
                 workload_info=ret[1],
                 skipread=False,
@@ -191,7 +199,7 @@ class TestIOWorkload:
             assert_utils.assert_true(read_ret[0], read_ret[1])
 
         self.log.info("Step 4: Performing delete operations.")
-        del_ret = NearFullStorage.perform_operations_on_pre_written_data(
+        del_ret = self.near_full_storage_obj.perform_operations_on_pre_written_data(
             s3userinfo=self.s3userinfo,
             workload_info=ret[1],
             skipread=True,
@@ -235,10 +243,11 @@ class TestIOWorkload:
             loop += 1
             write_per = write_per + write_percent_per_iter
             self.log.info("Write percentage per iteration : %s", write_percent_per_iter)
-            self.log.info("Write percentage to be written in this iteration: %s", write_per)
+            self.log.info("Storage percentage filled to be expected of total storage in this "
+                          "iteration: %s", write_per)
             if write_per < max_cluster_capacity_percent:
                 # Write data to fill cluster upto "write_per" percent
-                resp = NearFullStorage.perform_write_to_fill_system_percent(
+                resp = self.near_full_storage_obj.perform_write_to_fill_system_percent(
                     self.master_node_list[0], write_per, self.s3userinfo, bucket_prefix, clients)
                 assert_utils.assert_true(resp[0], resp[1])
                 if resp[1] is not None:
@@ -247,26 +256,33 @@ class TestIOWorkload:
                 if len(workload_info_list) > 0:
                     # Read and validate all written data
                     self.log.info("Read/Validate all the written data of the cluster")
-                    resp = NearFullStorage.perform_operations_on_pre_written_data(
+                    resp = self.near_full_storage_obj.perform_operations_on_pre_written_data(
                         self.s3userinfo, workload_info_list, False, True, True)
                     assert_utils.assert_true(resp[0], resp[1])
 
                     # Delete "delete_percent_per_iter" data of all the written data
                     self.log.info("Delete %s percent of the written data", delete_percent_per_iter)
-                    resp = NearFullStorage.delete_workload(workload_info_list, self.s3userinfo,
-                                                           delete_percent_per_iter)
+                    resp = self.near_full_storage_obj.delete_workload(workload_info_list,
+                                                                      self.s3userinfo,
+                                                                      delete_percent_per_iter)
                     assert_utils.assert_true(resp[0], resp[1])
-
+                    write_per = write_per - delete_percent_per_iter
                 else:
                     self.log.warning("No buckets available to perform read,validate,delete"
                                      " operations %s", workload_info_list)
             else:
                 self.log.info("Write percentage(%s) exceeding the max cluster capacity(%s)",
                               write_per, max_cluster_capacity_percent)
-                self.log.info("Deleting all the written data.")
-                resp = NearFullStorage.delete_workload(workload_info_list, self.s3userinfo, 100)
-                assert_utils.assert_true(resp[0], resp[1])
-                self.log.info("Deletion completed.")
+                if len(workload_info_list) > 0:
+                    self.log.info("Deleting all the written data.")
+                    resp = NearFullStorage.delete_workload(workload_info_list, self.s3userinfo, 100)
+                    assert_utils.assert_true(resp[0], resp[1])
+                    self.log.info("Deletion completed.")
+                    write_per = 0
+                else:
+                    self.log.warning("No buckets available to perform read,validate,delete"
+                                     " operations %s", workload_info_list)
+                    assert False, "Specified Max capacity already attained."
 
         self.test_completed = True
         self.log.info(

@@ -74,6 +74,7 @@ class TestCsmUser():
         if not user_already_present:
             user_already_present = cls.config.setup_csm_users()
             assert user_already_present
+        cls.users_dict = cls.config.get_predefined_csm_user_dict()
         #s3acc_already_present = cls.config.check_predefined_s3account_present()
         #if not s3acc_already_present:
         #    s3acc_already_present = cls.config.setup_csm_s3()
@@ -4653,6 +4654,93 @@ class TestCsmUser():
 
         self.log.info("Step 10: Verify success response")
         self.csm_obj.check_expected_response(response, HTTPStatus.OK)
+
+
+    @pytest.mark.skip(reason="not_in_main_build_yet")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44783')
+    def test_44783(self):
+        """
+        Verify same token is reused in case of existing active session
+        for multiple user login from same client
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        for username, password in self.users_dict.items():
+            self.log.info("Step 1: Login wtih %s %s and Get Header", username, password)
+            header = self.csm_obj.get_headers(username, password)
+            self.log.info("Step 2: Store Authorization Token")
+            init_token = header['Authorization']
+            self.log.info("Step 3: Login Again and Get Header")
+            header = self.csm_obj.get_headers(username, password)
+            self.log.info("Step 4: Store Authorization Token")
+            new_token = header['Authorization']
+            self.log.info("Step 5: Check Bearer token should be same")
+            self.log.info("init_token = %s new_token = %s ", init_token, new_token)
+            assert init_token == new_token, "unexpected token mismatch"
+
+
+    @pytest.mark.skip(reason="not_in_main_build_yet")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44785')
+    def test_44785(self):
+        """
+        Verify different token is generated when user logout and login again
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        for username, password in self.users_dict.items():
+            self.log.info("Step 1: Login wtih %s %s and Get Header", username, password)
+            header = self.csm_obj.get_headers(username, password)
+            self.log.info("Step 2: Store Authorization Token")
+            init_token = header['Authorization']
+            self.log.info("Step 3: Logout user session")
+            response = self.csm_obj.csm_user_logout(header)
+            assert response.status_code == HTTPStatus.OK, "Status code check failed"
+            self.log.info("Step 4: Login Again and Get Header")
+            header = self.csm_obj.get_headers(username, password)
+            self.log.info("Step 5: Store Authorization Token")
+            new_token = header['Authorization']
+            self.log.info("Step 6: Check Bearer token should be different")
+            self.log.info("init_token = %s new_token = %s ", init_token, new_token)
+            assert init_token != new_token, "unexpected token mismatch"
+
+
+    @pytest.mark.skip(reason="not_in_main_build_yet")
+    @pytest.mark.prolonged
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44787')
+    def test_44787(self):
+        """
+        Verify different token is generated when last token has expired due to inactivity.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        sleep_time = self.csm_obj.config["session_timeout_second"]
+
+        for username, password in self.users_dict.items():
+            self.log.info("Step 1: Login wtih %s %s and Get Header", username, password)
+            header = self.csm_obj.get_headers(username, password)
+            self.log.info("Step 2: Store Authorization Token")
+            init_token = header['Authorization']
+            self.log.info("Step 3: Sleep for %s second for Session timeout", sleep_time)
+            time.sleep(sleep_time)
+            self.log.info("Step 4: Login Again and Get Header")
+            header = self.csm_obj.get_headers(username, password)
+            self.log.info("Step 5: Store Authorization Token")
+            new_token = header['Authorization']
+            self.log.info("Step 6: Check Bearer token should be different")
+            self.log.info("init_token = %s new_token = %s ", init_token, new_token)
+            assert init_token != new_token, "unexpected token mismatch"
 
 
     @pytest.mark.lr
