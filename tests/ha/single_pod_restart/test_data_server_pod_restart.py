@@ -1,4 +1,4 @@
-#!/usr/bin/python  # pylint: disable=R0902
+#!/usr/bin/python  # pylint: disable=too-many-instance-attributes
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -55,8 +55,6 @@ class TestDataServerPodRestart:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations.")
-        cls.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
-        cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.username = []
         cls.password = []
