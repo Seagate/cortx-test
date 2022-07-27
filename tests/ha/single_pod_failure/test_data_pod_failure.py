@@ -2840,7 +2840,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.nightly_regression
-    @pytest.mark.skip(reason="V9 needs statefulset changes")
     @pytest.mark.tags("TEST-39976")
     @CTFailOn(error_handler)
     def test_object_crud_pod_failure(self):
