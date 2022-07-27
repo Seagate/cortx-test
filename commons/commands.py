@@ -564,6 +564,9 @@ K8S_CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' "\
 KUBECTL_CREATE_NAMESPACE = "kubectl create ns {}"
 KUBECTL_GET_NAMESPACE = "kubectl get ns"
 KUBECTL_DEL_NAMESPACE = "kubectl delete ns {}"
+KUBECTL_DESCRIBE_POD_CMD = "kubectl describe pod {}"
+KUBECTL_GET_STATEFULSET = "kubectl get sts | grep '{}'"
+KUBECTL_CREATE_STATEFULSET_REPLICA = "kubectl scale statefulset {} --replicas {}"
 
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
