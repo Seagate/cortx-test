@@ -169,6 +169,8 @@ class LogicalNode(Host):
                 status = True if output else False
                 return status, deploy
             elif set_type == const.STATEFULSET:
+                resp = self.get_num_replicas(set_type, set_name)
+                exp_replicas = int(resp[2]) if num_replica < int(resp[2]) else num_replica
                 log.info("Scaling %s replicas for statefulset %s", num_replica, set_name)
                 cmd = commands.KUBECTL_CREATE_STATEFULSET_REPLICA.format(set_name, num_replica)
                 output = self.execute_cmd(cmd=cmd, read_lines=True)
@@ -178,7 +180,8 @@ class LogicalNode(Host):
                 resp = self.get_num_replicas(set_type, set_name)
                 if int(resp[1]) != num_replica:
                     return False, set_name
-                return True, set_name
+                status = True if exp_replicas == int(resp[1]) else False
+                return status, set_name
         except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
                       LogicalNode.create_pod_replicas.__name__, error)
