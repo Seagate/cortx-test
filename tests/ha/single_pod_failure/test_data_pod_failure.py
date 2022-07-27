@@ -2878,7 +2878,10 @@ class TestDataPodFailure:
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.set_name = resp[1][pod_name]['deployment_name']
+        if set_type == const.STATEFULSET:
+            self.set_name = resp[1][pod_name]['deployment_name']
+        elif set_type == const.REPLICASET:
+            self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")

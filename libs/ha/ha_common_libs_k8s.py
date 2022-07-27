@@ -753,7 +753,7 @@ class HAK8s:
         :return: Bool, response
         """
         resp = False
-        deployment_name = restore_params["deployment_name"]
+        deployment_name = restore_params.get("deployment_name", None)
         deployment_backup = restore_params.get("deployment_backup", None)
         set_name = restore_params.get("set_name", None)
         num_replica = restore_params.get("num_replica", None)
