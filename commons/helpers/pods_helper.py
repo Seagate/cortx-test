@@ -168,7 +168,7 @@ class LogicalNode(Host):
                 output = self.execute_cmd(cmd=cmd, read_lines=True, exc=False)
                 status = True if output else False
                 return status, deploy
-            elif set_type == const.STATEFULSET:
+            if set_type == const.STATEFULSET:
                 resp = self.get_num_replicas(set_type, set_name)
                 exp_replicas = int(resp[2]) if num_replica < int(resp[2]) else num_replica
                 log.info("Scaling %s replicas for statefulset %s", num_replica, set_name)
@@ -182,6 +182,7 @@ class LogicalNode(Host):
                     return False, set_name
                 status = True if exp_replicas == int(resp[1]) else False
                 return status, set_name
+            return False, "Set type should be either ReplicaSet or StatefulSet"
         except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
                       LogicalNode.create_pod_replicas.__name__, error)
@@ -246,7 +247,7 @@ class LogicalNode(Host):
                 log.info("Desired replicas: %s \nCurrent replicas: %s \nReady replicas: %s",
                          output[1], output[2], output[3])
                 return True, output[1], output[2], output[3]
-            elif set_type == const.STATEFULSET:
+            if set_type == const.STATEFULSET:
                 cmd = commands.KUBECTL_GET_STATEFULSET.format(set_name)
                 output = self.execute_cmd(cmd=cmd, read_lines=True)
                 log.info("Response: %s", output)
@@ -254,6 +255,7 @@ class LogicalNode(Host):
                 log.info("Desired replicas: %s \nReady replicas: %s", desired_replicas,
                          ready_replicas)
                 return True, ready_replicas, desired_replicas
+            return False, "Please provide valid set type"
         except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
                       LogicalNode.get_num_replicas.__name__, error)
