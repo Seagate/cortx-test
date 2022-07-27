@@ -528,7 +528,8 @@ class TestCopyObjects:
                               CMN_CFG["s3_engine"], error)
         LOGGER.info("Step 5: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-19846_s3bench_ios")
-        LOGGER.info("ENDED: Copy object of object size greater than 5GB while S3 IOs are in progress.")
+        LOGGER.info("ENDED: Copy object of object size greater than 5GB while S3 IOs are in "
+                    "progress.")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -821,12 +822,11 @@ class TestCopyObjects:
         assert_utils.assert_equal(put_etag, copy_etag, f"Failed to match ETag: {put_etag},"
                                                        f" {copy_etag}")
         LOGGER.info("Matched ETag: %s, %s", put_etag, copy_etag)
-        resp = s3_acl_obj2.put_bucket_acl( bucket_name=self.bucket_name2,
-                                           grant_full_control="id={}".format(canonical_id2))
+        resp = s3_acl_obj2.put_bucket_acl(bucket_name=self.bucket_name2,
+                                          grant_full_control="id={}".format(canonical_id2))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("9. Stop and validate parallel S3 IOs")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="TEST-19851_s3bench_ios")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-19851_s3bench_ios")
         LOGGER.info("ENDED: Copy object applying canned ACL bucket-owner-read while S3 "
                     "IOs are in progress.")
 
@@ -898,7 +898,8 @@ class TestCopyObjects:
     @CTFailOn(error_handler)
     def test_19892(self):
         """Copy object applying full control access while S3 IOs are in progress."""
-        LOGGER.info("STARTED: Copy object applying full control access while S3 IOs are in progress.")
+        LOGGER.info("STARTED: Copy object applying full control access while S3 IOs are in "
+                    "progress.")
         LOGGER.info("1. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="TEST-19892_s3bench_ios",
                                                 duration="0h1m")
@@ -917,17 +918,20 @@ class TestCopyObjects:
         LOGGER.info("3. List object for the bucket1.")
         resp = s3_obj1.object_list(self.bucket_name1)
         assert_utils.assert_in(self.object_name1, resp[1], resp)
-        LOGGER.info("4. Copy object from bucket1 to bucket2 specifying full control access to Account2.")
+        LOGGER.info("4. Copy object from bucket1 to bucket2 specifying full control access to "
+                    "Account2.")
         canonical_id2, s3_acl_obj2 = self.response2[0], self.response2[2]
         resp = s3_obj1.copy_object(self.bucket_name1, self.object_name1, self.bucket_name2,
-                                   self.object_name2, GrantFullControl="id={}".format(canonical_id2))
+                                   self.object_name2,
+                                   GrantFullControl="id={}".format(canonical_id2))
         assert_utils.assert_true(resp[0], resp[1])
         copy_etag = resp[1]['CopyObjectResult']['ETag']
         LOGGER.info("5. Get Object ACL of the destination object from Account1. Validate the "
                     "permission.")
         resp = s3_acl_obj1.get_object_acl(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("6. Get Object ACL of the destination object from Account2. Validate the permission.")
+        LOGGER.info("6. Get Object ACL of the destination object from Account2. Validate the "
+                    "permission.")
         resp = s3_acl_obj2.get_object_acl(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7:  Compare ETag of source and destination object for data Integrity.")
@@ -1664,10 +1668,11 @@ class TestCopyObjects:
         except CTException as err:
             LOGGER.error(err.message)
             assert_utils.assert_in(errmsg.ACCESS_DENIED_ERR_KEY,err.message, err)
-        LOGGER.info("Step 4: From Account2 on bucket2 grant Write ACL to Account1 and "
-                    "full control to account2.")
+        LOGGER.info("Step 4: From Account2 on bucket2 grant Write ACL to Account1 and full control "
+                    "to account2.")
         resp = s3_acl_obj2.put_bucket_multiple_permission(bucket_name=self.bucket_name2,
-                                                          grant_full_control="id={}".format(canonical_id2),
+                                                          grant_full_control=\
+                                                              "id={}".format(canonical_id2),
                                                           grant_write="id={}".format(canonical_id1))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: From Account2 check the applied ACL in above step.")
@@ -1866,8 +1871,8 @@ class TestCopyObjects:
         bucket_policy1['Statement'][0]['Resource'] = bucket_policy1['Statement'][0][
             'Resource'].format(self.bucket_name2)
         bucket_policy1 = json.dumps(bucket_policy1)
-        s3_policy_usr_obj2 = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
-            access_key=access_key2, secret_key=secret_key2)
+        s3_policy_usr_obj2 = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(access_key=access_key2,
+                                                                             secret_key=secret_key2)
         resp = s3_policy_usr_obj2.put_bucket_policy(self.bucket_name2, bucket_policy1)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: From Account2 check the applied Bucket Policy in above step.")
@@ -1961,8 +1966,7 @@ class TestCopyObjects:
         LOGGER.info("Step 2: Copy object to different bucket")
         obj_list.append(self.object_name2)
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
-                                                     self.bucket_name2,self.object_name2,
-                                                     is_expect_err=False)
+                                                     self.bucket_name2,self.object_name2)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
@@ -1999,15 +2003,14 @@ class TestCopyObjects:
         response = self.s3_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(response[0], response[1])
         LOGGER.info("Step 2: Upload multipart object to source bucket")
-        res = self.s3mp_test_obj.complete_multipart_upload_with_di(self.bucket_name1,
+        _ = self.s3mp_test_obj.complete_multipart_upload_with_di(self.bucket_name1,
                                                                    self.object_name1,
                                                                    self.file_path, total_parts=2,
                                                                    file_size=10)
         obj_list = []
         LOGGER.info("Step 2: Copy object to different bucket")
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
-                                                     self.bucket_name2, self.object_name2,
-                                                     is_expect_err=False)
+                                                     self.bucket_name2, self.object_name2)
         obj_list.append(self.object_name2)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True)")
@@ -2051,8 +2054,7 @@ class TestCopyObjects:
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Step 2: Copy object to different bucket")
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
-                                                     self.bucket_name2, self.object_name2,
-                                                     is_expect_err=False)
+                                                     self.bucket_name2, self.object_name2)
         LOGGER.info("Step 3: Copy object to different bucket with condition "                             
                     "x-amz-copy-source-if-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
@@ -2144,25 +2146,24 @@ class TestCopyObjects:
         LOGGER.info("Step 4: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "modified-since (True) and x-amz-copy-source-if-none-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
-                         self.object_name2 + "_ims_nm", is_expect_err=True, is_none_match=etag,
+                         self.object_name2+"_ims_nm", is_expect_err=True, is_none_match=etag,
                          is_modified=pre_date, errmsg=errmsg.RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE)
         LOGGER.info("Step 5: Upload multipart object to bucket")
         etag, pre_date, _ = self.upload_mpu_copy_obj(self.bucket_name1,self.object_name1+"mpu",
                                                      self.bucket_name2, self.object_name2+"mpu1",
                                                      fpath=self.file_path, total_parts=2,
                                                      file_size=10)
-        LOGGER.info("Step 3: Copy object to different bucket with condition "
+        LOGGER.info("Step 6: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-unmodified-since ("
                     "False)")
-        self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
-                         self.object_name2 + "mpu_im_us", is_expect_err=False, is_match=etag,
+        self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
+                         self.object_name2+"mpu_im_us", is_expect_err=False, is_match=etag,
                          is_unmodified=pre_date)
-        LOGGER.info("Step 4: Copy object to different bucket with condition x-amz-copy-source-if-"
+        LOGGER.info("Step 7: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "modified-since (True) and x-amz-copy-source-if-none-match (False)")
-        self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
-                         self.object_name2 + "mpu_ims_nm", is_expect_err=True, is_none_match=etag,
+        self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
+                         self.object_name2+"mpu_ims_nm", is_expect_err=True, is_none_match=etag,
                          is_modified=pre_date, errmsg=errmsg.RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE)
-
         LOGGER.info("ENDED: Test to check exceptions for certain conditions  to copy simple and "
                     "multipart objects")
 
@@ -2184,38 +2185,56 @@ class TestCopyObjects:
                                                          self.object_name1, self.file_path)
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Step 2: Copy object to different bucket")
-        etag, pre_date, _ = self.handle_copy(self.bucket_name1, self.object_name1,
+        etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
                                              self.bucket_name2, self.object_name2,
                                              is_expect_err=False)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
-                    "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-unmodified-since ("
-                    "False)")
+                    "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-modified-since ("
+                    "True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
-                         self.object_name2+"_im_us", is_expect_err=False,
-                         is_unmodified=pre_date, is_match=etag)
+                         self.object_name2+"_im_ms", is_expect_err=False,
+                         is_modified=pre_date, is_match=etag)
         LOGGER.info("Step 4: Copy object to different bucket with condition x-amz-copy-source-if-"
-                    "modified-since (True) and x-amz-copy-source-if-none-match (False)")
+                    "modified-since (False) and x-amz-copy-source-if-match (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
-                         self.object_name2+"_ims_nm", is_expect_err=True,
-                         is_modified=pre_date, is_none_match=etag,
+                         self.object_name2+"_im_msf", is_expect_err=True,
+                         is_modified=post_date, is_match=etag,
                          errmsg=errmsg.RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE)
-        LOGGER.info("Step 5: Upload multipart object to bucket")
-        etag, pre_date, _ = self.upload_mpu_copy_obj(self.bucket_name1, self.object_name1 + "mpu",
-                                                     self.bucket_name2, self.object_name2 + "mpu1",
+        LOGGER.info("Step 5: Copy object to different bucket with condition x-amz-copy-source-if-"
+                    "modified-since (True) and x-amz-copy-source-if-match (False)")
+        self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
+                         self.object_name2 + "_imf_msf", is_expect_err=True,
+                         is_modified=pre_date, is_match=etag+"_",
+                         errmsg=errmsg.RGW_ERR_CPY_IF_MATCH_FALSE)
+        LOGGER.info("Step 6: Copy object to different bucket with condition x-amz-copy-source-if-"
+                    "modified-since (False) and x-amz-copy-source-if-match (False)")
+        self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
+                         self.object_name2 + "_imsf_mf", is_expect_err=True,
+                         is_modified=post_date, is_match=etag+"_",
+                         errmsg=errmsg.RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE)
+        LOGGER.info("Step 7: Upload multipart object to bucket")
+        etag, pre_date, _ = self.upload_mpu_copy_obj(self.bucket_name1, self.object_name1+"mpu",
+                                                     self.bucket_name2, self.object_name2+"mpu1",
                                                      fpath=self.file_path, total_parts=2,
                                                      file_size=10)
+        LOGGER.info("Step 8: Copy object to different bucket with condition "
+                    "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-modified-since ("
+                    "True)")
+        self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
+                         self.object_name2+"mpu_im_ms", is_expect_err=False,
+                         is_modified=pre_date, is_match=etag)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
-                    "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-unmodified-since ("
+                    "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-modified-since ("
                     "False)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
-                         self.object_name2+"mpu_im_us", is_expect_err=False,
-                         is_unmodified=pre_date, is_match=etag)
+                         self.object_name2+"mpu_im_msf", is_expect_err=False,
+                         is_modified=post_date, is_match=etag)
         LOGGER.info("Step 4: Copy object to different bucket with condition x-amz-copy-source-if-"
-                    "modified-since (True) and x-amz-copy-source-if-none-match (False)")
+                    "modified-since (True) and x-amz-copy-source-if-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
-                         self.object_name2+"mpu_ims_nm", is_expect_err=True,
-                         is_modified=pre_date, is_nonematch=etag,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE)
+                         self.object_name2+"mpu_im_mst", is_expect_err=True,
+                         is_modified=pre_date, is_match=etag+"_",
+                         errmsg=errmsg.RGW_ERR_CPY_IF_MATCH_FALSE)
         LOGGER.info("ENDED: Test to check exceptions for certain conditions  to copy simple and "
                     "multipart objects")
 
@@ -2239,8 +2258,7 @@ class TestCopyObjects:
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Step 2: Copy object to different bucket")
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
-                                                     self.bucket_name2, self.object_name2,
-                                                     is_expect_err=False)
+                                                     self.bucket_name2, self.object_name2)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-unmodified-since ("
                     "True)")
@@ -2308,8 +2326,7 @@ class TestCopyObjects:
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Step 2: Copy object to different bucket")
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
-                                                     self.bucket_name2, self.object_name2,
-                                                     is_expect_err=False)
+                                                     self.bucket_name2, self.object_name2)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-none-match (True) and "
                     "x-amz-copy-source-if-modified-since (True)")
@@ -2375,23 +2392,22 @@ class TestCopyObjects:
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Step 2: Copy object to different bucket")
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
-                                                     self.bucket_name2, self.object_name2,
-                                                     is_expect_err=False)
+                                                     self.bucket_name2, self.object_name2)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-none-match (True) and "
                     "x-amz-copy-source-if-unmodified-since (True)")
-        self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
+        self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_inmt_umst", is_expect_err=False,
                          is_unmodified=post_date, is_none_match=etag+"_")
         LOGGER.info("Step 4: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (True) and x-amz-copy-source-if-unmodified-since (False)")
-        self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
+        self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_inmt_umsf", is_expect_err=True,
                          is_unmodified=pre_date, is_none_match=etag+"_",
                          errmsg=errmsg.RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE)
         LOGGER.info("Step 5: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (False) and x-amz-copy-source-if-unmodified-since (True)")
-        self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
+        self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_inmf_umst", is_expect_err=True,
                          is_unmodified=post_date, is_none_match=etag,
                          errmsg=errmsg.RGW_ERR_CPY_IF_NONE_MATCH_FALSE)
@@ -2417,7 +2433,7 @@ class TestCopyObjects:
                          errmsg=errmsg.RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE)
         LOGGER.info("Step 9: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (True) and x-amz-copy-source-if-unmodified-since (False)")
-        self.handle_copy(self.bucket_name1, self.object_name1 + "mpu", self.bucket_name2,
+        self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2 + "mpu_inmt_umsf", is_expect_err=True,
                          is_unmodified=pre_date, is_none_match=etag+"_",
                          errmsg=errmsg.RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE)
@@ -2437,58 +2453,71 @@ class TestCopyObjects:
                     "x-amz-copy-source-if-none-match and x-amz-copy-source-if-unmodified-since for "
                     "copying simple and multipart object")
 
-    def upload_mpu_copy_obj(self, srcBucket, srcObj, destBucket,destObj, **kwargs):
+    def upload_mpu_copy_obj(self, src_bucket, src_obj, dest_bucket, dest_obj, **kwargs):
+        """ method to upload object via multipart upload and copy it to some bucket
+        :param src_bucket: The name of the source bucket.
+        :param src_obj: The name of the source object.
+        :param dest_bucket: The name of the destination bucket.
+        :param dest_obj: The name of the destination object."""
         file_path = kwargs.get("fpath", "None")
         file_size = kwargs.get("file_size", 0)
         total_parts = kwargs.get("total_parts", 2)
-        _ = self.s3mp_test_obj.complete_multipart_upload_with_di(srcBucket, srcObj, file_path,
+        _ = self.s3mp_test_obj.complete_multipart_upload_with_di(src_bucket, src_obj, file_path,
                                                                  total_parts=total_parts,
                                                                  file_size=file_size)
         LOGGER.info("Copy object to different bucket")
-        status, response = self.s3_obj.copy_object(srcBucket, srcObj, destBucket, destObj)
+        status, response = self.s3_obj.copy_object(src_bucket, src_obj, dest_bucket, dest_obj)
+        assert_utils.assert_true(status, response)
         date2 = response["CopyObjectResult"]["LastModified"]
         etag = response["CopyObjectResult"]["ETag"]
         pre_date = date2 - timedelta(days=1)
         post_date = date2 + timedelta(days=1)
         return etag, pre_date, post_date
 
-    def handle_copy(self, src_bucket, src_obj, dest_bucket, dest_obj, is_expect_err, **kwargs):
+    def handle_copy(self, src_bucket, src_obj, dest_bucket, dest_obj, **kwargs):
+        """ handling copy operation depending on conditional params passed
+        :param src_bucket: The name of the source bucket.
+        :param src_obj: The name of the source object.
+        :param dest_bucket: The name of the destination bucket.
+        :param dest_obj: The name of the destination object."""
         unmodified = kwargs.get("is_unmodified", None)
         modified = kwargs.get("is_modified", None)
         match = kwargs.get("is_match", None)
-        noneMatch = kwargs.get("is_none_match", None)
+        nonematch = kwargs.get("is_none_match", None)
         is_expect_err = kwargs.get("is_expect_err", False)
-        errmsg = kwargs.get ("errmsg", None)
+        err_msg = kwargs.get ("errmsg", None)
         c_response = None
         try:
             if match is not None:
                 if modified is not None:
                     status, c_response = self.s3_obj.copy_object(src_bucket, src_obj, dest_bucket,
-                                                              dest_obj,
-                                                              CopySourceIfModifiedSince=modified,
-                                                              CopySourceIfMatch=match)
+                                                                 dest_obj,
+                                                                 CopySourceIfModifiedSince=modified,
+                                                                 CopySourceIfMatch=match)
                 if unmodified is not None:
                     status, response = self.s3_obj.copy_object(src_bucket, src_obj, dest_bucket,
                                                                dest_obj, CopySourceIfMatch=match,
-                                                             CopySourceIfUnmodifiedSince=unmodified)
+                                                               CopySourceIfUnmodifiedSince=\
+                                                                   unmodified)
                 else:
                     status, response = self.s3_obj.copy_object(src_bucket, src_obj, dest_bucket,
                                                            dest_obj, CopySourceIfMatch=match)
-            elif noneMatch is not None:
+            elif nonematch is not None:
                 if modified is not None:
                     status, c_response = self.s3_obj.copy_object(src_bucket, src_obj, dest_bucket,
                                                                  dest_obj,
                                                                  CopySourceIfModifiedSince=modified,
-                                                                 CopySourceIfNoneMatch=noneMatch)
+                                                                 CopySourceIfNoneMatch=nonematch)
                 if unmodified is not None:
                     status, c_response = self.s3_obj.copy_object(src_bucket, src_obj, dest_bucket,
                                                                  dest_obj,
-                                                                 CopySourceIfUnmodifiedSince=unmodified,
-                                                                 CopySourceIfNoneMatch=noneMatch)
+                                                                 CopySourceIfUnmodifiedSince=\
+                                                                     unmodified,
+                                                                 CopySourceIfNoneMatch=nonematch)
                 else:
                     status, c_response = self.s3_obj.copy_object(src_bucket, src_obj, dest_bucket,
                                                                  dest_obj,
-                                                                 CopySourceIfNoneMatch=noneMatch)
+                                                                 CopySourceIfNoneMatch=nonematch)
             elif modified is not None:
                 status, c_response = self.s3_obj.copy_object(src_bucket, src_obj, dest_bucket,
                                                            dest_obj,
@@ -2519,4 +2548,4 @@ class TestCopyObjects:
         except CTException as error:
             LOGGER.error(error.message)
             if is_expect_err:
-                assert_utils.assert_in(errmsg, error.message, error)
+                assert_utils.assert_in(err_msg, error.message, error)
