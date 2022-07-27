@@ -144,7 +144,7 @@ class LogicalNode(Host):
         :param deploy: Name of the deployment of pod
         :param pod_name: Name of the pod (Compulsory param for Statefulset pods, User needs to
         mention last pod of the Statfulset if set_type is Statefulset)
-        :param set_name: Name of the set (i.e Statefulset or Replicaset)
+        :param set_name: Name of the Statefulset of the pod
         :return: Bool, string
         """
         try:
@@ -154,7 +154,6 @@ class LogicalNode(Host):
                 log.info("Getting set name and set type of pod %s", pod_name)
                 set_type, set_name = self.get_set_type_name(pod_name=pod_name)
                 deploy = set_name
-                log.debug("Set type: %s\n Set name: %s", set_type, set_name)
             else:
                 set_type = const.REPLICASET
             if set_type == const.REPLICASET:
@@ -231,7 +230,8 @@ class LogicalNode(Host):
 
     def get_num_replicas(self, set_type, set_name):
         """
-        Helper function to get number of desired, current and ready replicas for given replica set
+        Helper function to get number of desired, current and ready replicas for given pod's set
+        type and set name
         :param set_type: Type of the set (replica set or statefulset)
         :param set_name: Name of the set
         :return: Bool, str, str, str (Status, Desired replicas, Current replicas, Ready replicas)

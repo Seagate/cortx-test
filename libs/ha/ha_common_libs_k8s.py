@@ -742,7 +742,7 @@ class HAK8s:
         return resp
 
     def restore_pod(self, pod_obj, restore_method, restore_params: dict = None,
-                    clstr_status=False, num_replica=1, set_name=None):
+                    clstr_status=False):
         """
         Helper function to restore pod based on way_to_restore
         :param pod_obj: Object of master node
@@ -756,7 +756,7 @@ class HAK8s:
         deployment_name = restore_params.get("deployment_name", None)
         deployment_backup = restore_params.get("deployment_backup", None)
         set_name = restore_params.get("set_name", None)
-        num_replica = restore_params.get("num_replica", None)
+        num_replica = restore_params.get("num_replica", 1)
 
         if restore_method == common_const.RESTORE_SCALE_REPLICAS:
             resp = pod_obj.create_pod_replicas(num_replica=num_replica, deploy=deployment_name,
