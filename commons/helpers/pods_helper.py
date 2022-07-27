@@ -142,20 +142,23 @@ class LogicalNode(Host):
         Helper function to delete/remove/create pod by changing number of replicas
         :param num_replica: Number of replicas to be scaled
         :param deploy: Name of the deployment of pod
-        :param pod_name: Name of the pod (Compulsory param for Statefulset pods, User needs to
-        mention last pod of the Statfulset if set_type is Statefulset)
+        :param pod_name: Name of the pod
         :param set_name: Name of the Statefulset of the pod
+        (User should provide atleast one parameter from set_name, deploy or pod_name)
         :return: Bool, string
         """
         try:
             if set_name:
                 set_type = const.STATEFULSET
+            elif deploy:
+                set_type = const.REPLICASET
             elif pod_name:
                 log.info("Getting set name and set type of pod %s", pod_name)
                 set_type, set_name = self.get_set_type_name(pod_name=pod_name)
                 deploy = set_name
             else:
-                set_type = const.REPLICASET
+                return False, "Please provide atleast one of the parameters set_name, deploy or " \
+                              "pod_name"
             if set_type == const.REPLICASET:
                 log.info("Scaling %s replicas for deployment %s", num_replica, deploy)
                 cmd = commands.KUBECTL_CREATE_REPLICA.format(num_replica, deploy)
