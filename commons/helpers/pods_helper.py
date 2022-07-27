@@ -148,20 +148,16 @@ class LogicalNode(Host):
         :return: Bool, string
         """
         try:
-            set_type = None
             if set_name:
                 set_type = const.STATEFULSET
             elif pod_name:
                 log.info("Getting set name and set type of pod %s", pod_name)
                 set_type, set_name = self.get_set_type_name(pod_name=pod_name)
+                deploy = set_name
                 log.debug("Set type: %s\n Set name: %s", set_type, set_name)
             else:
                 set_type = const.REPLICASET
             if set_type == const.REPLICASET:
-                if pod_name:
-                    log.info("Getting deploy and replicaset of pod %s", pod_name)
-                    resp = self.get_deploy_replicaset(pod_name)
-                    deploy = resp[1]
                 log.info("Scaling %s replicas for deployment %s", num_replica, deploy)
                 cmd = commands.KUBECTL_CREATE_REPLICA.format(num_replica, deploy)
                 output = self.execute_cmd(cmd=cmd, read_lines=True)
@@ -178,11 +174,11 @@ class LogicalNode(Host):
                 output = self.execute_cmd(cmd=cmd, read_lines=True)
                 log.info("Response: %s", output)
                 time.sleep(60)
-                log.info("Check if pod %s exists", pod_name)
-                cmd = commands.KUBECTL_GET_POD_DETAILS.format(pod_name)
-                output = self.execute_cmd(cmd=cmd, read_lines=True, exc=False)
-                status = True if output else False
-                return status, set_name
+                log.info("Check if correct number of replicas are created for %s", set_name)
+                resp = self.get_num_replicas(set_type, set_name)
+                if int(resp[1]) != num_replica:
+                    return False, set_name
+                return True, set_name
         except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
                       LogicalNode.create_pod_replicas.__name__, error)
@@ -229,15 +225,14 @@ class LogicalNode(Host):
                       LogicalNode.get_deploy_replicaset.__name__, error)
             return False, error
 
-    def get_num_replicas(self, pod_name):
+    def get_num_replicas(self, set_type, set_name):
         """
         Helper function to get number of desired, current and ready replicas for given replica set
-        :param pod_name: Name of the pod
+        :param set_type: Type of the set (replica set or statefulset)
+        :param set_name: Name of the set
         :return: Bool, str, str, str (Status, Desired replicas, Current replicas, Ready replicas)
         """
         try:
-            log.info("Getting set name and set type of pod %s", pod_name)
-            set_type, set_name = self.get_set_type_name(pod_name=pod_name)
             log.debug("Set type: %s\n Set name: %s", set_type, set_name)
             log.info("Getting details of replicaset %s", set_name)
             if set_type == const.REPLICASET:

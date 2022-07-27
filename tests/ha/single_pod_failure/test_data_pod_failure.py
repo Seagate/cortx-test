@@ -129,7 +129,7 @@ class TestDataPodFailure:
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
         self.bucket_name = f"ha-mp-bkt-{int(perf_counter_ns())}"
         self.object_name = f"ha-mp-obj-{int(perf_counter_ns())}"
-        self.restore_pod = self.restore_method = self.deployment_name = None
+        self.restore_pod = self.restore_method = self.deployment_name = self.set_name = None
         self.deployment_backup = None
         if not os.path.exists(self.test_dir_path):
             sysutils.make_dirs(self.test_dir_path)
@@ -154,8 +154,9 @@ class TestDataPodFailure:
                                            restore_method=self.restore_method,
                                            restore_params={"deployment_name": self.deployment_name,
                                                            "deployment_backup":
-                                                               self.deployment_backup},
-                                           num_replica=self.num_replica)
+                                                               self.deployment_backup,
+                                                           "num_replica": self.num_replica,
+                                                           "set_name": self.set_name})
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} "
                                               "way")
@@ -2864,7 +2865,7 @@ class TestDataPodFailure:
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(delete_pod)
+            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
             assert_utils.assert_true(resp[0], resp)
             self.num_replica = int(resp[1])
             num_replica = self.num_replica - 1
@@ -2877,7 +2878,7 @@ class TestDataPodFailure:
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
