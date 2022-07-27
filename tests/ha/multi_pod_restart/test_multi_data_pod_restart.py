@@ -1,4 +1,4 @@
-#!/usr/bin/python  # pylint: disable=R0902
+#!/usr/bin/python  # pylint: disable=too-many-instance-attributes
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -55,14 +55,11 @@ class TestMultiDataPodRestart:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations.")
-        cls.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
-        cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.username = []
         cls.password = []
         cls.node_master_list = []
         cls.hlth_master_list = []
-        cls.host_worker_list = []
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.random_time = cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = None
@@ -83,7 +80,6 @@ class TestMultiDataPodRestart:
                                                    username=cls.username[node],
                                                    password=cls.password[node]))
             else:
-                cls.host_worker_list.append(cls.host)
                 cls.node_worker_list.append(LogicalNode(hostname=cls.host,
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
