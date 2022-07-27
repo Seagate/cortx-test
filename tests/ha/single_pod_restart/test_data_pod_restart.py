@@ -73,7 +73,6 @@ class TestDataPodRestart:
         cls.password = []
         cls.node_master_list = []
         cls.hlth_master_list = []
-        cls.host_worker_list = []
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.random_time = cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = None
@@ -95,7 +94,6 @@ class TestDataPodRestart:
                                                    username=cls.username[node],
                                                    password=cls.password[node]))
             else:
-                cls.host_worker_list.append(cls.host)
                 cls.node_worker_list.append(LogicalNode(hostname=cls.host,
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
