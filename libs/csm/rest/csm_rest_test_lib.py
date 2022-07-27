@@ -281,7 +281,7 @@ class RestTestLib:
             headers = self.config["Login_headers"]
             payload = "{{\"{}\":\"{}\",\"{}\":\"{}\"}}".format(
                 "username", user_name, "password", user_password)
-            self.log.debug("Payload for S3 account login is %s", payload)
+            self.log.debug("Payload for account login is %s", payload)
 
             # Fetch user token from response
             response = self.restapi.rest_call(

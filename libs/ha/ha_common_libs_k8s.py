@@ -29,7 +29,6 @@ import secrets
 import sys
 import time
 from ast import literal_eval
-from multiprocessing import Process
 from time import perf_counter_ns
 
 import yaml
@@ -48,7 +47,6 @@ from config.s3 import S3_BLKBOX_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
-from libs.di.di_run_man import RunDataCheckManager
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
@@ -188,53 +186,6 @@ class HAK8s:
             max_timeout=self.t_power_off, host=host, exp_resp=False, bmc_obj=bmc_obj)
         return resp
 
-    def status_pods_online(self, no_pods: int):
-        """
-        Helper function to check that all Pods are shown online in cortx REST
-        :param no_pods: Number of pods in the cluster
-        :return: boolean
-        """
-        # Future: Right now system health api is not available but will be implemented after M0
-        check_rem_pod = ["online" for _ in range(no_pods)]
-        rest_resp = self.system_health.verify_node_health_status_rest(exp_status=check_rem_pod)
-        LOGGER.info("REST response for pods health status. %s", rest_resp[1])
-        return rest_resp
-
-    def status_cluster_resource_online(self):
-        """
-        Check cluster/rack/site/pods are shown online in Cortx REST
-        :return: boolean
-        """
-        LOGGER.info("Check cluster/rack/site/pods health status.")
-        resp = self.check_csrn_status(csr_sts="online", pod_sts="online", pod_id=0)
-        LOGGER.info("Health status response : %s", resp[1])
-        if resp[0]:
-            LOGGER.info("cluster/rack/site/pods health status is online in REST")
-        return resp
-
-    def check_csrn_status(self, csr_sts: str, pod_sts: str, pod_id: int):
-        """
-        Check cluster/rack/site/pod status with expected status using REST
-        :param csr_sts: cluster/rack/site's expected status
-        :param pod_sts: Pod's expected status
-        :param pod_id: Pod ID to check for expected status
-        :return: (bool, response)
-        """
-        check_rem_pod = [
-            pod_sts if num == pod_id else "online" for num in range(int(self.num_pods))]
-        LOGGER.info("Checking pod-%s status is %s via REST", pod_id+1, pod_sts)
-        resp = self.system_health.verify_node_health_status_rest(
-            check_rem_pod)
-        if not resp[0]:
-            return resp
-        LOGGER.info("Checking Cluster/Site/Rack status is %s via REST", csr_sts)
-        resp = self.system_health.check_csr_health_status_rest(csr_sts)
-        if not resp[0]:
-            return resp
-
-        return True, f"cluster/rack/site status is {csr_sts} and \
-        pod-{pod_id+1} is {pod_sts} in Cortx REST"
-
     def delete_s3_acc_buckets_objects(self, s3_data: dict, obj_crud: bool = False):
         """
         This function deletes all s3 buckets objects for the s3 account
@@ -272,78 +223,6 @@ class HAK8s:
             LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
                              HAK8s.delete_s3_acc_buckets_objects.__name__, error)
             return False, error
-
-    # pylint: disable=too-many-arguments
-    # pylint: disable-msg=too-many-locals
-    def perform_ios_ops(
-            self,
-            prefix_data: str = None,
-            nusers: int = 2,
-            nbuckets: int = 2,
-            files_count: int = 10,
-            di_data: tuple = None,
-            is_di: bool = False):
-        """
-        This function creates s3 acc, buckets and performs IO.
-        This will perform DI check if is_di True and once done,
-        deletes all the buckets and s3 accounts created
-        :param prefix_data: Prefix data for IO Operation
-        :param nusers: Number of s3 user
-        :param nbuckets: Number of buckets per s3 user
-        :param files_count: NUmber of files to be uploaded per bucket
-        :param di_data: Data for DI check operation
-        :param is_di: To perform DI check operation
-        :return: (bool, response)
-        """
-        try:
-            if not is_di:
-                LOGGER.info("create s3 acc, buckets and upload objects.")
-                users = self.mgnt_ops.create_account_users(nusers=nusers)
-                io_data = self.mgnt_ops.create_buckets(nbuckets=nbuckets, users=users)
-                run_data_chk_obj = RunDataCheckManager(users=io_data)
-                pref_dir = {"prefix_dir": prefix_data}
-                star_res = run_data_chk_obj.start_io(users=io_data, buckets=None, prefs=pref_dir,
-                                                     files_count=files_count)
-                if not star_res:
-                    return False, star_res
-                return True, run_data_chk_obj, io_data
-            LOGGER.info("Checking DI for IOs run.")
-            stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
-            if not stop_res[0]:
-                return stop_res
-            del_resp = self.delete_s3_acc_buckets_objects(di_data[1])
-            if not del_resp[0]:
-                return del_resp
-            return True, "Di check for IOs passed successfully"
-        except ValueError as error:
-            LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
-                             HAK8s.perform_ios_ops.__name__, error)
-            return False, error
-
-    def perform_io_read_parallel(self, di_data, is_di=True, start_read=True):
-        """
-        This function runs parallel async stop_io function until called again with
-        start_read with False
-        :param di_data: Tuple of RunDataCheckManager obj and User-bucket info from
-        WRITEs call
-        :param is_di: IF DI check is required on READ objects
-        :param start_read: If True, function will start the parallel READs
-        and if False function will Stop the parallel READs
-        :return: bool/Process object or stop process status
-        """
-        if start_read:
-            self.parallel_ios = Process(
-                target=di_data[0].stop_io, args=(di_data[1], is_di))
-            self.parallel_ios.start()
-            return_val = (True, self.parallel_ios)
-        else:
-            if self.parallel_ios.is_alive():
-                self.parallel_ios.join()
-            LOGGER.info(
-                "Parallel IOs stopped: %s",
-                not self.parallel_ios.is_alive())
-            return_val = (not self.parallel_ios.is_alive(), "Failed to stop parallel READ IOs.")
-        return return_val
 
     # pylint: disable=too-many-arguments
     def ha_s3_workload_operation(
@@ -862,14 +741,14 @@ class HAK8s:
         LOGGER.debug("Time taken by cluster restart is %s seconds", int(time.time()) - start_time)
         return resp
 
-    @staticmethod
-    def restore_pod(pod_obj, restore_method, restore_params: dict = None):
+    def restore_pod(self, pod_obj, restore_method, restore_params: dict = None, clstr_status=False):
         """
         Helper function to restore pod based on way_to_restore
         :param pod_obj: Object of master node
         :param restore_method: Restore method to be used depending on shutdown method
         ("scale_replicas", "k8s", "helm")
         :param restore_params: Dict which has parameters required to restore pods
+        :clstr_status: Flag to check cluster status after pod restored
         :return: Bool, response
         """
         resp = False
@@ -884,6 +763,10 @@ class HAK8s:
         elif restore_method == common_const.RESTORE_DEPLOYMENT_HELM:
             resp = pod_obj.recover_deployment_helm(deployment_name=deployment_name)
 
+        if resp[0] and clstr_status:
+            resp_clstr = self.poll_cluster_status(pod_obj, timeout=180)
+            LOGGER.debug("Cluster status: %s", resp_clstr)
+            return resp_clstr
         return resp
 
     def event_s3_operation(self, event, setup_s3bench=True, log_prefix=None, s3userinfo=None,
@@ -1470,7 +1353,7 @@ class HAK8s:
         return resp
 
     def delete_kpod_with_shutdown_methods(self, master_node_obj, health_obj,
-                                          pod_prefix=None, kvalue=1,
+                                          pod_prefix=None, kvalue=1, delete_pod=None,
                                           down_method=common_const.RESTORE_SCALE_REPLICAS,
                                           event=None, event_set_clr=None):
         """
@@ -1481,6 +1364,7 @@ class HAK8s:
         :param pod_prefix: Pod prefix to be deleted (Expected List type)
         :param down_method: Pod shutdown/delete method.
         :param kvalue: Number of pod to be shutdown/deleted.
+        :param delete_pod: pod name to be deleted (optional)
         :param event_set_clr: Thread event set-clear flag reference when s3bench workload
         execution miss the event set-clear time window
         :param event: Thread event to set/clear before/after pods/nodes
@@ -1495,10 +1379,13 @@ class HAK8s:
                     "hostname": None}
         delete_pods = list()
         remaining = list()
-        for ptype in pod_prefix:
-            pod_list = master_node_obj.get_all_pods(pod_prefix=ptype)
-            # Get the list of Kvalue pods to be deleted for given pod_prefix list
-            delete_pods.extend(random.sample(pod_list, kvalue))
+        if delete_pod is not None:
+            delete_pods.extend(delete_pod)
+        else:
+            for ptype in pod_prefix:
+                pod_list = master_node_obj.get_all_pods(pod_prefix=ptype)
+                # Get the list of Kvalue pods to be deleted for given pod_prefix list
+                delete_pods.extend(random.sample(pod_list, kvalue))
 
         LOGGER.info("Get the list of all pods of total pod types.")
         for ptype in total_pod_type:
@@ -1930,3 +1817,26 @@ class HAK8s:
         LOGGER.info("Running command %s", get_cmd)
         resp = system_utils.execute_cmd(get_cmd)
         return resp
+
+    def dnld_obj_verify_chcksm(self, s3_test_obj, bucket, obj, download_path, upload_checksum):
+        """
+        Function to download the object and verify its checksum
+        :param s3_test_obj: Object of the s3 test lib
+        :param bucket: Name of the bucket
+        :param obj: Name of the object
+        :param download_path: Path to which object is to be downloaded
+        :param upload_checksum: Checksum of uploaded object
+        :return: Tuple (bool, string)
+        """
+        LOGGER.info("Download object %s from bucket %s", obj, bucket)
+        resp = s3_test_obj.object_download(bucket, obj, download_path)
+        LOGGER.info("Download object response: %s", resp)
+        if not resp[0]:
+            return resp
+        download_checksum = self.cal_compare_checksum(file_list=[download_path], compare=False)[0]
+        if upload_checksum != download_checksum:
+            LOGGER.info("Failed to match checksums. \nUpload checksum:%s Download checksum: %s",
+                        upload_checksum, download_checksum)
+            return False, download_checksum
+        LOGGER.info("Successfully downloaded the object and verified the checksum")
+        return True, download_checksum

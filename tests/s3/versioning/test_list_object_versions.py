@@ -170,6 +170,7 @@ class TestListObjectVersions:
                                        expected_versions=expected_versions,
                                        expected_flags=expected_flags)
             self.log.info("Step 4: Test List Object Versions with valid delimiter and prefix")
+            expected_flags = {"CommonPrefixes": [{"Prefix": "key-name-obj2"}]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"Delimiter": "obj2", "Prefix": "key"},
                                        expected_versions=expected_versions,
@@ -188,7 +189,7 @@ class TestListObjectVersions:
                           " and max-keys set to value greater than mumber of entries")
             flags = {"Delimiter": "obj2", "Prefix": "key", "MaxKeys": 4}
             expected_flags = {"Delimiter": "obj2", "Prefix": "key", "MaxKeys": 4,
-                              "CommonPrefixes": [{"Prefix": self.object_name2}]}
+                              "CommonPrefixes": [{"Prefix": "key-name-obj2"}]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params=flags, expected_flags=expected_flags,
                                        expected_versions=expected_versions)
@@ -196,20 +197,12 @@ class TestListObjectVersions:
                           " and max-keys set to value less than or equal to number of entries")
             flags = {"Delimiter": "obj2", "Prefix": "key", "MaxKeys": 3}
             expected_flags = {"Delimiter": "obj2", "Prefix": "key", "MaxKeys": 3,
-                              "IsTruncated": "true", "NextKeyMarker": self.object_name1,
+                              "IsTruncated": True, "NextKeyMarker": self.object_name1,
                               "NextVersionIdMarker": versions[self.object_name1]["is_latest"]}
             expected_versions = {self.object_name1: versions[self.object_name1]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params=flags, expected_flags=flags,
                                        expected_versions=expected_versions)
-            self.log.info("Step 9: Fetch next page of results")
-            flags = {"KeyMarker": self.object_name1, "Delimiter": "obj2", "Prefix": "key",
-                     "VersionIdMarker": versions[self.object_name1]["is_latest"],  "MaxKeys": 3}
-            expected_flags = {"IsTruncated": "false",
-                              "CommonPrefixes": [{"Prefix": self.object_name2}]}
-            check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
-                                       list_params=flags, expected_flags=expected_flags,
-                                       expected_versions={})
         self.log.info("ENDED: Test List Object Versions with delimiter request parameter.")
 
     @pytest.mark.s3_ops
@@ -287,6 +280,25 @@ class TestListObjectVersions:
             expected_versions = {self.object_name2: versions[self.object_name2]}
             check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
                                        list_params={"KeyMarker": self.object_name2},
+                                       expected_versions=expected_versions)
+            self.log.info("Step 4: Test List Object Versions with pagination")
+            flags = {"MaxKeys": 3}
+            expected_flags = {"IsTruncated": True, "NextKeyMarker": self.object_name2,
+                              "NextVersionIdMarker": versions[self.object_name2]["is_latest"],
+                              "MaxKeys": 3}
+            expected_versions = {self.object_name1: versions[self.object_name1]}
+            check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
+                                       list_params=flags, expected_flags=expected_flags,
+                                       expected_versions=expected_versions)
+            self.log.info("Step 5: Fetch next page of results")
+            flags = {"KeyMarker": self.object_name2,
+                     "VersionIdMarker": versions[self.object_name2]["is_latest"]}
+            expected_flags = {"IsTruncated": False, "KeyMarker": self.object_name2,
+                              "VersionIdMarker": versions[self.object_name2]["is_latest"],
+                              "MaxKeys": 1000,}
+            expected_versions = {self.object_name2: versions[self.object_name2]}
+            check_list_object_versions(self.s3_ver_test_obj, bucket_name=self.bucket_name,
+                                       list_params=flags, expected_flags=expected_flags,
                                        expected_versions=expected_versions)
         self.log.info("ENDED: Test List Object Versions with key-marker request parameter")
 

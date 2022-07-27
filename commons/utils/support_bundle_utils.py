@@ -213,20 +213,23 @@ def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const
     flg = False
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.CLSTR_LOGS_CMD.format(scripts_path), read_lines=True)
     for line in resp:
-        if ".tar" in line:
+        if "date" in line:
+            out = line.split("date:")[1]
+            out2 = out.strip()
             flg = True
-            out = line.split()[1]
-            file = out.strip('\"')
-            LOGGER.info("Support bundle generated: %s", file)
-            remote_path = os.path.join(scripts_path, file)
-            local_path = os.path.join(local_dir_path, file)
-            m_node_obj.copy_file_to_local(remote_path, local_path)
-
+            break
     if flg:
-        LOGGER.info("Support bundle %s generated and copied to %s path.",
-                    file, local_dir_path)
-    else:
-        LOGGER.info("Support Bundle not generated; response: %s", resp)
+        resp1 = m_node_obj.list_dir(scripts_path)
+        for file in resp1:
+            if out2 in file:
+                LOGGER.info("Support bundle filename:%s", file)
+                remote_path = os.path.join(scripts_path, file)
+                local_path = os.path.join(local_dir_path, file)
+                m_node_obj.copy_file_to_local(remote_path, local_path)
+                LOGGER.info("Support bundle %s generated and copied to %s path",
+                            file, local_dir_path)
+                return flg
+    LOGGER.info("Support Bundle not generated; response: %s", resp)
     return flg
 
 
