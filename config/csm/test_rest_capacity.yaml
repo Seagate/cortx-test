@@ -184,3 +184,7 @@ test_43862:
 test_44411:
   max_size: 1048576
   max_objects: 100
+test_44342:
+  err_margin: 0
+test_44345:
+  err_margin: 0
