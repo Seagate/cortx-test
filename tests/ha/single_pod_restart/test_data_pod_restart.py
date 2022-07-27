@@ -1530,7 +1530,8 @@ class TestDataPodRestart:
         test_prefix_read = 'test-read-34079'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=test_prefix_read, skipread=True,
-                                                    skipcleanup=True, nclients=5, nsamples=5)
+                                                    skipcleanup=True, nclients=5, nsamples=5,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs with variable sizes objects for parallel READs.")
         LOGGER.info("Starting three independent background threads for READs, WRITEs & DELETEs.")
@@ -1550,7 +1551,7 @@ class TestDataPodRestart:
         output_wr = Queue()
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
                 'nclients': 1, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
-                'output': output_wr}
+                'output': output_wr, 'setup_s3bench': False}
         thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                       kwargs=args)
         thread_wri.daemon = True  # Daemonize thread
@@ -1560,7 +1561,7 @@ class TestDataPodRestart:
         output_rd = Queue()
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_read,
                 'nclients': 1, 'nsamples': 5, 'skipwrite': True, 'skipcleanup': True,
-                'output': output_rd}
+                'output': output_rd, 'setup_s3bench': False}
         thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                      kwargs=args)
         thread_rd.daemon = True  # Daemonize thread
@@ -1631,7 +1632,8 @@ class TestDataPodRestart:
         LOGGER.info("Step 9: Verify READ/Verify for data written in healthy cluster and delete "
                     "buckets")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_org.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True)
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Verified READ/Verify on data written in healthy mode and deleted "
                     "buckets")
@@ -1771,7 +1773,8 @@ class TestDataPodRestart:
                     buckets)
         LOGGER.info("Step 9: Check READ/Verify on data written in healthy mode and delete buckets")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_org.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True)
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: READ/Verify on data written in degraded mode was successful and "
                     "buckets deleted.")
