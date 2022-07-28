@@ -61,7 +61,6 @@ from commons.utils import assert_utils
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons.constants import const
-from libs.ras.ras_test_lib import RASTestLib
 from config import CMN_CFG, RAS_VAL
 
 logger = logging.getLogger(__name__)
@@ -120,17 +119,13 @@ class TestCorruptDataDetection:
             cls.list1.append(index)
         cls.node_num = cls.list1
         cls.test_node = secrets.choice(cls.node_num)
-        cls.host = CMN_CFG["nodes"][cls.test_node - 1]["host"]
-        cls.uname = CMN_CFG["nodes"][cls.test_node - 1]["username"]
-        cls.passwd = CMN_CFG["nodes"][cls.test_node - 1]["password"]
-        cls.hostname = CMN_CFG["nodes"][cls.test_node - 1]["hostname"]
-        cls.node_obj = Node(hostname=cls.hostname, username=cls.uname, password=cls.passwd)
-        cls.health_obj = Health(hostname=cls.hostname, username=cls.uname, password=cls.passwd)
 
         for node in CMN_CFG["nodes"]:
             node_obj = LogicalNode(
                 hostname=node["hostname"], username=node["username"], password=node["password"]
             )
+            cls.health_obj = Health(hostname=cls.hostname, username=cls.uname, password=cls.passwd)
+
             if node["node_type"].lower() == "master":
                 cls.master_node_list.append(node_obj)
             else:
