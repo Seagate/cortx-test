@@ -250,7 +250,7 @@ class TestCorruptDataDetection:
         outfile = TEMP_PATH + "output"
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         node_data_pod_dict = self.motr_obj.get_node_data_pod_dict()
-
+        logger.debug(f"node_data_pod_dict = {node_data_pod_dict}")
         # motr_client_num = self.motr_obj.get_number_of_motr_clients()
 
         # Format the Object ID is xxx:yyy format
@@ -359,8 +359,8 @@ class TestCorruptDataDetection:
         -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
         """
         count_list = [["4", "1"]]
-        bsize_list = ["1M"]
-        layout_ids = ["9"]
+        bsize_list = ["4k"]
+        layout_ids = ["1"]
         offsets = [0]
 
         self.motr_inject_checksum_corruption(layout_ids, bsize_list, count_list, offsets)
