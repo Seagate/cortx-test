@@ -257,26 +257,21 @@ class MotrCoreK8s:
     def dd_cmd(self, b_size, count, file, node):
         """
         DD command for creating new file
-
         :b_size: Block size
         :count: Block count
         :file: Output file name
-        :node_pod: on which node_pod file need to create
+        :node: on which node file need to create
         """
-        # CREATE_FILE = "dd if={} of={} bs={} count={} iflag=fullblock"
+
         cmd = common_cmd.CREATE_FILE.format("/dev/urandom", file, b_size, count)  # nosec
-        resp = self.node_obj.send_k8s_cmd(
-            operation="cp",
-            pod=self.node_pod_dict[node],
-            namespace=common_const.NAMESPACE,
-            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
-            decode=True,
-        )
+        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
+                                          namespace=common_const.NAMESPACE,
+                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+                                                         f"-- {cmd}", decode=True)
         log.info("DD Resp: %s", resp)
 
-        assert_utils.assert_not_in(
-            "ERROR" or "Error", resp, f'"{cmd}" Failed, Please check the log'
-        )
+        assert_utils.assert_not_in("ERROR" or "Error", resp,
+                                   f'"{cmd}" Failed, Please check the log')
 
     def copy_file_to_remote_container(self, node_pod):
         """
