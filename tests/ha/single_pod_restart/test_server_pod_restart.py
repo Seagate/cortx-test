@@ -304,14 +304,6 @@ class TestServerPodRestart:
                                                     skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Successfully run READ/Verify on data written in healthy mode")
-        LOGGER.info("Step 8: Start IOs again after server pod restart by delete deployment")
-        self.test_prefix = 'test-44834-1'
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    skipcleanup=True, setup_s3bench=False)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 8: Successfully IOs completed after server pod restart by delete "
-                    "deployment")
         LOGGER.info("ENDED: Test to verify READs after server pod restart.")
 
     # pylint: disable=too-many-statements
@@ -366,18 +358,20 @@ class TestServerPodRestart:
                                           "way OR the cluster is not online")
         LOGGER.info("Step 4: Successfully started server pod and cluster is online.")
         self.restore_pod = False
-        LOGGER.info("Step 5: Perform WRITE/READs/verify DI on the written data in healthy mode.")
+        LOGGER.info("Step 5: Perform WRITE/READs/verify DI on buckets created in healthy mode.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Successfully run WRITE/READ/Verify on data written in healthy mode")
-        LOGGER.info("Step 6: Perform WRITE/READs/verify DI on the written data in degraded mode.")
+        LOGGER.info("Step 5: Successfully run WRITE/READ/Verify on buckets created in healthy "
+                    "mode")
+        LOGGER.info("Step 6: Perform WRITE/READs/verify DI on buckets created in degraded mode.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix_deg,
                                                     skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Successfully run WRITE/READs/Verify on data written in degraded mode")
+        LOGGER.info("Step 6: Successfully run WRITE/READs/Verify on buckets created in degraded "
+                    "mode")
         LOGGER.info("Step 7: Create new IAM user and buckets, Perform WRITEs-READs-Verify with "
                     "variable object sizes after server pod restart")
         users = self.mgnt_ops.create_account_users(nusers=1)
