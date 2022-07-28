@@ -288,7 +288,7 @@ class MotrCoreK8s:
             self.node_obj.execute_cmd(cmd)
         except IOError as error:
             log.exception(
-                "Failed to copy %s inside ha pod %s due to error: %s",
+                "Failed to copy %s inside data pod %s due to error: %s",
                 common_const.MOCK_MONITOR_LOCAL_PATH,
                 self.node_pod_dict[node_pod],
                 error,

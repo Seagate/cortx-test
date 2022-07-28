@@ -273,24 +273,29 @@ class TestCorruptDataDetection:
                     b_size, cnt_c, object_id, layout, infile, node_pod, 0
                 )  # client_num
 
-                # parse_m0trace_log()
-                # read_m0trace_log()
+                # self.motr_obj.parse_m0trace_log()
+                # self.motr_obj.read_m0trace_log()
 
-                # # ON THE DATA POD: ==========>>>>>>
-                # # Todo: Copy the emap script
-                # self.motr_obj.copy_file_to_remote_container(node_pod)
-                # # Todo: and run Emap
-                # self.motr_corruption_obj.inject_checksum_corruption()
-                #
-                # # Todo: need to restart m0tr container for taking emap effect
-                #
+        # ON THE DATA POD: ==========>>>>>>
+        # Todo: Copy the emap script
+        #  Trying on first data pod only ---- Then on all pods run this
+        self.motr_obj.copy_file_to_remote_container(node_data_pod_dict[0])
+        # # Todo: and run Emap
+        # self.motr_corruption_obj.inject_checksum_corruption()
+        #
+        # # Todo: need to restart m0tr container for taking emap effect
+        #
 
+        for node_pod in node_pod_dict:
+            for b_size, (cnt_c, cnt_u), layout, offset in zip(
+                    bsize_list, count_list, layout_ids, offsets
+            ):
                 # On the Client POD - cortx - hax container ==========>>>>>>
 
                 # # Read objects after
-                # self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout, outfile, node_pod, 0)
-                #
-                # self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
+                self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout, outfile, node_pod, 0)
+
+                self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
                 self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
 
             logger.info("Stop: Verify emap corruption detection operation")
