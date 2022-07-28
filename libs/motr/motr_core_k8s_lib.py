@@ -128,6 +128,13 @@ class MotrCoreK8s:
         node_pod_dict = self.get_pods_by_node()
         return node_pod_dict
 
+    def get_node_data_pod_dict(self):
+        """
+        Returns all the node_pod and motr Data pod names in dict format
+        """
+        node_pod_dict = self.get_pods_by_node(prefix=common_const.MOTR_CONTAINER_PREFIX)
+        return node_pod_dict
+
     def get_pods_by_node(
         self, prefix=common_const.CLIENT_POD_NAME_PREFIX, namespace=common_const.NAMESPACE
     ):
@@ -277,14 +284,20 @@ class MotrCoreK8s:
         :node_pod: on which node_pod file needs to be copied
         """
         try:
-            cmd = common_cmd.HA_COPY_CMD.format(common_const.MOTR_DI_ERR_INJ_SCRIPT_PATH,
-                                                self.node_pod_dict[node_pod],
-                                                common_const.MOTR_DI_ERR_INJ_SCRIPT_PATH)  # nosec
+            cmd = common_cmd.HA_COPY_CMD.format(
+                common_const.MOTR_DI_ERR_INJ_SCRIPT_PATH,
+                self.node_pod_dict[node_pod],
+                common_const.MOTR_DI_ERR_INJ_SCRIPT_PATH,
+            )  # nosec
             log.info("Copying file to remote container")
             self.node_obj.execute_cmd(cmd)
         except IOError as error:
-            log.exception("Failed to copy %s inside ha pod %s due to error: %s",
-                          common_const.MOCK_MONITOR_LOCAL_PATH, self.node_pod_dict[node_pod], error)
+            log.exception(
+                "Failed to copy %s inside ha pod %s due to error: %s",
+                common_const.MOCK_MONITOR_LOCAL_PATH,
+                self.node_pod_dict[node_pod],
+                error,
+            )
             return False
         log.info("Remote file/script copy successful")
         return True
