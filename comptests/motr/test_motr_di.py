@@ -110,7 +110,7 @@ class TestCorruptDataDetection:
         logger.info("STARTED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
         cls.motr_corruption_obj = MotrCorruptionAdapter(
-            CMN_CFG,
+            CMN_CFG, oid="1234:1234"
         )
         cls.dtm_obj = DTMRecoveryTestLib(max_attempts=0)
         cls.master_node_list = []
