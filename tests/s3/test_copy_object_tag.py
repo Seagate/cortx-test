@@ -412,7 +412,6 @@ class TestCopyObjectsTag():
         self.log.info("Copy-object with source object having max number of tags(10)"
                       "in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
-        # todo how to form 10 tag string for copy object with destination tags
         tag_str = ""
         resp = self.create_put_set_object_tag(self.bucket_name1,
                                               self.object_name1,
@@ -523,7 +522,7 @@ class TestCopyObjectsTag():
                                                         self.object_name2,
                                                         TaggingDirective='REPLACE',
                                                         Tagging=tag_str[:-1])
-        assert_utils.assert_true(status, response)                                                        
+        assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
         put_etag = resp[1]["ETag"]
         self.log.info("Step 3: Retrieving tag of a destination object %s", self.object_name2)
@@ -605,10 +604,9 @@ class TestCopyObjectsTag():
         self.log.info("Copy-object with source object having max number of tags(N<=10)"
                       "in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
-        # todo how to form 10 tag string for copy object with destination tags
         tag_str = ""
-        tag_count_src = random.SystemRandom.randint(1,10)
-        tag_count_dest = random.SystemRandom.randint(1,10)
+        tag_count_src = random.SystemRandom.randint(1, 10)
+        tag_count_dest = random.SystemRandom.randint(1, 10)
         resp = self.create_put_set_object_tag(self.bucket_name1,
                                               self.object_name1,
                                               self.file_path,
@@ -788,7 +786,7 @@ class TestCopyObjectsTag():
                                                           self.file_path,
                                                           total_parts=2,
                                                           file_size=10,
-                                                          obj_tag=tag_str)
+                                                          object_tag=tag_str)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Uploaded an multipart object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
@@ -872,7 +870,7 @@ class TestCopyObjectsTag():
                                                           self.file_path,
                                                           total_parts=2,
                                                           file_size=10,
-                                                          obj_tag=tag_str[:-1])
+                                                          object_tag=tag_str[:-1])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
@@ -958,7 +956,7 @@ class TestCopyObjectsTag():
                                                            self.file_path,
                                                            total_parts=2,
                                                            file_size=10,
-                                                           obj_tag=tag_str[:-1])
+                                                           object_tag=tag_str[:-1])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
@@ -1070,7 +1068,7 @@ class TestCopyObjectsTag():
                                                            self.file_path,
                                                            total_parts=2,
                                                            file_size=10,
-                                                           obj_tag=tag_str[:-1])
+                                                           object_tag=tag_str[:-1])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
