@@ -64,8 +64,6 @@ class TestServerPodFailure:
     def setup_class(cls):
         """Setup operations for the test file."""
         LOGGER.info("STARTED: Setup Module operations.")
-        cls.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
-        cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.username = []
         cls.password = []
@@ -114,12 +112,26 @@ class TestServerPodFailure:
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
         self.bucket_name = f"ha-mp-bkt-{int(perf_counter_ns())}"
         self.object_name = f"ha-mp-obj-{int(perf_counter_ns())}"
-        self.restore_pod = self.restore_method = self.deployment_name = self.set_name = None
+        self.restore_pod = self.restore_method = self.deployment_name = None
         self.deployment_backup = None
-        self.num_replica = 1
         if not os.path.exists(self.test_dir_path):
             sysutils.make_dirs(self.test_dir_path)
         self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
+        LOGGER.info("Get %s pod to be deleted", const.SERVER_POD_NAME_PREFIX)
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        self.delete_pod = sts_dict[sts][-1]
+        LOGGER.info("Pod to be deleted is %s", self.delete_pod)
+        self.set_type, self.set_name = self.node_master_list[0].get_set_type_name(
+            pod_name=self.delete_pod)
+        if self.set_type == const.STATEFULSET:
+            resp = self.node_master_list[0].get_num_replicas(self.set_type, self.set_name)
+            assert_utils.assert_true(resp[0], resp)
+            self.num_replica = int(resp[1])
+        else:
+            self.num_replica = 1
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -176,33 +188,19 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Performed READs and verified DI on the written data")
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 3: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
@@ -308,57 +306,25 @@ class TestServerPodFailure:
                     "background. Sleeping for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 3: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica, event=event, event_set_clr=event_set_clr)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-
-        # TODO: Need confirmation from Rick on delete deployment method
-        # LOGGER.info("Step 3: Shutdown random server pod by deleting deployment and "
-        #             "verify cluster & remaining pods status")
-        # resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-        #     master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-        #     pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S,
-        #     event=event, event_set_clr=event_set_clr)
-        # # Assert if empty dictionary
-        # assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        # pod_name = list(resp[1].keys())[0]
-        # self.deployment_name = resp[1][pod_name]['deployment_name']
-        # self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        # self.restore_pod = True
-        # self.restore_method = resp[1][pod_name]['method']
-        # assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        # LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
-        #            "services states are as expected & remaining pods status is online.", pod_name)
 
         thread.join()
         LOGGER.info("Thread has joined.")
@@ -408,33 +374,19 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects.")
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
@@ -526,57 +478,25 @@ class TestServerPodFailure:
                     "s3bench setup check.", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica, event=event, event_set_clr=event_set_clr)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-
-        # TODO: Need confirmation from Rick on delete deployment method
-        # LOGGER.info("Step 2: Shutdown random server pod by deleting deployment and "
-        #             "verify cluster & remaining pods status")
-        # resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-        #     master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-        #     pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S,
-        #     event=event, event_set_clr=event_set_clr)
-        # # Assert if empty dictionary
-        # assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        # pod_name = list(resp[1].keys())[0]
-        # self.deployment_name = resp[1][pod_name]['deployment_name']
-        # self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        # self.restore_pod = True
-        # self.restore_method = resp[1][pod_name]['method']
-        # assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        # LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
-        #            "services states are as expected & remaining pods status is online.", pod_name)
 
         thread.join()
         LOGGER.info("Thread has joined.")
@@ -659,33 +579,19 @@ class TestServerPodFailure:
         LOGGER.info("Step 1: Successfully created %s buckets & "
                     "performed WRITEs with variable size objects.", wr_bucket)
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
@@ -815,33 +721,19 @@ class TestServerPodFailure:
         LOGGER.info("Step 1: Started WRITEs and DELETEs with variable object sizes "
                     "during server pod down by delete deployment.")
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica, event=event)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
@@ -849,23 +741,6 @@ class TestServerPodFailure:
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
 
-        # TODO: Need confirmation from Rick on delete deployment method
-        # LOGGER.info("Step 2: Shutdown random server pod by deleting deployment and "
-        #             "verify cluster & remaining pods status")
-        # resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-        #     master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-        #     pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S,
-        #     event=event)
-        # # Assert if empty dictionary
-        # assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        # pod_name = list(resp[1].keys())[0]
-        # self.deployment_name = resp[1][pod_name]['deployment_name']
-        # self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        # self.restore_pod = True
-        # self.restore_method = resp[1][pod_name]['method']
-        # assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        # LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
-        #            "services states are as expected & remaining pods status is online.", pod_name)
         thread1.join()
         thread2.join()
 
@@ -1035,33 +910,19 @@ class TestServerPodFailure:
         LOGGER.info("Step 1: Started READs and DELETEs with variable object sizes "
                     "during server pod down by delete deployment.")
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica, event=event)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
@@ -1069,23 +930,6 @@ class TestServerPodFailure:
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
 
-        # TODO: Need confirmation from Rick on delete deployment method
-        # LOGGER.info("Step 2: Shutdown random server pod by deleting deployment and "
-        #             "verify cluster & remaining pods status")
-        # resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-        #     master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-        #     pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S,
-        #     event=event)
-        # # Assert if empty dictionary
-        # assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        # pod_name = list(resp[1].keys())[0]
-        # self.deployment_name = resp[1][pod_name]['deployment_name']
-        # self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        # self.restore_pod = True
-        # self.restore_method = resp[1][pod_name]['method']
-        # assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        # LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
-        #            "services states are as expected & remaining pods status is online.", pod_name)
         thread1.join()
         thread2.join()
 
@@ -1353,57 +1197,25 @@ class TestServerPodFailure:
         thread.start()
         LOGGER.info("Step 2: Started continuous DELETEs in background on %s buckets", del_bucket)
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 3: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica, event=event)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-
-        # TODO: Need confirmation from Rick on delete deployment method
-        # LOGGER.info("Step 3: Shutdown random server pod by deleting deployment and "
-        #             "verify cluster & remaining pods status")
-        # resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-        #     master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-        #     pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S,
-        #     event=event)
-        # # Assert if empty dictionary
-        # assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        # pod_name = list(resp[1].keys())[0]
-        # self.deployment_name = resp[1][pod_name]['deployment_name']
-        # self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        # self.restore_pod = True
-        # self.restore_method = resp[1][pod_name]['method']
-        # assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        # LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
-        #            "services states are as expected & remaining pods status is online.", pod_name)
 
         thread.join()
         LOGGER.debug("Thread has joined.")
@@ -1496,33 +1308,19 @@ class TestServerPodFailure:
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Step 1: Successfully started READs & WRITES in background")
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica, event=event, event_set_clr=event_set_clr)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
@@ -1530,23 +1328,6 @@ class TestServerPodFailure:
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
 
-        # TODO: Need confirmation from Rick on delete deployment method
-        # LOGGER.info("Step 2: Shutdown random server pod by deleting deployment and "
-        #             "verify cluster & remaining pods status")
-        # resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-        #     master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-        #     pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S,
-        #     event=event, event_set_clr=event_set_clr)
-        # # Assert if empty dictionary
-        # assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        # pod_name = list(resp[1].keys())[0]
-        # self.deployment_name = resp[1][pod_name]['deployment_name']
-        # self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        # self.restore_pod = True
-        # self.restore_method = resp[1][pod_name]['method']
-        # assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        # LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
-        #            "services states are as expected & remaining pods status is online.", pod_name)
         thread_rd.join()
         thread_wri.join()
         LOGGER.debug("Threads has joined")
@@ -1644,33 +1425,19 @@ class TestServerPodFailure:
                     "object from %s bucket to other buckets, download objects "
                     "and verify etags", self.bucket_name)
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
@@ -1881,57 +1648,25 @@ class TestServerPodFailure:
                 assert_utils.assert_true(False, "Please check background process logs")
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 3: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica, event=event)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-
-        # TODO: Need confirmation from Rick on delete deployment method
-        # LOGGER.info("Step 3: Shutdown random server pod by deleting deployment and "
-        #             "verify cluster & remaining pods status")
-        # resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-        #     master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-        #     pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S,
-        #     event=event)
-        # # Assert if empty dictionary
-        # assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        # pod_name = list(resp[1].keys())[0]
-        # self.deployment_name = resp[1][pod_name]['deployment_name']
-        # self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        # self.restore_pod = True
-        # self.restore_method = resp[1][pod_name]['method']
-        # assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        # LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
-        #            "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 4: Checking responses from background process")
         thread.join()
@@ -2043,33 +1778,19 @@ class TestServerPodFailure:
         upload_checksum = str(resp[2])
         LOGGER.info("Step 1: Successfully performed multipart upload for size 5GB.")
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
@@ -2251,56 +1972,25 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-
-        # TODO: Need confirmation from Rick on delete deployment method
-        # LOGGER.info("Step 2: Shutdown random server pod by deleting deployment and "
-        #             "verify cluster & remaining pods status")
-        # resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-        #     master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-        #     pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S)
-        # # Assert if empty dictionary
-        # assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        # pod_name = list(resp[1].keys())[0]
-        # self.deployment_name = resp[1][pod_name]['deployment_name']
-        # self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        # self.restore_pod = True
-        # self.restore_method = resp[1][pod_name]['method']
-        # assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        # LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
-        #            "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 3: Perform WRITEs-READs-Verify-DELETEs with variable object sizes "
                     "after server pod delete deployment shutdown.")
@@ -2361,57 +2051,25 @@ class TestServerPodFailure:
         LOGGER.info("Step 1: Started multipart upload of 5GB object in background")
         time.sleep(HA_CFG["common_params"]["60sec_delay"])
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica, event=event)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-
-        # TODO: Need confirmation from Rick on delete deployment method
-        # LOGGER.info("Step 2: Shutdown random server pod by deleting deployment and "
-        #             "verify cluster & remaining pods status")
-        # resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-        #     master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-        #     pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S,
-        #     event=event)
-        # # Assert if empty dictionary
-        # assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        # pod_name = list(resp[1].keys())[0]
-        # self.deployment_name = resp[1][pod_name]['deployment_name']
-        # self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        # self.restore_pod = True
-        # self.restore_method = resp[1][pod_name]['method']
-        # assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        # LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
-        #            "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 3: Checking response from background process")
         thread.join()
@@ -2534,56 +2192,25 @@ class TestServerPodFailure:
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Step 2: Successfully started chuck upload in background")
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 3: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-
-        # TODO: Need confirmation from Rick on delete deployment method
-        # LOGGER.info("Step 3: Shutdown random server pod by deleting deployment and "
-        #             "verify cluster & remaining pods status")
-        # resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-        #     master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-        #     pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S)
-        # # Assert if empty dictionary
-        # assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        # pod_name = list(resp[1].keys())[0]
-        # self.deployment_name = resp[1][pod_name]['deployment_name']
-        # self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        # self.restore_pod = True
-        # self.restore_method = resp[1][pod_name]['method']
-        # assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        # LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
-        #            "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 4: Verifying response of background chunk upload process")
         thread.join()
@@ -2695,56 +2322,25 @@ class TestServerPodFailure:
             assert_utils.assert_list_item(part_numbers, part_n["PartNumber"])
         LOGGER.info("Step 2: Listed parts of partial multipart upload: %s", res[1])
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 3: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-
-        # TODO: Need confirmation from Rick on delete deployment method
-        # LOGGER.info("Step 3: Shutdown random server pod by deleting deployment and "
-        #             "verify cluster & remaining pods status")
-        # resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-        #     master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-        #     pod_prefix=[const.SERVER_POD_NAME_PREFIX], down_method=const.RESTORE_DEPLOYMENT_K8S)
-        # # Assert if empty dictionary
-        # assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        # pod_name = list(resp[1].keys())[0]
-        # self.deployment_name = resp[1][pod_name]['deployment_name']
-        # self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        # self.restore_pod = True
-        # self.restore_method = resp[1][pod_name]['method']
-        # assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        # LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
-        #            "services states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 4: Upload remaining parts")
         remaining_parts = list(filter(lambda i: i not in part_numbers,
@@ -2822,33 +2418,19 @@ class TestServerPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
+        num_replica = self.num_replica - 1
         LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[delete_pod],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
             num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
+        if self.set_type == const.STATEFULSET:
             self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
+        elif self.set_type == const.REPLICASET:
             self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
