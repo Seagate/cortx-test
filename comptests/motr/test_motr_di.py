@@ -51,16 +51,18 @@ import csv
 import logging
 import secrets
 import pytest
-from config import CMN_CFG
 from commons import constants as const
 from commons.helpers.pods_helper import LogicalNode
-from commons.utils import assert_utils
-from commons.helpers.health_helper import Health
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.motr.emap_fi_adapter import MotrCorruptionAdapter
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
-
+from commons.utils import assert_utils
+from commons.helpers.node_helper import Node
+from commons.helpers.health_helper import Health
+from commons.constants import const
+from libs.ras.ras_test_lib import RASTestLib
+from config import CMN_CFG, RAS_VAL
 
 logger = logging.getLogger(__name__)
 
@@ -93,21 +95,38 @@ class TestCorruptDataDetection:
     3. Parity
     """
 
+    worker_node_list = None
+    master_node_list = None
+    passwd = None
+    uname = None
+    hostname = None
+    test_node = None
+    node_num = None
+    list1 = None
+    node_cnt = None
+
     @classmethod
     def setup_class(cls):
         """Setup class for running Motr tests"""
         logger.info("STARTED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
-        cls.motr_corruption_obj = MotrCorruptionAdapter(
-            CMN_CFG,
-        )
-        cls.dtm_obj = DTMRecoveryTestLib(self.access_key, self.secret_key, max_attempts=0)
-        cls.master_node_list = []
-        cls.health_obj = Health(
-            cls.master_node_list[0].hostname,
-            cls.master_node_list[0].username,
-            cls.master_node_list[0].password,
-        )
+        cls.motr_corruption_obj = MotrCorruptionAdapter(CMN_CFG, "1234:1234")
+
+        cls.dtm_obj = DTMRecoveryTestLib(max_attempts=0)
+        cls.node_cnt = len(CMN_CFG["nodes"])
+        logger.info("Total number of nodes in cluster: %s", cls.node_cnt)
+        cls.list1 = []
+        for index in range(1, cls.node_cnt):
+            cls.list1.append(index)
+        cls.node_num = cls.list1
+        cls.test_node = secrets.choice(cls.node_num)
+        cls.host = CMN_CFG["nodes"][cls.test_node - 1]["host"]
+        cls.uname = CMN_CFG["nodes"][cls.test_node - 1]["username"]
+        cls.passwd = CMN_CFG["nodes"][cls.test_node - 1]["password"]
+        cls.hostname = CMN_CFG["nodes"][cls.test_node - 1]["hostname"]
+        cls.node_obj = Node(hostname=cls.hostname, username=cls.uname, password=cls.passwd)
+        cls.health_obj = Health(hostname=cls.hostname, username=cls.uname, password=cls.passwd)
+
         for node in CMN_CFG["nodes"]:
             node_obj = LogicalNode(
                 hostname=node["hostname"], username=node["username"], password=node["password"]
