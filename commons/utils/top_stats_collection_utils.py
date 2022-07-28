@@ -23,6 +23,7 @@ import logging
 import os.path
 from multiprocessing import Process
 
+from commons.commands import CMD_PGREP_TOP
 from commons.commands import KILL_CMD
 from commons.constants import COLLECTION_FILE
 from commons.constants import COLLECTION_SCRIPT_PATH
@@ -80,7 +81,7 @@ class TopStatsCollection:
         cmd = f"chmod +x {COLLECTION_FILE} && ./{COLLECTION_FILE} {dir_path}"
         proc = Process(target=self.exe_cmd, args=(self.master_node_list[0], cmd))
         proc.start()
-        cmd = f'pgrep "/bin/sh ./{COLLECTION_FILE} {dir_path}" -fx'
+        cmd = CMD_PGREP_TOP.format(COLLECTION_FILE, dir_path)
         pids = str(self.master_node_list[0].execute_cmd(f"echo $({cmd})"))
         LOGGER.debug("pids of processes %s", pids)
         list_pids = pids.split()
@@ -96,7 +97,7 @@ class TopStatsCollection:
     def stop_collection(self, dir_path):
         """function to get pid and kill it on server"""
 
-        cmd = f'pgrep "/bin/sh ./{COLLECTION_FILE} {dir_path}" -fx'
+        cmd = CMD_PGREP_TOP.format(COLLECTION_FILE, dir_path)
         pids = str(self.master_node_list[0].execute_cmd(f"echo $({cmd})"))
         LOGGER.debug("pids of processes %s", pids)
         list_pids = pids.split()
