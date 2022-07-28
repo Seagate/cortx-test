@@ -40,6 +40,7 @@ echo $PYTHONPATH
 sh scripts/cicd_k8s/lb_haproxy.sh
 export EXTERNAL_EXPOSURE_SERVICE="${EXTERNAL_EXPOSURE_SERVICE}"
 python3.7 scripts/cicd_k8s/client_multinode_rgw.py --master_node "${M_NODE}" --password "${HOST_PASS}"
+export EXTERNAL_EXPOSURE_SERVICE="${EXTERNAL_EXPOSURE_SERVICE}"
 deactivate
 '''
 			}
