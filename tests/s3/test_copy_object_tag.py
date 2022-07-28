@@ -1057,8 +1057,8 @@ class TestCopyObjectsTag():
         self.log.info("Copy-object with source object having max number of tags(N<=10)"
                       "in the same bucket")
         self.log.info("Step 1: Uploading multipart object and setting tag for object")
-        tag_count_src = random.SystemRandom.randint(1,10)
-        tag_count_dest = random.SystemRandom.randint(1,10)
+        tag_count_src = random.SystemRandom.randint(1, 10)
+        tag_count_dest = random.SystemRandom.randint(1, 10)
         tag_str = ""
         for num in range(tag_count_src):
             tag_str = tag_str + "{}{}".format(self.key_src, str(num)) + "=" \
