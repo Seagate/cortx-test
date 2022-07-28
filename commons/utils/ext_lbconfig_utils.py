@@ -221,7 +221,7 @@ def configure_nodeport_lb(node_obj: LogicalNode, iface: str):
     resp = json.loads(resp)
     flag = False
     for item_data in resp["items"]:
-        if item_data['metadata']["name"] == "cortx-server-0":
+        if item_data['metadata']["name"] == "cortx-io-svc-0":
             for item in item_data['spec']['ports']:
                 if item['port'] == 443:
                     port_https = item["nodePort"]
