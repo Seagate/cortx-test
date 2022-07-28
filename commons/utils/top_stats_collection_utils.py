@@ -80,6 +80,17 @@ class TopStatsCollection:
         cmd = f"chmod +x {COLLECTION_FILE} && ./{COLLECTION_FILE} {dir_path}"
         proc = Process(target=self.exe_cmd, args=(self.master_node_list[0], cmd))
         proc.start()
+        cmd = f'pgrep "/bin/sh ./{COLLECTION_FILE} {dir_path}" -fx'
+        pids = str(self.master_node_list[0].execute_cmd(f"echo $({cmd})"))
+        LOGGER.debug("pids of processes %s", pids)
+        list_pids = pids.split()
+        res = []
+        for pid in list_pids:
+            res.append(''.join(filter(lambda j: j.isdigit(), pid)))
+        LOGGER.debug("list of pids %s", res)
+        if not res:
+            LOGGER.info("Process IDs of cmd %s is empty", cmd)
+            return False
         return True
 
     def stop_collection(self, dir_path):

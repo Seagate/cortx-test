@@ -127,7 +127,6 @@ class TestIOWorkloadDegradedPath:
             assert_utils.assert_true(resp)
         else:
             self.mail_notify.event_pass.set()
-            self.top_stats.stop_collection()
         self.log.info("Stop Procpath collection")
         self.proc_path.stop_collection()
         self.log.info("Copy files to client")
