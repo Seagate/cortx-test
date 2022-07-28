@@ -109,16 +109,20 @@ class TestCorruptDataDetection:
         """Setup class for running Motr tests"""
         logger.info("STARTED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
-        cls.motr_corruption_obj = MotrCorruptionAdapter(CMN_CFG, "1234:1234")
-
+        cls.motr_corruption_obj = MotrCorruptionAdapter(
+            CMN_CFG,
+        )
         cls.dtm_obj = DTMRecoveryTestLib(max_attempts=0)
-
+        cls.master_node_list = []
+        cls.health_obj = Health(
+            cls.master_node_list[0].hostname,
+            cls.master_node_list[0].username,
+            cls.master_node_list[0].password,
+        )
         for node in CMN_CFG["nodes"]:
             node_obj = LogicalNode(
                 hostname=node["hostname"], username=node["username"], password=node["password"]
             )
-            cls.health_obj = Health(hostname=cls.hostname, username=cls.uname, password=cls.passwd)
-
             if node["node_type"].lower() == "master":
                 cls.master_node_list.append(node_obj)
             else:
