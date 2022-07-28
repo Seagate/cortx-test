@@ -265,7 +265,7 @@ class TestCorruptDataDetection:
             for b_size, (cnt_c, cnt_u), layout, offset in zip(
                     bsize_list, count_list, layout_ids, offsets
             ):
-                # Client POD - cortx - hax container
+                # On the Client POD - cortx - hax container ==========>>>>>>
                 # Create file for m0cp cmd
                 self.motr_obj.dd_cmd(b_size, cnt_c, infile, node_pod)
                 # Create object
@@ -276,7 +276,7 @@ class TestCorruptDataDetection:
                 # parse_m0trace_log()
                 # read_m0trace_log()
 
-                # # ON THE DATA POD:
+                # # ON THE DATA POD: ==========>>>>>>
                 # # Todo: Copy the emap script
                 # self.motr_obj.copy_file_to_remote_container(node_pod)
                 # # Todo: and run Emap
@@ -284,11 +284,14 @@ class TestCorruptDataDetection:
                 #
                 # # Todo: need to restart m0tr container for taking emap effect
                 #
-                # # Read object after
+
+                # On the Client POD - cortx - hax container ==========>>>>>>
+
+                # # Read objects after
                 # self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout, outfile, node_pod, 0)
                 #
                 # self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
-                # self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
+                self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
 
             logger.info("Stop: Verify emap corruption detection operation")
         return True  # Todo: return status to be worked as per responses
