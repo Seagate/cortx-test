@@ -112,13 +112,6 @@ class TestCorruptDataDetection:
         cls.motr_corruption_obj = MotrCorruptionAdapter(CMN_CFG, "1234:1234")
 
         cls.dtm_obj = DTMRecoveryTestLib(max_attempts=0)
-        cls.node_cnt = len(CMN_CFG["nodes"])
-        logger.info("Total number of nodes in cluster: %s", cls.node_cnt)
-        cls.list1 = []
-        for index in range(1, cls.node_cnt):
-            cls.list1.append(index)
-        cls.node_num = cls.list1
-        cls.test_node = secrets.choice(cls.node_num)
 
         for node in CMN_CFG["nodes"]:
             node_obj = LogicalNode(
