@@ -135,7 +135,6 @@ class TestCorruptDataDetection:
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
         node_pod_dict = self.motr_obj.get_node_pod_dict()
-        node_data_pod_dict = self.motr_obj.get_node_data_pod_dict()
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
         object_id = (
             str(self.system_random.randint(1, 1024 * 1024))
@@ -237,6 +236,8 @@ class TestCorruptDataDetection:
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
         node_pod_dict = self.motr_obj.get_node_pod_dict()
+        node_data_pod_dict = self.motr_obj.get_node_data_pod_dict()
+
         # motr_client_num = self.motr_obj.get_number_of_motr_clients()
 
         # Format the Object ID is xxx:yyy format
@@ -277,6 +278,7 @@ class TestCorruptDataDetection:
                 self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
 
             logger.info("Stop: Verify emap corruption detection operation")
+        return True  # Todo: return status to be worked as per responses
 
     @pytest.mark.tags("TEST-41739")
     @pytest.mark.motr_di
@@ -387,7 +389,7 @@ class TestCorruptDataDetection:
         logger.info("Step 1: m0d restarted and recovered successfully")
 
         logger.info("Step 2: Perform m0cp and corrupt the parity block")
-        resp = self.m0cp_corrupt_parity_m0cat(layout_ids, bsize_list, count_list, offsets)
+        resp = self.motr_inject_checksum_corruption(layout_ids, bsize_list, count_list, offsets)
         assert_utils.assert_true(resp)
         logger.info("Step 2: Successfully performed m0cp and corrupt the parity block")
         logger.info(f"ENDED:{test_prefix} Test Parity corruption in degraded mode - aligned")
