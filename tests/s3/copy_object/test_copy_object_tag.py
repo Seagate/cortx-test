@@ -605,8 +605,9 @@ class TestCopyObjectsTag():
                       "in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         tag_str = ""
-        tag_count_src = random.SystemRandom.randint(1, 10)
-        tag_count_dest = random.SystemRandom.randint(1, 10)
+        secret_range = random.SystemRandom()
+        tag_count_src = secret_range.randint(1, 10)
+        tag_count_dest = secret_range.randint(1, 10)
         resp = self.create_put_set_object_tag(self.bucket_name1,
                                               self.object_name1,
                                               self.file_path,
@@ -1057,8 +1058,9 @@ class TestCopyObjectsTag():
         self.log.info("Copy-object with source object having max number of tags(N<=10)"
                       "in the same bucket")
         self.log.info("Step 1: Uploading multipart object and setting tag for object")
-        tag_count_src = random.SystemRandom.randint(1, 10)
-        tag_count_dest = random.SystemRandom.randint(1, 10)
+        secret_range = random.SystemRandom()
+        tag_count_src = secret_range.randint(1, 10)
+        tag_count_dest = secret_range.randint(1, 10)
         tag_str = ""
         for num in range(tag_count_src):
             tag_str = tag_str + "{}{}".format(self.key_src, str(num)) + "=" \
