@@ -114,6 +114,7 @@ class TestCorruptDataDetection:
         )
         cls.dtm_obj = DTMRecoveryTestLib(max_attempts=0)
         cls.master_node_list = []
+        cls.worker_node_list = []
 
         for node in CMN_CFG["nodes"]:
             node_obj = LogicalNode(
