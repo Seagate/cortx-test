@@ -349,7 +349,7 @@ class TestCorruptDataDetection:
 
         self.motr_inject_checksum_corruption(layout_ids, bsize_list, count_list, offsets)
 
-    @pytest.mark.skip(reason="Feature Unavailable")
+    # @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.tags("TEST-41768")
     @pytest.mark.motr_di
     def test_corrupt_parity_degraded_aligned(self):
