@@ -616,3 +616,21 @@ class LogicalNode(Host):
         set_type, set_name = ((output.split(":")[-1]).strip()).split("/")
         log.debug("Set type is: %s\n Set name is: %s\n", set_type, set_name)
         return set_type, set_name
+
+    def get_sts_pods(self, pod_prefix=""):
+        """
+        Function to get name of the statefulset and its pods
+        :param pod_prefix: Pod prefix
+        :return: dict
+        """
+        sts_dict = dict()
+        cmd = commands.KUBECTL_GET_STATEFULSET.format(pod_prefix)
+        output = self.execute_cmd(cmd=cmd, read_lines=True)
+        log.info("Response: %s", output)
+        sts_list = [line.split()[0].strip() for line in output]
+        if pod_prefix is "":
+            sts_list.pop(0)
+        for sts in sts_list:
+            sts_dict[sts] = self.get_all_pods(sts)
+        log.debug("Statefulsets with pods: %s", sts_dict)
+        return sts_dict

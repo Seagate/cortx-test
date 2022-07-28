@@ -178,8 +178,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -307,8 +310,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -404,8 +410,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -519,8 +528,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -649,8 +661,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -802,8 +817,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -1019,8 +1037,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -1334,8 +1355,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -1474,8 +1498,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -1619,8 +1646,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -1853,8 +1883,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -2012,8 +2045,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -2217,8 +2253,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -2324,8 +2363,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -2494,8 +2536,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -2652,8 +2697,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
@@ -2776,8 +2824,11 @@ class TestServerPodFailure:
 
         num_replica = 0
         LOGGER.info("Get pod to be deleted")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
-        delete_pod = pod_list[-1]
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
         LOGGER.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
         if set_type == const.STATEFULSET:
