@@ -280,7 +280,7 @@ class TestProvK8Cortx:
         resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_NODE, read_lines=True)
         node_list = resp[1:]
         LOGGER.info("Identify pods and nodes are equal.")
-        assert_utils.assert_true(len(list(data_pod_count[0])) == len(node_list))
+        assert_utils.assert_true(2*(len(list(data_pod_count[0]))) >= len(node_list))
         LOGGER.info("Test Completed.")
 
     @pytest.mark.prov_sanity
