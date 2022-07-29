@@ -32,8 +32,6 @@ from time import perf_counter_ns
 import pytest
 
 from commons import constants as const
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
@@ -164,7 +162,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39902")
-    @CTFailOn(error_handler)
     def test_degraded_reads_safe_server_pod_shutdown(self):
         """
         Following test steps tests degraded READs after server pod down - safe shutdown.
@@ -221,7 +218,6 @@ class TestServerPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39903")
     @pytest.mark.skip("Skipped until CORTX-33759 is fixed")
-    @CTFailOn(error_handler)
     def test_degraded_reads_unsafe_server_pod_shutdown(self):
         """
         Following test steps tests degraded READs after server pod down - unsafe shutdown.
@@ -273,7 +269,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39904")
-    @CTFailOn(error_handler)
     def test_reads_during_server_pod_down(self):
         """
         Following test steps tests degraded reads while server pod is going down - unsafe shutdown.
@@ -358,7 +353,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39905")
-    @CTFailOn(error_handler)
     def test_degraded_writes_safe_server_pod_shutdown(self):
         """
         Following test steps tests degraded writes after safe server pod shutdown.
@@ -408,7 +402,6 @@ class TestServerPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39906")
     @pytest.mark.skip("Skipped until CORTX-33759 is fixed")
-    @CTFailOn(error_handler)
     def test_degraded_writes_unsafe_server_pod_shutdown(self):
         """
         Following test tests degraded writes after unsafe server pod shutdown. (delete deployment)
@@ -453,7 +446,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39907")
-    @CTFailOn(error_handler)
     def test_writes_during_server_pod_down(self):
         """
         Following test tests WRITEs during server pod down (delete deployment)
@@ -536,7 +528,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39908")
-    @CTFailOn(error_handler)
     def test_degraded_deletes_safe_server_pod_shutdown(self):
         """
         Following test tests degraded deletes after safe server pod shutdown. (replicas=0)
@@ -659,7 +650,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39912")
-    @CTFailOn(error_handler)
     def test_writes_deletes_during_server_pod_down(self):
         """
         This test tests WRITEs and DELETEs during server pod down (delete deployment)
@@ -830,7 +820,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39913")
-    @CTFailOn(error_handler)
     def test_reads_deletes_during_server_pod_down(self):
         """
         This test tests READs and DELETEs during server pod down (delete deployment)
@@ -1029,7 +1018,6 @@ class TestServerPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39909")
     @pytest.mark.skip("Skipped until CORTX-33759 is fixed")
-    @CTFailOn(error_handler)
     def test_degraded_deletes_unsafe_server_pod_shutdown(self):
         """
         Following test tests degraded deletes after unsafe server pod shutdown (deleting deployment)
@@ -1146,7 +1134,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39910")
-    @CTFailOn(error_handler)
     def test_deletes_during_server_pod_down(self):
         """
         Following test tests DELETEs during server pod down by deleting deployment
@@ -1258,7 +1245,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39911")
-    @CTFailOn(error_handler)
     def test_reads_writes_during_server_pod_down(self):
         """
         Following test tests READs/WRITEs during server pod down (delete deployment)
@@ -1384,7 +1370,6 @@ class TestServerPodFailure:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-39918")
-    @CTFailOn(error_handler)
     def test_copy_obj_safe_server_pod_shutdown(self):
         """
         Verify degraded copy object after server pod down - pod shutdown (make replicas=0)
@@ -1485,7 +1470,6 @@ class TestServerPodFailure:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-39919")
-    @CTFailOn(error_handler)
     def test_copy_obj_unsafe_server_pod_shutdown(self):
         """
         Verify degraded copy object after server pod down - pod unsafe
@@ -1585,7 +1569,6 @@ class TestServerPodFailure:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-39920")
-    @CTFailOn(error_handler)
     def test_copy_obj_during_server_pod_shutdown(self):
         """
         Verify copy object during server pod shutdown (delete deployment)
@@ -1738,7 +1721,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39914")
-    @CTFailOn(error_handler)
     def test_mpu_safe_server_pod_down(self):
         """
         This test tests degraded multipart upload after server pod safe shutdown
@@ -1850,7 +1832,6 @@ class TestServerPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39915")
     @pytest.mark.skip("Skipped until CORTX-33759 is fixed")
-    @CTFailOn(error_handler)
     def test_mpu_unsafe_server_pod_down(self):
         """
         This test tests degraded multipart upload after server pod unsafe shutdown
@@ -1955,7 +1936,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39921")
-    @CTFailOn(error_handler)
     def test_ios_unsafe_server_pod_shutdown(self):
         """
         Verify WRITEs-READs-Verify-DELETEs before and after server pod failure; server pod delete
@@ -2008,7 +1988,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39916")
-    @CTFailOn(error_handler)
     def test_mpu_during_server_pod_down(self):
         """
         This test tests multipart upload during server pod shutdown (delete deployment)
@@ -2153,7 +2132,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39922")
-    @CTFailOn(error_handler)
     def test_chunk_upload_during_server_pod_shutdown(self):
         """
         Test chunk upload during server pod shutdown (using jclient) by delete deployment
@@ -2264,7 +2242,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-39917")
-    @CTFailOn(error_handler)
     def test_partial_mpu_server_pod_shutdown(self):
         """
         This test tests degraded partial multipart upload after server pod unsafe shutdown
@@ -2400,7 +2377,6 @@ class TestServerPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32461")
-    @CTFailOn(error_handler)
     def test_server_pod_failure(self):
         """
         Verify IOs before and after server pod failure (pod shutdown by making replicas=0)
