@@ -628,7 +628,7 @@ class LogicalNode(Host):
         output = self.execute_cmd(cmd=cmd, read_lines=True)
         log.info("Response: %s", output)
         sts_list = [line.split()[0].strip() for line in output]
-        if pod_prefix is "":
+        if pod_prefix == "":
             sts_list.pop(0)
         for sts in sts_list:
             sts_dict[sts] = self.get_all_pods(sts)
