@@ -27,7 +27,6 @@ export ADMIN_PWD="${ADMIN_PWD}"
 export HOST_PASS="${HOST_PASS}"
 export Target_Node="${Target_Node}"
 export WORK_SPACE="${WORK_SPACE}"
-export EXTERNAL_EXPOSURE_SERVICE="${EXTERNAL_EXPOSURE_SERVICE}"
 deactivate
 '''
 			}
@@ -37,6 +36,7 @@ deactivate
 			    sh label: '', script: '''source venv/bin/activate
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
 echo $PYTHONPATH
+export EXTERNAL_EXPOSURE_SERVICE="${EXTERNAL_EXPOSURE_SERVICE}"
 sh scripts/cicd_k8s/lb_haproxy.sh
 python3.7 scripts/cicd_k8s/client_multinode_rgw.py --master_node "${M_NODE}" --password "${HOST_PASS}"
 deactivate
