@@ -73,7 +73,8 @@ MOTR_CLIENT="motr_client"
 UPGRADE_IN_PROGRESS_MSG = "An upgrade is already in progress"
 UPGRADE_SUSPEND_MSG = "Upgrade suspended"
 UPGRADE_ALREADY_SUSPENDED = "Upgrade Process Not found on the system, Suspend cannot be performed"
-
+PARSE_SIZE = "10485760"
+CONTAINER_PATH = "/root/error_injection.py"
 # common constant.
 ERR_MSG = "Error in %s: %s"
 
