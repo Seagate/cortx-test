@@ -2011,6 +2011,7 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34088")
+    @pytest.mark.skip("Bucket CRUDs are not supported in DTM0Int0")
     def test_ios_rc_node_restart(self):
         """
         This test tests IOs before and after RC data pod restart
@@ -2091,17 +2092,16 @@ class TestDataPodRestart:
             user = value[0]
             prefix = value[1]
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(user.values())[0],
-                                                        log_prefix=prefix, skipcleanup=True)
+                                                        log_prefix=prefix)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully performed READ-Verify data written in healthy and "
                     "degraded cluster")
 
         LOGGER.info("Step 7: Start IOs again after data pod restart by making replicas=1.")
         if CMN_CFG["dtm0_disabled"]:
-            self.test_prefix = 'test-34087-1'
+            self.test_prefix = 'test-34088-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Successfully IOs completed after data pod restart by making "
                     "replicas=1.")
@@ -2110,6 +2110,7 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34087")
+    @pytest.mark.skip("Bucket CRUDs are not supported in DTM0Int0")
     def test_ios_safe_shutdown_pod_restart(self):
         """
         This test tests IOs before and after data pod restart (pod shutdown by making replicas=0)
@@ -2179,7 +2180,7 @@ class TestDataPodRestart:
             user = value[0]
             prefix = value[1]
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(user.values())[0],
-                                                        log_prefix=prefix, skipcleanup=True)
+                                                        log_prefix=prefix)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully performed READ-Verify data written in healthy and "
                     "degraded cluster")
@@ -2188,8 +2189,7 @@ class TestDataPodRestart:
         if CMN_CFG["dtm0_disabled"]:
             self.test_prefix = 'test-34087-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Successfully IOs completed after data pod restart by making "
                     "replicas=1.")
@@ -2199,6 +2199,7 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32456")
+    @pytest.mark.skip("Buckets CRUDs are not supported in DTM0Int0")
     def test_pod_shutdown_kubectl_delete(self):
         """
         Verify IOs before and after data pod failure; pod shutdown deleting pod
