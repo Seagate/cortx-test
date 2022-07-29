@@ -109,6 +109,8 @@ class MotrCoreK8s:
                 if "client" in node["name"]:
                     nodename = node["name"]
                     self.cortx_node_list.append(nodename)
+                    # Todo: Remove debug
+                    logging.debug(f"~~~~~ Added node {nodename} to the cortx_node_list ~~~~~")
                     node_dict[nodename] = {}
                     node_dict[nodename][common_const.MOTR_CLIENT] = []
                     for svc in node["svcs"]:
