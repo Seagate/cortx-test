@@ -21,6 +21,7 @@
 """
 Test suite for testing RGW Process Restart with DTM enabled.
 """
+import copy
 import logging
 import multiprocessing
 import os
@@ -570,11 +571,12 @@ class TestRGWProcessRestart:
         for i_i in range(self.test_cfg["rgw_restart_cnt"]):
             self.log.info("Loop: %s", i_i)
             bkts_to_del = self.system_random.sample(buckets, 50)
-
+            bkts_to_del_copy = copy.deepcopy(bkts_to_del)
             self.log.info("Step 2: Start Continuous DELETEs of buckets %s in background",
                           bkts_to_del)
             args = {'test_prefix': test_prefix, 'test_dir_path': self.test_dir_path,
-                    'skipput': True, 'skipget': True, 'bkt_list': bkts_to_del, 'output': del_output}
+                    'skipput': True, 'skipget': True, 'bkt_list': bkts_to_del_copy,
+                    'output': del_output}
             thread = threading.Thread(target=self.ha_obj.put_get_delete,
                                       args=(event, self.s3_test_obj,), kwargs=args)
             thread.daemon = True  # Daemonize thread
