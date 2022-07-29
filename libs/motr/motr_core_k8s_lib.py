@@ -102,12 +102,15 @@ class MotrCoreK8s:
             decode=True,
         )
         cluster_info = json.loads(response)
+        logging.debug(f"~~~~~ CLUSTER INFO: {cluster_info} \n ~~~~~")
+
         if cluster_info is not None:
             self.profile_fid = cluster_info["profiles"][0]["fid"]
             nodes_data = cluster_info["nodes"]
             for node in nodes_data:
                 if "client" in node["name"]:
-                    nodename = node["name"]
+                    nodename_full = node["name"]
+                    nodename = nodename_full.split(".")[0]
                     self.cortx_node_list.append(nodename)
                     # Todo: Remove debug
                     logging.debug(f"~~~~~ Added node {nodename} to the cortx_node_list ~~~~~")
