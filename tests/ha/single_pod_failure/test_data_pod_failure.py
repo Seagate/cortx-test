@@ -129,11 +129,12 @@ class TestDataPodFailure:
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
         self.bucket_name = f"ha-mp-bkt-{int(perf_counter_ns())}"
         self.object_name = f"ha-mp-obj-{int(perf_counter_ns())}"
-        self.restore_pod = self.restore_method = self.deployment_name = None
+        self.restore_pod = self.restore_method = self.deployment_name = self.set_name = None
         self.deployment_backup = None
         if not os.path.exists(self.test_dir_path):
             sysutils.make_dirs(self.test_dir_path)
         self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
+        self.num_replica = 1
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -153,7 +154,9 @@ class TestDataPodFailure:
                                            restore_method=self.restore_method,
                                            restore_params={"deployment_name": self.deployment_name,
                                                            "deployment_backup":
-                                                               self.deployment_backup})
+                                                               self.deployment_backup,
+                                                           "num_replica": self.num_replica,
+                                                           "set_name": self.set_name})
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} "
                                               "way")
@@ -2848,20 +2851,39 @@ class TestDataPodFailure:
 
         LOGGER.info("Step 1: Perform WRITEs-READs-Verify with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-39976'
+        self.test_prefix = f'test-39976-{perf_counter_ns()}'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects.")
 
+        num_replica = 0
+        LOGGER.info("Get pod to be deleted")
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
+        LOGGER.info("Pod to be deleted is %s", delete_pod)
+        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
+        if set_type == const.STATEFULSET:
+            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
+            assert_utils.assert_true(resp[0], resp)
+            self.num_replica = int(resp[1])
+            num_replica = self.num_replica - 1
+
         LOGGER.info("Step 2: Shutdown random data pod by making replicas=0 and "
                     "verify cluster & remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0])
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
+        if set_type == const.STATEFULSET:
+            self.set_name = resp[1][pod_name]['deployment_name']
+        elif set_type == const.REPLICASET:
+            self.deployment_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")

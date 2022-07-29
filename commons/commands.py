@@ -569,6 +569,9 @@ K8S_CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' "\
 KUBECTL_CREATE_NAMESPACE = "kubectl create ns {}"
 KUBECTL_GET_NAMESPACE = "kubectl get ns"
 KUBECTL_DEL_NAMESPACE = "kubectl delete ns {}"
+KUBECTL_DESCRIBE_POD_CMD = "kubectl describe pod {}"
+KUBECTL_GET_STATEFULSET = "kubectl get sts | grep '{}'"
+KUBECTL_CREATE_STATEFULSET_REPLICA = "kubectl scale statefulset {} --replicas {}"
 
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
@@ -584,7 +587,7 @@ HELM_GET_VALUES = "helm get values {}"
 CLSTR_START_CMD = "cd {}; ./start-cortx-cloud.sh"
 CLSTR_STOP_CMD = "cd {}; ./shutdown-cortx-cloud.sh"
 CLSTR_STATUS_CMD = "cd {}; ./status-cortx-cloud.sh"
-CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh"
+CLSTR_LOGS_CMD = "cd {}; ./logs-cortx-cloud.sh -s solution.yaml --all True"
 PRE_REQ_CMD = "cd $dir; ./prereq-deploy-cortx-cloud.sh -p -d $disk"
 DEPLOY_CLUSTER_CMD = "cd $path; ./deploy-cortx-cloud.sh > $log"
 DESTROY_CLUSTER_CMD = "cd $dir; ./destroy-cortx-cloud.sh --force"
