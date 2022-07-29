@@ -342,7 +342,7 @@ class TestCsmLoad():
         self.log.info("threads_2 = %s", threads_2)
 
         self.log.info("Step 2: Create users in parallel")
-        if loop is not 0:
+        if loop != 0:
             self.log.info("Run intital batch of create csm users")
             result = self.jmx_obj.run_verify_jmx(
                 jmx_file,
@@ -350,7 +350,7 @@ class TestCsmLoad():
                 rampup=1,
                 loop=loop)
             assert result, "Errors reported in the Jmeter execution"
-        if operation_last is not 0:
+        if operation_last != 0:
             self.log.info("Run last batch of create csm users")
             result = self.jmx_obj.run_verify_jmx(
                 jmx_file,
