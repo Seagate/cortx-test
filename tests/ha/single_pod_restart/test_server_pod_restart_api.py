@@ -153,9 +153,7 @@ class TestServerPodRestartAPI:
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
         LOGGER.info("Cleanup: Check cluster status and start it if not up.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        if not resp[0]:
-            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Removing extra files")
         for file in self.extra_files:
             system_utils.remove_file(file)
