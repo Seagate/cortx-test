@@ -243,6 +243,7 @@ class TestCsmLoad():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -292,6 +293,7 @@ class TestCsmLoad():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
+    # pylint: disable=too-many-statements
     @pytest.mark.skip(reason="not_in_main_build_yet")
     @pytest.mark.lc
     @pytest.mark.jmeter
@@ -365,7 +367,7 @@ class TestCsmLoad():
         current_users = user_data_new['users']
         self.log.info("List initial user  : %s", init_users)
         self.log.info("List current user : %s", current_users)
-        delete_user_list = [ ele for ele in current_users ]
+        delete_user_list = current_users
         for user in init_users:
             if user in current_users:
                 delete_user_list.remove(user)
