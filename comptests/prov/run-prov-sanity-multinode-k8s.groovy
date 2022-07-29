@@ -13,7 +13,7 @@ pipeline {
 		stage('CODE_CHECKOUT') {
 			steps{
 			    cleanWs()
-			    checkout([$class: 'GitSCM', branches: [[name: '*/SANITY_TESTCASES_CHANGES']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
+			    checkout([$class: 'GitSCM', branches: [[name: '*/SANITY_TESTCASES_CHANGES']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/aayushisharma88/cortx-test-1.git']]])
 			}
 		}
 		stage('ENV_SETUP') {
