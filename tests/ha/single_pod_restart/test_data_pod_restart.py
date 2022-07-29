@@ -2067,10 +2067,11 @@ class TestDataPodRestart:
 
         LOGGER.info("Step 4: Start IOs (create s3 acc, buckets and upload objects) after pod "
                     "shutdown by making replicas=0.")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.s3_clean.update(users)
-        self.test_prefix = 'test-34088-deg'
-        workload_info[2] = [users, self.test_prefix]
+        if CMN_CFG["dtm0_disabled"]:
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.s3_clean.update(users)
+            self.test_prefix = 'test-34088-deg'
+            workload_info[2] = [users, self.test_prefix]
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipcleanup=True)
@@ -2155,10 +2156,11 @@ class TestDataPodRestart:
 
         LOGGER.info("Step 4: Start IOs (create s3 acc, buckets and upload objects) after pod "
                     "shutdown by making replicas=0.")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.s3_clean.update(users)
-        self.test_prefix = 'test-34087-deg'
-        workload_info[2] = [users, self.test_prefix]
+        if CMN_CFG["dtm0_disabled"]:
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.s3_clean.update(users)
+            self.test_prefix = 'test-34087-deg'
+            workload_info[2] = [users, self.test_prefix]
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipcleanup=True)
