@@ -1470,10 +1470,9 @@ class TestDataPodRestart:
     @pytest.mark.tags("TEST-34079")
     def test_ios_during_pod_restart(self):
         """
-        This test tests continuous READs/WRITEs/DELETEs in loop during data pod restart
+        This test tests READs/WRITEs/DELETEs in loop during data pod restart
         """
-        LOGGER.info("STARTED: Test to verify continuous READs/WRITEs/DELETEs in loop during data "
-                    "pod restart")
+        LOGGER.info("STARTED: Test to verify READs/WRITEs/DELETEs in loop during data pod restart")
         LOGGER.info("STEP 1: Perform WRITEs/READs/Verify with variable object sizes")
         users_org = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34079'
@@ -1535,9 +1534,9 @@ class TestDataPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs with variable sizes objects for parallel READs.")
         LOGGER.info("Starting three independent background threads for READs, WRITEs & DELETEs.")
-        LOGGER.info("Step 5: Start Continuous DELETEs in background on random %s buckets",
+        LOGGER.info("Step 5: Start continuous DELETEs in background on random %s buckets",
                     del_bucket)
-        bucket_list = list(s3_data)
+        bucket_list = s3_data.keys()
         get_random_buck = self.system_random.sample(bucket_list, del_bucket)
         args = {'test_prefix': test_prefix_del, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkt_list': get_random_buck, 'output': del_output}
@@ -1566,8 +1565,10 @@ class TestDataPodRestart:
                                      kwargs=args)
         thread_rd.daemon = True  # Daemonize thread
         thread_rd.start()
-        LOGGER.info("Step 6: Successfully started READs and verified DI on the written data in "
+        LOGGER.info("Step 6: Successfully started READs and verify on the written data in "
                     "background")
+        LOGGER.info("Wait for %s seconds for all background operations to start",
+                    HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Step 7: Starting pod again by creating deployment using K8s command")
         event.set()
@@ -1597,9 +1598,10 @@ class TestDataPodRestart:
         fail_del_bkt = del_resp[1]
         rem_bkts_aftr_del = s3_test_obj.bucket_list()[1]
         assert_utils.assert_false(len(fail_del_bkt),
-                                  f"Bucket deletion failed when cluster was online {fail_del_bkt}")
-        assert_utils.assert_true(len(rem_bkts_aftr_del) < del_bucket,
-                                 "Some bucket deletion expected during pods going down")
+                                  "Bucket deletion failed when cluster was degraded"
+                                  f" {fail_del_bkt}")
+        assert_utils.assert_equals(len(rem_bkts_aftr_del), del_bucket,
+                                 "All buckets are expected to be deleted while pod restarted")
         LOGGER.info("Step 8.1: Verified status for In-flight DELETEs")
         LOGGER.info("Step 8.2: Verify status for In-flight WRITEs")
         responses_wr = dict()
@@ -1609,10 +1611,8 @@ class TestDataPodRestart:
         fail_logs = list(x[1] for x in responses_wr["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
-        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
-                                 f"Logs which contain pass: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
+        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         LOGGER.info("Step 8.2: Verified status for In-flight WRITEs")
         LOGGER.info("Step 8.3: Verify status for In-flight READs/Verify DI")
         responses_rd = dict()
@@ -1622,10 +1622,8 @@ class TestDataPodRestart:
         fail_logs = list(x[1] for x in responses_rd["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        # TODO: Expecting Failures when data pods going down. Re-test once CORTX-28541 is Resolved
-        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
-                                 f"Logs which contain pass: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
+        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         LOGGER.info("Step 8.3: Verified status for In-flight READs/Verify DI")
         LOGGER.info("Step 8: Verified status for In-flight READs/WRITEs/DELETEs while data pod %s "
                     "was restarted.", pod_name)
@@ -1637,7 +1635,7 @@ class TestDataPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Verified READ/Verify on data written in healthy mode and deleted "
                     "buckets")
-        LOGGER.info("COMPLETED: Test to verify continuous READs/WRITEs/DELETEs in loop during data "
+        LOGGER.info("COMPLETED: Test to verify READs/WRITEs/DELETEs in loop during data "
                     "pod restart")
 
     # pylint: disable=C0321
@@ -1645,11 +1643,11 @@ class TestDataPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Bucket CRUDs not supported with DTM0Int0")
     @pytest.mark.tags("TEST-34078")
-    def test_continuous_deletes_during_pod_restart(self):
+    def test_deletes_during_pod_restart(self):
         """
-        This test tests continuous DELETEs during pod restart
+        This test tests DELETEs during pod restart
         """
-        LOGGER.info("STARTED: Test to verify continuous DELETEs during data pod restart.")
+        LOGGER.info("STARTED: Test to verify DELETEs during data pod restart.")
         LOGGER.info("STEP 1: Perform WRITEs/READs/Verify with variable object sizes")
         users_org = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34078-org'
@@ -1705,20 +1703,18 @@ class TestDataPodRestart:
                                                            f"of buckets. Created {len(buckets)} "
                                                            f"number of buckets")
         LOGGER.info("Step 3: Successfully performed WRITEs with variable object sizes.")
-        LOGGER.info("Step 4: Verify %s has %s buckets created", self.s3acc_name, wr_bucket)
-        buckets = s3_test_obj.bucket_list()
-        assert_utils.assert_equal(wr_bucket, len(buckets[1]), buckets)
-        LOGGER.info("Step 4: Verified %s has %s buckets created", self.s3acc_name, wr_bucket)
-        LOGGER.info("Step 5: Start Continuous DELETEs in background on %s buckets", del_bucket)
+        LOGGER.info("Step 4: Start Continuous DELETEs in background on %s buckets", del_bucket)
+        get_random_buck = self.system_random.sample(buckets, del_bucket)
         args = {'test_prefix': self.test_prefix_deg, 'test_dir_path': self.test_dir_path,
-                'skipput': True, 'skipget': True, 'bkts_to_del': del_bucket, 'output': del_output}
+                'bkt_list': get_random_buck, 'skipput': True, 'skipget': True, 'bkts_to_del':
+                    del_bucket, 'output': del_output}
         thread = threading.Thread(target=self.ha_obj.put_get_delete,
                                   args=(event, s3_test_obj,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
-        LOGGER.info("Step 5: Successfully started continuous DELETEs in background on %s buckets",
+        LOGGER.info("Step 4: Successfully started continuous DELETEs in background on %s buckets",
                     del_bucket)
-        LOGGER.info("Step 6: Starting pod again by creating deployment using K8s command")
+        LOGGER.info("Step 5: Starting pod again by creating deployment using K8s command")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
@@ -1728,11 +1724,11 @@ class TestDataPodRestart:
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 6: Successfully started the pod again by creating deployment")
+        LOGGER.info("Step 5: Successfully started the pod again by creating deployment")
         self.restore_pod = False
         event.clear()
         thread.join()
-        LOGGER.info("Step 7: Verify status for In-flight DELETEs while pod was"
+        LOGGER.info("Step 6: Verify status for In-flight DELETEs while pod was"
                     "restarting are successful & check the remaining buckets.")
         del_resp = ()
         while len(del_resp) != 2:
@@ -1745,9 +1741,9 @@ class TestDataPodRestart:
         assert_utils.assert_equal(wr_bucket - del_bucket, len(buckets),
                                   f"Failed to delete {del_bucket} number of buckets from "
                                   f"{wr_bucket}. Remaining {len(buckets)} number of buckets")
-        LOGGER.info("Step 7: Verified status for In-flight DELETEs while pod was"
+        LOGGER.info("Step 6: Verified status for In-flight DELETEs while pod was"
                     "restarting are successful & remaining buckets count is %s", len(buckets))
-        LOGGER.info("Step 8: Verify read on the remaining %s buckets.", buckets)
+        LOGGER.info("Step 7: Verify read on the remaining %s buckets.", buckets)
         rd_output = Queue()
         new_s3data = {}
         for bkt in buckets:
@@ -1769,14 +1765,14 @@ class TestDataPodRestart:
                                                      "operations. Found failures in READ: "
                                                      f"{fail_bkt_get} {event_bkt_get}"
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
-        LOGGER.info("Step 8: Successfully verified READs & DI check for remaining buckets: %s",
+        LOGGER.info("Step 7: Successfully verified READs & DI check for remaining buckets: %s",
                     buckets)
-        LOGGER.info("Step 9: Check READ/Verify on data written in healthy mode and delete buckets")
+        LOGGER.info("Step 8: Check READ/Verify on data written in healthy mode and delete buckets")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_org.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
                                                     setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 9: READ/Verify on data written in degraded mode was successful and "
+        LOGGER.info("Step 8: READ/Verify on data written in degraded mode was successful and "
                     "buckets deleted.")
         LOGGER.info("COMPLETED: Test to verify continuous DELETEs during data pod restart.")
 
