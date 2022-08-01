@@ -2017,8 +2017,8 @@ class TestDataPodRestart:
         LOGGER.info("STARTED: Test to verify IOs before & after RC data pod restart")
 
         workload_info = dict()
-        LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects) with variable "
-                    "object sizes")
+        LOGGER.info("Step 1: Start IOs with variable object sizes")
+        LOGGER.info("Create IAM user")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
         self.test_prefix = 'test-34088'
@@ -2063,9 +2063,9 @@ class TestDataPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Successfully performed READ-Verify data written in healthy cluster")
 
-        LOGGER.info("Step 4: Start IOs (create s3 acc, buckets and upload objects) after pod "
-                    "shutdown by making replicas=0.")
+        LOGGER.info("Step 4: Start IOs after pod shutdown by making replicas=0.")
         if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create new IAM user, buckets and run IOs")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.s3_clean.update(users)
             self.test_prefix = 'test-34088-deg'
@@ -2083,7 +2083,8 @@ class TestDataPodRestart:
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 5: Successfully started the pod again by making replicas=1")
+        LOGGER.info("Step 5: Successfully started the pod again by making replicas=1 and checked "
+                    "cluster status")
         self.restore_pod = False
 
         LOGGER.info("Step 6: READ-Verify data written in healthy and degraded cluster")
@@ -2098,7 +2099,10 @@ class TestDataPodRestart:
 
         LOGGER.info("Step 7: Start IOs again after data pod restart by making replicas=1.")
         if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create new IAM user, buckets and run IOs")
+            users = self.mgnt_ops.create_account_users(nusers=1)
             self.test_prefix = 'test-34088-1'
+            self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
@@ -2118,8 +2122,8 @@ class TestDataPodRestart:
                     "by making replicas=0).")
 
         workload_info = dict()
-        LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects) with variable "
-                    "object sizes")
+        LOGGER.info("Step 1: Start IOs with variable object sizes")
+        LOGGER.info("Create IAM user")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
         self.test_prefix = 'test-34087'
@@ -2152,9 +2156,9 @@ class TestDataPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Successfully performed READ-Verify data written in healthy cluster")
 
-        LOGGER.info("Step 4: Start IOs (create s3 acc, buckets and upload objects) after pod "
-                    "shutdown by making replicas=0.")
+        LOGGER.info("Step 4: Start IOs after pod shutdown by making replicas=0.")
         if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create new IAM user, buckets and run IOs")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.s3_clean.update(users)
             self.test_prefix = 'test-34087-deg'
@@ -2187,7 +2191,10 @@ class TestDataPodRestart:
 
         LOGGER.info("Step 7: Start IOs again after data pod restart by making replicas=1.")
         if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create new IAM user, buckets and run IOs")
+            users = self.mgnt_ops.create_account_users(nusers=1)
             self.test_prefix = 'test-34087-1'
+            self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
@@ -2209,7 +2216,7 @@ class TestDataPodRestart:
                     "pod shutdown by deleting pod using kubectl delete.")
 
         LOGGER.info("STEP 1: Create IAM user and perform WRITEs-READs-Verify with "
-                    "variable object sizes. 0B + (1KB - 512MB)")
+                    "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-32456'
         self.s3_clean = users
