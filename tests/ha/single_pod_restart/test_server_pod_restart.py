@@ -180,7 +180,7 @@ class TestServerPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects")
         num_replica = self.num_replica - 1
-        LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
+        LOGGER.info("Step 2: Shutdown server pod with replica method and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
@@ -274,7 +274,7 @@ class TestServerPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
         num_replica = self.num_replica - 1
-        LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
+        LOGGER.info("Step 2: Shutdown server pod with replica method and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
@@ -354,7 +354,7 @@ class TestServerPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
         num_replica = self.num_replica - 1
-        LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
+        LOGGER.info("Step 2: Shutdown server pod with replica method and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
@@ -435,8 +435,9 @@ class TestServerPodRestart:
         del_output = Queue()
         deg_output = Queue()
         wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
-        del_bucket = wr_bucket - 100
-        deg_bucket = 50
+        del_bucket = wr_bucket - HA_CFG["s3_bucket_data"]["no_bck_writes"]
+        new_bkt = wr_bucket - del_bucket
+        deg_bucket = HA_CFG["s3_bucket_data"]["degraded_bucket"]
         event = threading.Event()
         LOGGER.info("Step 1: Perform WRITEs with variable object sizes.")
         LOGGER.info("Create IAM user with name %s", self.s3acc_name)
@@ -466,7 +467,7 @@ class TestServerPodRestart:
                                                            f"number of buckets")
         LOGGER.info("Step 1: Successfully performed WRITEs with variable object sizes.")
         num_replica = self.num_replica - 1
-        LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
+        LOGGER.info("Step 2: Shutdown server pod with replica method and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
@@ -492,7 +493,6 @@ class TestServerPodRestart:
         while len(del_resp) != 2:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         remain_bkt = s3_test_obj.bucket_list()[1]
-        new_bkt = wr_bucket - del_bucket
         assert_utils.assert_equal(len(remain_bkt), new_bkt,
                                   f"Failed to delete {del_bucket} number of buckets from "
                                   f"{wr_bucket}. Remaining {len(remain_bkt)} number of buckets")
@@ -559,7 +559,7 @@ class TestServerPodRestart:
                                                      "operations. Found failures in READ: "
                                                      f"{fail_bkt_get} {event_bkt_get}"
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
-        LOGGER.info("Step 7: Successfully verified READs and DI check for remaining buckets: %s",
+        LOGGER.info("Step 7: Successfully verify READs and DI check for remaining buckets: %s",
                     remain_bkt)
         LOGGER.info("Step 8: Again create %s buckets and put variable size objects and perform "
                     "delete on %s buckets", wr_bucket, del_bucket)
@@ -609,7 +609,7 @@ class TestServerPodRestart:
                                                      "operations. Found failures in READ: "
                                                      f"{fail_bkt_get} {event_bkt_get}"
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
-        LOGGER.info("Step 9: Successfully verified READs and DI check for remaining buckets: %s",
+        LOGGER.info("Step 9: Successfully verify READs and DI check for remaining buckets: %s",
                     buckets1)
         LOGGER.info("ENDED: Test to verify DELETEs after server pod restart.")
 
@@ -632,7 +632,7 @@ class TestServerPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs-Verify with variable sizes objects.")
         num_replica = self.num_replica - 1
-        LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
+        LOGGER.info("Step 2: Shutdown server pod with replica method and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
@@ -669,9 +669,9 @@ class TestServerPodRestart:
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
-        LOGGER.info("Step 4: Successfully started READs and verified DI on data written in healthy"
+        LOGGER.info("Step 4: Successfully started READs and verify DI on data written in healthy"
                     " cluster in background ")
-        LOGGER.info("Step 5: Starting pod again by replicas=0")
+        LOGGER.info("Step 5: Restart the pod with replica method")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
@@ -683,7 +683,7 @@ class TestServerPodRestart:
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 5: Successfully started the pod by replicas=0")
+        LOGGER.info("Step 5: Successfully restart the pod with replica method")
         self.restore_pod = False
         event.clear()
         thread.join()
@@ -692,15 +692,14 @@ class TestServerPodRestart:
         while len(responses) != 2:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
-        LOGGER.debug("Pass logs list: %s", pass_logs)
         fail_logs = list(x[1] for x in responses["fail_res"])
-        LOGGER.debug("Fail logs list: %s", fail_logs)
-        pass_logs1 = fail_logs1 = list()
-        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs + pass_logs1)
+        LOGGER.debug("Pass logs list: %s \nFail logs list: %s", pass_logs, fail_logs)
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs + fail_logs1)
-        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        LOGGER.info("Step 6: Successfully completed READs and verified DI on the data written in "
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
+                                 f"Logs which contain passed IOs: {resp[1]}")
+        LOGGER.info("Step 6: Successfully completed READs and verify DI on the data written in "
                     "healthy cluster in background")
         LOGGER.info("Step 7: Perform READ-Verify on data written in degraded mode")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
