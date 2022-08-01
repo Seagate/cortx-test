@@ -246,9 +246,16 @@ class TestCorruptDataDetection:
         logger.info("STARTED: Emap corruption workflow")
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
-        err_inj_script_path = const.MOTR_DI_ERR_INJ_LOCAL_PATH
+
+        err_inj_script_path = str(const.MOTR_DI_ERR_INJ_LOCAL_PATH)
+        logger.debug(f"Printing const: {err_inj_script_path}")
+
         remote_script_path = const.CONTAINER_PATH
+        logger.debug(f"Printing const: {remote_script_path}")
+
         motr_container_name = str(const.MOTR_CONTAINER_PREFIX) + "-001"
+        logger.debug(f"Printing const: {motr_container_name}")
+
         node_data_pod_dict = self.motr_obj.get_node_data_pod_dict()
         logger.debug(f"node_data_pod_dict = {node_data_pod_dict}")
         # motr_client_num = self.motr_obj.get_number_of_motr_clients()
@@ -292,6 +299,8 @@ class TestCorruptDataDetection:
         # Todo: Copy the emap script
         #  Trying on first data pod only ---- Then on all pods run this in for loop
 
+        logger.debug(f"node_data_pod_dict = {POD_NAME_PREFIX}")
+
         pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
         for pod in pod_list:
             logger.debug(f"in pod = {pod}")
@@ -301,6 +310,7 @@ class TestCorruptDataDetection:
                 remote_script_path,
                 motr_container_name
             )
+
             if not result:
                 raise FileNotFoundError
 
