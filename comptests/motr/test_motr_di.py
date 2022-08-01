@@ -291,7 +291,7 @@ class TestCorruptDataDetection:
         #  Trying on first data pod only ---- Then on all pods run this in for loop
         for ndp_dict_key, ndp_dict_val in node_data_pod_dict.items():
             # self.motr_obj.copy_file_to_remote_container(list(node_data_pod_dict.keys())[0])
-            logger.debug(f" Copying to data pod = {ndp_dict_val}")
+            logger.debug(f" Copying emap to data pod = {ndp_dict_val}")
             self.motr_obj.copy_file_to_remote_container(ndp_dict_val)
 
         # # Todo: and run Emap

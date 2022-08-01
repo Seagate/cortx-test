@@ -287,9 +287,12 @@ class MotrCoreK8s:
         :node_pod: on which node_pod file needs to be copied
         """
         try:
+            # Todo: remove debug
+            log.debug("Copying emap file to remote container")
+
             cmd = common_cmd.HA_COPY_CMD.format(
                 common_const.MOTR_DI_ERR_INJ_SCRIPT_PATH,
-                self.node_pod_dict[node_pod],
+                node_pod,
                 common_const.MOTR_DI_ERR_INJ_SCRIPT_PATH,
             )  # nosec
             log.info("Copying file to remote container")
