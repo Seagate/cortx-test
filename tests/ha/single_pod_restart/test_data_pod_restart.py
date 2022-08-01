@@ -2059,7 +2059,7 @@ class TestDataPodRestart:
         LOGGER.info("Step 3: READ-Verify data written in healthy cluster")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Successfully performed READ-Verify data written in healthy cluster")
 
@@ -2072,7 +2072,7 @@ class TestDataPodRestart:
             workload_info[2] = [users, self.test_prefix]
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Successfully IOs completed after pod shutdown by making replicas=0.")
 
@@ -2088,11 +2088,11 @@ class TestDataPodRestart:
         self.restore_pod = False
 
         LOGGER.info("Step 6: READ-Verify data written in healthy and degraded cluster")
-        for _, value in workload_info.items():
+        for value in workload_info.values():
             user = value[0]
             prefix = value[1]
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(user.values())[0],
-                                                        log_prefix=prefix)
+                                                        log_prefix=prefix, setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully performed READ-Verify data written in healthy and "
                     "degraded cluster")
@@ -2104,7 +2104,8 @@ class TestDataPodRestart:
             self.test_prefix = 'test-34088-1'
             self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Successfully IOs completed after data pod restart by making "
                     "replicas=1.")
@@ -2152,7 +2153,7 @@ class TestDataPodRestart:
         LOGGER.info("Step 3: READ-Verify data written in healthy cluster")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Successfully performed READ-Verify data written in healthy cluster")
 
@@ -2165,7 +2166,7 @@ class TestDataPodRestart:
             workload_info[2] = [users, self.test_prefix]
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Successfully IOs completed after pod shutdown by making replicas=0.")
 
@@ -2184,7 +2185,7 @@ class TestDataPodRestart:
             user = value[0]
             prefix = value[1]
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(user.values())[0],
-                                                        log_prefix=prefix)
+                                                        log_prefix=prefix, setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully performed READ-Verify data written in healthy and "
                     "degraded cluster")
@@ -2196,7 +2197,8 @@ class TestDataPodRestart:
             self.test_prefix = 'test-34087-1'
             self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Successfully IOs completed after data pod restart by making "
                     "replicas=1.")
@@ -2255,7 +2257,8 @@ class TestDataPodRestart:
             self.test_prefix = 'test-32456-1'
             self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
