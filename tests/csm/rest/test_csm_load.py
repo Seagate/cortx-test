@@ -99,6 +99,8 @@ class TestCsmLoad():
             else:
                 self.log.error("Bucket deletion failed for %s ", bucket)
         self.log.info("buckets deleted %s", buckets_deleted)
+        for bucket in buckets_deleted:
+            self.buckets_created.remove(bucket)
 
         admin_usr = CSM_REST_CFG["csm_admin_user"]["username"]
         admin_pwd = CSM_REST_CFG["csm_admin_user"]["password"]
@@ -110,10 +112,9 @@ class TestCsmLoad():
             else:
                 self.log.error("IAM deletion failed for %s ", iam_user)
         self.log.info("IAMs deleted %s", iam_deleted)
-        for bucket in buckets_deleted:
-            self.buckets_created.remove(bucket)
         for iam in iam_deleted:
             self.iam_users_created.remove(iam)
+
         if self.default_cpu_usage:
             self.log.info("\nStep 4: Resolving CPU usage fault. ")
             self.log.info("Updating default CPU usage threshold value")
@@ -160,20 +161,33 @@ class TestCsmLoad():
 
         for user in data.keys():
             self.iam_users_created.append(user)
+            username = user
             for bucket_data in data.values():
                 for bucket in bucket_data['buckets']:
-                    self.buckets_created.append([bucket, 
+                    self.buckets_created.append([bucket,
                                                 bucket_data['accesskey'],
-                                                bucket_data['secretkey']]) 
+                                                bucket_data['secretkey']])
 
         run_data_chk_obj = RunDataCheckManager(users=data)
         pref_dir = {"prefix_dir": 'test_44788'}
         run_data_chk_obj.start_io_async(
             users=data, buckets=None, files_count=test_cfg["files_count"], prefs=pref_dir)
 
-
-        time.sleep(4)
-
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        fieldnames = ["user"]
+        content.append({fieldnames[0]: username})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+        jmx_file = "CSM_Poll_User_Capacity.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file,
+            threads=test_cfg["threads"],
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
+        assert result, "Errors reported in the Jmeter execution"
 
         stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True)
         self.log.info("stop_res -  %s", stop_res)
@@ -198,9 +212,9 @@ class TestCsmLoad():
             self.iam_users_created.append(user)
             for bucket_data in data.values():
                 for bucket in bucket_data['buckets']:
-                    self.buckets_created.append([bucket, 
+                    self.buckets_created.append([bucket,
                                                 bucket_data['accesskey'],
-                                                bucket_data['secretkey']]) 
+                                                bucket_data['secretkey']])
 
         run_data_chk_obj = RunDataCheckManager(users=data)
         pref_dir = {"prefix_dir": 'test_44794'}
