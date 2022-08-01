@@ -289,6 +289,10 @@ class TestCorruptDataDetection:
         # ON THE DATA POD: ==========>>>>>>
 
         for node_pod in node_pod_dict:
+            logger.debug(f"self.master_node_list[0] = {self.master_node_list[0]}")
+            logger.debug(f"const.CONTAINER_PATH, {const.CONTAINER_PATH,}")
+            logger.debug(f"const.MOTR_CONTAINER_PREFIX + \"-001\" = {const.MOTR_CONTAINER_PREFIX} "
+                         f"-001")
             result = self.master_node_list[0].copy_file_to_container(
                 "error_injection.py",
                 node_pod,
