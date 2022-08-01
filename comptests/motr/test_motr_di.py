@@ -246,6 +246,9 @@ class TestCorruptDataDetection:
         logger.info("STARTED: Emap corruption workflow")
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
+        err_inj_script_path = const.MOTR_DI_ERR_INJ_LOCAL_PATH
+        remote_script_path = const.CONTAINER_PATH,
+        motr_container_name = const.MOTR_CONTAINER_NAME
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         node_data_pod_dict = self.motr_obj.get_node_data_pod_dict()
         logger.debug(f"node_data_pod_dict = {node_data_pod_dict}")
@@ -297,10 +300,10 @@ class TestCorruptDataDetection:
             #  container_path,
             #  container_name):
             result = self.master_node_list[0].copy_file_to_container(
-                const.MOTR_DI_ERR_INJ_LOCAL_PATH,
+                err_inj_script_path,
                 pod,
-                const.CONTAINER_PATH,
-                const.MOTR_CONTAINER_NAME
+                remote_script_path,
+                motr_container_name
             )
             if not result:
                 raise FileNotFoundError
