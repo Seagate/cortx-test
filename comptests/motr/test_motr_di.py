@@ -250,12 +250,12 @@ class TestCorruptDataDetection:
         # ON THE DATA POD: ==========>>>>>>
         # Todo: Copy the emap script to controller pod's root dir>>>>>>>>>>>>>>>>>>>>
         # err_inj_script_path = str(const.MOTR_DI_ERR_INJ_LOCAL_PATH)
-        err_inj_script_path = str(MOTR_DI_ERR_INJ_LOCAL_PATH)  # Taken from params
+        # err_inj_script_path = str(MOTR_DI_ERR_INJ_LOCAL_PATH)  # Taken from params
         # /root/pranavdev/cortx-test/scripts/server_scripts/error_injection.py on master does not
         # exist
         # This exists on the client = local path
-        copy_status, resp = self.motr_obj.master_node.copy_file_to_remote(
-            str(MOTR_DI_ERR_INJ_LOCAL_PATH),
+        copy_status, resp = self.motr_obj.master_node_list[0].copy_file_to_remote(
+            MOTR_DI_ERR_INJ_LOCAL_PATH,
             const.HA_TMP
         )
         if not copy_status:
@@ -264,9 +264,6 @@ class TestCorruptDataDetection:
         else:
             logger.debug(f"copy failed,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
         # Todo: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-        # MOTR_DI_ERR_INJ_LOCAL_PATH
-        logger.debug(f"Printing const: {err_inj_script_path}")
 
         remote_script_path = const.CONTAINER_PATH
         logger.debug(f"Printing const: {remote_script_path}")
