@@ -243,7 +243,7 @@ class TestCorruptDataDetection:
         and corrupt single parity block with emap script and
         validate the corruption M0CAT.
         """
-        logger.info("STARTED: m0cp, corrupt and m0cat workflow")
+        logger.info("STARTED: Emap corruption workflow")
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
         node_pod_dict = self.motr_obj.get_node_pod_dict()
@@ -277,16 +277,20 @@ class TestCorruptDataDetection:
                     b_size, cnt_c, object_id, layout, infile, node_pod, 0
                 )  # client_num
 
+                # todo: Remove this object cleaning from here after use:
+                self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
+
                 # self.motr_obj.parse_m0trace_log()
                 # self.motr_obj.read_m0trace_log()
-
+        logger.debug(f"object_id_list is: ###### {object_id_list}")
         # ON THE DATA POD: ==========>>>>>>
         # Todo: Copy the emap script
-        #  Trying on first data pod only ---- Then on all pods run this
+        #  Trying on first data pod only ---- Then on all pods run this in for loop
         self.motr_obj.copy_file_to_remote_container(node_data_pod_dict[0])
+
         # # Todo: and run Emap
         # self.motr_corruption_obj.inject_checksum_corruption()
-        #
+
         # # Todo: need to restart m0tr container for taking emap effect
         #
 
