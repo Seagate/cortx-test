@@ -102,7 +102,6 @@ class MotrCoreK8s:
             decode=True,
         )
         cluster_info = json.loads(response)
-        logging.debug(f"~~~~~ CLUSTER INFO: {cluster_info} \n ~~~~~")
 
         if cluster_info is not None:
             self.profile_fid = cluster_info["profiles"][0]["fid"]
@@ -269,14 +268,18 @@ class MotrCoreK8s:
         """
 
         cmd = common_cmd.CREATE_FILE.format("/dev/urandom", file, b_size, count)  # nosec
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+            decode=True,
+        )
         log.info("DD Resp: %s", resp)
 
-        assert_utils.assert_not_in("ERROR" or "Error", resp,
-                                   f'"{cmd}" Failed, Please check the log')
+        assert_utils.assert_not_in(
+            "ERROR" or "Error", resp, f'"{cmd}" Failed, Please check the log'
+        )
 
     def copy_file_to_remote_container(self, node_pod):
         """
