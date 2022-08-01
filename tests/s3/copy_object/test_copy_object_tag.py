@@ -824,7 +824,7 @@ class TestCopyObjectsTag():
             tag_str = tag_str + "{}{}".format(self.key_src, str(num)) + "=" \
                       + "{}{}".format(self.value_src, str(num)) + "&"
         resp = self.complete_multipart_upload_with_tagging(self.bucket_name1,
-                                                          self.object_name1+"mpu",
+                                                          self.object_name1,
                                                           self.file_path,
                                                           total_parts=2,
                                                           file_size=10,
@@ -844,7 +844,7 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]..replace('"', '')
+        put_etag = resp[1]["ETag"].replace('"', '')
         self.log.info("Step 3: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -909,7 +909,7 @@ class TestCopyObjectsTag():
             tag_str = tag_str + "{}{}".format(self.key_src, str(num)) + "=" \
                       + "{}{}".format(self.value_src, str(num)) + "&"
         resp = self.complete_multipart_upload_with_tagging(self.bucket_name1,
-                                                           self.object_name1+"mpu",
+                                                           self.object_name1,
                                                            self.file_path,
                                                            total_parts=2,
                                                            file_size=10,
@@ -933,7 +933,7 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]..replace('"', '')
+        put_etag = resp[1]["ETag"].replace('"', '')
         self.log.info("Step 3: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
