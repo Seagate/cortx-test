@@ -27,20 +27,13 @@ from time import perf_counter_ns
 import logging
 import pytest
 
-# from commons import error_messages as errmsg
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.params import TEST_DATA_FOLDER
 from config.s3 import S3_CFG
-# from config import CMN_CFG
 from config.s3 import S3_OBJ_TST
-# from scripts.s3_bench import s3bench
-# from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
-# from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
-# from libs.s3.s3_acl_test_lib import S3AclTestLib
-# from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 
 
@@ -70,11 +63,6 @@ class TestCopyObjectsTag():
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
-        # self.rest_obj = S3AccountOperations()
-        # self.account_list = []
-        # self.account_name1 = "acc1-copyobject-{}".format(perf_counter_ns())
-        # self.account_name2 = "acc2-copyobject-{}".format(perf_counter_ns())
-        # self.io_bucket_name = "iobkt1-copyobject-{}".format(perf_counter_ns())
         self.bucket_name1 = "bkt1-copyobject-{}".format(perf_counter_ns())
         self.bucket_name2 = "bkt2-copyobject-{}".format(perf_counter_ns())
         self.object_name1 = "obj1-copyobject-{}".format(perf_counter_ns())
@@ -84,19 +72,7 @@ class TestCopyObjectsTag():
         self.key_dest = S3_OBJ_TST["s3_object"]["key"] + "-dest"
         self.value_dest = S3_OBJ_TST["test_9413"]["value"] + "-dest"
         self.mb_count = S3_OBJ_TST["s3_object"]["mb_count"]
-        # self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
         self.file_path = os.path.join(self.test_dir_path, self.object_name1)
-        # self.download_path = os.path.join(
-        #     self.test_dir_path, self.object_name2)
-        # status, self.response1 = self.create_s3cortxcli_acc(
-        #     self.account_name1, "{}@seagate.com".format(
-        #         self.account_name1), self.s3acc_passwd)
-        # assert_utils.assert_true(status, self.response1)
-        # status, self.response2 = self.create_s3cortxcli_acc(
-        #     self.account_name2, "{}@seagate.com".format(
-        #         self.account_name2), self.s3acc_passwd)
-        # assert_utils.assert_true(status, self.response2)
-        # self.parallel_ios = None
         self.log.info("Creating a source bucket: %s", self.bucket_name1)
         resp = self.s3_test_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
@@ -108,27 +84,16 @@ class TestCopyObjectsTag():
         self.log.info("ENDED: test setup.")
         yield
         self.log.info("STARTED: test teardown.")
-        # self.log.info("Deleting all buckets/objects created during TC execution")
-        # if self.parallel_ios:
-        #     if self.parallel_ios.is_alive():
-        #         self.parallel_ios.join()
         bucket_list = self.s3_test_obj.bucket_list()[1]
         pref_list = [
             each_bucket for each_bucket in bucket_list if each_bucket in [
                 self.bucket_name1,
-                self.io_bucket_name,
                 self.bucket_name2]]
         if pref_list:
             resp = self.s3_test_obj.delete_multiple_buckets(pref_list)
             assert_utils.assert_true(resp[0], resp[1])
         if system_utils.path_exists(self.file_path):
-            system_utils.remove_file(self.file_pathpath)
-        for response in [self.response1, self.response2]:
-            if response:
-                bucket_list = response[1].bucket_list()[1]
-                if bucket_list:
-                    resp = response[1].delete_multiple_buckets(bucket_list)
-                    assert_utils.assert_true(resp[0], resp[1])
+            system_utils.remove_file(self.file_path)
         self.log.info("ENDED: test teardown.")
 
     def create_put_set_object_tag(self, bucket_name, obj_name, file_path, **kwargs):
@@ -141,6 +106,7 @@ class TestCopyObjectsTag():
         :param file_path: Path of the file
         :mb_count: Size of file in MB
         :param tag_count: Number of tags to be set
+        :return: Etag of Put object
         """
         mb_count = kwargs.get("mb_count", None)
         key = kwargs.get("key", None)
@@ -148,12 +114,12 @@ class TestCopyObjectsTag():
         tag_count = kwargs.get("tag_count", 1)
         system_utils.create_file(file_path, mb_count)
         self.log.info("Uploading an object %s to bucket %s", obj_name, bucket_name)
-        resp = self.s3_test_obj.put_object(bucket_name, obj_name, file_path)
-        assert resp[0], resp[1]
+        put_resp = self.s3_test_obj.put_object(bucket_name, obj_name, file_path)
+        assert put_resp[0], put_resp[1]
         self.log.info("Setting tag to an object %s", obj_name)
         resp = self.tag_obj.set_object_tag(bucket_name, obj_name, key, value, tag_count=tag_count)
         assert resp[0], resp[1]
-        return resp
+        return put_resp[1]["ETag"]
 
     def copy_obj_di_check(self, src_bucket, src_object, dest_bucket, dest_object, **kwargs):
         """
@@ -182,12 +148,12 @@ class TestCopyObjectsTag():
         assert_utils.assert_true(resp_meta2[0], resp_meta2[1])
         assert_utils.assert_dict_equal(resp_meta1[1]["Metadata"],
                                        resp_meta2[1]["Metadata"])
-        self.log.info("Step 6: Get Object ACL of the destination object and Check that ACL is set"
-                      " to private for the user making the request.")
-        resp_acl = self.s3_acl_obj.get_object_acl(dest_bucket, dest_object)
-        assert_utils.assert_true(resp_acl[0], resp_acl[1])
-        assert_utils.assert_equal(resp_acl[1]["Grants"][0]["Grantee"]["ID"], self.response1[0])
-        assert_utils.assert_equal(resp_acl[1]["Grants"][0]["Permission"], "FULL_CONTROL")
+        # self.log.info("Step 6: Get Object ACL of the destination object and Check that ACL is set"
+        #               " to private for the user making the request.")
+        # resp_acl = self.s3_acl_obj.get_object_acl(dest_bucket, dest_object)
+        # assert_utils.assert_true(resp_acl[0], resp_acl[1])
+        # assert_utils.assert_equal(resp_acl[1]["Grants"][0]["Grantee"]["ID"], self.response1[0])
+        # assert_utils.assert_equal(resp_acl[1]["Grants"][0]["Permission"], "FULL_CONTROL")
 
     # pylint: disable=too-many-arguments
     def complete_multipart_upload_with_tagging(self,
@@ -228,16 +194,16 @@ class TestCopyObjectsTag():
                                            multipart_obj_path=file_path)
         assert_utils.assert_true(resp[0], resp[1])
         upload_parts_list = resp[1]
-        self.log.info("Parts are uploaded to a bucket %s", self.bucket_name)
-        self.log.info("Performing list parts of object %s", self.object_name)
-        resp = self.s3_mp_obj.list_parts(upload_id, self.bucket_name, self.object_name)
+        self.log.info("Parts are uploaded to a bucket %s", bucket_name)
+        self.log.info("Performing list parts of object %s", object_name)
+        resp = self.s3_mp_obj.list_parts(upload_id, bucket_name, object_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Performed list parts operation")
-        self.log.info("Performing complete multipart upload on a bucket %s", self.bucket_name)
+        self.log.info("Performing complete multipart upload on a bucket %s", bucket_name)
         resp = self.s3_mp_obj.complete_multipart_upload(upload_id, upload_parts_list,
-                                                        self.bucket_name, self.object_name)
+                                                        bucket_name, object_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Performed complete multipart upload on a bucket %s", self.bucket_name)
+        self.log.info("Performed complete multipart upload on a bucket %s", bucket_name)
         return resp
 
     @pytest.mark.parallel
@@ -255,13 +221,12 @@ class TestCopyObjectsTag():
                       "in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         tag_str = self.key_src + "=" + self.value_src
-        resp = self.create_put_set_object_tag(self.bucket_name1,
-                                              self.object_name1,
-                                              self.file_path,
-                                              mb_count=self.mb_count,
-                                              key=self.key_src,
-                                              value=self.value_src)
-        assert_utils.assert_true(resp[0], resp[1])
+        put_etag = self.create_put_set_object_tag(self.bucket_name1,
+                                                  self.object_name1,
+                                                  self.file_path,
+                                                  mb_count=self.mb_count,
+                                                  key=self.key_src,
+                                                  value=self.value_src)
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
         put_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name1)
@@ -276,7 +241,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 3: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -299,7 +263,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -330,13 +293,12 @@ class TestCopyObjectsTag():
                       "in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         tag_str = self.key_dest + "=" + self.value_dest
-        resp = self.create_put_set_object_tag(self.bucket_name1,
-                                              self.object_name1,
-                                              self.file_path,
-                                              mb_count=self.mb_count,
-                                              key=self.key_src,
-                                              value=self.value_src)
-        assert_utils.assert_true(resp[0], resp[1])
+        put_etag = self.create_put_set_object_tag(self.bucket_name1,
+                                                  self.object_name1,
+                                                  self.file_path,
+                                                  mb_count=self.mb_count,
+                                                  key=self.key_src,
+                                                  value=self.value_src)
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
         put_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name1)
@@ -351,7 +313,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 3: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -413,14 +374,13 @@ class TestCopyObjectsTag():
                       "in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         tag_str = ""
-        resp = self.create_put_set_object_tag(self.bucket_name1,
-                                              self.object_name1,
-                                              self.file_path,
-                                              mb_count=self.mb_count,
-                                              key=self.key_src,
-                                              value=self.value_src,
-                                              tag_count=10)
-        assert_utils.assert_true(resp[0], resp[1])
+        put_etag = self.create_put_set_object_tag(self.bucket_name1,
+                                                  self.object_name1,
+                                                  self.file_path,
+                                                  mb_count=self.mb_count,
+                                                  key=self.key_src,
+                                                  value=self.value_src,
+                                                  tag_count=10)
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
         put_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name1)
@@ -437,7 +397,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 3: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -464,7 +423,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -499,14 +457,13 @@ class TestCopyObjectsTag():
                       "in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         tag_str = ""
-        resp = self.create_put_set_object_tag(self.bucket_name1,
-                                              self.object_name1,
-                                              self.file_path,
-                                              mb_count=self.mb_count,
-                                              key=self.key_src,
-                                              value=self.value_src,
-                                              tag_count=10)
-        assert_utils.assert_true(resp[0], resp[1])
+        put_etag = self.create_put_set_object_tag(self.bucket_name1,
+                                                  self.object_name1,
+                                                  self.file_path,
+                                                  mb_count=self.mb_count,
+                                                  key=self.key_src,
+                                                  value=self.value_src,
+                                                  tag_count=10)
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
         put_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name1)
@@ -524,7 +481,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 3: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -561,7 +517,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name2, self.object_name2)
         self.log.info("Retrieved tag of an object")
@@ -608,14 +563,13 @@ class TestCopyObjectsTag():
         secret_range = random.SystemRandom()
         tag_count_src = secret_range.randint(1, 10)
         tag_count_dest = secret_range.randint(1, 10)
-        resp = self.create_put_set_object_tag(self.bucket_name1,
-                                              self.object_name1,
-                                              self.file_path,
-                                              mb_count=self.mb_count,
-                                              key=self.key_src,
-                                              value=self.value_src,
-                                              tag_count=tag_count_src)
-        assert_utils.assert_true(resp[0], resp[1])
+        put_etag = self.create_put_set_object_tag(self.bucket_name1,
+                                                  self.object_name1,
+                                                  self.file_path,
+                                                  mb_count=self.mb_count,
+                                                  key=self.key_src,
+                                                  value=self.value_src,
+                                                  tag_count=tag_count_src)
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
         put_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name1)
@@ -633,7 +587,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 3: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -665,7 +618,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name2, self.object_name1)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -751,7 +703,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -831,7 +782,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -914,7 +864,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -1014,7 +963,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -1122,7 +1070,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
