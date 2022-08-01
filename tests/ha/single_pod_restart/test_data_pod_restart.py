@@ -1730,11 +1730,11 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34075")
-    def test_continuous_writes_during_pod_restart(self):
+    def test_writes_during_pod_restart(self):
         """
-        Verify continuous WRITEs during data pod restart
+        Verify WRITEs during data pod restart
         """
-        LOGGER.info("STARTED: Test to verify continuous Writes during data pod restart.")
+        LOGGER.info("STARTED: Test to verify Writes during data pod restart.")
         LOGGER.info("STEP 1: Perform WRITEs/READs/Verify with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34075'
@@ -1798,32 +1798,40 @@ class TestDataPodRestart:
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         LOGGER.info("Step 5: Successfully completed Writes in background")
-        LOGGER.info("Step 6: Run READ/Verify on data written in healthy cluster")
+        LOGGER.info("Step 6: Read/Verify data written in background process")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=log_prefix, skipwrite=True,
+                                                    skipcleanup=True, setup_s3bench=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 6: Read/Verify successfully on data written in background")
+        LOGGER.info("Step 7: Run READ/Verify on data written in healthy cluster")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
                                                     skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Read/Verify successful on data written in healthy cluster")
+        LOGGER.info("Step 7: Read/Verify successful on data written in healthy cluster")
+        LOGGER.info("Step 8: Run IOs on cluster with restarted pod")
         if CMN_CFG["dtm0_disabled"]:
-            LOGGER.info("Step 7: Create multiple buckets and run IOs")
+            LOGGER.info("Create new ISM user and multiple buckets")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.s3_clean.update(users)
             self.test_prefix = 'test-34075-restart'
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        skipcleanup=True, setup_s3bench=False)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
-        LOGGER.info("ENDED: Test to verify continuous Writes during data pod restart.")
+            log_prefix = self.test_prefix
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=log_prefix,
+                                                    skipcleanup=True, setup_s3bench=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 8: IOs completed successfully.")
+        LOGGER.info("ENDED: Test to verify Writes during data pod restart.")
 
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34076")
-    def test_continuous_read_write_during_pod_restart(self):
+    def test_read_write_during_pod_restart(self):
         """
-        Verify continuous READ/WRITEs during data pod restart
+        Verify READ/WRITEs during data pod restart
         """
-        LOGGER.info("STARTED: Test to verify continuous READ/WRITE during data pod restart.")
+        LOGGER.info("STARTED: Test to verify READ/WRITE during data pod restart.")
         LOGGER.info("STEP 1: Perform WRITEs/READs/Verify with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-34076'
@@ -1892,16 +1900,18 @@ class TestDataPodRestart:
                                                     skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Read/Verify successful on data written in healthy cluster")
+        LOGGER.info("Step 7: Run IOs on cluster with restarted pod")
         if CMN_CFG["dtm0_disabled"]:
-            LOGGER.info("Step 7: Create multiple buckets and run IOs")
+            LOGGER.info("Create new IAM user and multiple buckets")
             users = self.mgnt_ops.create_account_users(nusers=1)
             self.s3_clean.update(users)
             self.test_prefix = 'test-34076-restart'
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        skipcleanup=True, setup_s3bench=False)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
+            log_prefix = self.test_prefix
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=log_prefix,
+                                                    skipcleanup=True, setup_s3bench=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: IOs completed successfully.")
         LOGGER.info("ENDED: Test to verify continuous READs/WRITE during data pod restart.")
 
     # pylint: disable=multiple-statements
