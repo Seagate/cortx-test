@@ -284,7 +284,7 @@ class TestCorruptDataDetection:
         #         # self.motr_obj.parse_m0trace_log()
         #         # self.motr_obj.read_m0trace_log()
         # logger.debug(f"object_id_list is: ###### {object_id_list}")
-        # Todo: Working code -> Enable -> End
+        # Todo: Working code -> Enable -> End --------------------------------
 
         # ON THE DATA POD: ==========>>>>>>
         # Todo: Copy the emap script
@@ -297,21 +297,24 @@ class TestCorruptDataDetection:
         # # Todo: need to restart m0tr container for taking emap effect
         #
 
-        for node_pod in node_pod_dict:
-            for b_size, (cnt_c, cnt_u), layout, offset in zip(
-                bsize_list, count_list, layout_ids, offsets
-            ):
-                # On the Client POD - cortx - hax container ==========>>>>>>
+        # Todo: Working code -> Enable -> Start --------------------------------
+        # for node_pod in node_pod_dict:
+        #     for b_size, (cnt_c, cnt_u), layout, offset in zip(
+        #         bsize_list, count_list, layout_ids, offsets
+        #     ):
+        #         # On the Client POD - cortx - hax container ==========>>>>>>
+        #
+        #         # # Read objects after
+        #         self.motr_obj.cat_cmd(
+        #             b_size, cnt_c, object_id_list[node_pod.index()], layout, outfile, node_pod, 0
+        #         )
+        #
+        #         self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
+        #         self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
+        #
+        #     logger.info("Stop: Verify emap corruption detection operation")
+        # Todo: Working code -> Enable -> End --------------------------------
 
-                # # Read objects after
-                self.motr_obj.cat_cmd(
-                    b_size, cnt_c, object_id_list[node_pod.index()], layout, outfile, node_pod, 0
-                )
-
-                self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
-                self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
-
-            logger.info("Stop: Verify emap corruption detection operation")
         return True  # Todo: return status to be worked as per responses
 
     @pytest.mark.tags("TEST-41739")
