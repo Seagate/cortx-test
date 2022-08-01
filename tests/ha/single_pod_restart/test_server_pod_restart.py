@@ -569,7 +569,7 @@ class TestServerPodRestart:
         wr_resp = tuple()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        s3_data = wr_resp[0]  # Contains s3 data for passed buckets
+        s3_data = wr_resp[0]  # Contains s3 data for updated buckets
         new_bkts = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(len(new_bkts) - len(remain_bkt), wr_bucket,
                                   f"Failed to create {wr_bucket} number of buckets. Created "
@@ -660,9 +660,8 @@ class TestServerPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed WRITEs/READs-Verify with variable object sizes and create "
                     "new bucket in degraded mode")
-        LOGGER.info("Step 4: Perform READs and verify DI on the data in background of healthy "
-                    "cluster")
-        self.test_prefix = 'test-44835-hlt'
+        LOGGER.info("Step 4: Perform READs and verify DI on the data written in healthy cluster "
+                    "in background")
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
                 'nclients': 1, 'nsamples': 10, 'skipwrite': True, 'skipcleanup': True,
                 'output': output, 'setup_s3bench': False}
@@ -670,9 +669,9 @@ class TestServerPodRestart:
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
-        LOGGER.info("Step 4: Successfully started READs and verified DI on the written data in "
-                    "background of healthy cluster")
-        LOGGER.info("Step 5: Starting pod again by statefulset")
+        LOGGER.info("Step 4: Successfully started READs and verified DI on data written in healthy"
+                    " cluster in background ")
+        LOGGER.info("Step 5: Starting pod again by replicas=0")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
@@ -684,7 +683,7 @@ class TestServerPodRestart:
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 5: Successfully started the pod by statefulset")
+        LOGGER.info("Step 5: Successfully started the pod by replicas=0")
         self.restore_pod = False
         event.clear()
         thread.join()
@@ -701,8 +700,8 @@ class TestServerPodRestart:
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs + fail_logs1)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        LOGGER.info("Step 6: Successfully completed READs and verified DI on the written data in "
-                    "background of healthy cluster")
+        LOGGER.info("Step 6: Successfully completed READs and verified DI on the data written in "
+                    "healthy cluster in background")
         LOGGER.info("Step 7: Perform READ-Verify on data written in degraded mode")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix_deg,
@@ -711,10 +710,12 @@ class TestServerPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Performed READ-Verify on data written in degraded mode")
         LOGGER.info("Step 8: Perform WRITEs/READs-Verify after server pod restart")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.s3_clean.update(users)
         self.test_prefix = 'test-44835-rstrt'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Successfully ran IOs after server pod restart")
-        LOGGER.info("ENDED: Test to verify continuous READs during data pod restart.")
+        LOGGER.info("ENDED: Test to verify READs during data pod restart.")
