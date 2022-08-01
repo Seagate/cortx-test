@@ -321,7 +321,7 @@ class TestCorruptDataDetection:
         for pod in pod_list:
             logger.debug(f"in pod = {pod}")
             result = self.motr_obj.master_node_list[0].copy_file_to_container(
-                err_inj_script_path,
+                const.MOTR_DI_ERR_INJ_SCRIPT_PATH,
                 pod,
                 remote_script_path,
                 motr_container_name
