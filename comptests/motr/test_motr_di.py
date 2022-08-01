@@ -289,7 +289,7 @@ class TestCorruptDataDetection:
         # ON THE DATA POD: ==========>>>>>>
         # Todo: Copy the emap script
         #  Trying on first data pod only ---- Then on all pods run this in for loop
-        self.motr_obj.copy_file_to_remote_container(node_data_pod_dict[0])
+        self.motr_obj.copy_file_to_remote_container(list(node_data_pod_dict.keys())[0])
 
         # # Todo: and run Emap
         # self.motr_corruption_obj.inject_checksum_corruption()
