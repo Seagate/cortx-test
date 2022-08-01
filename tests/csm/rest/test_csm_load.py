@@ -179,7 +179,7 @@ class TestCsmLoad():
         self.log.info("Running jmx script: %s", jmx_file)
         result = self.jmx_obj.run_verify_jmx(
             jmx_file,
-            threads=test_cfg["threads"],
+            threads=self.request_usage,
             rampup=test_cfg["rampup"],
             loop=test_cfg["loop"])
         assert result, "Errors reported in the Jmeter execution"
@@ -235,7 +235,7 @@ class TestCsmLoad():
         self.log.info("Running jmx script: %s", jmx_file)
         result = self.jmx_obj.run_verify_jmx(
             jmx_file,
-            threads=test_cfg["threads"],
+            threads=self.request_usage,
             rampup=test_cfg["rampup"],
             loop=test_cfg["loop"])
         assert result, "Errors reported in the Jmeter execution"
