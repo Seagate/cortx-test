@@ -292,15 +292,19 @@ class TestCorruptDataDetection:
 
         pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
         for pod in pod_list:
+            logger.debug(f"in pod = {pod}")
             logger.debug(f"self.master_node_list[0] = {self.master_node_list[0]}")
             logger.debug(f"const.CONTAINER_PATH, {const.CONTAINER_PATH,}")
             logger.debug(f"const.MOTR_CONTAINER_PREFIX + \"-001\" = {const.MOTR_CONTAINER_PREFIX} "
                          f"-001")
+            # Todo: remove temp copy -copy_file_to_container(self, local_file_path, pod_name,
+            #  container_path,
+            #  container_name):
             result = self.master_node_list[0].copy_file_to_container(
                 const.MOTR_DI_ERR_INJ_LOCAL_PATH,
                 pod,
                 const.CONTAINER_PATH,
-                const.MOTR_CONTAINER_PREFIX
+                const.MOTR_CONTAINER_NAME
             )
             if not result:
                 raise FileNotFoundError
