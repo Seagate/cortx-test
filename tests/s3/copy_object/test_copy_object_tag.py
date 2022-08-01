@@ -115,11 +115,12 @@ class TestCopyObjectsTag():
         system_utils.create_file(file_path, mb_count)
         self.log.info("Uploading an object %s to bucket %s", obj_name, bucket_name)
         put_resp = self.s3_test_obj.put_object(bucket_name, obj_name, file_path)
+        put_etag = put_resp[1]["ETag"].replace('"', '')
         assert put_resp[0], put_resp[1]
         self.log.info("Setting tag to an object %s", obj_name)
         resp = self.tag_obj.set_object_tag(bucket_name, obj_name, key, value, tag_count=tag_count)
         assert resp[0], resp[1]
-        return resp, put_resp[1]["ETag"]
+        return put_etag
 
     def copy_obj_di_check(self, src_bucket, src_object, dest_bucket, dest_object, **kwargs):
         """
@@ -240,7 +241,8 @@ class TestCopyObjectsTag():
                                                         TaggingDirective='COPY',
                                                         Tagging=tag_str)
         assert_utils.assert_true(status, response)
-        copy_etag = response['CopyObjectResult']['ETag']
+        copy_etag = str(response['CopyObjectResult']['ETag'])
+        self.log("Copy Object Etag %s", copy_etag)
         self.log.info("Step 3: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
