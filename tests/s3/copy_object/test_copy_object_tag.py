@@ -195,7 +195,7 @@ class TestCopyObjectsTag():
                                            multipart_obj_path=file_path)
         assert_utils.assert_true(resp[0], resp[1])
         upload_parts_list = resp[1]
-        self.log.info("Parts are uploaded to a bucket %s", bucket_name)
+        self.log.info("Parts are uploaded to a object %s", object_name)
         self.log.info("Performing list parts of object %s", object_name)
         resp = self.s3_mp_obj.list_parts(upload_id, bucket_name, object_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -217,9 +217,9 @@ class TestCopyObjectsTag():
         source object.(--tagging-directive=COPY)
         """
         self.log.info("STARTED: Simple copy-object with destination tag set same as source object"
-                      "(--tagging-directive=COPY)")
+                      " (--tagging-directive=COPY)")
         self.log.info("Simple Copy-object with destination tag set same as source object"
-                      "in the same bucket")
+                      " in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         put_etag = self.create_put_set_object_tag(self.bucket_name1,
                                                   self.object_name1,
@@ -256,7 +256,7 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        self.log.info("Step 5: Copy-object with destination tag set same as source object"
+        self.log.info("Simple Copy-object with destination tag set same as source object"
                       "in the different bucket")
         status, response = self.s3_test_obj.copy_object(self.bucket_name1,
                                                         self.object_name1,
@@ -281,7 +281,7 @@ class TestCopyObjectsTag():
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
         self.log.info("ENDED: copy-object with destination tag set same as source object"
-                      "(--tagging-directive=COPY)")
+                      " (--tagging-directive=COPY)")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -289,13 +289,13 @@ class TestCopyObjectsTag():
     @pytest.mark.tags("TEST-44812")
     def test_44812(self):
         """
-        TEST-44812: Test simple copy-object with destination tag set same as
-        source object.(--tagging-directive=REPLACE)
+        TEST-44812: Test simple copy-object with destination tag set replaces source
+        object tag(--tagging-directive=REPLACE)
         """
-        self.log.info("STARTED: Copy-object with destination tag set same as source object"
-                      "(--tagging-directive=REPLACE)")
-        self.log.info("Copy-object with destination tag set same as source object"
-                      "in the same bucket")
+        self.log.info("STARTED: Test simple copy-object with destination tag set replaces source"
+                      " object tag(--tagging-directive=REPLACE)")
+        self.log.info("Simple copy-object with destination tag set replaces source object tag"
+                      " in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         tag_str = self.key_dest + "=" + self.value_dest
         put_etag = self.create_put_set_object_tag(self.bucket_name1,
@@ -336,7 +336,7 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        self.log.info("Step 5: Copy-object with destination tag set same as source object"
+        self.log.info("Simple Copy-object with destination tag set replaces source object tag"
                       "in the different bucket")
         status, response = self.s3_test_obj.copy_object(self.bucket_name1,
                                                         self.object_name1,
@@ -364,8 +364,8 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        self.log.info("ENDED: copy-object with destination tag set same as source object"
-                      "(--tagging-directive=REPLACE)")
+        self.log.info("ENDED: Test simple copy-object with destination tag set replaces source"
+                      " object tag(--tagging-directive=REPLACE)")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -376,10 +376,10 @@ class TestCopyObjectsTag():
         TEST-44813 :Test simple copy-object with source object having max number of tags(10)
         and parameter (--tagging-directive=COPY)
         """
-        self.log.info("STARTED: Simple copy-object with source object having max number of"
-                      "tags(10) and parameter (--tagging-directive=COPY)")
-        self.log.info("Copy-object with source object having max number of tags(10)"
-                      "in the same bucket")
+        self.log.info("STARTED:Test simple copy-object with source object having max number of"
+                      " tags(10) and parameter (--tagging-directive=COPY)")
+        self.log.info("Simple copy-object with source object having max number of tags(10)"
+                      " in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         tag_str = ""
         put_etag = self.create_put_set_object_tag(self.bucket_name1,
@@ -447,8 +447,8 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        self.log.info("ENDED: copy-object with destination tag set same as source object"
-                      "(--tagging-directive=COPY)")
+        self.log.info("ENDED: Test simple copy-object with destination tag set same as source"
+                      " object (--tagging-directive=COPY)")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -459,10 +459,10 @@ class TestCopyObjectsTag():
         TEST-44814 :Test simple copy-object with source object having max number of tags(10)
         and parameter (--tagging-directive=REPLACE)
         """
-        self.log.info("STARTED: Simple copy-object with source object having max number of"
-                      "tags(10) and parameter (--tagging-directive=REPLACE)")
-        self.log.info("Copy-object with source object having max number of tags(10)"
-                      "in the same bucket")
+        self.log.info("STARTED: Test simple copy-object with source object having max number of"
+                      " tags(10) and parameter (--tagging-directive=REPLACE)")
+        self.log.info("Simple copy-object with source object having max number of tags(10)"
+                      " in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         tag_str = ""
         put_etag = self.create_put_set_object_tag(self.bucket_name1,
@@ -515,7 +515,7 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        self.log.info("Step 5: Copy-object with destination tag set same as source object"
+        self.log.info("Simple copy-object with destination tag set same as source object"
                       "in the different bucket")
         status, response = self.s3_test_obj.copy_object(self.bucket_name1,
                                                         self.object_name1,
@@ -550,22 +550,22 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        self.log.info("ENDED: copy-object with destination tag set same as source object"
-                      "(--tagging-directive=REPLACE)")
+        self.log.info("ENDED: Test simple copy-object with destination tag set same as source"
+                      " object (--tagging-directive=REPLACE)")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
-    @pytest.mark.tags("TEST-44815")
-    def test_44815(self):
+    @pytest.mark.tags("TEST-44817")
+    def test_44817(self):
         """
-        TEST-44815 :Test simple copy-object with source object having max number of tags(N<=10)
+        TEST-44817 :Test simple copy-object with source object having max number of tags(N<=10)
         and parameter (--tagging-directive=REPLACE)
         """
-        self.log.info("STARTED: Simple copy-object with source object having max number of"
-                      "tags(n<=10) and parameter (--tagging-directive=REPLACE)")
-        self.log.info("Copy-object with source object having max number of tags(N<=10)"
-                      "in the same bucket")
+        self.log.info("STARTED: Test simple copy-object with source object having max number of"
+                      " tags(n<=10) and parameter (--tagging-directive=REPLACE)")
+        self.log.info("Simple copy-object with source object having max number of tags(N<=10)"
+                      " in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         tag_str = ""
         secret_range = random.SystemRandom()
@@ -616,7 +616,7 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        self.log.info("Step 5: Copy-object with destination tag set same as source object"
+        self.log.info("Simple copy-object with destination tag set same as source object"
                       "in the different bucket")
         status, response = self.s3_test_obj.copy_object(self.bucket_name1,
                                                         self.object_name1,
@@ -647,8 +647,8 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        self.log.info("ENDED: copy-object with destination tag set same as source object"
-                      "(--tagging-directive=REPLACE)")
+        self.log.info("ENDED: Test simple copy-object with source object having max number of"
+                      " tags(n<=10) and parameter (--tagging-directive=REPLACE)")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -659,10 +659,10 @@ class TestCopyObjectsTag():
         TEST-44820: Test multipart copy-object with destination tag set same as
         source object.(--tagging-directive=COPY)
         """
-        self.log.info("STARTED: Copy-object with multipart upload and destination tag set same"
-                      "as source object (--tagging-directive=COPY)")
-        self.log.info("Copy multipart object with destination tag set same as source "
-                      "object in the same bucket")
+        self.log.info("STARTED: Test multipart copy-object with multipart upload and destination"
+                      " tag set same as source object (--tagging-directive=COPY)")
+        self.log.info("Multipart copy multipart object with destination tag set same as source"
+                      " object in the same bucket")
         self.log.info("Step 1:Upload multipart object to bucket")
         tag_str = self.key_src + "=" + self.value_src
         resp = self.complete_multipart_upload_with_tagging(self.bucket_name1,
@@ -700,7 +700,7 @@ class TestCopyObjectsTag():
                                                   put_etag=put_etag,
                                                   copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        self.log.info("Step 5: Copy-object with destination tag set same as source object"
+        self.log.info("Multipart copy-object with destination tag set same as source object"
                       "in the different bucket")
         status, response = self.s3_test_obj.copy_object(self.bucket_name1,
                                                         self.object_name1,
@@ -722,8 +722,8 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verified of etag and metadata for data integrity check")
-        self.log.info("ENDED: copy-object with multipart upload and destination tag set same as "
-                      "source object (--tagging-directive=COPY)")
+        self.log.info("ENDED: Test multipart copy-object with multipart upload and destination"
+                      " tag set same as source object (--tagging-directive=COPY)")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -731,13 +731,13 @@ class TestCopyObjectsTag():
     @pytest.mark.tags("TEST-44821")
     def test_44821(self):
         """
-        TEST-44821: Test Multipart copy-object with destination tag set same as
-        source object.(--tagging-directive=REPLACE)
+        TEST-44821: Test Multipart copy-object with destination tag set replaces
+        source object tag set.(--tagging-directive=REPLACE)
         """
-        self.log.info("STARTED: Multipart Copy-object with destination tag set same as source "
-                      "object (--tagging-directive=REPLACE)")
-        self.log.info("Multipart Copy-object with destination tag set same as source object"
-                      "in the same bucket")
+        self.log.info("STARTED: Test multipart Copy-object with destination tag set replaces"
+                      " source object tag set(--tagging-directive=REPLACE)")
+        self.log.info("Multipart Copy-object with destination tag set replaces source object"
+                      " tag set in the same bucket")
         self.log.info("Step 1: Uploading an multipart object and setting tag for object")
         tag_str =self.key_src + "=" + self.value_src
         resp = self.complete_multipart_upload_with_tagging(self.bucket_name1,
@@ -802,8 +802,8 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        self.log.info("ENDED: copy-object with destination tag set same as source object"
-                      "(--tagging-directive=REPLACE)")
+        self.log.info("ENDED: Test multipart Copy-object with destination tag set replaces "
+                      "source object tag set(--tagging-directive=REPLACE)")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -814,9 +814,9 @@ class TestCopyObjectsTag():
         TEST-44822 :Test multipart copy-object with source object having max number of tags(10)
         and parameter (--tagging-directive=COPY)
         """
-        self.log.info("STARTED: Simple copy-object with source object having max number of"
-                      "tags(10) and parameter (--tagging-directive=COPY)")
-        self.log.info("Copy-object with source object having max number of tags(10)"
+        self.log.info("STARTED: Test multipart copy-object with source object having max number"
+                      " of tags(10) and parameter (--tagging-directive=COPY)")
+        self.log.info("Multipart copy-object with source object having max number of tags(10)"
                       "in the same bucket")
         self.log.info("Step 1: Uploading multipart object and setting tag for object")
         tag_str = ""
@@ -861,7 +861,7 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        self.log.info("Step 5: Copy-object with destination tag set same as source object"
+        self.log.info("Multipart copy-object with destination tag set same as source object"
                       "in the different bucket")
         status, response = self.s3_test_obj.copy_object(self.bucket_name1,
                                                         self.object_name1,
@@ -887,20 +887,20 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        self.log.info("ENDED: copy-object with destination tag set same as source object"
-                      "(--tagging-directive=COPY)")
+        self.log.info("ENDED: Test multipart copy-object with source object having max number"
+                      " of tags(10) and parameter (--tagging-directive=COPY)")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-44824")
-    def test_448124(self):
+    def test_44824(self):
         """
-        TEST-44814 :Test multipart copy-object with source object having max number of tags(10)
+        TEST-44824 :Test multipart copy-object with source object having max number of tags(10)
         and parameter (--tagging-directive=REPLACE)
         """
-        self.log.info("STARTED: Multipart copy-object with source object having max number of"
-                      "tags(10) and parameter (--tagging-directive=REPLACE)")
+        self.log.info("STARTED: Test multipart copy-object with source object having max number"
+                      " of tags(10) and parameter (--tagging-directive=REPLACE)")
         self.log.info("Multipart Copy-object with source object having max number of tags(10)"
                       "in the same bucket")
         self.log.info("Step 1: Uploading multipart object and setting tag for object")
@@ -960,14 +960,14 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        self.log.info("Step 5: Copy-object with destination tag set same as source object"
+        self.log.info("Multipart copy-object with destination tag set same as source object"
                       "in the different bucket")
         status, response = self.s3_test_obj.copy_object(self.bucket_name1,
                                                         self.object_name1,
                                                         self.bucket_name2,
                                                         self.object_name2,
-                                                        TaggingDirective='COPY',
-                                                        Tagging=tag_str)
+                                                        TaggingDirective='REPLACE',
+                                                        Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
@@ -996,8 +996,8 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        self.log.info("ENDED: copy-object with destination tag set same as source object"
-                      "(--tagging-directive=REPLACE)")
+        self.log.info("ENDED: Test multipart copy-object with source object having max number"
+                      " of tags(10) and parameter (--tagging-directive=REPLACE)")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -1008,9 +1008,9 @@ class TestCopyObjectsTag():
         TEST-44826 :Test multipart copy-object with source object having max number of tags(N<=10)
         and parameter (--tagging-directive=REPLACE)
         """
-        self.log.info("STARTED: Multipart copy-object with source object having max number of"
-                      "tags(n<=10) and parameter (--tagging-directive=REPLACE)")
-        self.log.info("Copy-object with source object having max number of tags(N<=10)"
+        self.log.info("STARTED: Test multipart copy-object with source object having max number"
+                      " of tags(n<=10) and parameter (--tagging-directive=REPLACE)")
+        self.log.info("Multipart copy-object with source object having max number of tags(N<=10)"
                       "in the same bucket")
         self.log.info("Step 1: Uploading multipart object and setting tag for object")
         secret_range = random.SystemRandom()
@@ -1067,7 +1067,7 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        self.log.info("Step 5: Copy-object with destination tag set same as source object"
+        self.log.info("Multipart copy-object with destination tag set same as source object"
                       "in the different bucket")
         status, response = self.s3_test_obj.copy_object(self.bucket_name1,
                                                         self.object_name1,
@@ -1098,5 +1098,5 @@ class TestCopyObjectsTag():
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
                                self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        self.log.info("ENDED: copy-object with destination tag set same as source object"
-                      "(--tagging-directive=REPLACE)")
+        self.log.info("ENDED: Test multipart copy-object with source object having max number"
+                      " of tags(n<=10) and parameter (--tagging-directive=REPLACE)")
