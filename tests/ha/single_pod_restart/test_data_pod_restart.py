@@ -1933,15 +1933,9 @@ class TestDataPodRestart:
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
         assert_utils.assert_false(len(resp[1]),
                                   f"READs/VerifyDI logs which contain failures: {resp[1]}")
-        LOGGER.info("Step 3.2: Verified status for In-flight READs/VerifyDI while %s "
+        LOGGER.info("Step 5.2: Verified status for In-flight READs/VerifyDI while %s "
                     " date pod restarted.", pod_name)
-        LOGGER.info("Step 6: Run Read/Verify on data written in healthy cluster")
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True, setup_s3bench=False)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Read/Verify successful on data written in healthy cluster")
-        LOGGER.info("Step 7: Run IOs on cluster with restarted pod")
+        LOGGER.info("Step 6: Run IOs on cluster with restarted pod")
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Create new IAM user and multiple buckets")
             users_rst = self.mgnt_ops.create_account_users(nusers=1)
@@ -1961,7 +1955,7 @@ class TestDataPodRestart:
                                                     skipcleanup=True, setup_s3bench=False,
                                                     nsamples=5, nclients=5)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: IOs completed successfully.")
+        LOGGER.info("Step 6: IOs completed successfully.")
         LOGGER.info("ENDED: Test to verify continuous READs/WRITE during data pod restart.")
 
     # pylint: disable=multiple-statements
