@@ -257,7 +257,7 @@ class TestCorruptDataDetection:
         copy_status = Host.copy_file_to_remote(
             self.motr_obj.master_node,
             str(MOTR_DI_ERR_INJ_LOCAL_PATH),
-            const.CONTAINER_PATH
+            str(const.HA_TMP)
         )
         if copy_status:
             logger.info(f"....... File copy success to Controller Node .........................")
