@@ -61,6 +61,7 @@ from commons.utils import assert_utils
 from commons.helpers.health_helper import Health
 from config import CMN_CFG
 from commons.params import MOTR_DI_ERR_INJ_LOCAL_PATH
+from commons.helpers.host import Host
 
 logger = logging.getLogger(__name__)
 
@@ -246,8 +247,23 @@ class TestCorruptDataDetection:
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
 
+        # ON THE DATA POD: ==========>>>>>>
+        # Todo: Copy the emap script to controller pod's root dir>>>>>>>>>>>>>>>>>>>>
         # err_inj_script_path = str(const.MOTR_DI_ERR_INJ_LOCAL_PATH)
-        err_inj_script_path = str(MOTR_DI_ERR_INJ_LOCAL_PATH)
+        err_inj_script_path = str(MOTR_DI_ERR_INJ_LOCAL_PATH)  # Taken from params
+        # /root/pranavdev/cortx-test/scripts/server_scripts/error_injection.py on master does not
+        # exist
+        # This exists on the client = local path
+        copy_status = Host.copy_file_to_remote(
+            self.motr_obj.master_node,
+            str(MOTR_DI_ERR_INJ_LOCAL_PATH),
+            const.CONTAINER_PATH
+        )
+        if copy_status:
+            logger.info(f"....... File copy success to Controller Node .........................")
+        else:
+            logger.debug(f"copy failed,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
+        # Todo: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
         # MOTR_DI_ERR_INJ_LOCAL_PATH
         logger.debug(f"Printing const: {err_inj_script_path}")
@@ -297,8 +313,6 @@ class TestCorruptDataDetection:
         # logger.debug(f"object_id_list is: ###### {object_id_list}")
         # Todo: Working code -> Enable -> End --------------------------------
 
-        # ON THE DATA POD: ==========>>>>>>
-        # Todo: Copy the emap script to controller pod's root dir
 
         #  Trying on first data pod only ---- Then on all pods run this in for loop
 
