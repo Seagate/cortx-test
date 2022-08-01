@@ -251,7 +251,7 @@ class TestCorruptDataDetection:
         remote_script_path = const.CONTAINER_PATH
         logger.debug(f"Printing const: {remote_script_path}")
 
-        motr_container_name = str(const.MOTR_CONTAINER_PREFIX) + "-001"
+        motr_container_name = str(const.MOTR_CONTAINER_NAME)
         logger.debug(f"Printing const: {motr_container_name}")
 
         node_data_pod_dict = self.motr_obj.get_node_data_pod_dict()
