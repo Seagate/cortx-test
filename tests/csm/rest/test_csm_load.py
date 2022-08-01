@@ -38,6 +38,9 @@ from libs.csm.csm_interface import csm_api_factory
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.jmeter.jmeter_integration import JmeterInt
 from libs.ras.sw_alerts import SoftwareAlert
+from libs.s3 import s3_misc
+from libs.di.di_mgmt_ops import ManagementOPs
+from libs.di.di_run_man import RunDataCheckManager
 
 
 class TestCsmLoad():
@@ -69,6 +72,7 @@ class TestCsmLoad():
         assert s3acc_already_present
         cls.log.info("[Completed]: Setup class")
         cls.default_cpu_usage = False
+        cls.buckets_created = []
 
     def setup_method(self):
         """
@@ -81,6 +85,19 @@ class TestCsmLoad():
     def teardown_method(self):
         """Teardown method
         """
+        self.log.info("STARTED: Teardown Operations.")
+        buckets_deleted = []
+        for bucket in self.buckets_created:
+            resp = s3_misc.delete_objects_bucket(bucket[0], bucket[1], bucket[2])
+            if resp:
+                buckets_deleted.append(bucket)
+            else:
+                self.log.error("Bucket deletion failed for %s ", bucket)
+        self.log.info("buckets deleted %s", buckets_deleted)
+        for bucket in buckets_deleted:
+            self.buckets_created.remove(bucket)
+        for iam in iam_deleted:
+            self.iam_users_created.remove(iam)
         if self.default_cpu_usage:
             self.log.info("\nStep 4: Resolving CPU usage fault. ")
             self.log.info("Updating default CPU usage threshold value")
@@ -88,6 +105,10 @@ class TestCsmLoad():
             assert resp[0], resp[1]
             self.log.info("\nStep 4: CPU usage fault is resolved.\n")
             self.default_cpu_usage = False
+        assert len(self.buckets_created) == 0, "Bucket deletion failed"
+        assert len(self.iam_users_created) == 0, "IAM deletion failed"
+        self.log.info("Done: Teardown completed.")
+
 
     @pytest.mark.skip("Dummy test")
     @pytest.mark.jmeter
@@ -103,6 +124,81 @@ class TestCsmLoad():
         result = self.jmx_obj.run_verify_jmx(jmx_file)
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44788')
+    def test_44788(self):
+        """Test maximum number of same users which can login per second using CSM REST.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_44788"]
+        mgm_ops = ManagementOPs()
+        users = mgm_ops.create_account_users(nusers=1)
+        self.log.info("users -  %s", users)
+        data = mgm_ops.create_buckets(nbuckets=1, users=users)
+        self.log.info("data -  %s", data)
+
+        for user in data.keys():
+            self.iam_users_created.append(user)
+            for bucket_data in data.values():
+                for bucket in bucket_data['buckets']:
+                    self.buckets_created.append([bucket, 
+                                                bucket_data['accesskey'],
+                                                bucket_data['secretkey']]) 
+
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'test_44788'}
+        run_data_chk_obj.start_io_async(
+            users=data, buckets=None, files_count=test_cfg["files_count"], prefs=pref_dir)
+
+
+        time.sleep(4)
+
+
+        stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True)
+        self.log.info("stop_res -  %s", stop_res)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44794')
+    def test_44794(self):
+        """Test maximum number of same users which can login per second using CSM REST.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_44794"]
+        mgm_ops = ManagementOPs()
+        users = mgm_ops.create_account_users(nusers=test_cfg["users_count"], use_cortx_cli=False)
+        data = mgm_ops.create_buckets(nbuckets=test_cfg["buckets_count"], users=users)
+
+        for user in data.keys():
+            self.iam_users_created.append(user)
+            for bucket_data in data.values():
+                for bucket in bucket_data['buckets']:
+                    self.buckets_created.append([bucket, 
+                                                bucket_data['accesskey'],
+                                                bucket_data['secretkey']]) 
+
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'test_44794'}
+        run_data_chk_obj.start_io_async(
+            users=data, buckets=None, files_count=test_cfg["files_count"], prefs=pref_dir)
+
+
+        time.sleep(4)
+
+
+        stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True)
+        self.log.info("stop_res -  %s", stop_res)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.lr
     @pytest.mark.jmeter
