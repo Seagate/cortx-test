@@ -259,7 +259,7 @@ class TestCorruptDataDetection:
             const.HA_TMP
         )
         if not copy_status:
-            return status, resp
+            return copy_status, resp
             # logger.info(f"....... File copy success to Controller Node .........................")
         else:
             logger.debug(f"copy failed,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
