@@ -246,8 +246,10 @@ class TestCopyObjectsTag():
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
         self.log.info("Step 3: Retrieved tag of an object")
         self.log.info("Step 4: Compare tagset of source and destination object")
-        assert_utils.assert_equal(copy_resp[1][0]["Key"], self.key_src, self.key_src)
-        assert_utils.assert_equal(copy_resp[1][0]["Value"], self.value_src, self.value_src)
+        assert_utils.assert_equal(copy_resp[1][0]["Key"], put_resp[1][0]["Key"],
+                                  put_resp[1][0]["Key"])
+        assert_utils.assert_equal(copy_resp[1][0]["Value"], put_resp[1][0]["Value"],
+                                  put_resp[1][0]["Value"])
         self.log.info("Step 4: Compared and verified tag of source and destination object")
         self.log.info("Step : Verification of etag and metadata for data integrity check")
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
@@ -268,8 +270,10 @@ class TestCopyObjectsTag():
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
         self.log.info("Retrieved tag of an object")
         self.log.info("Step 7: Compare tagset of source and destination object")
-        assert_utils.assert_equal(copy_resp[1][0]["Key"], self.key_src, self.key_src)
-        assert_utils.assert_equal(copy_resp[1][0]["Value"], self.value_src, self.value_src)
+        assert_utils.assert_equal(copy_resp[1][0]["Key"], put_resp[1][0]["Key"],
+                                  put_resp[1][0]["Key"])
+        assert_utils.assert_equal(copy_resp[1][0]["Value"], put_resp[1][0]["Value"],
+                                  put_resp[1][0]["Value"])
         self.log.info("Step 7: Compared and verified tag of source and destination object")
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
         self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
