@@ -1833,11 +1833,18 @@ class TestDataPodRestart:
         """
         LOGGER.info("STARTED: Test to verify READ/WRITE during data pod restart.")
         LOGGER.info("STEP 1: Perform WRITEs/READs/Verify with variable object sizes")
+        LOGGER.info("Create 2 set of buckets to be used for writes and reads")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-34076'
         self.s3_clean.update(users)
+        test_prefix_read = 'test-34076-read'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
+                                                    log_prefix=test_prefix_read, skipcleanup=True,
+                                                    nsamples=5, nclients=5, skipread=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        test_prefix_write = 'test-34076-write'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=test_prefix_write, skipcleanup=True,
+                                                    nsamples=5, nclients=5, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
         LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
@@ -1858,17 +1865,33 @@ class TestDataPodRestart:
         output = Queue()
         event = threading.Event()  # Event to be used to send intimation of pod restart
         LOGGER.info("Step 3: Start READ/WRITEs/VERIFY with variable object sizes in background")
-        log_prefix = self.test_prefix
         if CMN_CFG["dtm0_disabled"]:
-            self.test_prefix_deg = 'test-34076-deg'
-            log_prefix = self.test_prefix_deg
-        args = {'s3userinfo': list(users.values())[0], 'log_prefix': log_prefix,
-                'skipcleanup': True, 'nclients': 1, 'nsamples': 30, 'setup_s3bench': False}
-        thread = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,), kwargs=args)
-        thread.daemon = True  # Daemonize thread
-        thread.start()
-        LOGGER.info("Step 3: Started READ/WRITEs/VERIFY with variable sizes objects in "
-                    "background.")
+            test_prefix_write = 'test-34076-deg-write'
+        LOGGER.info("Step 3.1: Start WRITEs with variable object sizes in background")
+        output_wr = Queue()
+        event_set_clr = [False]
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
+                'nclients': 5, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
+                'output': output_wr, 'setup_s3bench': False, 'event_set_clr': event_set_clr}
+        thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
+                                      kwargs=args)
+        thread_wri.daemon = True  # Daemonize thread
+        thread_wri.start()
+        LOGGER.info("Step 3.1: Successfully started WRITEs with variable sizes objects"
+                    " in background")
+        LOGGER.info("Step 3.2: Start READs and verify DI on the written data in background")
+        output_rd = Queue()
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_read,
+                'nclients': 5, 'nsamples': 5, 'skipwrite': True, 'skipcleanup': True,
+                'output': output_rd, 'setup_s3bench': False, 'event_set_clr': event_set_clr}
+        thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
+                                     kwargs=args)
+        thread_rd.daemon = True  # Daemonize thread
+        thread_rd.start()
+        LOGGER.info("Step 3.2: Successfully started READs and verify on the written data in "
+                    "background")
+        LOGGER.info("Waiting for %s seconds", HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Step 4: Starting pod again by creating deployment using K8s command")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
@@ -1882,18 +1905,36 @@ class TestDataPodRestart:
         LOGGER.info("Step 4: Successfully started the pod and cluster and services are online")
         self.restore_pod = False
         event.clear()
-        thread.join()
-        LOGGER.info("Step 5: Verifying read/writes from background process")
-        responses = {}
-        while len(responses) != 2:
-            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        pass_logs = list(x[1] for x in responses["pass_res"])
-        fail_logs = list(x[1] for x in responses["fail_res"])
+        thread_wri.join()
+        thread_rd.join()
+        LOGGER.info("Step 5.1: Verify status for In-flight WRITEs while %s data pod restarted "
+                    "down should be failed/error.", pod_name)
+        responses_wr = dict()
+        while len(responses_wr) != 2:
+            responses_wr = output_wr.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses_wr["pass_res"])
+        fail_logs = list(x[1] for x in responses_wr["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
+        assert_utils.assert_false(len(resp[1]), f"WRITEs logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
-        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        LOGGER.info("Step 5: Successfully completed Read/Writes in background")
+        assert_utils.assert_false(len(resp[1]), f"WRITEs logs which contain failures: {resp[1]}")
+        LOGGER.info("Step 5.1: Verified status for In-flight WRITEs while %s data pod "
+                    "restarted", pod_name)
+        LOGGER.info("Step 5.2: Verify status for In-flight READs/Verify DI while %s"
+                    " data pod restarted.", pod_name)
+        responses_rd = dict()
+        while len(responses_rd) != 2:
+            responses_rd = output_rd.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses_rd["pass_res"])
+        fail_logs = list(x[1] for x in responses_rd["fail_res"])
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]),
+                                  f"READs/VerifyDI logs which contain failures: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
+        assert_utils.assert_false(len(resp[1]),
+                                  f"READs/VerifyDI logs which contain failures: {resp[1]}")
+        LOGGER.info("Step 3.2: Verified status for In-flight READs/VerifyDI while %s "
+                    " date pod restarted.", pod_name)
         LOGGER.info("Step 6: Run Read/Verify on data written in healthy cluster")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
@@ -1903,13 +1944,22 @@ class TestDataPodRestart:
         LOGGER.info("Step 7: Run IOs on cluster with restarted pod")
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Create new IAM user and multiple buckets")
-            users = self.mgnt_ops.create_account_users(nusers=1)
-            self.s3_clean.update(users)
+            users_rst = self.mgnt_ops.create_account_users(nusers=1)
+            self.s3_clean.update(users_rst)
             self.test_prefix = 'test-34076-restart'
-            log_prefix = self.test_prefix
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_rst.values())[0],
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True, setup_s3bench=False)
+            assert_utils.assert_true(resp[0], resp[1])
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=log_prefix,
-                                                    skipcleanup=True, setup_s3bench=False)
+                                                    log_prefix=test_prefix_read,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=test_prefix_write,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: IOs completed successfully.")
         LOGGER.info("ENDED: Test to verify continuous READs/WRITE during data pod restart.")
