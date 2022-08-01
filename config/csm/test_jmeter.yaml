@@ -50,3 +50,5 @@ test_44788:
   threads: 5
   rampup: 2
   loop: 10
+test_44799:
+  thread_request: 2

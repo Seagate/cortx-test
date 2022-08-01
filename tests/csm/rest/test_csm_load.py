@@ -20,6 +20,7 @@
 """Tests for performing load testing using Jmeter"""
 
 import logging
+import math
 import os
 import shutil
 import time
@@ -73,6 +74,8 @@ class TestCsmLoad():
         cls.log.info("[Completed]: Setup class")
         cls.default_cpu_usage = False
         cls.buckets_created = []
+        cls.iam_users_created = []
+        cls.request_usage = 122
 
     def setup_method(self):
         """
@@ -86,7 +89,9 @@ class TestCsmLoad():
         """Teardown method
         """
         self.log.info("STARTED: Teardown Operations.")
+        iam_deleted = []
         buckets_deleted = []
+
         for bucket in self.buckets_created:
             resp = s3_misc.delete_objects_bucket(bucket[0], bucket[1], bucket[2])
             if resp:
@@ -94,6 +99,17 @@ class TestCsmLoad():
             else:
                 self.log.error("Bucket deletion failed for %s ", bucket)
         self.log.info("buckets deleted %s", buckets_deleted)
+
+        admin_usr = CSM_REST_CFG["csm_admin_user"]["username"]
+        admin_pwd = CSM_REST_CFG["csm_admin_user"]["password"]
+        header = self.csm_obj.get_headers(admin_usr, admin_pwd)
+        for iam_user in self.iam_users_created:
+            resp = self.csm_obj.delete_iam_user_rgw(iam_user, header)
+            if resp:
+                iam_deleted.append(iam_user)
+            else:
+                self.log.error("IAM deletion failed for %s ", iam_user)
+        self.log.info("IAMs deleted %s", iam_deleted)
         for bucket in buckets_deleted:
             self.buckets_created.remove(bucket)
         for iam in iam_deleted:
@@ -282,7 +298,8 @@ class TestCsmLoad():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-22204')
     def test_22204(self):
-        """Test maximum number of different users which can login using CSM REST per second
+        """
+        Test maximum number of different users which can login using CSM REST per second
         using CSM REST
         """
         test_case_name = cortxlogging.get_frame()
@@ -324,6 +341,7 @@ class TestCsmLoad():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -370,6 +388,130 @@ class TestCsmLoad():
             rampup=test_cfg["rampup"],
             loop=loops)
         assert result, "Errors reported in the Jmeter execution"
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    # pylint: disable=too-many-statements
+    @pytest.mark.skip(reason="not_in_main_build_yet")
+    @pytest.mark.lc
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44799')
+    def test_44799(self):
+        """
+        Verify max number of IAM users using all the required parameters
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_44799"]
+        jmx_file = "CSM_create_IAM_user_Loaded.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
+        user_data = resp.json()
+        self.log.info("Step 1: List user response : %s", user_data)
+        existing_user = len(user_data['users'])
+        self.log.info("Existing iam users count: %s", existing_user)
+        self.log.info("Max iam users : %s", rest_const.MAX_IAM_USERS)
+        new_iam_users = rest_const.MAX_IAM_USERS - existing_user
+        self.log.info("New users to create: %s", new_iam_users)
+        thread_request = test_cfg["thread_request"] # ( login + create )
+        operation_count = new_iam_users * thread_request
+
+        request_usage_rounded = int( thread_request * round( self.request_usage / thread_request ))
+        loop = operation_count // request_usage_rounded
+        req_in_loops = request_usage_rounded * loop
+        operation_last = operation_count - req_in_loops
+        threads_1 = request_usage_rounded // thread_request
+        threads_2 = operation_last // thread_request
+
+        self.log.info("request_usage = %s", self.request_usage)
+        self.log.info("request_usage_rounded = %s", request_usage_rounded)
+        self.log.info("Total Operations = %s", operation_count)
+        self.log.info("Total Requests = %s", operation_count // thread_request)
+        self.log.info("Loop = %s", loop)
+        self.log.info("Operations in loops = %s", req_in_loops)
+        self.log.info("Request in loops = %s", req_in_loops // thread_request)
+        self.log.info("Operations in last = %s", operation_last)
+        self.log.info("Request in last = %s", operation_last // thread_request)
+        self.log.info("threads_1 = %s", threads_1)
+        self.log.info("threads_2 = %s", threads_2)
+
+        self.log.info("Step 2: Create users in parallel")
+        if loop != 0:
+            self.log.info("Run intital batch of create csm users")
+            result = self.jmx_obj.run_verify_jmx(
+                jmx_file,
+                threads=threads_1,
+                rampup=1,
+                loop=loop)
+            assert result, "Errors reported in the Jmeter execution"
+        if operation_last != 0:
+            self.log.info("Run last batch of create csm users")
+            result = self.jmx_obj.run_verify_jmx(
+                jmx_file,
+                threads=threads_2,
+                rampup=1,
+                loop=1)
+            assert result, "Errors reported in the Jmeter execution"
+
+        self.log.info("Find all newly created users")
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
+        user_data_new = resp.json()
+        init_users = user_data['users']
+        current_users = user_data_new['users']
+        self.log.info("List initial user  : %s", init_users)
+        self.log.info("List current user : %s", current_users)
+        delete_user_list = current_users
+        for user in init_users:
+            if user in current_users:
+                delete_user_list.remove(user)
+        self.iam_users_created.extend(delete_user_list)
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.skip(reason="not_in_main_build_yet")
+    @pytest.mark.lc
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44781')
+    def test_44781(self):
+        """
+        Verify proper error message is returned when number of CSM requests exceeds
+        the CSM_REQUEST_USAGE.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        fieldnames = ["role", "user", "pswd"]
+        content.append({fieldnames[0]: "admin",
+                        fieldnames[1]: CSM_REST_CFG["csm_admin_user"]["username"],
+                        fieldnames[2]: CSM_REST_CFG["csm_admin_user"]["password"]})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+        jmx_file = "CSM_Concurrent_Same_User_Login.jmx"
+        self.log.info("Running jmx scripts: %s", jmx_file)
+        request_count_limited = math.floor(self.request_usage - self.request_usage * 0.1)
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file,
+            threads=request_count_limited,
+            rampup=1,
+            loop=1)
+        assert result, "Errors reported in the Jmeter execution for less than limit"
+        request_count_exceed = math.floor(self.request_usage + self.request_usage * 0.1)
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file,
+            threads=request_count_exceed,
+            rampup=1,
+            loop=1)
+        assert result is False, "Errors not reported in the Jmeter execution for greater than limit"
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
