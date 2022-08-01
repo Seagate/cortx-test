@@ -143,36 +143,31 @@ class TestCsmLoad():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-44788')
     def test_44788(self):
-        """Test maximum number of same users which can login per second using CSM REST.
+        """
+        CSM load testing with Get User Capacity while running IOs in parallel
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.test_cfgs["test_44788"]
+        self.log.info("Step 1: Create account for I/O and GET capacity usage stats")
         mgm_ops = ManagementOPs()
-        users = mgm_ops.create_account_users(nusers=1)
-        self.log.info("users -  %s", users)
-        data = mgm_ops.create_buckets(nbuckets=1, users=users)
-        self.log.info("data -  %s", data)
+        users = mgm_ops.create_account_users(nusers=test_cfg["users_count"], use_cortx_cli=False)
+        data = mgm_ops.create_buckets(nbuckets=test_cfg["buckets_count"], users=users)
+        username = list(data.keys())[0]
 
-        for user in data.keys():
-            self.iam_users_created.append(user)
-            username = user
-            for bucket_data in data.values():
-                for bucket in bucket_data['buckets']:
-                    self.buckets_created.append([bucket,
-                                                bucket_data['accesskey'],
-                                                bucket_data['secretkey']])
-
+        self.log.info("Step 2: Start I/O")
         run_data_chk_obj = RunDataCheckManager(users=data)
         pref_dir = {"prefix_dir": 'test_44788'}
         run_data_chk_obj.start_io_async(
             users=data, buckets=None, files_count=test_cfg["files_count"], prefs=pref_dir)
 
+        self.log.info("Step 3: Poll User Capacity")
         fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
         content = []
         fieldnames = ["user"]
@@ -189,8 +184,24 @@ class TestCsmLoad():
             loop=test_cfg["loop"])
         assert result, "Errors reported in the Jmeter execution"
 
-        stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True)
+        stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True, eventual_stop=True)
         self.log.info("stop_res -  %s", stop_res)
+
+        self.log.info("Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", username)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+        self.log.info("objects -  %s", t_obj)
+        self.log.info("used capacity-  %s", t_size)
+        self.log.info("used_rounded capacity-  %s", m_size)
+        assert t_obj != 0, "Number of objects is Zero"
+        assert t_size != 0, "Used Size is Zero"
+        assert m_size != 0, "Total Size is Zero"
+        assert m_size >= t_size, "Used - Used Rounded Size mismatch found"
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
@@ -199,34 +210,49 @@ class TestCsmLoad():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-44794')
     def test_44794(self):
-        """Test maximum number of same users which can login per second using CSM REST.
+        """
+        CSM load testing in degraded mode to view Degraded capacity
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.test_cfgs["test_44794"]
+        self.log.info("Step 1: Create accounts for I/O")
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=test_cfg["users_count"], use_cortx_cli=False)
         data = mgm_ops.create_buckets(nbuckets=test_cfg["buckets_count"], users=users)
 
-        for user in data.keys():
-            self.iam_users_created.append(user)
-            for bucket_data in data.values():
-                for bucket in bucket_data['buckets']:
-                    self.buckets_created.append([bucket,
-                                                bucket_data['accesskey'],
-                                                bucket_data['secretkey']])
+        self.log.info("Step 2: Fail single node")
+        #TODO: TBD
 
+        self.log.info("Step 3: Start I/O")
         run_data_chk_obj = RunDataCheckManager(users=data)
         pref_dir = {"prefix_dir": 'test_44794'}
         run_data_chk_obj.start_io_async(
             users=data, buckets=None, files_count=test_cfg["files_count"], prefs=pref_dir)
 
+        self.log.info("Step 4: Poll Degraded Capacity")
+        jmx_file = "CSM_Poll_Degraded_Capacity.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file,
+            threads=test_cfg["threads"],
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
+        assert result, "Errors reported in the Jmeter execution"
 
-        time.sleep(4)
-
-
-        stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True)
+        stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True, eventual_stop=True)
         self.log.info("stop_res -  %s", stop_res)
+
+        self.log.info("Step 5: Call degraded capacity api")
+        response = self.csm_obj.get_degraded_capacity(endpoint_param=None)
+        assert response.status_code == HTTPStatus.OK , "Status code check failed"
+        self.log.info("Step 6: Check all variables are present in rest response")
+        resp = self.csm_obj.validate_metrics(response.json(), endpoint_param=None)
+        assert resp, "Rest data metrics check failed in full mode"
+
+        self.log.info("Step 7: Recover node")
+        #TODO: TBD
+
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
