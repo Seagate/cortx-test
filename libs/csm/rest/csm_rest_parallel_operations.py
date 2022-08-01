@@ -26,7 +26,7 @@ from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 class RestParallelOps(RestTestLib):
     """RestIamUser contains all the Rest API calls for iam user operations"""
-    
+
     def __init__(self):
         super(RestParallelOps, self).__init__()
         self.jmx_obj = JmeterInt()
@@ -84,16 +84,18 @@ class RestParallelOps(RestTestLib):
         else:
             loop1, remain_users = divmod(users, request_limit)
             req_loop = {request_limit : loop1, remain_users : 1}
+        self.log.info("User batches : %s", req_loop)
         return req_loop
 
 
     def execute_max_user_loop(self, jmx_file, users, request_limit, ops):
         """
-        
+        Executes jmeter in batches to create max users
         """
         req_loop = self.get_thread_loop(users, request_limit)
         result = True
         for thread, loop in req_loop.items():
+            self.log.info("Running jmeter for Thread: %s and loop: %s", thread, loop)
             batch_cnt = thread * loop + self.counter
             if ops == "create":
                 self.write_users_to_create_csv(batch_cnt)
@@ -119,13 +121,13 @@ class RestParallelOps(RestTestLib):
             user_limit = self.get_max_csm_user_limit()
             existing_user = 3
             users = user_limit - existing_user
-        
+
         jmx_file = "CSM_Create_N_Manage_Users.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        request_limit = 25 #self.get_request_usage_limit(jmx_file, users, request_limit, request_thread)
+        request_limit = self.get_request_usage_limit()
         result = self.execute_max_user_loop(jmx_file, users, request_limit, ops = "create")
         return result
-        
+
     @RestTestLib.authenticate_and_login
     def delete_multi_csm_user(self, users:int):
         """
@@ -139,12 +141,14 @@ class RestParallelOps(RestTestLib):
         jmx_file = "CSM_Delete_N_CsmUsers.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
 
-        request_limit = 25 #self.get_request_usage_limit(jmx_file, users, request_limit, request_thread)
+        request_limit = self.get_request_usage_limit()
         result = self.execute_max_user_loop(jmx_file, users, request_limit, ops = "delete")
         return result
 
     def write_users_to_delete_csv(self, users):
-
+        """
+        Creates a csv with list of users to be deleted
+        """
         fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
         content = []
         fieldnames = ["user"]
@@ -155,6 +159,9 @@ class RestParallelOps(RestTestLib):
         config_utils.write_csv(fpath, fieldnames, content)
 
     def write_users_to_create_csv(self, users):
+        """
+        Creates a csv with list of user to be created
+        """
         fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
         content = []
         fieldnames = ["role", "user", "pswd"]
@@ -165,4 +172,3 @@ class RestParallelOps(RestTestLib):
         self.log.info("Test data file path : %s", fpath)
         self.log.info("Test data content : %s", content)
         config_utils.write_csv(fpath, fieldnames, content)
-

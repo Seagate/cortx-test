@@ -403,7 +403,7 @@ M0CP_G = "m0cp -G -l $ep -H $hax_ep -P $fid -p $prof_fid -s $bsize -c $count -o 
          " $layout $file"
 
 M0CP_U = "m0cp -G -l $ep -H $hax_ep -P $fid -p $prof_fid -s $bsize -c $count -o $obj -L" \
-         " $layout -O $off -u $file" 
+         " $layout -O $off -u $file"
 
 # m0cp from data unit aligned offset 0
 # m0cp -G -l inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@21201
