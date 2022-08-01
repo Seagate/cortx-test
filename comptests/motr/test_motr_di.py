@@ -250,7 +250,7 @@ class TestCorruptDataDetection:
         # ON THE DATA POD: ==========>>>>>>
         # Todo: Copy the emap script to controller pod's root dir>>>>>>>>>>>>>>>>>>>>
         # err_inj_script_path = str(const.MOTR_DI_ERR_INJ_LOCAL_PATH)
-        # err_inj_script_path = str(MOTR_DI_ERR_INJ_LOCAL_PATH)  # Taken from params
+        err_inj_script_path = str(MOTR_DI_ERR_INJ_LOCAL_PATH)  # Taken from params
         # /root/pranavdev/cortx-test/scripts/server_scripts/error_injection.py on master does not
         # exist
         # This exists on the client = local path
