@@ -58,10 +58,8 @@ from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.motr.emap_fi_adapter import MotrCorruptionAdapter
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from commons.utils import assert_utils
-from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
-from commons.constants import const
-from config import CMN_CFG, RAS_VAL
+from config import CMN_CFG
 
 logger = logging.getLogger(__name__)
 
@@ -299,7 +297,7 @@ class TestCorruptDataDetection:
         # Todo: Copy the emap script
         #  Trying on first data pod only ---- Then on all pods run this in for loop
 
-        logger.debug(f"node_data_pod_dict = {POD_NAME_PREFIX}")
+        logger.debug(f"node_data_pod_dict = {const.POD_NAME_PREFIX}")
 
         pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
         for pod in pod_list:
