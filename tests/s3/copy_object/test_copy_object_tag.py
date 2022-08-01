@@ -25,6 +25,7 @@ import os
 import random
 from time import perf_counter_ns
 import logging
+from tkinter import W
 import pytest
 
 from commons.utils import assert_utils
@@ -242,7 +243,6 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = str(response['CopyObjectResult']['ETag'])
-        self.log("Copy Object Etag %s", copy_etag)
         self.log.info("Step 3: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
@@ -411,7 +411,7 @@ class TestCopyObjectsTag():
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
         self.log.info("Step 3: Retrieved tag of an object")
         self.log.info("Step 4: Compare tagset of source and destination object")
-        assert_utils.assert_equal(copy_resp[1]["TagCount"], len(put_resp[1]), len(put_resp[1]))
+        assert_utils.assert_equal(len(copy_resp[1]), len(put_resp[1]), len(put_resp[1]))
         for num in range(len(copy_resp[1])):
             assert_utils.assert_equal(copy_resp[1][num]["Key"],
                                       put_resp[1][num]["Key"], put_resp[1][num]["Key"])
