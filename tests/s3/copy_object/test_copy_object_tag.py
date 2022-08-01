@@ -119,7 +119,7 @@ class TestCopyObjectsTag():
         self.log.info("Setting tag to an object %s", obj_name)
         resp = self.tag_obj.set_object_tag(bucket_name, obj_name, key, value, tag_count=tag_count)
         assert resp[0], resp[1]
-        return put_resp[1]["ETag"]
+        return resp, put_resp[1]["ETag"]
 
     def copy_obj_di_check(self, src_bucket, src_object, dest_bucket, dest_object, **kwargs):
         """
@@ -220,7 +220,6 @@ class TestCopyObjectsTag():
         self.log.info("Simple Copy-object with destination tag set same as source object"
                       "in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
-        tag_str = self.key_src + "=" + self.value_src
         put_etag = self.create_put_set_object_tag(self.bucket_name1,
                                                   self.object_name1,
                                                   self.file_path,
@@ -233,6 +232,7 @@ class TestCopyObjectsTag():
         assert_utils.assert_true(put_resp[0], put_resp[1])
         self.log.debug("Retrieved tag of an object")
         self.log.info("Step 2: Copy object to same bucket with different object.")
+        tag_str = put_resp[1][0]["Key"] + "=" + put_resp[1][0]["Value"]
         status, response = self.s3_test_obj.copy_object(self.bucket_name1,
                                                         self.object_name1,
                                                         self.bucket_name1,
@@ -318,8 +318,10 @@ class TestCopyObjectsTag():
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
         self.log.info("Step 3: Retrieved tag of an object")
         self.log.info("Step 4: Compare tagset of source and destination object")
-        assert_utils.assert_not_equal(copy_resp[1][0]["Key"], self.key_src, self.key_src)
-        assert_utils.assert_not_equal(copy_resp[1][0]["Value"], self.value_src, self.value_src)
+        assert_utils.assert_not_equal(copy_resp[1][0]["Key"], put_resp[1][0]["Key"],
+                                      put_resp[1][0]["Key"])
+        assert_utils.assert_not_equal(copy_resp[1][0]["Value"], put_resp[1][0]["Value"],
+                                      put_resp[1][0]["Value"])
         self.log.info("Step 4: Compared and verified tags of source and destination object"
                       " are different")
         self.log.info("Verify destination tag set match with assigned tag set in copy object")
@@ -339,14 +341,15 @@ class TestCopyObjectsTag():
                                                         Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        put_etag = resp[1]["ETag"]
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
         copy_resp = self.tag_obj.get_object_tags(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(copy_resp[0], copy_resp[1])
         self.log.info("Retrieved tag of an object")
         self.log.info("Step 7: Compare tagset of source and destination object")
-        assert_utils.assert_not_equal(copy_resp[1][0]["Key"], self.key_src, self.key_src)
-        assert_utils.assert_not_equal(copy_resp[1][0]["Value"], self.value_src, self.value_src)
+        assert_utils.assert_not_equal(copy_resp[1][0]["Key"], put_resp[1][0]["Key"],
+                                      put_resp[1][0]["Key"])
+        assert_utils.assert_not_equal(copy_resp[1][0]["Value"], put_resp[1][0]["Value"],
+                                      put_resp[1][0]["Value"])
         self.log.info("Verify destination tag set match with assigned tag set in copy object")
         assert_utils.assert_equal(copy_resp[1][0]["Key"], self.key_dest, self.key_dest)
         assert_utils.assert_equal(copy_resp[1][0]["Value"], self.value_dest, self.value_dest)
