@@ -60,6 +60,7 @@ from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from commons.utils import assert_utils
 from commons.helpers.health_helper import Health
 from config import CMN_CFG
+from commons.params import MOTR_DI_ERR_INJ_LOCAL_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -245,7 +246,10 @@ class TestCorruptDataDetection:
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
 
-        err_inj_script_path = str(const.MOTR_DI_ERR_INJ_LOCAL_PATH)
+        # err_inj_script_path = str(const.MOTR_DI_ERR_INJ_LOCAL_PATH)
+        err_inj_script_path = str(MOTR_DI_ERR_INJ_LOCAL_PATH)
+
+        # MOTR_DI_ERR_INJ_LOCAL_PATH
         logger.debug(f"Printing const: {err_inj_script_path}")
 
         remote_script_path = const.CONTAINER_PATH
@@ -294,10 +298,13 @@ class TestCorruptDataDetection:
         # Todo: Working code -> Enable -> End --------------------------------
 
         # ON THE DATA POD: ==========>>>>>>
-        # Todo: Copy the emap script
+        # Todo: Copy the emap script to controller pod's root dir
+
         #  Trying on first data pod only ---- Then on all pods run this in for loop
 
         logger.debug(f"node_data_pod_dict = {const.POD_NAME_PREFIX}")
+
+        # Todo: Copy the emap script
 
         pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
         for pod in pod_list:
