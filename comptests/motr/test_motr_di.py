@@ -254,13 +254,13 @@ class TestCorruptDataDetection:
         # /root/pranavdev/cortx-test/scripts/server_scripts/error_injection.py on master does not
         # exist
         # This exists on the client = local path
-        copy_status = Host.copy_file_to_remote(
-            self.motr_obj.master_node,
+        copy_status, resp = self.motr_obj.master_node.copy_file_to_remote(
             str(MOTR_DI_ERR_INJ_LOCAL_PATH),
-            str(const.HA_TMP)
+            const.HA_TMP
         )
-        if copy_status:
-            logger.info(f"....... File copy success to Controller Node .........................")
+        if not copy_status:
+            return status, resp
+            # logger.info(f"....... File copy success to Controller Node .........................")
         else:
             logger.debug(f"copy failed,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
         # Todo: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
