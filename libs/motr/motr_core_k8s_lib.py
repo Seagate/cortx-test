@@ -291,7 +291,7 @@ class MotrCoreK8s:
             log.debug("Copying emap file to remote container")
 
             cmd = common_cmd.HA_COPY_CMD.format(
-                common_const.MOTR_DI_ERR_INJ_SCRIPT_PATH,
+                common_const.MOTR_DI_ERR_INJ_LOCAL_PATH,
                 node_pod,
                 common_const.MOTR_DI_ERR_INJ_SCRIPT_PATH,
             )  # nosec
@@ -302,7 +302,7 @@ class MotrCoreK8s:
         except IOError as error:
             log.exception(
                 "Failed to copy %s inside data pod %s due to error: %s",
-                common_const.MOCK_MONITOR_LOCAL_PATH,
+                common_const.MOTR_DI_ERR_INJ_LOCAL_PATH,
                 node_pod,
                 error,
             )
