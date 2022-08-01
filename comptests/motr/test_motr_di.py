@@ -297,7 +297,7 @@ class TestCorruptDataDetection:
         pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
         for pod in pod_list:
             logger.debug(f"in pod = {pod}")
-            result = self.master_node_list[0].copy_file_to_container(
+            result = self.motr_obj.master_node_list[0].copy_file_to_container(
                 err_inj_script_path,
                 pod,
                 remote_script_path,
