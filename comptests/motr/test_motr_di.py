@@ -294,7 +294,7 @@ class TestCorruptDataDetection:
             logger.debug(f"const.MOTR_CONTAINER_PREFIX + \"-001\" = {const.MOTR_CONTAINER_PREFIX} "
                          f"-001")
             result = self.master_node_list[0].copy_file_to_container(
-                "error_injection.py",
+                const.MOTR_DI_ERR_INJ_LOCAL_PATH,
                 node_pod,
                 const.CONTAINER_PATH,
                 const.MOTR_CONTAINER_PREFIX + "-001"
