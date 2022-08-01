@@ -288,6 +288,8 @@ class MotrCoreK8s:
         Command for copying file to container
         :node_pod: on which node_pod file needs to be copied
         """
+        pod_list = self.node_obj.get_all_pods(common_const.POD_NAME_PREFIX)
+        log.debug("pod list is %s", pod_list)
         try:
             # Todo: remove debug
             log.debug("Copying emap file to remote container")

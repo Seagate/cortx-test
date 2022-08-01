@@ -287,26 +287,23 @@ class TestCorruptDataDetection:
         # Todo: Working code -> Enable -> End --------------------------------
 
         # ON THE DATA POD: ==========>>>>>>
+        # Todo: Copy the emap script
+        #  Trying on first data pod only ---- Then on all pods run this in for loop
 
-        for node_pod in node_pod_dict:
+        pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
+        for pod in pod_list:
             logger.debug(f"self.master_node_list[0] = {self.master_node_list[0]}")
             logger.debug(f"const.CONTAINER_PATH, {const.CONTAINER_PATH,}")
             logger.debug(f"const.MOTR_CONTAINER_PREFIX + \"-001\" = {const.MOTR_CONTAINER_PREFIX} "
                          f"-001")
             result = self.master_node_list[0].copy_file_to_container(
                 const.MOTR_DI_ERR_INJ_LOCAL_PATH,
-                node_pod,
+                pod,
                 const.CONTAINER_PATH,
                 const.MOTR_CONTAINER_PREFIX + "-001"
             )
             if not result:
                 raise FileNotFoundError
-        # Todo: Copy the emap script
-        #  Trying on first data pod only ---- Then on all pods run this in for loop
-        for ndp_dict_key, ndp_dict_val in node_data_pod_dict.items():
-            # self.motr_obj.copy_file_to_remote_container(list(node_data_pod_dict.keys())[0])
-            logger.debug(f" Copying emap to data pod = {ndp_dict_val}")
-            # self.motr_obj.copy_file_to_remote_container(ndp_dict_val)
 
         # # Todo: and run Emap
         # self.motr_corruption_obj.inject_checksum_corruption()
