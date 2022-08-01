@@ -300,7 +300,7 @@ class TestCorruptDataDetection:
                 const.MOTR_DI_ERR_INJ_LOCAL_PATH,
                 pod,
                 const.CONTAINER_PATH,
-                const.MOTR_CONTAINER_PREFIX + "-001"
+                const.MOTR_CONTAINER_PREFIX
             )
             if not result:
                 raise FileNotFoundError
