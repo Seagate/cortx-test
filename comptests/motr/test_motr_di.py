@@ -109,9 +109,7 @@ class TestCorruptDataDetection:
         """Setup class for running Motr tests"""
         logger.info("STARTED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
-        cls.motr_corruption_obj = MotrCorruptionAdapter(
-            CMN_CFG, oid="1234:1234"
-        )
+        cls.motr_corruption_obj = MotrCorruptionAdapter(CMN_CFG, oid="1234:1234")
         cls.dtm_obj = DTMRecoveryTestLib(max_attempts=0)
         cls.master_node_list = list()
         cls.worker_node_list = list()
@@ -126,9 +124,9 @@ class TestCorruptDataDetection:
             else:
                 cls.worker_node_list.append(node_obj)
 
-            cls.health_obj = Health(hostname=node["hostname"], username=node["username"],
-                                    password=node["password"]
-                                    )
+            cls.health_obj = Health(
+                hostname=node["hostname"], username=node["username"], password=node["password"]
+            )
         cls.m0d_process = "m0d"
         cls.system_random = secrets.SystemRandom()
         logger.info("ENDED: Setup Operation")
@@ -150,15 +148,15 @@ class TestCorruptDataDetection:
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
         object_id = (
-                str(self.system_random.randint(1, 1024 * 1024))
-                + ":"
-                + str(self.system_random.randint(1, 1024 * 1024))
+            str(self.system_random.randint(1, 1024 * 1024))
+            + ":"
+            + str(self.system_random.randint(1, 1024 * 1024))
         )
         for client_num in range(motr_client_num):
             for node in node_pod_dict:
 
                 for b_size, (cnt_c, cnt_u), layout, offset in zip(
-                        bsize_list, count_list, layout_ids, offsets
+                    bsize_list, count_list, layout_ids, offsets
                 ):
                     self.motr_obj.dd_cmd(b_size, cnt_c, infile, node)
                     self.motr_obj.cp_cmd(b_size, cnt_c, object_id, layout, infile, node, client_num)
@@ -199,14 +197,14 @@ class TestCorruptDataDetection:
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
         object_id = (
-                str(self.system_random.randint(1, 1024 * 1024))
-                + ":"
-                + str(self.system_random.randint(1, 1024 * 1024))
+            str(self.system_random.randint(1, 1024 * 1024))
+            + ":"
+            + str(self.system_random.randint(1, 1024 * 1024))
         )
         for client_num in range(motr_client_num):
             for node in node_pod_dict:
                 for b_size, (cnt_c, cnt_u), layout, offset in zip(
-                        bsize_list, count_list, layout_ids, offsets
+                    bsize_list, count_list, layout_ids, offsets
                 ):
                     self.motr_obj.dd_cmd(b_size, cnt_c, infile, node)
                     self.motr_obj.cp_cmd(b_size, cnt_c, object_id, layout, infile, node, client_num)
@@ -253,22 +251,28 @@ class TestCorruptDataDetection:
         logger.debug(f"node_data_pod_dict = {node_data_pod_dict}")
         # motr_client_num = self.motr_obj.get_number_of_motr_clients()
 
-        # Format the Object ID is xxx:yyy format
-        object_id = (
+        # For all pods in the system
+        for node_pod in node_pod_dict:
+
+            # Format the Object ID is xxx:yyy format
+            object_id = (
                 str(self.system_random.randint(1, 1024 * 1024))
                 + ":"
                 + str(self.system_random.randint(1, 1024 * 1024))
-        )
+            )
 
-        # For all pods in the system
-        for node_pod in node_pod_dict:
+            # Store in object list
+            object_id_list = []
+
             for b_size, (cnt_c, cnt_u), layout, offset in zip(
-                    bsize_list, count_list, layout_ids, offsets
+                bsize_list, count_list, layout_ids, offsets
             ):
+
                 # On the Client POD - cortx - hax container ==========>>>>>>
                 # Create file for m0cp cmd
                 self.motr_obj.dd_cmd(b_size, cnt_c, infile, node_pod)
                 # Create object
+                object_id_list.append(object_id)  # Store object_id for future delete
                 self.motr_obj.cp_cmd(
                     b_size, cnt_c, object_id, layout, infile, node_pod, 0
                 )  # client_num
@@ -288,7 +292,7 @@ class TestCorruptDataDetection:
 
         for node_pod in node_pod_dict:
             for b_size, (cnt_c, cnt_u), layout, offset in zip(
-                    bsize_list, count_list, layout_ids, offsets
+                bsize_list, count_list, layout_ids, offsets
             ):
                 # On the Client POD - cortx - hax container ==========>>>>>>
 

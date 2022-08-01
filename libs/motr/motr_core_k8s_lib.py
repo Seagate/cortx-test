@@ -293,6 +293,8 @@ class MotrCoreK8s:
                 common_const.MOTR_DI_ERR_INJ_SCRIPT_PATH,
             )  # nosec
             log.info("Copying file to remote container")
+            # Todo remove debug:
+            log.debug("Debug: >>>> Copied emap script >>>>")
             self.node_obj.execute_cmd(cmd)
         except IOError as error:
             log.exception(
