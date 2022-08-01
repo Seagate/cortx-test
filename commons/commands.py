@@ -403,7 +403,12 @@ M0CP_G = "m0cp -G -l $ep -H $hax_ep -P $fid -p $prof_fid -s $bsize -c $count -o 
          " $layout $file"
 
 M0CP_U = "m0cp -G -l $ep -H $hax_ep -P $fid -p $prof_fid -s $bsize -c $count -o $obj -L" \
-         " $layout -O $off -u $file" 
+         " $layout -O $off -u $file"
+M0TRACE = "m0trace -i $trace > $file"
+LIST_M0TRACE = "ls -ltr| grep m0|awk '{print $9}'"
+GREP_DP_BLOCK_FID = "grep -E \"prepare io fops|UTyp\" $file| cut -d , -f2"
+EMAP_LIST = "python3 /root/error_injection.py -list_emap -m $path -parse_size $size 2>$file"
+FETCH_ID_EMAP = "grep -n {} -e \"{}\"|awk 'END{{print $9}}'"
 
 # m0cp from data unit aligned offset 0
 # m0cp -G -l inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@21201
@@ -564,6 +569,9 @@ K8S_CHANGE_POD_NODE = "kubectl patch deploy/{} --type='json' "\
 KUBECTL_CREATE_NAMESPACE = "kubectl create ns {}"
 KUBECTL_GET_NAMESPACE = "kubectl get ns"
 KUBECTL_DEL_NAMESPACE = "kubectl delete ns {}"
+KUBECTL_DESCRIBE_POD_CMD = "kubectl describe pod {}"
+KUBECTL_GET_STATEFULSET = "kubectl get sts | grep '{}'"
+KUBECTL_CREATE_STATEFULSET_REPLICA = "kubectl scale statefulset {} --replicas {}"
 
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""

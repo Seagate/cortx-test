@@ -73,6 +73,9 @@ MOTR_CLIENT="motr_client"
 UPGRADE_IN_PROGRESS_MSG = "An upgrade is already in progress"
 UPGRADE_SUSPEND_MSG = "Upgrade suspended"
 UPGRADE_ALREADY_SUSPENDED = "Upgrade Process Not found on the system, Suspend cannot be performed"
+PARSE_SIZE = "10485760"
+CONTAINER_PATH = "/root/error_injection.py"
+POD_HCTL_POSTFIX = "-headless.cortx.svc.cluster.local"
 
 # common constant.
 ERR_MSG = "Error in %s: %s"
@@ -492,3 +495,5 @@ REQUIRED_MODULES = ["Procpath", "apsw-wheels"]
 DTM_RECOVERY_STATE = "RECOVERED"
 M0D_SVC = "ioservice"
 SERVER_SVC = "rgw_s3"
+STATEFULSET = "StatefulSet"
+REPLICASET = "ReplicaSet"
