@@ -858,21 +858,27 @@ class MotrCoreK8s:
                     conn.disconnect()
 
     def dump_m0trace_log(self, filepath, node):
-        """ This method is used to parse the m0trace logs on all the data pods,
+        """This method is used to parse the m0trace logs on all the data pods,
         filepath: m0trace log path
         """
         list_trace = common_cmd.LIST_M0TRACE
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {list_trace}", decode=True)
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {list_trace}",
+            decode=True,
+        )
         latest_trace_file = resp.split("\n")[-1]
         log.debug("Resp: %s", latest_trace_file)
         cmd = Template(common_cmd.M0TRACE).substitute(trace=latest_trace_file, file=filepath)
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+            decode=True,
+        )
         log.info("Resp of trace: %s", resp)
         return resp, filepath
 
@@ -894,27 +900,27 @@ class MotrCoreK8s:
         for line in lines:
             if "tfid" in line:
                 tfid_list.append(line)  # append the target fid in the list.
-            if '[P]' in line:
+            if "[P]" in line:
                 if tfid_list:
                     tfid = tfid_list.pop()
                     tfid = tfid.split(" ")
                     fid = tfid[-1][1:-1]  # fetch target fid and strip the <>
-                    dict_schema = {"PARITY"+str(parity_blk): fid}  # create dictionary
+                    dict_schema = {"PARITY" + str(parity_blk): fid}  # create dictionary
                     checksum_dict.update(dict_schema)
-                    parity_blk=parity_blk+1
+                    parity_blk = parity_blk + 1
             if "[D]" in line:
                 if tfid_list:
                     tfid = tfid_list.pop()
                     tfid = tfid.split(" ")
                     fid = tfid[-1][1:-1]  # fetch target fid and strip the <>
-                    dict_schema = {"DATA"+str(data_blk): fid}  # create dictionary
+                    dict_schema = {"DATA" + str(data_blk): fid}  # create dictionary
                     checksum_dict.update(dict_schema)
-                    data_blk=data_blk+1
+                    data_blk = data_blk + 1
         log.debug("DICT is %s", checksum_dict)
         return checksum_dict
 
     # pylint: disable=too-many-locals
-    def fetch_gob(self, metadata_device, parse_size, fid:dict):
+    def fetch_gob(self, metadata_device, parse_size, fid: dict):
         """
         This method helps to verify the gob id by running emap_list using error_injection script
         it returns the corresponding data,parity block checksum id
@@ -926,44 +932,49 @@ class MotrCoreK8s:
         data_checksum_list = []
         parity_checksum_list = []
         for key, value in fid.items():
-            if "DATA" in key:        # fetch the value from dict for data block
+            if "DATA" in key:  # fetch the value from dict for data block
                 fid_val = value[7:16]
                 d_fid.append(fid_val)
-            else:                   # fetch the value from dict for parity block
+            else:  # fetch the value from dict for parity block
                 fid_val = value[7:16]
                 p_fid.append(fid_val)
         # Iterate over data pods to copy the error_injection.py script on motr container
         for pod in pod_list:
             result = self.master_node_list[0].copy_file_to_container(
-                "error_injection.py", pod, common_const.CONTAINER_PATH,
-                common_const.MOTR_CONTAINER_PREFIX+"-001")
+                "error_injection.py",
+                pod,
+                common_const.CONTAINER_PATH,
+                common_const.MOTR_CONTAINER_PREFIX + "-001",
+            )
             if not result:
                 raise FileNotFoundError
             # Run script to list emap and dump the output to the file
-            cmd = Template(common_cmd.EMAP_LIST).substitute(path=metadata_device, size=parse_size,
-                                                            file=f"{pod}-emap_list.txt")
+            cmd = Template(common_cmd.EMAP_LIST).substitute(
+                path=metadata_device, size=parse_size, file=f"{pod}-emap_list.txt"
+            )
             self.node_obj.send_k8s_cmd(
-                operation="exec", pod=pod, namespace=common_const.NAMESPACE,
-                command_suffix=f"-c {common_const.MOTR_CONTAINER_PREFIX}-001 "
-                               f"-- {cmd}", decode=True)
+                operation="exec",
+                pod=pod,
+                namespace=common_const.NAMESPACE,
+                command_suffix=f"-c {common_const.MOTR_CONTAINER_PREFIX}-001 " f"-- {cmd}",
+                decode=True,
+            )
             d_fid = [*set(d_fid)]
             p_fid = [*set(p_fid)]
             log.debug("lists of d_fid, p_fid %s \n %s", d_fid, p_fid)
             # Fetch the target fid from emap list output captured in file while running
             # emap list on motr container
             for data_fid in d_fid:
-                cmd = common_cmd.FETCH_ID_EMAP.format(
-                    f"{pod}-emap_list.txt", data_fid)
+                cmd = common_cmd.FETCH_ID_EMAP.format(f"{pod}-emap_list.txt", data_fid)
                 d_resp = self.master_node_list[0].execute_cmd(cmd)
-                d_resp = d_resp.decode('UTF-8').strip(",\n")  # strip the resp and make it readable
+                d_resp = d_resp.decode("UTF-8").strip(",\n")  # strip the resp and make it readable
                 if d_resp:
                     # log.debug("gob data entity %s", d_resp)
                     data_checksum_list.append(d_resp)
             for parity_fid in p_fid:
-                cmd = common_cmd.FETCH_ID_EMAP.format(
-                    f"{pod}-emap_list.txt", parity_fid)
+                cmd = common_cmd.FETCH_ID_EMAP.format(f"{pod}-emap_list.txt", parity_fid)
                 p_resp = self.master_node_list[0].execute_cmd(cmd)
-                p_resp = p_resp.decode('UTF-8').strip(",\n")  # strip the resp and make it readable
+                p_resp = p_resp.decode("UTF-8").strip(",\n")  # strip the resp and make it readable
                 if p_resp:
                     parity_checksum_list.append(p_resp)
         log.debug("gob data %s", data_checksum_list)
