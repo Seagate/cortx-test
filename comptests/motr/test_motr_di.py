@@ -301,7 +301,9 @@ class TestCorruptDataDetection:
                 # On the Client POD - cortx - hax container ==========>>>>>>
 
                 # # Read objects after
-                self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout, outfile, node_pod, 0)
+                self.motr_obj.cat_cmd(
+                    b_size, cnt_c, object_id_list[node_pod.index()], layout, outfile, node_pod, 0
+                )
 
                 self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
                 self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
