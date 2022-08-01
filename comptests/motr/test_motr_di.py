@@ -248,7 +248,7 @@ class TestCorruptDataDetection:
         outfile = TEMP_PATH + "output"
         err_inj_script_path = const.MOTR_DI_ERR_INJ_LOCAL_PATH
         remote_script_path = const.CONTAINER_PATH,
-        motr_container_name = const.MOTR_CONTAINER_NAME
+        motr_container_name = const.MOTR_CONTAINER_PREFIX + "-001"
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         node_data_pod_dict = self.motr_obj.get_node_data_pod_dict()
         logger.debug(f"node_data_pod_dict = {node_data_pod_dict}")
@@ -296,9 +296,6 @@ class TestCorruptDataDetection:
         pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
         for pod in pod_list:
             logger.debug(f"in pod = {pod}")
-            # Todo: remove temp copy -copy_file_to_container(self, local_file_path, pod_name,
-            #  container_path,
-            #  container_name):
             result = self.master_node_list[0].copy_file_to_container(
                 err_inj_script_path,
                 pod,
