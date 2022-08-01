@@ -247,10 +247,8 @@ class TestCorruptDataDetection:
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
         err_inj_script_path = const.MOTR_DI_ERR_INJ_LOCAL_PATH
-        remote_script_path = const.CONTAINER_PATH,
+        remote_script_path = const.CONTAINER_PATH
         motr_container_name = str(const.MOTR_CONTAINER_PREFIX) + "-001"
-        # motr_container_name = str(motr_container_name) + "-001"
-        # node_pod_dict = self.motr_obj.get_node_pod_dict()
         node_data_pod_dict = self.motr_obj.get_node_data_pod_dict()
         logger.debug(f"node_data_pod_dict = {node_data_pod_dict}")
         # motr_client_num = self.motr_obj.get_number_of_motr_clients()
