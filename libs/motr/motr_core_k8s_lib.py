@@ -303,7 +303,7 @@ class MotrCoreK8s:
             log.exception(
                 "Failed to copy %s inside data pod %s due to error: %s",
                 common_const.MOCK_MONITOR_LOCAL_PATH,
-                self.node_pod_dict[node_pod],
+                node_pod,
                 error,
             )
             return False
