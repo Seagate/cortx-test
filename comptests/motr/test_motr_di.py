@@ -255,8 +255,8 @@ class TestCorruptDataDetection:
         # exist
         # This exists on the client = local path
         copy_status, resp = self.motr_obj.master_node_list[0].copy_file_to_remote(
-            MOTR_DI_ERR_INJ_LOCAL_PATH,
-            const.HA_TMP
+            MOTR_DI_ERR_INJ_LOCAL_PATH,  # From param
+            const.MOTR_DI_ERR_INJ_SCRIPT_PATH
         )
         if not copy_status:
             return copy_status, resp
