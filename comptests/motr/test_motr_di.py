@@ -248,26 +248,20 @@ class TestCorruptDataDetection:
         outfile = TEMP_PATH + "output"
 
         # ON THE DATA POD: ==========>>>>>>
-        # Todo: Copy the emap script to controller pod's root dir>>>>>>>>>>>>>>>>>>>>
-        # err_inj_script_path = str(const.MOTR_DI_ERR_INJ_LOCAL_PATH)
+        # Copy the emap script to controller node's root dir
         err_inj_script_path = str(MOTR_DI_ERR_INJ_LOCAL_PATH)  # Taken from params
-        # /root/pranavdev/cortx-test/scripts/server_scripts/error_injection.py on master does not
-        # exist
-        # This exists on the client = local path
         copy_status, resp = self.motr_obj.master_node_list[0].copy_file_to_remote(
-            MOTR_DI_ERR_INJ_LOCAL_PATH, const.MOTR_DI_ERR_INJ_SCRIPT_PATH  # From param
+            err_inj_script_path, const.MOTR_DI_ERR_INJ_SCRIPT_PATH  # From param
         )
         if not copy_status:
             return copy_status, resp
-            # logger.info(f"....... File copy success to Controller Node .........................")
         else:
-            logger.debug(f"copy failed,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,")
-        # Todo: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+            logger.debug(f"copy failed")
 
         remote_script_path = const.CONTAINER_PATH
         logger.debug(f"Printing const: {remote_script_path}")
 
-        motr_container_name = str(const.MOTR_CONTAINER_NAME)
+        motr_container_name = f"{const.MOTR_CONTAINER_PREFIX}-001"
         logger.debug(f"Printing const: {motr_container_name}")
 
         node_data_pod_dict = self.motr_obj.get_node_data_pod_dict()
@@ -310,10 +304,9 @@ class TestCorruptDataDetection:
         # Todo: Working code -> Enable -> End --------------------------------
 
         logger.debug(f"node_data_pod_dict = {const.POD_NAME_PREFIX}")
-
+        logger.info(f"Copying the error injection script to cortx_motr_io containers in data pods")
         pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
         for pod in pod_list:
-            logger.debug(f"in pod = {pod}")
             result = self.motr_obj.master_node_list[0].copy_file_to_container(
                 const.MOTR_DI_ERR_INJ_SCRIPT_PATH, pod, remote_script_path, motr_container_name
             )
