@@ -228,11 +228,11 @@ class MotrCorruptionAdapter(InjectCorruption):
                 )
                 logging.debug(f"motr_containers %%%%%%%%%% = {motr_containers}")
 
-                # motr_instances = len(motr_containers)
-                # select 1st motr instance
-                logging.debug(f"Executing only on pod_name = {pod_name}")
-                if pod_name == "cortx-data-g0-0":  # Todo: remove hardcode
-                    logging.debug(f" Inside.......... pod_name = {pod_name}")
+                # motr_instances = len(motr_containers)  # Todo
+                # select 1st motr pod
+                logging.debug(f"pod_name = {pod_name}")
+                if pod_name == "cortx-data-g0-0":
+                    logging.debug(f"Inside.......... pod_name = {pod_name}")
                     retries = 1
                     success = False
                     while retries > 0:
@@ -255,8 +255,6 @@ class MotrCorruptionAdapter(InjectCorruption):
                             time.sleep(2)
                     if success:
                         break
-                else:
-                    break
             # Todo:
             # if self.restart_motr_container(0):
             #     return True
