@@ -288,9 +288,6 @@ class TestCorruptDataDetection:
                     b_size, cnt_c, object_id, layout, infile, node_pod, 0
                 )  # client_num
 
-                # todo: Remove this object cleaning from here after use:
-                self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
-
                 # self.motr_obj.parse_m0trace_log()
                 # self.motr_obj.read_m0trace_log()
         logger.debug(f"object_id_list is: ###### {object_id_list}")
@@ -325,6 +322,7 @@ class TestCorruptDataDetection:
                 )
 
                 self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
+
                 self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
 
             logger.info("Stop: Verify emap corruption detection operation")
