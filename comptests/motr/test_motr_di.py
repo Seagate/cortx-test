@@ -310,7 +310,7 @@ class TestCorruptDataDetection:
                 raise FileNotFoundError
 
         # Todo: and run Emap
-        self.motr_corruption_obj.inject_checksum_corruption()
+        # self.motr_corruption_obj.inject_checksum_corruption()
 
         # # Todo: need to restart m0tr container for taking emap effect
         #
