@@ -449,6 +449,7 @@ class S3MultipartTestLib(Multipart):
         :param file_size: Object size.
         :param file_path: File path.
         :param parts: Number of parts the objects needs to be divided.
+        :return: (Boolean, response)
         """
         try:
             LOGGER.info("Initiating multipart upload")

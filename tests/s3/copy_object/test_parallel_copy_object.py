@@ -116,6 +116,8 @@ class TestCopyObjects:
             assert_utils.assert_true(process1.get()[0], process1.get()[1])
             assert_utils.assert_true(process2.get()[0], process2.get()[1])
 
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-44786")
     @CTFailOn(error_handler)
     def test_44786(self):
@@ -137,6 +139,8 @@ class TestCopyObjects:
         LOGGER.info("ENDED: Test Parallel copy and put operation from same source bucket "
                     "(for simple and multipart source objects)")
 
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-44810")
     @CTFailOn(error_handler)
     def test_44810(self):
@@ -159,6 +163,8 @@ class TestCopyObjects:
         LOGGER.info("ENDED: Test Parallel copy and overwrite of same object "
                     "(for simple and multipart source objects)")
 
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-44791")
     @CTFailOn(error_handler)
     def test_44791(self):
@@ -180,6 +186,8 @@ class TestCopyObjects:
         LOGGER.info("ENDED: Test Parallel self-copy and overwrite on same source bucket "
                     "(simple and multipart source objects)")
 
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-44809")
     @CTFailOn(error_handler)
     def test_44809(self):
@@ -199,6 +207,8 @@ class TestCopyObjects:
         LOGGER.info("ENDED: Test Parallel put and copy on destination object "
                     "(simple and multipart source objects)")
 
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-44807")
     @CTFailOn(error_handler)
     def test_44807(self):
@@ -218,6 +228,8 @@ class TestCopyObjects:
         LOGGER.info("ENDED: Test Parallel copy and overwrite of same source object "
                     "(simple and multipart source objects)")
 
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-44792")
     @CTFailOn(error_handler)
     def test_44792(self):
@@ -249,6 +261,8 @@ class TestCopyObjects:
             assert_utils.assert_true(process1.get()[0], process1.get()[1])
             assert_utils.assert_true(process2.get()[0], process2.get()[1])
 
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-44806")
     @CTFailOn(error_handler)
     def test_44806(self):
@@ -306,16 +320,16 @@ class TestCopyObjects:
             assert_utils.assert_equal(resp1[1]["ETag"], resp[1]["ETag"])
             resp = self.s3_obj.object_info("dest-bucket1", f"{obj_type}-dest-obj4")
             assert_utils.assert_equal(resp3[1]["ETag"], resp[1]["ETag"])
-
         LOGGER.info("ENDED: Test Parallel copy from multiple source buckets to one or multiple "
                     "destination buckets (simple and multipart source objects)")
 
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-44793")
     @CTFailOn(error_handler)
     def test_44793(self):
         """Test 10 times chain Copy operation (simple and multipart object)"""
         LOGGER.info("STARTED: Test 10 times chain Copy operation (simple and multipart object)")
-
         LOGGER.info("Upload obj1 to src-bucket1")
         LOGGER.info("Create 10 destination buckets - dest-bucket2, ….dest-bucket11")
         bucket_prefix = "test-44793-dest-bucket"
