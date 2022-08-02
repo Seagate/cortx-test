@@ -221,17 +221,17 @@ class MotrCorruptionAdapter(InjectCorruption):
         try:
             # data_pods = self.master_node_list[0].get_all_pods_and_ips(POD_NAME_PREFIX)
             data_pods = self.master_node_list[0].get_all_pods(POD_NAME_PREFIX)
-            LOGGER.debug("Data pods and ips : %s", data_pods)
+            LOGGER.debug("Data pods ----- : %s", data_pods)
             for pod_name in data_pods:
                 motr_containers = self.master_node_list[0].get_container_of_pod(
                     pod_name, MOTR_CONTAINER_PREFIX
                 )
                 logging.debug(f"motr_containers %%%%%%%%%% = {motr_containers}")
-                logging.debug(f"pod_name %%%%%%%%%% = {pod_name}")
 
-                motr_instances = len(motr_containers)
+                # motr_instances = len(motr_containers)
                 # select 1st motr instance
-                if pod_name == "cortx-data-g0-0":  # Todo: remove hardcode
+                if pod_name is "cortx-data-g0-0":  # Todo: remove hardcode
+                    logging.debug(f" Executing only on pod_name = {pod_name}")
                     retries = 1
                     success = False
                     while retries > 0:
