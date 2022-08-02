@@ -2087,7 +2087,7 @@ class TestDataPodRestart:
         self.restore_pod = False
 
         LOGGER.info("Step 6: READ-Verify data written in healthy and degraded cluster")
-        skipcleanup = True if CMN_CFG["dtm0_disabled"] else False
+        skipcleanup = not CMN_CFG["dtm0_disabled"]
         for value in workload_info.values():
             user = value[0]
             prefix = value[1]
@@ -2181,7 +2181,7 @@ class TestDataPodRestart:
         self.restore_pod = False
 
         LOGGER.info("Step 6: READ-Verify data written in healthy and degraded cluster")
-        skipcleanup = True if CMN_CFG["dtm0_disabled"] else False
+        skipcleanup = not CMN_CFG["dtm0_disabled"]
         for value in workload_info.values():
             user = value[0]
             prefix = value[1]
@@ -2246,7 +2246,7 @@ class TestDataPodRestart:
         LOGGER.info("Step 3: Cluster is in healthy state.")
 
         LOGGER.info("Step 4: READs-Verify-DELETE data written in healthy cluster")
-        skipcleanup = True if CMN_CFG["dtm0_disabled"] else False
+        skipcleanup = not CMN_CFG["dtm0_disabled"]
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipwrite=True, skipcleanup=skipcleanup,
