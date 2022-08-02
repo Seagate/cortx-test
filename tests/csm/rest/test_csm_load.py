@@ -22,26 +22,30 @@
 import logging
 import math
 import os
+import pytest
+import secrets
 import shutil
 import time
-from http import HTTPStatus
-import pytest
 
 from commons import constants as cons
 from commons import cortxlogging
 from commons import configmanager
+from commons.constants import POD_NAME_PREFIX
+from commons import constants as const
 from commons.constants import Rest as rest_const
-from commons.constants import SwAlerts as const
+from commons.constants import SwAlerts as sw_alerts
 from commons.utils import config_utils
+from http import HTTPStatus
 from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.csm_interface import csm_api_factory
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-from libs.jmeter.jmeter_integration import JmeterInt
-from libs.ras.sw_alerts import SoftwareAlert
-from libs.s3 import s3_misc
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
+from libs.jmeter.jmeter_integration import JmeterInt
+from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.ras.sw_alerts import SoftwareAlert
+from libs.s3 import s3_misc
 
 
 class TestCsmLoad():
@@ -75,15 +79,24 @@ class TestCsmLoad():
         cls.default_cpu_usage = False
         cls.buckets_created = []
         cls.iam_users_created = []
+        cls.ha_obj = HAK8s()
+        cls.failed_pod = []
+        cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
+        cls.num_replica = 1
+        cls.system_random = secrets.SystemRandom()
         cls.request_usage = 122
 
     def setup_method(self):
         """
         Setup Method
         """
+        self.log.info("[START] Setup Method")
         self.log.info("Deleting older jmeter logs : %s", self.jmx_obj.jtl_log_path)
         if os.path.exists(self.jmx_obj.jtl_log_path):
             shutil.rmtree(self.jmx_obj.jtl_log_path)
+        self.restore_pod = self.restore_method = self.deployment_name = self.set_name = None
+        self.num_replica = 1
+        self.log.info("[END] Setup Method")
 
     def teardown_method(self):
         """Teardown method
@@ -91,6 +104,18 @@ class TestCsmLoad():
         self.log.info("STARTED: Teardown Operations.")
         iam_deleted = []
         buckets_deleted = []
+
+        if self.restore_pod:
+            resp = self.ha_obj.restore_pod(pod_obj=self.csm_obj.master,
+                                           restore_method=self.restore_method,
+                                           restore_params={"deployment_name": self.deployment_name,
+                                                           "deployment_backup":
+                                                               self.deployment_backup,
+                                                           "num_replica": self.num_replica,
+                                                           "set_name": self.set_name})
+            self.log.debug("Response: %s", resp)
+            assert resp[0], f"Failed to restore pod by {self.restore_method} way"
+            self.log.info("Successfully restored pod by %s way", self.restore_method)
 
         for bucket in self.buckets_created:
             resp = s3_misc.delete_objects_bucket(bucket[0], bucket[1], bucket[2])
@@ -144,6 +169,7 @@ class TestCsmLoad():
 
 
     # pylint: disable-msg=too-many-locals
+    @pytest.mark.skip(reason="not_in_main_build_yet")
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -205,6 +231,7 @@ class TestCsmLoad():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
+    @pytest.mark.skip(reason="not_in_main_build_yet")
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -221,8 +248,37 @@ class TestCsmLoad():
         users = mgm_ops.create_account_users(nusers=test_cfg["users_count"], use_cortx_cli=False)
         data = mgm_ops.create_buckets(nbuckets=test_cfg["buckets_count"], users=users)
 
-        self.log.info("Step 2: Fail single node")
-        #TODO: TBD
+        self.log.info("Step 2: : [Start] Shutdown the data pod safely")
+        num_replica = 0
+        self.log.info("Get pod to be deleted")
+        sts_dict = self.csm_obj.master.get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        self.log.debug("%s Statefulset: %s", const.POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
+        self.log.info("Pod to be deleted is %s", delete_pod)
+        set_type, set_name = self.csm_obj.master.get_set_type_name(pod_name=delete_pod)
+        if set_type == const.STATEFULSET:
+            resp = self.csm_obj.master.get_num_replicas(set_type, set_name)
+            assert resp[0], resp
+            self.num_replica = int(resp[1])
+            num_replica = self.num_replica - 1
+
+        self.log.info("Step 2: Shutdown random data pod by making replicas=0 and "
+                    "verify cluster & remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.csm_obj.master, health_obj=self.csm_obj.hlth_master,
+            delete_pod=[delete_pod], num_replica=num_replica)
+        # Assert if empty dictionary
+        assert resp[1], "Failed to shutdown/delete pod"
+        pod_name = list(resp[1].keys())[0]
+        if set_type == const.STATEFULSET:
+            self.set_name = resp[1][pod_name]['deployment_name']
+        elif set_type == const.REPLICASET:
+            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.restore_pod = True
+        self.restore_method = resp[1][pod_name]['method']
+        assert resp[0], "Cluster/Services status is not as expected"
 
         self.log.info("Step 3: Start I/O")
         run_data_chk_obj = RunDataCheckManager(users=data)
@@ -250,8 +306,17 @@ class TestCsmLoad():
         resp = self.csm_obj.validate_metrics(response.json(), endpoint_param=None)
         assert resp, "Rest data metrics check failed in full mode"
 
-        self.log.info("Step 7: Recover node")
-        #TODO: TBD
+        resp = self.ha_obj.restore_pod(pod_obj=self.csm_obj.master,
+                                        restore_method=self.restore_method,
+                                        restore_params={"deployment_name": self.deployment_name,
+                                                        "deployment_backup":
+                                                            self.deployment_backup,
+                                                        "num_replica": self.num_replica,
+                                                        "set_name": self.set_name})
+        self.log.debug("Response: %s", resp)
+        assert resp[0], f"Failed to restore pod by {self.restore_method} way"
+        self.restore_pod = False
+        self.log.info("Successfully restored pod by %s way", self.restore_method)
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -614,7 +679,7 @@ class TestCsmLoad():
         self.log.info("\nStep 3: Checking CPU usage fault alerts on CSM REST API ")
         resp = self.csm_alert_obj.wait_for_alert(test_cfg["wait_for_alert"],
                                                  starttime,
-                                                 const.AlertType.FAULT,
+                                                 sw_alerts.AlertType.FAULT,
                                                  False,
                                                  test_cfg["resource_type"])
         assert resp[0], resp[1]
@@ -646,7 +711,7 @@ class TestCsmLoad():
         self.log.info("\nStep 3: Checking CPU usage fault alerts on CSM REST API ")
         resp = self.csm_alert_obj.wait_for_alert(test_cfg["wait_for_alert"],
                                                  starttime,
-                                                 const.AlertType.FAULT,
+                                                 sw_alerts.AlertType.FAULT,
                                                  True,
                                                  test_cfg["resource_type"])
         assert resp[0], resp[1]
