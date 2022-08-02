@@ -245,6 +245,7 @@ class MotrCorruptionAdapter(InjectCorruption):
                                 f"{self.build_emap_command(fault_type)}",
                                 decode=True,
                             )
+                            logging.debug(f"resp = {resp}")
                             if resp:
                                 success = True
                                 break
