@@ -285,9 +285,6 @@ class TestCorruptDataDetection:
                     b_size, cnt_c, object_id, layout, infile, node_pod, 0
                 )  # client_num
 
-                # Todo
-                # self.motr_obj.dump_m0trace_log(filepath=, node=)
-                # tfid_dict = self.motr_obj.read_m0trace_log(filepath=)
                 logger.debug(f"object_id_list is: ###### {object_id_list}")
 
         logger.info(f"Copying the error injection script to cortx_motr_io containers in data pods.")
@@ -300,13 +297,15 @@ class TestCorruptDataDetection:
             if not result:
                 raise FileNotFoundError
 
-        # Todo: and run Emap
-        self.motr_corruption_obj.inject_checksum_corruption()
+        # Run Emap on all objects
+        self.motr_corruption_obj.inject_checksum_corruption(object_id_list)
 
-        # # Todo: need to restart m0tr container for taking emap effect
-        #
+        # Todo
+        # self.motr_obj.dump_m0trace_log(filepath=, node=)
+        # tfid_dict = self.motr_obj.read_m0trace_log(filepath=)
 
-        # Todo: Working code -> Enable -> Start --------------------------------
+        # Todo: need to restart m0tr container for taking emap effect
+
         for index, node_pod in enumerate(node_pod_dict):
             for b_size, (cnt_c, cnt_u), layout, offset in zip(
                 bsize_list, count_list, layout_ids, offsets
@@ -323,7 +322,6 @@ class TestCorruptDataDetection:
                 self.motr_obj.unlink_cmd(object_id_list[index], layout, node_pod, 0)
 
             logger.info("Stop: Verify emap corruption detection operation")
-        # Todo: Working code -> Enable -> End --------------------------------
 
         return True  # Todo: return status to be worked as per responses
 

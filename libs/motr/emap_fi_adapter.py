@@ -66,6 +66,11 @@ class EmapCommand:
             option = "-corrupt_emap " + str(self.opts.get("corrupt_emap"))
             self.add_option(option)
 
+        if self.opts.get("list_emap"):
+            # Cob FID of object is specified for corrupt_emap
+            option = "-list_emap "
+            self.add_option(option)
+
         if self.opts.get("emap_count"):
             # number of checksum corruption instances for parity or data
             option = "-e " + str(self.opts.get("emap_count"))
@@ -206,13 +211,17 @@ class MotrCorruptionAdapter(InjectCorruption):
         selected_shard = self.get_metadata_shard(self.oid)
         cob_id = self.get_object_cob_id(self.oid, dtype=ftype)
         emap_bldr = EmapCommandBuilder()
-        kwargs = dict(
-            corrupt_emap=cob_id, parse_size=10485760, emap_count=1, metadata_db_path=selected_shard
+        kwargs = dict(corrupt_emap=oid,
+                      list_emap="list_emap",
+                      corrupt_emap=cob_id,
+                      parse_size=10485760,
+                      emap_count=1,
+                      metadata_db_path=selected_shard
         )
         cmd = EmapCommandBuilder.build(emap_bldr, **kwargs)
         return cmd
 
-    def inject_fault_k8s(self, fault_type: int):
+    def inject_fault_k8s(self, oid: str, fault_type: int):
         """
         Inject fault of type checksum or parity.
         :param fault_type: checksum or parity
@@ -240,7 +249,7 @@ class MotrCorruptionAdapter(InjectCorruption):
                                 pod=pod_name,
                                 namespace=NAMESPACE,
                                 command_suffix=f"-c {motr_containers[0]} -- "
-                                f"{self.build_emap_command(fault_type)}",
+                                f"{self.build_emap_command(oid, fault_type)}",
                                 decode=True,
                             )
                             logging.debug(f"resp = {resp}")
@@ -258,17 +267,17 @@ class MotrCorruptionAdapter(InjectCorruption):
             # if self.restart_motr_container(0):
             #     return True
         except IOError as ex:
-            LOGGER.exception("Exception occured while injecting emap fault", exc_info=ex)
+            LOGGER.exception("Exception occurred while injecting emap fault", exc_info=ex)
             return False
 
-    def inject_checksum_corruption(self):
+    def inject_checksum_corruption(self, oid: list):
         """Injects data checksum error by providing the DU FID."""
         return self.inject_fault_k8s(FT_CHKSUM)
 
-    def inject_parity_corruption(self):
+    def inject_parity_corruption(self,oid: list):
         """Injects parity checksum error by providing the Parity FID."""
         return self.inject_fault_k8s(FT_PARITY)
 
-    def inject_metadata_corruption(self):
+    def inject_metadata_corruption(self, oid: list):
         """Not supported."""
         raise NotImplementedError("Not Implemented")
