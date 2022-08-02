@@ -247,6 +247,7 @@ class TestCorruptDataDetection:
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
         node_pod_dict = self.motr_obj.get_node_pod_dict()
+        object_id_list = []
 
         # ON THE DATA POD: ==========>>>>>>
 
@@ -275,7 +276,6 @@ class TestCorruptDataDetection:
             )
 
             # Store in object list
-            object_id_list = []
 
             for b_size, (cnt_c, cnt_u), layout, offset in zip(bsize_list, count_list, layout_ids,
                                                               offsets):
@@ -290,7 +290,7 @@ class TestCorruptDataDetection:
 
                 # self.motr_obj.parse_m0trace_log()
                 # self.motr_obj.read_m0trace_log()
-        logger.debug(f"object_id_list is: ###### {object_id_list}")
+                logger.debug(f"object_id_list is: ###### {object_id_list}")
         # Todo: Working code -> Enable -> End --------------------------------
 
         logger.info(f"Copying the error injection script to cortx_motr_io containers in data pods.")
@@ -323,7 +323,7 @@ class TestCorruptDataDetection:
 
                 self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
 
-                self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
+                self.motr_obj.unlink_cmd(object_id_list[node_pod.index()], layout, node_pod, 0)
 
             logger.info("Stop: Verify emap corruption detection operation")
         # Todo: Working code -> Enable -> End --------------------------------
