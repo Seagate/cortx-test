@@ -650,16 +650,15 @@ class TestServerPodRestart:
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-        LOGGER.info("Step 3: Perform WRITEs/READs-Verify with variable object sizes and create "
-                    "new bucket in degraded mode")
+        LOGGER.info("Step 3: Create new buckets and perform WRITEs/READs-Verify with variable "
+                    "object sizes")
         self.test_prefix_deg = 'test-44835-deg'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix_deg,
                                                     skipcleanup=True,
                                                     setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 3: Performed WRITEs/READs-Verify with variable object sizes and create "
-                    "new bucket in degraded mode")
+        LOGGER.info("Step 3: Performed WRITEs/READs-Verify with variable object")
         LOGGER.info("Step 4: Perform READs and verify DI on the data written in healthy cluster "
                     "in background")
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
@@ -701,13 +700,13 @@ class TestServerPodRestart:
                                  f"Logs which contain passed IOs: {resp[1]}")
         LOGGER.info("Step 6: Successfully completed READs and verify DI on the data written in "
                     "healthy cluster in background")
-        LOGGER.info("Step 7: Perform READ-Verify on data written in degraded mode")
+        LOGGER.info("Step 7: Perform READ-Verify on data written in step3")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix_deg,
                                                     skipwrite=True, skipcleanup=True,
                                                     setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Performed READ-Verify on data written in degraded mode")
+        LOGGER.info("Step 7: Performed READ-Verify on data written in step3")
         LOGGER.info("Step 8: Perform WRITEs/READs-Verify after server pod restart")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
