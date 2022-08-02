@@ -65,7 +65,6 @@ class LogicalNode(Host):
         log.debug("Performing %s on service %s in namespace %s...", operation, pod, namespace)
         cmd = commands.KUBECTL_CMD.format(operation, pod, namespace, command_suffix)
         resp = self.execute_cmd(cmd, **kwargs)
-        log.debug(resp)
         if decode:
             resp = (resp.decode("utf8")).strip()
         return resp
