@@ -2186,8 +2186,8 @@ class TestCopyObjects:
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Step 2: Copy object to different bucket")
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
-                                             self.bucket_name2, self.object_name2,
-                                             is_expect_err=False)
+                                                     self.bucket_name2, self.object_name2,
+                                                     is_expect_err=False)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-modified-since ("
                     "True)")
@@ -2458,7 +2458,8 @@ class TestCopyObjects:
         :param src_bucket: The name of the source bucket.
         :param src_obj: The name of the source object.
         :param dest_bucket: The name of the destination bucket.
-        :param dest_obj: The name of the destination object."""
+        :param dest_obj: The name of the destination object.
+        :return: etag, pre_date (current date - 1), post_date (cuurent date + 1) """
         file_path = kwargs.get("fpath", "None")
         file_size = kwargs.get("file_size", 0)
         total_parts = kwargs.get("total_parts", 2)
@@ -2501,7 +2502,7 @@ class TestCopyObjects:
                                                                    unmodified)
                 else:
                     status, response = self.s3_obj.copy_object(src_bucket, src_obj, dest_bucket,
-                                                           dest_obj, CopySourceIfMatch=match)
+                                                               dest_obj, CopySourceIfMatch=match)
             elif nonematch is not None:
                 if modified is not None:
                     status, c_response = self.s3_obj.copy_object(src_bucket, src_obj, dest_bucket,
@@ -2520,12 +2521,12 @@ class TestCopyObjects:
                                                                  CopySourceIfNoneMatch=nonematch)
             elif modified is not None:
                 status, c_response = self.s3_obj.copy_object(src_bucket, src_obj, dest_bucket,
-                                                           dest_obj,
-                                                           CopySourceIfModifiedSince=modified)
+                                                             dest_obj,
+                                                             CopySourceIfModifiedSince=modified)
             elif unmodified is not None:
                 status, c_response = self.s3_obj.copy_object(src_bucket, src_obj, dest_bucket,
-                                                           dest_obj,
-                                                           CopySourceIfUnmodifiedSince=unmodified)
+                                                             dest_obj,
+                                                             CopySourceIfUnmodifiedSince=unmodified)
             else:
                 response = self.s3_obj.create_bucket(self.bucket_name2)
                 assert_utils.assert_true(response[0], response[1])
