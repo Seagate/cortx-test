@@ -559,7 +559,7 @@ class TestCopyObjectsTag():
     @pytest.mark.tags("TEST-44817")
     def test_44817(self):
         """
-        TEST-44817 :Test simple copy-object with source object tag count different 
+        TEST-44817 :Test simple copy-object with source object tag count different
         than destination object. (--tagging-directive=REPLACE)
         """
         self.log.info("STARTED: Test simple copy-object with source object tag count"
