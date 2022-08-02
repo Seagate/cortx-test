@@ -264,10 +264,6 @@ class TestCorruptDataDetection:
         motr_container_name = f"{const.MOTR_CONTAINER_PREFIX}-001"
         logger.debug(f"Printing const: {motr_container_name}")
 
-        node_data_pod_dict = self.motr_obj.get_node_data_pod_dict()
-        logger.debug(f"node_data_pod_dict = {node_data_pod_dict}")
-        # motr_client_num = self.motr_obj.get_number_of_motr_clients()
-
         # Todo: Working code -> Enable
         # For all pods in the system
         # for node_pod in node_pod_dict:
@@ -303,7 +299,6 @@ class TestCorruptDataDetection:
         # logger.debug(f"object_id_list is: ###### {object_id_list}")
         # Todo: Working code -> Enable -> End --------------------------------
 
-        logger.debug(f"node_data_pod_dict = {const.POD_NAME_PREFIX}")
         logger.info(f"Copying the error injection script to cortx_motr_io containers in data pods")
         pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
         for pod in pod_list:
