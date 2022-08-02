@@ -62,6 +62,7 @@ CLIENT_POD_NAME_PREFIX = "cortx-client"
 MOTR_CONTAINER_PREFIX = "cortx-motr-io"
 HA_SHUTDOWN_SIGNAL_PATH = "scripts/server_scripts/ha_shutdown_signal.py"
 MOCK_MONITOR_REMOTE_PATH = "/root/mock_health_event_publisher.py"
+MOTR_DI_ERR_INJ_SCRIPT_PATH = "/root/error_injection.py"
 MOCK_MONITOR_LOCAL_PATH = "scripts/server_scripts/mock_health_event_publisher.py"
 HA_CONSUL_VERIFY = "cortx>ha>v1>cluster_stop_key:1"
 HA_CONSUL_NOKEY = "NotFound"
@@ -69,7 +70,7 @@ HA_TMP = "/root"
 HA_LOG = "/mnt/fs-local-volume/local-path-provisioner/"
 HA_PROCESS = "/opt/seagate/cortx/ha/bin/ha_start"
 HA_CONFIG_FILE = "/root/config.json"
-MOTR_CLIENT="motr_client"
+MOTR_CLIENT = "motr_client"
 UPGRADE_IN_PROGRESS_MSG = "An upgrade is already in progress"
 UPGRADE_SUSPEND_MSG = "Upgrade suspended"
 UPGRADE_ALREADY_SUSPENDED = "Upgrade Process Not found on the system, Suspend cannot be performed"
@@ -95,8 +96,7 @@ MANUAL_PATH = "/opt/seagate/sspl/low-level/tests/manual/"
 RABBIT_MQ_LOCAL_PATH = "scripts/server_scripts/rabbitmq_reader.py"
 MSG_BUS_READER_LOCAL_PATH = "scripts/server_scripts/read_message_bus.py"
 ENCRYPTOR_FILE_PATH = "scripts/server_scripts/encryptor.py"
-STORAGE_ENCLOSURE_PATH = "/opt/seagate/cortx/provisioner/pillar/components" \
-                         "/storage_enclosure.sls"
+STORAGE_ENCLOSURE_PATH = "/opt/seagate/cortx/provisioner/pillar/components" "/storage_enclosure.sls"
 CLUSTER_PATH = "/opt/seagate/cortx/provisioner/pillar/components/cluster.sls"
 RAS_CONFIG_PATH = "config/ras_config.yaml"
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
@@ -123,10 +123,13 @@ REMOTE_RECEIVER_PATH = "/root/test_receiver.py"
 REMOTE_DAEMON_PATH = "/root/daemon.py"
 CTRL_LOG_PATH = "/root/telnet.xml"
 SELINUX_FILE_PATH = "/etc/selinux/config"
-HEADERS_STREAM_UTILITIES = {"Content-type": "application/x-www-form-urlencoded",
-                            "Accept": "text/plain"}
-URL_STREAM_UTILITIES = "http://utils-stream.sw.lcd.colo.seagate.com/utility" \
-                       "/api/public/v1/get_tripw"
+HEADERS_STREAM_UTILITIES = {
+    "Content-type": "application/x-www-form-urlencoded",
+    "Accept": "text/plain",
+}
+URL_STREAM_UTILITIES = (
+    "http://utils-stream.sw.lcd.colo.seagate.com/utility" "/api/public/v1/get_tripw"
+)
 NO_CMD_RECEIVED_MSG = "No command response received !!!"
 PCS_SSPL_SECTION = " Master/Slave Set: sspl-master [sspl]\n"
 RAS_CFG = "config/ras_config.yaml"
@@ -147,7 +150,7 @@ CONF_MEM_USAGE = "NODEDATAMSGHANDLER>host_memory_usage_threshold"
 CONF_DISK_USAGE = "NODEDATAMSGHANDLER>disk_usage_threshold"
 CONF_SSPL_SRV_THRS_INACT_TIME = "SERVICEMONITOR>threshold_inactive_time"
 CONF_CPU_FAULT_EN = "CPUFAULTSENSOR>monitor"
-SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
+SSPL_GLOBAL_CONF_URL = "yaml:///etc/sspl_global_config_copy.yaml"
 SSPL_CFG_URL = "yaml:///etc/sspl.conf"
 SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
 CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
@@ -172,14 +175,16 @@ const.S3_CONFIG_K8s = "/etc/cortx/s3/conf/s3config.yaml"
 const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
 const.REMOTE_DEFAULT_DIR = "/var/motr"
-const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
-                   "/opt/seagate/cortx/s3/conf/s3config.yaml",
-                   "/opt/seagate/cortx/auth/resources/authserver.properties",
-                   "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
-                   "/opt/seagate/cortx/s3/s3startsystem.sh"]
+const.CFG_FILES = [
+    "/etc/haproxy/haproxy.cfg",
+    "/opt/seagate/cortx/s3/conf/s3config.yaml",
+    "/opt/seagate/cortx/auth/resources/authserver.properties",
+    "/opt/seagate/cortx/s3/s3backgrounddelete/config.yaml",
+    "/opt/seagate/cortx/s3/s3startsystem.sh",
+]
 const.AUTHSERVER_FILE = "/opt/seagate/cortx/auth/resources/authserver.properties"
 const.SCRIPT_PATH = "cd /opt/seagate/cortx/auth/scripts"
-const.CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"],
+const.CRASH_COMMANDS = (["ls -l /var/crash", "ls -lR /var/motr | grep core"],)
 const.AUTHSERVER_LOG_PATH = "/var/log/seagate/auth/server/app.log"
 const.S3CMD = "s3cmd"
 const.S3FS = "s3fs-fuse"
@@ -221,31 +226,42 @@ class Rest:
     FORBIDDEN = 403
     METHOD_NOT_FOUND = 404
     SUCCESS_STATUS_FOR_POST = 201
-    USER_DATA = "{\"username\": \"testusername\", \"password\": \"Testuser@123\"," \
-                " \"role\": \"user_role\",\"email\":\"testmonitoruser@seagate.com\"," \
-                "\"alert_notification\":true}"
-    MISSING_USER_DATA = "{\"username\": \"testusername\", \"role\": \"user_role\"}"
-    CONTENT_TYPE = {'Content-Type': 'application/json'}
+    USER_DATA = (
+        '{"username": "testusername", "password": "Testuser@123",'
+        ' "role": "user_role","email":"testmonitoruser@seagate.com",'
+        '"alert_notification":true}'
+    )
+    MISSING_USER_DATA = '{"username": "testusername", "role": "user_role"}'
+    CONTENT_TYPE = {"Content-Type": "application/json"}
     BUCKET_NAME = "bucket_name"
     BUCKET = "buckets"
     NAME = "name"
-    LOGIN_PAYLOAD = "{\"username\":\"$username\",\"password\":\"$password\"}"
-    BUCKET_PAYLOAD = "{\"bucket_name\":\"buk$value\"}"
-    BUCKET_POLICY_PAYLOAD = "{\"Statement\": [{\"Action\": [\"s3:$s3operation\"]," \
-                            "\"Effect\": \"$effect\",\"Resource\": \"arn:aws:s3:::$value/*\"," \
-                            "\"Principal\": \"$principal\"}]}"
-    BUCKET_POLICY_PAYLOAD_IAM = "{\"Statement\": [{\"Action\": [\"s3:$s3operation\"]," \
-                                "\"Effect\": \"$effect\",\"Resource\": \"arn:aws:s3:::$value/*\"," \
-                                "\"Principal\": {\"AWS\":\"$principal\"}}]}"
-    IAM_USER_DATA_PAYLOAD = "{\"user_name\": \"$iamuser\",\"password\": \"$iampassword\"," \
-                            "\"require_reset\": $requireresetval}"
-    IAM_USER_LOGIN_PAYLOAD = "{\"username\":\"$username\",\"password\":\"$password\"}"
-    MULTI_BUCKET_POLICY_PAYLOAD = "{\"Statement\": [{\"Action\": [\"s3:$s3operation1\"," \
-                                  "\"s3:$s3operation2\"],\"Effect\": \"$effect\"," \
-                                  "\"Resource\": \"arn:aws:s3:::$value/*\"," \
-                                  "\"Principal\": {\"AWS\":\"$principal\"}}]}"
-    SORT_BY_ERROR = "{\'sort_by\': [\'Must be one of: user_id, username," \
-                    " user_type, created_time, updated_time.\']}"
+    LOGIN_PAYLOAD = '{"username":"$username","password":"$password"}'
+    BUCKET_PAYLOAD = '{"bucket_name":"buk$value"}'
+    BUCKET_POLICY_PAYLOAD = (
+        '{"Statement": [{"Action": ["s3:$s3operation"],'
+        '"Effect": "$effect","Resource": "arn:aws:s3:::$value/*",'
+        '"Principal": "$principal"}]}'
+    )
+    BUCKET_POLICY_PAYLOAD_IAM = (
+        '{"Statement": [{"Action": ["s3:$s3operation"],'
+        '"Effect": "$effect","Resource": "arn:aws:s3:::$value/*",'
+        '"Principal": {"AWS":"$principal"}}]}'
+    )
+    IAM_USER_DATA_PAYLOAD = (
+        '{"user_name": "$iamuser","password": "$iampassword",' '"require_reset": $requireresetval}'
+    )
+    IAM_USER_LOGIN_PAYLOAD = '{"username":"$username","password":"$password"}'
+    MULTI_BUCKET_POLICY_PAYLOAD = (
+        '{"Statement": [{"Action": ["s3:$s3operation1",'
+        '"s3:$s3operation2"],"Effect": "$effect",'
+        '"Resource": "arn:aws:s3:::$value/*",'
+        '"Principal": {"AWS":"$principal"}}]}'
+    )
+    SORT_BY_ERROR = (
+        "{'sort_by': ['Must be one of: user_id, username,"
+        " user_type, created_time, updated_time.']}"
+    )
     CUSTOM_S3_USER = ["account_name", "account_email", "password", "access_key", "secret_key"]
     S3_ACCESS_UL = 128
     S3_ACCESS_LL = 16
@@ -266,11 +282,14 @@ class Rest:
     CSM_NUM_OF_USERS_TO_CREATE = 5
     RANDOM_NUM_START = 3
     RANDOM_NUM_END = 9
-    SORT_DIR_ERROR = "{\'dir\': [\'Must be one of: desc, asc.\']}"
+    SORT_DIR_ERROR = "{'dir': ['Must be one of: desc, asc.']}"
     SORT_BY_EMPTY_PARAM_ERROR_RESPONSE = {
-        'error_code': '4099', 'message_id': "{'sort_by': ['Must be one of: user_id,"
-                                            " username, user_type, created_time, updated_time.']}",
-        'message': 'Invalid Parameter for alerts', 'error_format_args': None}
+        "error_code": "4099",
+        "message_id": "{'sort_by': ['Must be one of: user_id,"
+        " username, user_type, created_time, updated_time.']}",
+        "message": "Invalid Parameter for alerts",
+        "error_format_args": None,
+    }
     NODE_ID_OPTIONS = {"storage": "storage_encl", "node": "node:{}"}
     HEALTH_SUMMARY_INSTANCE = "health_summary"
     HEALTH_SUMMARY_SCHEMA = {
@@ -278,84 +297,98 @@ class Rest:
         "properties": {
             "total": {"type": "number"},
             "fault": {"type": "number"},
-            "good": {"type": "number"}
+            "good": {"type": "number"},
         },
-        "required": ["total", "good"]
+        "required": ["total", "good"],
     }
-    PERF_STAT_METRICS = ["throughput_read",
-                         "throughput_write",
-                         "iops_read_object",
-                         "latency_create_object",
-                         "iops_write_object",
-                         "iops_read_bucket",
-                         "iops_write_bucket"]
+    PERF_STAT_METRICS = [
+        "throughput_read",
+        "throughput_write",
+        "iops_read_object",
+        "latency_create_object",
+        "iops_write_object",
+        "iops_read_bucket",
+        "iops_write_bucket",
+    ]
 
 
 # aws cli errors
-AWS_CLI_ERROR = ["ServiceUnavailable",
-                 "MalformedPolicy",
-                 "InvalidRequest",
-                 "Forbidden",
-                 "Conflict",
-                 "InternalError",
-                 "InvalidArgument",
-                 "AccessDenied",
-                 "Failed:",
-                 "An error occurred",
-                 "S3 error: ",
-                 "Read timeout"
-                 "Connection was closed"]
+AWS_CLI_ERROR = [
+    "ServiceUnavailable",
+    "MalformedPolicy",
+    "InvalidRequest",
+    "Forbidden",
+    "Conflict",
+    "InternalError",
+    "InvalidArgument",
+    "AccessDenied",
+    "Failed:",
+    "An error occurred",
+    "S3 error: ",
+    "Read timeout" "Connection was closed",
+]
 
 # cortxcli constants
 S3BUCKET_HELP = [
-    f'usage: cortxcli s3buckets [-h] {{show,create,delete}}',
-    'positional arguments:',
-    '{show,create,delete}',
-    'show                Displays S3 buckets On The CLI',
-    'create              Create new S3 bucket',
-    'delete              Delete the bucket',
-    'optional arguments:',
-    '-h, --help            show this help message and exit']
+    f"usage: cortxcli s3buckets [-h] {{show,create,delete}}",
+    "positional arguments:",
+    "{show,create,delete}",
+    "show                Displays S3 buckets On The CLI",
+    "create              Create new S3 bucket",
+    "delete              Delete the bucket",
+    "optional arguments:",
+    "-h, --help            show this help message and exit",
+]
 S3BUCKET_CREATE_HELP = [
     f"usage: cortxcli s3buckets create [-h] bucket_name",
     "positional arguments:",
     "bucket_name  Give a bucket name to create.",
     "optional arguments:",
-    "-h, --help   show this help message and exit"]
+    "-h, --help   show this help message and exit",
+]
 S3BUCKET_SHOW_HELP = [
     f"usage: cortxcli s3buckets show [-h] [-f {{table,xml,json}}]",
     "optional arguments:",
     "-h, --help           show this help message and exit",
-    "-f {table,xml,json}  Format of Output"]
+    "-f {table,xml,json}  Format of Output",
+]
 S3BUCKET_DELETE_HELP = [
     f"usage: cortxcli s3buckets delete [-h] bucket_name",
     "positional arguments:",
     "bucket_name  Bucket Name",
     "optional arguments:",
-    "-h, --help   show this help message and exit"]
+    "-h, --help   show this help message and exit",
+]
 S3ACCOUNT_HELP_CMDS = [
     "s3iamusers",
     "support_bundle",
     "system",
     "s3buckets",
     "s3accounts",
-    "s3bucketpolicy"]
-S3ACCOUNT_HELP = ["positional arguments:",
-                  "{show,create,reset_password}",
-                  "show                Displays S3 Accounts On the cli",
-                  "create              Create a new S3 Account",
-                  "reset_password      Reset password for S3 Account"]
-S3ACC_CREATE_HELP = ["positional arguments:",
-                     "account_name   Name to be given to S3 account",
-                     "account_email  Email to be given to S3 account"]
-S3ACC_SHOW_HELP = ["optional arguments:",
-                   "-h, --help           show this help message and exit",
-                   "-f {table,xml,json}  Format of Output"]
-S3ACC_DELETE_HELP = ["positional arguments:",
-                     "account_name  Name of the account to be Deleted."]
+    "s3bucketpolicy",
+]
+S3ACCOUNT_HELP = [
+    "positional arguments:",
+    "{show,create,reset_password}",
+    "show                Displays S3 Accounts On the cli",
+    "create              Create a new S3 Account",
+    "reset_password      Reset password for S3 Account",
+]
+S3ACC_CREATE_HELP = [
+    "positional arguments:",
+    "account_name   Name to be given to S3 account",
+    "account_email  Email to be given to S3 account",
+]
+S3ACC_SHOW_HELP = [
+    "optional arguments:",
+    "-h, --help           show this help message and exit",
+    "-f {table,xml,json}  Format of Output",
+]
+S3ACC_DELETE_HELP = ["positional arguments:", "account_name  Name of the account to be Deleted."]
 S3ACC_RESET_PWD_HELP = [
     "positional arguments:",
-    "account_name  Name of S3 account whose password want to be reset."]
+    "account_name  Name of S3 account whose password want to be reset.",
+]
 SUPPORT_BUNDLE_PATH = "/var/log/seagate/support_bundle/"
 TAR_POSTFIX = "tar.gz"
 SB_STATUS = "status"
@@ -368,23 +401,20 @@ JSON_LIST_FORMAT = "json"
 TABLE_LIST_FORMAT = "table"
 XML_LIST_FORMAT = "xml"
 SUPPORT_BUNDLE_MSG = "Support bundle generation completed"
-CSM_USER_HELP = [
-    "support_bundle",
-    "alerts",
-    "s3accounts",
-    "system",
-    "users"]
+CSM_USER_HELP = ["support_bundle", "alerts", "s3accounts", "system", "users"]
 
 # Prov Constants:
 JENKINS_USERNAME = "6LS9f5yJ1IFpxbasg/wPKG4p5ycaBT6x/j7Kj7anTSk="
-JENKINS_PASSWORD = "/AxML7GgiVqRSmKGcPSJSorUq0X9FLZrfrlEyw6tjKnccwT67II+SwOcKBWPV6SWoBwM/46rAky+fXKumyX41Q=="
+JENKINS_PASSWORD = (
+    "/AxML7GgiVqRSmKGcPSJSorUq0X9FLZrfrlEyw6tjKnccwT67II+SwOcKBWPV6SWoBwM/46rAky+fXKumyX41Q=="
+)
 TOKEN_NAME = "10Mnx/XE4tEN8xrzQTNp2iSGQxPjpcHXbIdZgJyIN7Y="
 PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "True"}
 PIP_CONFIG = "/etc/pip.conf"
 
 # Locking server
-SHARED_LOCK = 'shared'
-EXCLUSIVE_LOCK = 'exclusive'
+SHARED_LOCK = "shared"
+EXCLUSIVE_LOCK = "exclusive"
 
 
 class SwAlerts:
@@ -399,13 +429,10 @@ class SwAlerts:
         "salt-minion.service",
         "glusterd.service",
         "multipathd.service",
-        "scsi-network-relay.service"
+        "scsi-network-relay.service",
     ]
 
-    SVCS_3P_UNAVAIL_VM = [
-        "glusterd.service",
-        "multipathd.service",
-        "scsi-network-relay.service"]
+    SVCS_3P_UNAVAIL_VM = ["glusterd.service", "multipathd.service", "scsi-network-relay.service"]
 
     SVCS_3P_ENABLED_VM = list(set(SVCS_3P) - set(SVCS_3P_UNAVAIL_VM))
 
@@ -435,11 +462,33 @@ MB = KB * KB
 GB = MB * MB
 
 # Removing 0Byte File Size for now.
-NORMAL_UPLOAD_SIZES = [4 * KB, 8 * KB, 64 * KB, 256 * KB, 1 * MB, 4 * MB, 8 * MB,
-                       16 * MB, 32 * MB, 64 * MB, 128 * MB]
+NORMAL_UPLOAD_SIZES = [
+    4 * KB,
+    8 * KB,
+    64 * KB,
+    256 * KB,
+    1 * MB,
+    4 * MB,
+    8 * MB,
+    16 * MB,
+    32 * MB,
+    64 * MB,
+    128 * MB,
+]
 
-MULTIPART_UPLOAD_SIZES = [1 * MB, 4 * MB, 8 * MB, 16 * MB, 21 * MB, 32 * MB, 64 * MB,
-                          128 * MB, 256 * MB, 512 * MB, 1024 * MB]
+MULTIPART_UPLOAD_SIZES = [
+    1 * MB,
+    4 * MB,
+    8 * MB,
+    16 * MB,
+    21 * MB,
+    32 * MB,
+    64 * MB,
+    128 * MB,
+    256 * MB,
+    512 * MB,
+    1024 * MB,
+]
 
 OFFSET = 1 * KB  # Offset for mis aligned sizes
 
@@ -449,12 +498,25 @@ MULTIPART_UPLOAD_SIZES_IN_MB = [1, 4, 16, 32, 64, 128, 256, 512, 1024]
 
 # Support Bundle
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
-SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
-                                 "manifest", "uds", "elasticsearch", "utils", "HA"]
-SB_POD_PREFIX_AND_COMPONENT_LIST = {POD_NAME_PREFIX: ["hare", "motr", "utils"],
-                                    SERVER_POD_NAME_PREFIX: ["rgw", "hare", "utils"],
-                                    CONTROL_POD_NAME_PREFIX: ["csm", "utils"],
-                                    HA_POD_NAME_PREFIX: ["utils"]}
+SUPPORT_BUNDLE_COMPONENT_LIST = [
+    "csm",
+    "sspl",
+    "s3",
+    "motr",
+    "hare",
+    "provisioner",
+    "manifest",
+    "uds",
+    "elasticsearch",
+    "utils",
+    "HA",
+]
+SB_POD_PREFIX_AND_COMPONENT_LIST = {
+    POD_NAME_PREFIX: ["hare", "motr", "utils"],
+    SERVER_POD_NAME_PREFIX: ["rgw", "hare", "utils"],
+    CONTROL_POD_NAME_PREFIX: ["csm", "utils"],
+    HA_POD_NAME_PREFIX: ["utils"],
+}
 SB_EXTRACTED_PATH = "/etc/cortx/log/"
 
 # K8s env
@@ -462,8 +524,10 @@ K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
 K8S_PEM_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.pem"
 K8S_CRT_PATH = "/opt/seagate/cortx/s3/install/haproxy/ssl/s3.seagate.com.crt"
 K8S_PRE_DISK = "/dev/sdb"
-K8S_PEM_FILE_PATH = "/root/deploy-scripts/k8_cortx_cloud/cortx-cloud-helm-pkg/cortx-configmap/" \
-                    "ssl-cert/s3.seagate.com.pem"
+K8S_PEM_FILE_PATH = (
+    "/root/deploy-scripts/k8_cortx_cloud/cortx-cloud-helm-pkg/cortx-configmap/"
+    "ssl-cert/s3.seagate.com.pem"
+)
 
 # haproxy.cfg dummy file Path
 HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
@@ -477,19 +541,25 @@ RESTORE_DEPLOYMENT_HELM = "helm"
 # log rotation
 LOG_PATH_CSM = "/etc/cortx/log/csm"
 MAX_LOG_FILE_SIZE_CSM_MB = 17
-LOG_PATH_FILE_SIZE_MB_S3 = {"/etc/cortx/log/s3/{}/s3backgrounddelete/":5,
-                            "/etc/cortx/log/auth/{}/server/":20,
-                            "/etc/cortx/log/s3/{}/haproxy/":5}
-LOG_PATH_FILE_SIZE_MB_UTILS = {"/etc/cortx/log/utils/{}/iem/":5,
-                               "/etc/cortx/log/utils/{}/message_bus/":5}
-LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/":50}
-LOG_PATH_FILE_SIZE_MB_MOTR = {"/etc/cortx/log/motr/{}/addb/":129,
-                              "/etc/cortx/log/motr/{}/trace/":17}
-MAX_NO_OF_ROTATED_LOG_FILES = {"CSM":10, "Hare":10, "Motr":2, "Utils":6}
+LOG_PATH_FILE_SIZE_MB_S3 = {
+    "/etc/cortx/log/s3/{}/s3backgrounddelete/": 5,
+    "/etc/cortx/log/auth/{}/server/": 20,
+    "/etc/cortx/log/s3/{}/haproxy/": 5,
+}
+LOG_PATH_FILE_SIZE_MB_UTILS = {
+    "/etc/cortx/log/utils/{}/iem/": 5,
+    "/etc/cortx/log/utils/{}/message_bus/": 5,
+}
+LOG_PATH_FILE_SIZE_MB_HARE = {"/etc/cortx/log/hare/log/{}/": 50}
+LOG_PATH_FILE_SIZE_MB_MOTR = {
+    "/etc/cortx/log/motr/{}/addb/": 129,
+    "/etc/cortx/log/motr/{}/trace/": 17,
+}
+MAX_NO_OF_ROTATED_LOG_FILES = {"CSM": 10, "Hare": 10, "Motr": 2, "Utils": 6}
 
 
 # Procpath Collection
-PID_WATCH_LIST = ['m0d', 'radosgw', 'hax']
+PID_WATCH_LIST = ["m0d", "radosgw", "hax"]
 REQUIRED_MODULES = ["Procpath", "apsw-wheels"]
 
 DTM_RECOVERY_STATE = "RECOVERED"

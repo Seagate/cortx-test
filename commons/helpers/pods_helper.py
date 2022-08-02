@@ -42,7 +42,7 @@ class LogicalNode(Host):
     """
 
     kube_commands = ('create', 'apply', 'config', 'get', 'explain',
-                     'autoscale', 'patch', 'scale', 'exec')
+                     'autoscale', 'patch', 'scale', 'exec', 'cp')
 
     def get_service_logs(self, svc_name: str, namespace: str, options: '') -> Tuple:
         """Get logs of a pod or service."""
@@ -472,13 +472,13 @@ class LogicalNode(Host):
         :param: container_name: Name of the container where the file will be copied
         """
         try:
-            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name, \
-                container_path, container_name)
+            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name,
+                                                          container_path, container_name)
             output = self.execute_cmd(cmd=cmd, exc=False)
             return True, output
         except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
-                    LogicalNode.copy_file_to_container.__name__, error)
+                      LogicalNode.copy_file_to_container.__name__, error)
             return False, error
 
     def get_machine_id_for_pod(self, pod_name: str):
@@ -578,10 +578,10 @@ class LogicalNode(Host):
             return False, f"{file_path} does not exist on node {self.hostname}"
         log.info("Applying deployment from %s", file_path)
         resp = self.execute_cmd(cmd=commands.K8S_APPLY_YAML_CONFIG.format(file_path),
-                                read_lines=True,exc=False)
+                                read_lines=True, exc=False)
         return True, resp
 
-    def select_random_pod_container(self,pod_prefix: str,
+    def select_random_pod_container(self, pod_prefix: str,
                                     container_prefix: str):
         """
         Select random pod and container for the given pods and container prefix

@@ -45,8 +45,8 @@ log = logging.getLogger(__name__)
 
 
 # pylint: disable=too-many-public-methods
-class MotrCoreK8s():
-    """ Motr Kubernetes environment test library """
+class MotrCoreK8s:
+    """Motr Kubernetes environment test library"""
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self):
@@ -60,23 +60,29 @@ class MotrCoreK8s():
                 self.master_node = CMN_CFG["nodes"][node]["hostname"]
                 self.master_uname = CMN_CFG["nodes"][node]["username"]
                 self.master_passwd = CMN_CFG["nodes"][node]["password"]
-                self.node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
-                                            username=CMN_CFG["nodes"][node]["username"],
-                                            password=CMN_CFG["nodes"][node]["password"])
-                self.master_node_list.append(self.node_obj)
-                self.health_obj = Health(hostname=CMN_CFG["nodes"][node]["hostname"],
-                                         username=CMN_CFG["nodes"][node]["username"],
-                                         password=CMN_CFG["nodes"][node]["password"])
-            else:
-                self.worker_node_list.append(CMN_CFG["nodes"][node]["hostname"])
-                self.worker_node_objs.append(LogicalNode(
+                self.node_obj = LogicalNode(
                     hostname=CMN_CFG["nodes"][node]["hostname"],
                     username=CMN_CFG["nodes"][node]["username"],
-                    password=CMN_CFG["nodes"][node]["password"]))
+                    password=CMN_CFG["nodes"][node]["password"],
+                )
+                self.master_node_list.append(self.node_obj)
+                self.health_obj = Health(
+                    hostname=CMN_CFG["nodes"][node]["hostname"],
+                    username=CMN_CFG["nodes"][node]["username"],
+                    password=CMN_CFG["nodes"][node]["password"],
+                )
+            else:
+                self.worker_node_list.append(CMN_CFG["nodes"][node]["hostname"])
+                self.worker_node_objs.append(
+                    LogicalNode(
+                        hostname=CMN_CFG["nodes"][node]["hostname"],
+                        username=CMN_CFG["nodes"][node]["username"],
+                        password=CMN_CFG["nodes"][node]["password"],
+                    )
+                )
         self.node_dict = self._get_cluster_info
         self.node_pod_dict = self.get_node_pod_dict()
         self.ha_obj = HAK8s()
-
 
     @property
     def _get_cluster_info(self):
@@ -84,50 +90,67 @@ class MotrCoreK8s():
         Returns all the cortx nodes endpoints in a dict format
         """
         motr_client_pod = self.node_obj.get_pod_name(
-            pod_prefix=common_const.CLIENT_POD_NAME_PREFIX)[1]
+            pod_prefix=common_const.CLIENT_POD_NAME_PREFIX
+        )[1]
         node_dict = {}
         if self.cortx_node_list is None:
             self.cortx_node_list = []
         response = self.node_obj.send_k8s_cmd(
-            operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
+            operation="exec",
+            pod=motr_client_pod,
+            namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME}"
-                           f" -- {common_cmd.HCTL_STATUS_CMD_JSON}",
-            decode=True)
+            f" -- {common_cmd.HCTL_STATUS_CMD_JSON}",
+            decode=True,
+        )
         cluster_info = json.loads(response)
+
         if cluster_info is not None:
             self.profile_fid = cluster_info["profiles"][0]["fid"]
             nodes_data = cluster_info["nodes"]
             for node in nodes_data:
-                if 'client' in node['name']:
-                    nodename = node["name"]
+                if "client" in node["name"]:
+                    nodename_full = node["name"]
+                    nodename = nodename_full.split(".")[0]
                     self.cortx_node_list.append(nodename)
+                    # Todo: Remove debug
+                    logging.debug(f"~~~~~ Added node {nodename} to the cortx_node_list ~~~~~")
                     node_dict[nodename] = {}
                     node_dict[nodename][common_const.MOTR_CLIENT] = []
                     for svc in node["svcs"]:
                         if svc["name"] == "hax":
-                            node_dict[nodename]['hax_fid'] = svc["fid"]
-                            node_dict[nodename]['hax_ep'] = svc["ep"]
+                            node_dict[nodename]["hax_fid"] = svc["fid"]
+                            node_dict[nodename]["hax_ep"] = svc["ep"]
                         if svc["name"] == common_const.MOTR_CLIENT:
                             node_dict[nodename][common_const.MOTR_CLIENT].append(
-                                {"ep": svc["ep"], "fid": svc["fid"]})
+                                {"ep": svc["ep"], "fid": svc["fid"]}
+                            )
         return node_dict
 
     def get_node_pod_dict(self):
         """
-        Returns all the node and motr client pod names in dict format
+        Returns all the node_pod and motr client pod names in dict format
         """
         node_pod_dict = self.get_pods_by_node()
         return node_pod_dict
 
-    def get_pods_by_node(self, prefix=common_const.CLIENT_POD_NAME_PREFIX,
-                         namespace=common_const.NAMESPACE):
+    def get_node_data_pod_dict(self):
+        """
+        Returns all the node_pod and motr Data pod names in dict format
+        """
+        node_pod_dict = self.get_pods_by_node(prefix=common_const.MOTR_CONTAINER_PREFIX)
+        return node_pod_dict
+
+    def get_pods_by_node(
+        self, prefix=common_const.CLIENT_POD_NAME_PREFIX, namespace=common_const.NAMESPACE
+    ):
         """Retrieves all pods by nodes with given pod name prefix."""
         node_pod_dict = {}
         cmd = "| grep \"{}\" |awk '{{print $1}}'".format(prefix)
         response = self.node_obj.send_k8s_cmd(
-            operation="get", pod="pods", namespace=namespace,
-            command_suffix=f"{cmd}", decode=True)
-        pod_list = [node.strip() for node in response.split('\n')]
+            operation="get", pod="pods", namespace=namespace, command_suffix=f"{cmd}", decode=True
+        )
+        pod_list = [node.strip() for node in response.split("\n")]
         for pod_name in pod_list:
             node_name = self.get_node_name_from_pod_name(pod_name)
             node_pod_dict[node_name] = pod_name
@@ -135,34 +158,37 @@ class MotrCoreK8s():
 
     def get_primary_cortx_node(self):
         """
-        To get the primary cortx node name
+        To get the primary cortx node_pod name
 
-        :returns: Primary(RC) node name in the cluster
+        :returns: Primary(RC) node_pod name in the cluster
         :rtype: str
         """
         motr_client_pod = self.node_obj.get_pod_name(
-            pod_prefix=common_const.CLIENT_POD_NAME_PREFIX)[1]
+            pod_prefix=common_const.CLIENT_POD_NAME_PREFIX
+        )[1]
         cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
         primary_cortx_node = self.node_obj.send_k8s_cmd(
-            operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
+            operation="exec",
+            pod=motr_client_pod,
+            namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                           f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}",
-            decode=True)
+            f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}",
+            decode=True,
+        )
         return primary_cortx_node.replace("data", "client")
 
     def get_cortx_node_endpoints(self, cortx_node=None):
         """
-        To get the endpoints details of the cortx node
+        To get the endpoints details of the cortx node_pod
 
-        :param cortx_node: Name of the cortx node
+        :param cortx_node: Name of the cortx node_pod
         :type: str
-        :returns: Dict of a cortx node containing the endpoints details
+        :returns: Dict of a cortx node_pod containing the endpoints details
         :rtype: dict
         """
         if cortx_node:
             if cortx_node not in self.cortx_node_list:
-                raise ValueError(
-                    "Node must be one of %r." % str(self.cortx_node_list))
+                raise ValueError("Node must be one of %r." % str(self.cortx_node_list))
         else:
             cortx_node = self.get_primary_cortx_node()
         for key in self.node_dict:
@@ -172,8 +198,8 @@ class MotrCoreK8s():
 
     def get_number_of_motr_clients(self):
         """
-        To get the number of motr_clients in a node
-        :returns: Number of motr_clients present in given node
+        To get the number of motr_clients in a node_pod
+        :returns: Number of motr_clients present in given node_pod
         :rtype: integer
         """
         return len(self.node_dict[list(self.node_pod_dict.keys())[0]]["motr_client"])
@@ -188,49 +214,55 @@ class MotrCoreK8s():
         """
         cmd = "hostname"
         node_name = self.node_obj.send_k8s_cmd(
-            operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
-            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                           f"-- {cmd}",
-            decode=True)
+            operation="exec",
+            pod=motr_client_pod,
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+            decode=True,
+        )
         return node_name
 
     def m0crate_run(self, local_file_path, remote_file_path, cortx_node):
         """
         To run the m0crate utility on specified cortx_node
         param: local_file_path: Absolute workload file(yaml) path on the client
-        param: remote_file_path: Absolute workload file(yaml) path on the master node
+        param: remote_file_path: Absolute workload file(yaml) path on the master node_pod
         param: cortx_node: Node where the m0crate utility will run
         """
         pod_node = self.get_node_pod_dict()[cortx_node]
         result = self.node_obj.copy_file_to_remote(local_file_path, remote_file_path)
         if not result[0]:
-            raise Exception("Copy from {} to {} failed with error: {}".format(local_file_path,
-                                                                              remote_file_path,
-                                                                              result[1]))
-        m0crate_run_cmd = f'm0crate -S {remote_file_path}'
-        result = self.node_obj.copy_file_to_container(remote_file_path, pod_node,
-                                                      remote_file_path,
-                                                      common_const.HAX_CONTAINER_NAME)
+            raise Exception(
+                "Copy from {} to {} failed with error: {}".format(
+                    local_file_path, remote_file_path, result[1]
+                )
+            )
+        m0crate_run_cmd = f"m0crate -S {remote_file_path}"
+        result = self.node_obj.copy_file_to_container(
+            remote_file_path, pod_node, remote_file_path, common_const.HAX_CONTAINER_NAME
+        )
         log.info(result)
         if not result[0]:
-            raise Exception("Copy from {} to {} failed with error: \
-                             {}".format(local_file_path, common_const.HAX_CONTAINER_NAME,
-                                        result[1]))
+            raise Exception(
+                "Copy from {} to {} failed with error: \
+                             {}".format(
+                    local_file_path, common_const.HAX_CONTAINER_NAME, result[1]
+                )
+            )
         cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(pod_node, m0crate_run_cmd)
-        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
-                                                                      self.master_node,
-                                                                      self.master_uname,
-                                                                      self.master_passwd)
+        result, error1, ret = system_utils.run_remote_cmd_wo_decision(
+            cmd, self.master_node, self.master_uname, self.master_passwd
+        )
         log.info("%s , %s", result, error1)
         if ret:
             assert False, "Failed with return code {}, Please check the logs".format(ret)
-        assert not any((error_str in error1.decode("utf-8") for error_str in
-                        ['error', 'ERROR', 'Error'])), "Errors found in output {}".format(error1)
+        assert not any(
+            (error_str in error1.decode("utf-8") for error_str in ["error", "ERROR", "Error"])
+        ), "Errors found in output {}".format(error1)
 
     def dd_cmd(self, b_size, count, file, node):
         """
         DD command for creating new file
-
         :b_size: Block size
         :count: Block count
         :file: Output file name
@@ -238,14 +270,49 @@ class MotrCoreK8s():
         """
 
         cmd = common_cmd.CREATE_FILE.format("/dev/urandom", file, b_size, count)  # nosec
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+            decode=True,
+        )
         log.info("DD Resp: %s", resp)
 
-        assert_utils.assert_not_in("ERROR" or "Error", resp,
-                                   f'"{cmd}" Failed, Please check the log')
+        assert_utils.assert_not_in(
+            "ERROR" or "Error", resp, f'"{cmd}" Failed, Please check the log'
+        )
+
+    def copy_file_to_remote_container(self, node_pod):
+        """
+        Command for copying file to container
+        :node_pod: on which node_pod file needs to be copied
+        """
+        pod_list = self.node_obj.get_all_pods(common_const.POD_NAME_PREFIX)
+        log.debug("pod list is %s", pod_list)
+        try:
+            # Todo: remove debug
+            log.debug("Copying emap file to remote container")
+
+            cmd = common_cmd.HA_COPY_CMD.format(
+                common_const.MOTR_DI_ERR_INJ_LOCAL_PATH,
+                node_pod,
+                common_const.MOTR_DI_ERR_INJ_SCRIPT_PATH,
+            )  # nosec
+            log.info("Copying file to remote container")
+            # Todo remove debug:
+            log.debug("Debug: >>>> Copied emap script >>>>")
+            self.node_obj.execute_cmd(cmd)
+        except IOError as error:
+            log.exception(
+                "Failed to copy %s inside data pod %s due to error: %s",
+                common_const.MOTR_DI_ERR_INJ_LOCAL_PATH,
+                node_pod,
+                error,
+            )
+            return False
+        log.info("Remote file/script copy successful")
+        return True
 
     # pylint: disable=too-many-arguments
     def cp_cmd(self, b_size, count, obj, layout, file, node, client_num=None, di_g=False):
@@ -257,7 +324,7 @@ class MotrCoreK8s():
         :obj: Object ID
         :layout: Layout ID
         :file: Output file name
-        :node: on which node m0cp cmd need to perform
+        :node_pod: on which node_pod m0cp cmd need to perform
         :client_num: perform operation on motr_client
         :di_g: DI mode flag
         """
@@ -269,24 +336,38 @@ class MotrCoreK8s():
                 ep=node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
                 hax_ep=node_dict["hax_ep"],
                 fid=node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-                prof_fid=self.profile_fid, bsize=b_size.lower(),
-                count=count, obj=obj, layout=layout, file=file)
+                prof_fid=self.profile_fid,
+                bsize=b_size.lower(),
+                count=count,
+                obj=obj,
+                layout=layout,
+                file=file,
+            )
         else:
             cmd = common_cmd.M0CP.format(
                 node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
                 node_dict["hax_ep"],
                 node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-                self.profile_fid, b_size.lower(),
-                count, obj, layout, file)  # nosec
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
+                self.profile_fid,
+                b_size.lower(),
+                count,
+                obj,
+                layout,
+                file,
+            )  # nosec
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+            decode=True,
+        )
 
         log.info("CP Resp: %s", resp)
 
-        assert_utils.assert_not_in("ERROR" or "Error", resp,
-                                   f'"{cmd}" Failed, Please check the log')
+        assert_utils.assert_not_in(
+            "ERROR" or "Error", resp, f'"{cmd}" Failed, Please check the log'
+        )
 
     def cp_update_cmd(self, **kwargs):
         """
@@ -297,17 +378,17 @@ class MotrCoreK8s():
         :obj: Object ID
         :layout: Layout ID
         :file: Output file name
-        :node: on which node m0cp cmd need to perform
+        :node_pod: on which node_pod m0cp cmd need to perform
         :client_num: perform operation on motr_client
         """
-        b_size = kwargs.get('b_size')
-        count = kwargs.get('count')
-        obj = kwargs.get('obj')
-        layout = kwargs.get('layout')
-        file = kwargs.get('file')
-        node = kwargs.get('node')
-        offset = kwargs.get('offset')
-        client_num = kwargs.get('client_num', None)
+        b_size = kwargs.get("b_size")
+        count = kwargs.get("count")
+        obj = kwargs.get("obj")
+        layout = kwargs.get("layout")
+        file = kwargs.get("file")
+        node = kwargs.get("node_pod")
+        offset = kwargs.get("offset")
+        client_num = kwargs.get("client_num", None)
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
@@ -315,20 +396,30 @@ class MotrCoreK8s():
             ep=node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
             hax_ep=node_dict["hax_ep"],
             fid=node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-            prof_fid=self.profile_fid, bsize=b_size.lower(),
-            count=count, obj=obj, layout=layout, off=offset, file=file)
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
+            prof_fid=self.profile_fid,
+            bsize=b_size.lower(),
+            count=count,
+            obj=obj,
+            layout=layout,
+            off=offset,
+            file=file,
+        )
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+            decode=True,
+        )
 
         log.info("CP Update Resp: %s", resp)
 
-        assert_utils.assert_not_in("ERROR" or "Error", resp,
-                                   f'"{cmd}" Failed, Please check the log')
+        assert_utils.assert_not_in(
+            "ERROR" or "Error", resp, f'"{cmd}" Failed, Please check the log'
+        )
 
     # pylint: disable=too-many-arguments
-    def cat_cmd(self, b_size, count, obj, layout, file, node, client_num=None):
+    def cat_cmd(self, b_size, count, obj, layout, file, node, client_num=None, di_g=False):
         """
         M0CAT command creation
 
@@ -337,26 +428,49 @@ class MotrCoreK8s():
         :obj: Object ID
         :layout: Layout ID
         :file: Output file name
-        :node: on which node m0cp cmd need to perform
+        :node_pod: on which node_pod m0cp cmd need to perform
         :client_num: perform operation on motr_client
         """
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0CAT.format(node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
-                                      node_dict["hax_ep"],
-                                      node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-                                      self.profile_fid, b_size.lower(),
-                                      count, obj, layout, file)
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
+        if di_g:
+            cmd = common_cmd.M0CAT_G.format(
+                node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                node_dict["hax_ep"],
+                node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                self.profile_fid,
+                b_size.lower(),
+                count,
+                obj,
+                layout,
+                file,
+            )
+        else:
+            cmd = common_cmd.M0CAT.format(
+                node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                node_dict["hax_ep"],
+                node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                self.profile_fid,
+                b_size.lower(),
+                count,
+                obj,
+                layout,
+                file,
+            )
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+            decode=True,
+        )
 
         log.info("CAT Resp: %s", resp)
 
-        assert_utils.assert_not_in("ERROR" or "Error", resp,
-                                   f'"{cmd}" Failed, Please check the log')
+        assert_utils.assert_not_in(
+            "ERROR" or "Error", resp, f'"{cmd}" Failed, Please check the log'
+        )
 
     def unlink_cmd(self, obj, layout, node, client_num=None):
         """
@@ -364,25 +478,33 @@ class MotrCoreK8s():
 
         :obj: Object ID
         :layout: Layout ID
-        :node: on which node m0cp cmd need to perform
+        :node_pod: on which node_pod m0cp cmd need to perform
         :client_num: perform operation on motr_client
         """
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0UNLINK.format(node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
-                                         node_dict["hax_ep"],
-                                         node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-                                         self.profile_fid, obj, layout)
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
+        cmd = common_cmd.M0UNLINK.format(
+            node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+            node_dict["hax_ep"],
+            node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+            self.profile_fid,
+            obj,
+            layout,
+        )
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+            decode=True,
+        )
 
         log.info("UNLINK Resp: %s", resp)
 
-        assert_utils.assert_not_in("ERROR" or "Error", resp,
-                                   f'"{cmd}" Failed, Please check the log')
+        assert_utils.assert_not_in(
+            "ERROR" or "Error", resp, f'"{cmd}" Failed, Please check the log'
+        )
 
     def diff_cmd(self, file1, file2, node):
         """
@@ -390,21 +512,24 @@ class MotrCoreK8s():
 
         :file1: first file
         :file2: second file
-        :node: compare files on which node
+        :node_pod: compare files on which node_pod
         """
         diff_utils_install = common_cmd.CMD_INSTALL_TOOL.format("diffutils") + " -y"
         cmd = common_cmd.DIFF.format(file1, file2)
         cmd_list = [diff_utils_install, cmd]
         for cmd in cmd_list:
-            resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                              namespace=common_const.NAMESPACE,
-                                              command_suffix=
-                                              f"-c {common_const.HAX_CONTAINER_NAME} "
-                                              f"-- {cmd}", decode=True)
+            resp = self.node_obj.send_k8s_cmd(
+                operation="exec",
+                pod=self.node_pod_dict[node],
+                namespace=common_const.NAMESPACE,
+                command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+                decode=True,
+            )
             log.info("DIFF Resp: %s", resp)
 
-        assert_utils.assert_not_in("ERROR" or "Error", resp,
-                                   f'"{cmd}" Failed, Please check the log')
+        assert_utils.assert_not_in(
+            "ERROR" or "Error", resp, f'"{cmd}" Failed, Please check the log'
+        )
 
     def md5sum_cmd(self, file1, file2, node, **kwargs):
         """
@@ -412,118 +537,133 @@ class MotrCoreK8s():
 
         :file1: first file
         :file2: second file
-        :node: compare files on which node
+        :node_pod: compare files on which node_pod
         """
         flag = kwargs.get("flag", None)
         cmd = common_cmd.MD5SUM.format(file1, file2)
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+            decode=True,
+        )
         log.info("MD5SUM Resp: %s", resp)
         chksum = resp.split()
         if flag:
-            assert_utils.assert_not_equal(chksum[0], chksum[1], f'{cmd}, Checksum did not match')
+            assert_utils.assert_not_equal(chksum[0], chksum[1], f"{cmd}, Checksum did not match")
         else:
-            assert_utils.assert_equal(chksum[0], chksum[2], f'Failed {cmd}, Checksum did not match')
+            assert_utils.assert_equal(chksum[0], chksum[2], f"Failed {cmd}, Checksum did not match")
 
-            assert_utils.assert_not_in("ERROR" or "Error", resp,
-                                   f'"{cmd}" Failed, Please check the log')
+            assert_utils.assert_not_in(
+                "ERROR" or "Error", resp, f'"{cmd}" Failed, Please check the log'
+            )
 
     def get_md5sum(self, file, node):
         """
         Get MD5SUM of a file from hax container
 
         :param file: Absolute Path of the file inside hax container
-        :param node: Cortx node where the file is present
+        :param node: Cortx node_pod where the file is present
         :returns: md5sum of the file
         :rtype: str
         """
 
         cmd = common_cmd.GET_MD5SUM.format(file)
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+            decode=True,
+        )
         log.info("Resp: %s", resp)
-        assert_utils.assert_not_in("ERROR" or "Error", resp,
-                                   f'"{cmd}" Failed, Please check the log')
+        assert_utils.assert_not_in(
+            "ERROR" or "Error", resp, f'"{cmd}" Failed, Please check the log'
+        )
         chksum = resp.split()[0]
         return chksum
 
     def verify_libfabric_version(self):
         """TO check libfabric version and protocol status"""
         for node in self.node_pod_dict:
-            log.info('Checking libfabric rpm')
-            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
-                                                            common_cmd.GETRPM.format("libfab"))
-            result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
-                                                                          self.master_uname,
-                                                                          self.master_passwd)
+            log.info("Checking libfabric rpm")
+            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(
+                self.node_pod_dict[node], common_cmd.GETRPM.format("libfab")
+            )
+            result, error1, ret = system_utils.run_remote_cmd_wo_decision(
+                cmd, self.master_node, self.master_uname, self.master_passwd
+            )
             log.info("%s , %s", result, error1)
             if ret:
                 log.info('"%s" Failed, Please check the log', cmd)
                 assert False
             if (b"ERROR" or b"Error") in error1:
                 log.error('"%s" failed, please check the log', cmd)
-                assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
-                                           f'"{cmd}" Failed, Please check the log')
-            log.info('Checking libfabric version')
-            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
-                                                            common_cmd.LIBFAB_VERSION)
-            result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
-                                                                          self.master_uname,
-                                                                          self.master_passwd)
+                assert_utils.assert_not_in(
+                    error1, b"ERROR" or b"Error", f'"{cmd}" Failed, Please check the log'
+                )
+            log.info("Checking libfabric version")
+            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(
+                self.node_pod_dict[node], common_cmd.LIBFAB_VERSION
+            )
+            result, error1, ret = system_utils.run_remote_cmd_wo_decision(
+                cmd, self.master_node, self.master_uname, self.master_passwd
+            )
             if ret:
                 log.info('"%s" Failed, Please check the log', cmd)
                 assert False
             if (b"ERROR" or b"Error") in error1:
                 log.error('"%s" failed, please check the log', cmd)
-                assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
-                                           f'"{cmd}" Failed, Please check the log')
-            log.info('Checking libfabric tcp protocol presence')
-            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
-                                                            common_cmd.LIBFAB_TCP)
-            result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
-                                                                          self.master_uname,
-                                                                          self.master_passwd)
+                assert_utils.assert_not_in(
+                    error1, b"ERROR" or b"Error", f'"{cmd}" Failed, Please check the log'
+                )
+            log.info("Checking libfabric tcp protocol presence")
+            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(
+                self.node_pod_dict[node], common_cmd.LIBFAB_TCP
+            )
+            result, error1, ret = system_utils.run_remote_cmd_wo_decision(
+                cmd, self.master_node, self.master_uname, self.master_passwd
+            )
             if ret:
                 log.info('"%s" Failed, Please check the log', cmd)
                 assert False
             if (b"ERROR" or b"Error") in error1:
                 log.error('"%s" failed, please check the log', cmd)
-                assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
-                                           f'"{cmd}" Failed, Please check the log')
-            log.info('Checking libfabric socket protocol presence')
-            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(self.node_pod_dict[node],
-                                                            common_cmd.LIBFAB_SOCKET)
-            result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.master_node,
-                                                                          self.master_uname,
-                                                                          self.master_passwd)
+                assert_utils.assert_not_in(
+                    error1, b"ERROR" or b"Error", f'"{cmd}" Failed, Please check the log'
+                )
+            log.info("Checking libfabric socket protocol presence")
+            cmd = common_cmd.K8S_POD_INTERACTIVE_CMD.format(
+                self.node_pod_dict[node], common_cmd.LIBFAB_SOCKET
+            )
+            result, error1, ret = system_utils.run_remote_cmd_wo_decision(
+                cmd, self.master_node, self.master_uname, self.master_passwd
+            )
             if ret:
                 log.info('"%s" Failed, Please check the log', cmd)
                 assert False
             if (b"ERROR" or b"Error") in error1:
                 log.error('"%s" failed, please check the log', cmd)
-                assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
-                                           f'"{cmd}" Failed, Please check the log')
+                assert_utils.assert_not_in(
+                    error1, b"ERROR" or b"Error", f'"{cmd}" Failed, Please check the log'
+                )
 
     @staticmethod
     def byte_conversion(size):
-        """ Convert file size of GB/MB/KB into bytes
+        """Convert file size of GB/MB/KB into bytes
         :param: size: size of the file in either G, M or K i.e 2G, 1m
         :return: size in bytes
         """
-        suffix = ['G', 'M', 'K']
+        suffix = ["G", "M", "K"]
         if size[-1].upper() not in suffix:
-            assert_utils.assert_in(size[-1], suffix,
-                                   'invalid size')
-        if size[-1].upper() == 'G':
-            size = int(size[0: -1]) * 1024 * 1024 * 1024
-        elif size[-1].upper() == 'M':
-            size = int(size[0: -1]) * 1024 * 1024
-        elif size[-1].upper() == 'K':
-            size = int(size[0: -1]) * 1024
+            assert_utils.assert_in(size[-1], suffix, "invalid size")
+        if size[-1].upper() == "G":
+            size = int(size[0:-1]) * 1024 * 1024 * 1024
+        elif size[-1].upper() == "M":
+            size = int(size[0:-1]) * 1024 * 1024
+        elif size[-1].upper() == "K":
+            size = int(size[0:-1]) * 1024
         return size
 
     def kv_cmd(self, param, node, client_num=None):
@@ -531,25 +671,32 @@ class MotrCoreK8s():
         M0KV command creation
 
         :param: Input Parameters
-        :node: on which node m0cp cmd need to perform
+        :node_pod: on which node_pod m0cp cmd need to perform
         :client_num: perform operation on motr_client
         """
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0KV.format(node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
-                                     node_dict["hax_ep"],
-                                     node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-                                     self.profile_fid, param)
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
+        cmd = common_cmd.M0KV.format(
+            node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+            node_dict["hax_ep"],
+            node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+            self.profile_fid,
+            param,
+        )
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+            decode=True,
+        )
 
         log.info("Resp: %s", resp)
 
-        assert_utils.assert_not_in("ERROR" or "Error", resp,
-                                   f'"{cmd}" Failed, Please check the log')
+        assert_utils.assert_not_in(
+            "ERROR" or "Error", resp, f'"{cmd}" Failed, Please check the log'
+        )
 
     def shutdown_cluster(self):
         """
@@ -567,14 +714,15 @@ class MotrCoreK8s():
         Method is generic enough to kick m0d restart.
         :return:
         """
-        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            self.node_obj,
-            self.health_obj)
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.node_obj, self.health_obj)
         assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
         log.info("Deleted pod : %s", list(resp[1].keys())[0])
 
-    def restart_m0d_container(self, pod_prefix: str = common_const.POD_NAME_PREFIX,
-                              container_prefix: str = common_const.MOTR_CONTAINER_PREFIX):
+    def restart_m0d_container(
+        self,
+        pod_prefix: str = common_const.POD_NAME_PREFIX,
+        container_prefix: str = common_const.MOTR_CONTAINER_PREFIX,
+    ):
         """
         restart m0d container to reflect metadata change.
         Method is generic enough to kick m0d restart.
@@ -584,38 +732,44 @@ class MotrCoreK8s():
         # prefer 0th pod and 0th container for running m0scripts
         pod = pod_list[0]
         containers = self.node_obj.get_container_of_pod(
-            pod_name=pod, container_prefix=container_prefix)
+            pod_name=pod, container_prefix=container_prefix
+        )
         log.info("Perform restart of 0th M0d container")
         container = containers[0]
-        resp = self.node_obj.restart_container_in_pod(
-            pod_name=pod, container_name=container)
+        resp = self.node_obj.restart_container_in_pod(pod_name=pod, container_name=container)
         self.log.debug("Container restarted with new PID: %s", resp)
 
     def update_m0crate_config(self, config_file, node):
         """
-        This will modify the m0crate workload config yaml with the node details
+        This will modify the m0crate workload config yaml with the node_pod details
         param: confile_file: Path of m0crate workload config yaml
-        param: node: Cortx node on which m0crate utility to be executed
+        param: node_pod: Cortx node_pod on which m0crate utility to be executed
         """
         m0cfg = config_utils.read_yaml(config_file)[1]
         node_enpts = self.get_cortx_node_endpoints(node)
         # modify m0cfg and write back to file
-        m0cfg['MOTR_CONFIG']['MOTR_HA_ADDR'] = node_enpts['hax_ep']
-        m0cfg['MOTR_CONFIG']['PROF'] = self.profile_fid
-        m0cfg['MOTR_CONFIG']['PROCESS_FID'] = node_enpts[common_const.MOTR_CLIENT][0]['fid']
-        m0cfg['MOTR_CONFIG']['MOTR_LOCAL_ADDR'] = node_enpts[common_const.MOTR_CLIENT][0]['ep']
-        b_size = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['BLOCK_SIZE']
-        source_file = m0cfg['WORKLOAD_SPEC'][0]['WORKLOAD']['SOURCE_FILE']
-        file_size = source_file.split('/')[-1]
+        m0cfg["MOTR_CONFIG"]["MOTR_HA_ADDR"] = node_enpts["hax_ep"]
+        m0cfg["MOTR_CONFIG"]["PROF"] = self.profile_fid
+        m0cfg["MOTR_CONFIG"]["PROCESS_FID"] = node_enpts[common_const.MOTR_CLIENT][0]["fid"]
+        m0cfg["MOTR_CONFIG"]["MOTR_LOCAL_ADDR"] = node_enpts[common_const.MOTR_CLIENT][0]["ep"]
+        b_size = m0cfg["WORKLOAD_SPEC"][0]["WORKLOAD"]["BLOCK_SIZE"]
+        source_file = m0cfg["WORKLOAD_SPEC"][0]["WORKLOAD"]["SOURCE_FILE"]
+        file_size = source_file.split("/")[-1]
         count = self.byte_conversion(file_size) // self.byte_conversion(b_size)
         self.dd_cmd(b_size.upper(), str(count), source_file, node)
         config_utils.write_yaml(config_file, m0cfg, backup=False, sort_keys=False)
 
-    def run_motr_io(self, node, bsize_layout_map=BSIZE_LAYOUT_MAP, block_count=FILE_BLOCK_COUNT,
-                    run_m0cat=True, delete_objs=True):
+    def run_motr_io(
+        self,
+        node,
+        bsize_layout_map=BSIZE_LAYOUT_MAP,
+        block_count=FILE_BLOCK_COUNT,
+        run_m0cat=True,
+        delete_objs=True,
+    ):
         """
-        Run m0cp, m0cat and m0unlink on a node for all the motr clients and returns the objects
-        :param: str node: Cortx node on which utilities to be executed
+        Run m0cp, m0cat and m0unlink on a node_pod for all the motr clients and returns the objects
+        :param: str node_pod: Cortx node_pod on which utilities to be executed
         :param: dict bsize_layout_map: mapping of block size and layout for IOs to run
         :param: list block_count: List containing the integer values. If block count is 1,
                 then size of object file will vary from 4K to 32M,
@@ -631,45 +785,56 @@ class MotrCoreK8s():
         :rtype: dict
         """
         object_dict = {}
-        infile = TEMP_PATH + '/input'
-        outfile = TEMP_PATH + '/output'
+        infile = TEMP_PATH + "/input"
+        outfile = TEMP_PATH + "/output"
         try:
             for count in block_count:
                 for b_size in bsize_layout_map.keys():
-                    object_id = str(SystemRandom().randint(1, 9999)) + ":" + \
-                                str(SystemRandom().randint(1, 9999))
-                    object_dict[object_id] = {'block_size': b_size}
-                    object_dict[object_id]['deleted'] = False
-                    object_dict[object_id]['count'] = count
+                    object_id = (
+                        str(SystemRandom().randint(1, 9999))
+                        + ":"
+                        + str(SystemRandom().randint(1, 9999))
+                    )
+                    object_dict[object_id] = {"block_size": b_size}
+                    object_dict[object_id]["deleted"] = False
+                    object_dict[object_id]["count"] = count
                     self.dd_cmd(b_size, str(count), infile, node)
-                    self.cp_cmd(b_size, str(count), object_id, bsize_layout_map[b_size],
-                                infile, node)
+                    self.cp_cmd(
+                        b_size, str(count), object_id, bsize_layout_map[b_size], infile, node
+                    )
                     if run_m0cat:
-                        self.cat_cmd(b_size, str(count), object_id,
-                                     bsize_layout_map[b_size], outfile, node)
+                        self.cat_cmd(
+                            b_size, str(count), object_id, bsize_layout_map[b_size], outfile, node
+                        )
                         md5sum = self.get_md5sum(outfile, node)
-                        object_dict[object_id]['md5sum'] = md5sum
+                        object_dict[object_id]["md5sum"] = md5sum
                         self.md5sum_cmd(infile, outfile, node)
                     if delete_objs:
                         self.unlink_cmd(object_id, bsize_layout_map[b_size], node)
-                        object_dict[object_id]['deleted'] = True
+                        object_dict[object_id]["deleted"] = True
             return object_dict
         except Exception as exc:
             log.exception("Test has failed with execption: %s", exc)
             raise exc
 
-    def run_io_in_parallel(self, node, bsize_layout_map=BSIZE_LAYOUT_MAP,
-                           block_count=FILE_BLOCK_COUNT, run_m0cat=True, delete_objs=True,
-                           return_dict=None):
+    def run_io_in_parallel(
+        self,
+        node,
+        bsize_layout_map=BSIZE_LAYOUT_MAP,
+        block_count=FILE_BLOCK_COUNT,
+        run_m0cat=True,
+        delete_objs=True,
+        return_dict=None,
+    ):
         """
-        :param: str node: Cortx node on which utilities to be executed
+        :param: str node_pod: Cortx node_pod on which utilities to be executed
         :param: dict bsize_layout_map: mapping of block size and layout for IOs to run
         :param: list block_count: List containing the integer values. If block count is 1,
                 then size of object file will vary from 4K to 32M,
                 i.e multiple of supported object block sizes
         :param: bool run_m0cat: if True, will also run m0cat and compares the md5sum
         :param: bool delete_objs: if True, will delete the created objects
-        :param: dict return_dict: contains the return value from for node
+        :param: dict return_dict: contains the return value from for node_pod
         """
         if return_dict is None:
             return_dict = {}
@@ -681,14 +846,15 @@ class MotrCoreK8s():
             return_dict[node] = exc
             return return_dict
 
-    def run_m0crate_in_parallel(self, local_file_path, remote_file_path,
-                                cortx_node, return_dict=None):
+    def run_m0crate_in_parallel(
+        self, local_file_path, remote_file_path, cortx_node, return_dict=None
+    ):
         """
         Run motr m0crate in parallel using this function with the help of multiprocessing
         :param: str local_file_path: Absolute workload file(yaml) path on the client
-        :param: str remote_file_path: Absolute workload file(yaml) path on the master node
+        :param: str remote_file_path: Absolute workload file(yaml) path on the master node_pod
         :param: str cortx_node: Node where the m0crate utility will run
-        :param: dict return_dict: contains the return value from for node
+        :param: dict return_dict: contains the return value from for node_pod
         """
         if return_dict is None:
             return_dict = {}
@@ -701,28 +867,33 @@ class MotrCoreK8s():
 
     def close_connections(self):
         """Close connections to target nodes."""
-        if CMN_CFG["product_family"] in ('LR', 'LC') and \
-                CMN_CFG["product_type"] == 'K8S':
+        if CMN_CFG["product_family"] in ("LR", "LC") and CMN_CFG["product_type"] == "K8S":
             for conn in self.master_node_list + self.worker_node_list:
                 if isinstance(conn, LogicalNode):
                     conn.disconnect()
 
     def dump_m0trace_log(self, filepath, node):
-        """ This method is used to parse the m0trace logs on all the data pods,
+        """This method is used to parse the m0trace logs on all the data pods,
         filepath: m0trace log path
         """
         list_trace = common_cmd.LIST_M0TRACE
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {list_trace}", decode=True)
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {list_trace}",
+            decode=True,
+        )
         latest_trace_file = resp.split("\n")[-1]
         log.debug("Resp: %s", latest_trace_file)
         cmd = Template(common_cmd.M0TRACE).substitute(trace=latest_trace_file, file=filepath)
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
-                                          namespace=common_const.NAMESPACE,
-                                          command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
+        resp = self.node_obj.send_k8s_cmd(
+            operation="exec",
+            pod=self.node_pod_dict[node],
+            namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} " f"-- {cmd}",
+            decode=True,
+        )
         log.info("Resp of trace: %s", resp)
         return resp, filepath
 
@@ -744,27 +915,27 @@ class MotrCoreK8s():
         for line in lines:
             if "tfid" in line:
                 tfid_list.append(line)  # append the target fid in the list.
-            if '[P]' in line:
+            if "[P]" in line:
                 if tfid_list:
                     tfid = tfid_list.pop()
                     tfid = tfid.split(" ")
                     fid = tfid[-1][1:-1]  # fetch target fid and strip the <>
-                    dict_schema = {"PARITY"+str(parity_blk): fid}  # create dictionary
+                    dict_schema = {"PARITY" + str(parity_blk): fid}  # create dictionary
                     checksum_dict.update(dict_schema)
-                    parity_blk=parity_blk+1
+                    parity_blk = parity_blk + 1
             if "[D]" in line:
                 if tfid_list:
                     tfid = tfid_list.pop()
                     tfid = tfid.split(" ")
                     fid = tfid[-1][1:-1]  # fetch target fid and strip the <>
-                    dict_schema = {"DATA"+str(data_blk): fid}  # create dictionary
+                    dict_schema = {"DATA" + str(data_blk): fid}  # create dictionary
                     checksum_dict.update(dict_schema)
-                    data_blk=data_blk+1
+                    data_blk = data_blk + 1
         log.debug("DICT is %s", checksum_dict)
         return checksum_dict
 
     # pylint: disable=too-many-locals
-    def fetch_gob(self, metadata_device, parse_size, fid:dict):
+    def fetch_gob(self, metadata_device, parse_size, fid: dict):
         """
         This method helps to verify the gob id by running emap_list using error_injection script
         it returns the corresponding data,parity block checksum id
@@ -776,44 +947,49 @@ class MotrCoreK8s():
         data_checksum_list = []
         parity_checksum_list = []
         for key, value in fid.items():
-            if "DATA" in key:        # fetch the value from dict for data block
+            if "DATA" in key:  # fetch the value from dict for data block
                 fid_val = value[7:16]
                 d_fid.append(fid_val)
-            else:                   # fetch the value from dict for parity block
+            else:  # fetch the value from dict for parity block
                 fid_val = value[7:16]
                 p_fid.append(fid_val)
         # Iterate over data pods to copy the error_injection.py script on motr container
         for pod in pod_list:
             result = self.master_node_list[0].copy_file_to_container(
-                "error_injection.py", pod, common_const.CONTAINER_PATH,
-                common_const.MOTR_CONTAINER_PREFIX+"-001")
+                "error_injection.py",
+                pod,
+                common_const.CONTAINER_PATH,
+                common_const.MOTR_CONTAINER_PREFIX + "-001",
+            )
             if not result:
                 raise FileNotFoundError
             # Run script to list emap and dump the output to the file
-            cmd = Template(common_cmd.EMAP_LIST).substitute(path=metadata_device, size=parse_size,
-                                                            file=f"{pod}-emap_list.txt")
+            cmd = Template(common_cmd.EMAP_LIST).substitute(
+                path=metadata_device, size=parse_size, file=f"{pod}-emap_list.txt"
+            )
             self.node_obj.send_k8s_cmd(
-                operation="exec", pod=pod, namespace=common_const.NAMESPACE,
-                command_suffix=f"-c {common_const.MOTR_CONTAINER_PREFIX}-001 "
-                               f"-- {cmd}", decode=True)
+                operation="exec",
+                pod=pod,
+                namespace=common_const.NAMESPACE,
+                command_suffix=f"-c {common_const.MOTR_CONTAINER_PREFIX}-001 " f"-- {cmd}",
+                decode=True,
+            )
             d_fid = [*set(d_fid)]
             p_fid = [*set(p_fid)]
             log.debug("lists of d_fid, p_fid %s \n %s", d_fid, p_fid)
             # Fetch the target fid from emap list output captured in file while running
             # emap list on motr container
             for data_fid in d_fid:
-                cmd = common_cmd.FETCH_ID_EMAP.format(
-                    f"{pod}-emap_list.txt", data_fid)
+                cmd = common_cmd.FETCH_ID_EMAP.format(f"{pod}-emap_list.txt", data_fid)
                 d_resp = self.master_node_list[0].execute_cmd(cmd)
-                d_resp = d_resp.decode('UTF-8').strip(",\n")  # strip the resp and make it readable
+                d_resp = d_resp.decode("UTF-8").strip(",\n")  # strip the resp and make it readable
                 if d_resp:
                     # log.debug("gob data entity %s", d_resp)
                     data_checksum_list.append(d_resp)
             for parity_fid in p_fid:
-                cmd = common_cmd.FETCH_ID_EMAP.format(
-                    f"{pod}-emap_list.txt", parity_fid)
+                cmd = common_cmd.FETCH_ID_EMAP.format(f"{pod}-emap_list.txt", parity_fid)
                 p_resp = self.master_node_list[0].execute_cmd(cmd)
-                p_resp = p_resp.decode('UTF-8').strip(",\n")  # strip the resp and make it readable
+                p_resp = p_resp.decode("UTF-8").strip(",\n")  # strip the resp and make it readable
                 if p_resp:
                     parity_checksum_list.append(p_resp)
         log.debug("gob data %s", data_checksum_list)
