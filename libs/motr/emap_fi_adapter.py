@@ -86,9 +86,9 @@ class EmapCommand:
 
     def __str__(self):
         if len(self.cmd_options) == 0:
-            return self.parent_cmd
+            return self.parent_cmd[0]
         options_str = " ".join(map(str, self.cmd_options))
-        return " ".join((self.parent_cmd, options_str))
+        return " ".join((self.parent_cmd[0], options_str))
 
 
 class EmapCommandBuilder:
@@ -117,7 +117,7 @@ class EmapCommandBuilder:
         Constructs the concrete command with provided options or arguments.
         """
         cmd = self._command
-        cmd.build_options(kwargs)
+        cmd.build_options(**kwargs)
         return cmd
 
 
