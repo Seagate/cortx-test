@@ -225,6 +225,10 @@ class MotrCorruptionAdapter(InjectCorruption):
                 motr_containers = self.master_node_list[0].get_container_of_pod(
                     pod_name, MOTR_CONTAINER_PREFIX
                 )
+                logging.debug(f"motr_containers %%%%%%%%%% = {motr_containers}")
+                logging.debug(f"pods_name %%%%%%%%%% = {pod_name}")
+                logging.debug(f"pod_ip %%%%%%%%%% = {pod_ip}")
+
                 motr_instances = len(motr_containers)
                 # select 1st motr instance
                 retries = 1
