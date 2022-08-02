@@ -2009,7 +2009,6 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34088")
-    @pytest.mark.skip("Bucket CRUDs are not supported in DTM0Int0")
     def test_ios_rc_node_restart(self):
         """
         This test tests IOs before and after RC data pod restart
@@ -2058,7 +2057,7 @@ class TestDataPodRestart:
 
         LOGGER.info("Step 3: READ-Verify data written in healthy cluster")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix,
+                                                    log_prefix=self.test_prefix, skipwrite=True,
                                                     skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Successfully performed READ-Verify data written in healthy cluster")
@@ -2088,11 +2087,13 @@ class TestDataPodRestart:
         self.restore_pod = False
 
         LOGGER.info("Step 6: READ-Verify data written in healthy and degraded cluster")
+        skipcleanup = True if CMN_CFG["dtm0_disabled"] else False
         for value in workload_info.values():
             user = value[0]
             prefix = value[1]
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(user.values())[0],
-                                                        log_prefix=prefix, setup_s3bench=False)
+                                                        log_prefix=prefix, setup_s3bench=False,
+                                                        skipcleanup=skipcleanup, skipwrite=True)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully performed READ-Verify data written in healthy and "
                     "degraded cluster")
@@ -2105,7 +2106,7 @@ class TestDataPodRestart:
             self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    setup_s3bench=False)
+                                                    skipcleanup=skipcleanup, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Successfully IOs completed after data pod restart by making "
                     "replicas=1.")
@@ -2114,7 +2115,6 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34087")
-    @pytest.mark.skip("Bucket CRUDs are not supported in DTM0Int0")
     def test_ios_safe_shutdown_pod_restart(self):
         """
         This test tests IOs before and after data pod restart (pod shutdown by making replicas=0)
@@ -2181,11 +2181,14 @@ class TestDataPodRestart:
         self.restore_pod = False
 
         LOGGER.info("Step 6: READ-Verify data written in healthy and degraded cluster")
-        for _, value in workload_info.items():
+        skipcleanup = True if CMN_CFG["dtm0_disabled"] else False
+        for value in workload_info.values():
             user = value[0]
             prefix = value[1]
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(user.values())[0],
-                                                        log_prefix=prefix, setup_s3bench=False)
+                                                        log_prefix=prefix,
+                                                        skipwrite=True, skipcleanup=skipcleanup,
+                                                        setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully performed READ-Verify data written in healthy and "
                     "degraded cluster")
@@ -2198,7 +2201,7 @@ class TestDataPodRestart:
             self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    setup_s3bench=False)
+                                                    skipcleanup=skipcleanup, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Successfully IOs completed after data pod restart by making "
                     "replicas=1.")
@@ -2208,7 +2211,6 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32456")
-    @pytest.mark.skip("Buckets CRUDs are not supported in DTM0Int0")
     def test_pod_shutdown_kubectl_delete(self):
         """
         Verify IOs before and after data pod failure; pod shutdown deleting pod
@@ -2244,9 +2246,11 @@ class TestDataPodRestart:
         LOGGER.info("Step 3: Cluster is in healthy state.")
 
         LOGGER.info("Step 4: READs-Verify-DELETE data written in healthy cluster")
+        skipcleanup = True if CMN_CFG["dtm0_disabled"] else False
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipwrite=True, setup_s3bench=False)
+                                                    skipwrite=True, skipcleanup=skipcleanup,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed READs-Verify-DELETE on data written in healthy cluster")
 
@@ -2258,7 +2262,7 @@ class TestDataPodRestart:
             self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    setup_s3bench=False)
+                                                    setup_s3bench=False, skipcleanup=skipcleanup)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
