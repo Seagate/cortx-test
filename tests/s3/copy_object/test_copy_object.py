@@ -95,10 +95,10 @@ class TestCopyObjects:
         self.file_path = os.path.join(self.test_dir_path, self.object_name1)
         self.download_path = os.path.join(
             self.test_dir_path, self.object_name2)
-        status, self.response1 = self.create_s3cortxcli_acc(
+        status, self.response1 = self.create_s3cortxiam_acc(
             self.account_name1, "{}@seagate.com".format(self.account_name1), self.s3acc_passwd)
         assert_utils.assert_true(status, self.response1)
-        status, self.response2 = self.create_s3cortxcli_acc(
+        status, self.response2 = self.create_s3cortxiam_acc(
             self.account_name2, "{}@seagate.com".format(
                 self.account_name2), self.s3acc_passwd)
         assert_utils.assert_true(status, self.response2)
@@ -203,7 +203,7 @@ class TestCopyObjects:
 
         return True, put_resp[1]["ETag"]
 
-    def create_s3cortxcli_acc(
+    def create_s3cortxiam_acc(
             self,
             account_name: str = None,
             email_id: str = None,
