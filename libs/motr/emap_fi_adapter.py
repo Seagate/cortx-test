@@ -248,7 +248,7 @@ class MotrCorruptionAdapter(InjectCorruption):
                             if resp:
                                 success = True
                                 break
-                            retries -= 1
+                            # retries -= 1
                         except IOError as ex:
                             LOGGER.exception("remaining retrying: %s")
                             retries -= 1
