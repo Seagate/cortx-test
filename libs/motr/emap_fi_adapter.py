@@ -117,7 +117,7 @@ class EmapCommandBuilder:
         Constructs the concrete command with provided options or arguments.
         """
         cmd = self._command
-        cmd.build_options(self, kwargs)
+        cmd.build_options(kwargs)
         return cmd
 
 
