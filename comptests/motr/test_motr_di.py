@@ -248,21 +248,19 @@ class TestCorruptDataDetection:
         outfile = TEMP_PATH + "output"
 
         # ON THE DATA POD: ==========>>>>>>
+
         # Copy the emap script to controller node's root dir
-        err_inj_script_path = str(MOTR_DI_ERR_INJ_LOCAL_PATH)  # Taken from params
+        err_inj_script_path = str(MOTR_DI_ERR_INJ_LOCAL_PATH)
         copy_status, resp = self.motr_obj.master_node_list[0].copy_file_to_remote(
-            err_inj_script_path, const.MOTR_DI_ERR_INJ_SCRIPT_PATH  # From param
+            err_inj_script_path, const.MOTR_DI_ERR_INJ_SCRIPT_PATH
         )
         if not copy_status:
             return copy_status, resp
         else:
-            logger.debug(f"copy failed")
+            logger.debug(f"Error Injection Script File already exists...")
 
         remote_script_path = const.CONTAINER_PATH
-        logger.debug(f"Printing const: {remote_script_path}")
-
         motr_container_name = f"{const.MOTR_CONTAINER_PREFIX}-001"
-        logger.debug(f"Printing const: {motr_container_name}")
 
         # Todo: Working code -> Enable
         # For all pods in the system
@@ -299,7 +297,7 @@ class TestCorruptDataDetection:
         # logger.debug(f"object_id_list is: ###### {object_id_list}")
         # Todo: Working code -> Enable -> End --------------------------------
 
-        logger.info(f"Copying the error injection script to cortx_motr_io containers in data pods")
+        logger.info(f"Copying the error injection script to cortx_motr_io containers in data pods.")
         pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
         for pod in pod_list:
             result = self.motr_obj.master_node_list[0].copy_file_to_container(
