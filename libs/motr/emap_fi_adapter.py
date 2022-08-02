@@ -227,35 +227,38 @@ class MotrCorruptionAdapter(InjectCorruption):
                     pod_name, MOTR_CONTAINER_PREFIX
                 )
                 logging.debug(f"motr_containers %%%%%%%%%% = {motr_containers}")
-                logging.debug(f"pods_name %%%%%%%%%% = {pod_name}")
-                logging.debug(f"pod_ip %%%%%%%%%% = {pod_ip}")
+                logging.debug(f"pod_name %%%%%%%%%% = {pod_name}")
 
                 motr_instances = len(motr_containers)
                 # select 1st motr instance
-                retries = 1
-                success = False
-                while retries > 0:
-                    try:
-                        resp = self.master_node_list[0].send_k8s_cmd(
-                            operation="exec",
-                            pod=pod_name,
-                            namespace=NAMESPACE,
-                            command_suffix=f"-c {motr_containers[0]} -- "
-                            f"{self.build_emap_command(fault_type)}",
-                            decode=True,
-                        )
-                        if resp:
-                            success = True
-                            break
-                    except IOError as ex:
-                        LOGGER.exception("remaining retrying: %s")
-                        retries -= 1
-                        time.sleep(2)
+                if pod_name == "cortx-data-g0-0":
+                    retries = 1
+                    success = False
+                    while retries > 0:
+                        try:
+                            resp = self.master_node_list[0].send_k8s_cmd(
+                                operation="exec",
+                                pod=pod_name,
+                                namespace=NAMESPACE,
+                                command_suffix=f"-c {motr_containers[0]} -- "
+                                f"{self.build_emap_command(fault_type)}",
+                                decode=True,
+                            )
+                            if resp:
+                                success = True
+                                break
+                        except IOError as ex:
+                            LOGGER.exception("remaining retrying: %s")
+                            retries -= 1
+                            time.sleep(2)
 
-                if success:
+                    if success:
+                        break
+                else:
                     break
-            if self.restart_motr_container(0):
-                return True
+            # Todo:
+            # if self.restart_motr_container(0):
+            #     return True
         except IOError as ex:
             LOGGER.exception("Exception occured while injecting emap fault", exc_info=ex)
             return False
