@@ -652,4 +652,4 @@ PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'
            "record -i 45 -d {} -p $pid"
 
 # stat collection through kubectl top
-CMD_PGREP_TOP = "pgrep /bin/sh ./{} {} -fx"
+CMD_PGREP_TOP = 'pgrep "/bin/sh ./{} {}" -fx'
