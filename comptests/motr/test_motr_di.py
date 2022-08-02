@@ -255,8 +255,7 @@ class TestCorruptDataDetection:
         # exist
         # This exists on the client = local path
         copy_status, resp = self.motr_obj.master_node_list[0].copy_file_to_remote(
-            MOTR_DI_ERR_INJ_LOCAL_PATH,  # From param
-            const.MOTR_DI_ERR_INJ_SCRIPT_PATH
+            MOTR_DI_ERR_INJ_LOCAL_PATH, const.MOTR_DI_ERR_INJ_SCRIPT_PATH  # From param
         )
         if not copy_status:
             return copy_status, resp
@@ -310,28 +309,20 @@ class TestCorruptDataDetection:
         # logger.debug(f"object_id_list is: ###### {object_id_list}")
         # Todo: Working code -> Enable -> End --------------------------------
 
-
-        #  Trying on first data pod only ---- Then on all pods run this in for loop
-
         logger.debug(f"node_data_pod_dict = {const.POD_NAME_PREFIX}")
-
-        # Todo: Copy the emap script
 
         pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
         for pod in pod_list:
             logger.debug(f"in pod = {pod}")
             result = self.motr_obj.master_node_list[0].copy_file_to_container(
-                const.MOTR_DI_ERR_INJ_SCRIPT_PATH,
-                pod,
-                remote_script_path,
-                motr_container_name
+                const.MOTR_DI_ERR_INJ_SCRIPT_PATH, pod, remote_script_path, motr_container_name
             )
 
             if not result:
                 raise FileNotFoundError
 
-        # # Todo: and run Emap
-        # self.motr_corruption_obj.inject_checksum_corruption()
+        # Todo: and run Emap
+        self.motr_corruption_obj.inject_checksum_corruption()
 
         # # Todo: need to restart m0tr container for taking emap effect
         #
@@ -475,44 +466,26 @@ class TestCorruptDataDetection:
     @pytest.mark.motr_di
     def test_corrupt_data_all_du_unaligned(self):
         """
-        Corrupt each data unit one by one and check Motr is able to detect read error 4MB IO
-        with 1MB Unit Size and N=4 K=2 Unaligned data blocks
+        Corrupt each data unit one by one and check Motr is able to detect read error 4KB IO
+        with 4KB Unit Size and N=4 K=2 aligned data blocks
         In the loop for each data unit,
         Copy motr object with m0cp
         Read from object with m0cat should throw an error.
-        -s 1m -c 4 -o 1048583 /root/infile -L 9
-        -s 1m -c 1 -o 1048583 /root/myfile -L 9 -u -O 0
-        -o 1048583 -s 1m -c 4 -L 9 /root/dest_myfile
+        -s 4k -c 4 -o 1234:1234 /root/infile -L 1
+        -s 4k -c 4 -o 1234:1234 /root/myfile -L 1 -u -O 0
+        -o 1234:1234 -s 4k -c 4 -L 1 /root/dest_myfile
         """
         count_list = [["4", "4"]]
-        bsize_list = ["4M"]
-        layout_ids = ["9"]
+        bsize_list = ["4096"]
+        layout_ids = ["1"]
         offsets = [0]
+        test_prefix = "test-45162"
+        logger.info("STARTED: Test data unit corruption in loop - aligned")
+
         # Todo: Run the following 4 times for 4 data units after identifying nodes on which
         #  those are stored
-        self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
-
-        # Check for deployment status using kubectl commands - Taken care in setup stage
-        # Todo: Invoke in degraded mode depends on PR 1732
-        # Todo: Find parity block and corrupt
-        #
-        logger.info("STARTED: Test Parity corruption in degraded mode - aligned")
-        test_prefix = "test-41768"
-
-        logger.info("Step 1: Perform Single m0d Process Restart")
-        resp = self.dtm_obj.process_restart(
-            master_node=self.master_node_list[0],
-            health_obj=self.health_obj,
-            pod_prefix=const.POD_NAME_PREFIX,
-            container_prefix=const.MOTR_CONTAINER_PREFIX,
-            process=self.m0d_process,
-            check_proc_state=True,
-        )
-        assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
-        logger.info("Step 1: m0d restarted and recovered successfully")
-
-        logger.info("Step 2: Perform m0cp and corrupt the parity block")
-        resp = self.m0cp_corrupt_parity_m0cat(layout_ids, bsize_list, count_list, offsets)
-        assert_utils.assert_true(resp)
-        logger.info("Step 2: Successfully performed m0cp and corrupt the parity block")
+        for _ in range(4):
+            logger.info("Step 1: Perform m0cp and corrupt the data block")
+            self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
+            logger.info("Successfully performed m0cp and corrupt the data block")
         logger.info(f"ENDED:{test_prefix} Test Parity corruption in degraded mode - aligned")
