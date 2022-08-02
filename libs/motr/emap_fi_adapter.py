@@ -130,17 +130,17 @@ class InjectCorruption(ABC):
     """Abstract class to perform failure injection."""
 
     @abstractmethod
-    def inject_checksum_corruption(self):
+    def inject_checksum_corruption(self, oid: list):
         """Enable Checksum failure."""
         pass
 
     @abstractmethod
-    def inject_parity_corruption(self):
+    def inject_parity_corruption(self, oid: list):
         """Enable Checksum failure."""
         pass
 
     @abstractmethod
-    def inject_metadata_corruption(self):
+    def inject_metadata_corruption(self, oid: list):
         """Enable metadata corruption."""
         pass
 
@@ -190,13 +190,13 @@ class MotrCorruptionAdapter(InjectCorruption):
         """
         return ""
 
-    def get_metadata_shard(self, oid):
+    def get_metadata_device(self, oid):
         """
-        Locate metadata shard.
+        Locate metadata device from solution.yaml.
         :param oid:
         :return: COB ID in FID format to be corrupted
         """
-        # Todo
+        # Todo - read from solution.yaml
         return "/dev/sdc"
 
     def restart_motr_container(self, index):
@@ -207,11 +207,11 @@ class MotrCorruptionAdapter(InjectCorruption):
         """
         return False
 
-    def build_emap_command(self, ftype=FT_PARITY):
-        selected_shard = self.get_metadata_shard(self.oid)
-        cob_id = self.get_object_cob_id(self.oid, dtype=ftype)
+    def build_emap_command(self, oid, ftype=FT_PARITY):
+        selected_shard = self.get_metadata_device(self.oid)
+        cob_id = self.get_object_cob_id(oid, dtype=ftype)
         emap_bldr = EmapCommandBuilder()
-        kwargs = dict(corrupt_emap=oid,
+        kwargs = dict(
                       list_emap="list_emap",
                       corrupt_emap=cob_id,
                       parse_size=10485760,
@@ -221,9 +221,10 @@ class MotrCorruptionAdapter(InjectCorruption):
         cmd = EmapCommandBuilder.build(emap_bldr, **kwargs)
         return cmd
 
-    def inject_fault_k8s(self, oid: str, fault_type: int):
+    def inject_fault_k8s(self, oid: list, fault_type: int):
         """
         Inject fault of type checksum or parity.
+        :param oid object id list
         :param fault_type: checksum or parity
         :return boolean :true :if successful
                           false: if error
@@ -231,7 +232,7 @@ class MotrCorruptionAdapter(InjectCorruption):
         try:
             # data_pods = self.master_node_list[0].get_all_pods_and_ips(POD_NAME_PREFIX)
             data_pods = self.master_node_list[0].get_all_pods(POD_NAME_PREFIX)
-            for pod_name in data_pods:
+            for index, pod_name in enumerate(data_pods):
                 motr_containers = self.master_node_list[0].get_container_of_pod(
                     pod_name, MOTR_CONTAINER_PREFIX
                 )
@@ -272,11 +273,11 @@ class MotrCorruptionAdapter(InjectCorruption):
 
     def inject_checksum_corruption(self, oid: list):
         """Injects data checksum error by providing the DU FID."""
-        return self.inject_fault_k8s(FT_CHKSUM)
+        return self.inject_fault_k8s(oid, FT_CHKSUM)
 
     def inject_parity_corruption(self,oid: list):
         """Injects parity checksum error by providing the Parity FID."""
-        return self.inject_fault_k8s(FT_PARITY)
+        return self.inject_fault_k8s(oid, FT_PARITY)
 
     def inject_metadata_corruption(self, oid: list):
         """Not supported."""
