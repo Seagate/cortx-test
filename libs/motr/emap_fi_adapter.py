@@ -231,26 +231,27 @@ class MotrCorruptionAdapter(InjectCorruption):
 
                 motr_instances = len(motr_containers)
                 # select 1st motr instance
-                if pod_name == "cortx-data-g0-0":
-                    retries = 1
-                    success = False
-                    while retries > 0:
-                        try:
-                            resp = self.master_node_list[0].send_k8s_cmd(
-                                operation="exec",
-                                pod=pod_name,
-                                namespace=NAMESPACE,
-                                command_suffix=f"-c {motr_containers[0]} -- "
-                                f"{self.build_emap_command(fault_type)}",
-                                decode=True,
-                            )
-                            if resp:
-                                success = True
-                                break
-                        except IOError as ex:
-                            LOGGER.exception("remaining retrying: %s")
-                            retries -= 1
-                            time.sleep(2)
+                if pod_name == "cortx-data-g0-0":  # Todo: remove hardcode
+                    # retries = 1
+                    # success = False
+                    # while retries > 0:
+                    try:
+                        resp = self.master_node_list[0].send_k8s_cmd(
+                            operation="exec",
+                            pod=pod_name,
+                            namespace=NAMESPACE,
+                            command_suffix=f"-c {motr_containers[0]} -- "
+                            f"{self.build_emap_command(fault_type)}",
+                            decode=True,
+                        )
+                        if resp:
+                            success = True
+                            break
+                        # retries -= 1
+                    except IOError as ex:
+                        LOGGER.exception("remaining retrying: %s")
+                        # retries -= 1
+                        time.sleep(2)
 
                     if success:
                         break
