@@ -230,8 +230,8 @@ class MotrCorruptionAdapter(InjectCorruption):
 
                 # motr_instances = len(motr_containers)
                 # select 1st motr instance
-                logging.debug(f" Executing only on pod_name = {pod_name}")
-                if pod_name is "cortx-data-g0-0":  # Todo: remove hardcode
+                logging.debug(f"Executing only on pod_name = {pod_name}")
+                if pod_name == "cortx-data-g0-0":  # Todo: remove hardcode
                     logging.debug(f" Inside.......... pod_name = {pod_name}")
                     retries = 1
                     success = False
@@ -251,9 +251,8 @@ class MotrCorruptionAdapter(InjectCorruption):
                             retries -= 1
                         except IOError as ex:
                             LOGGER.exception("remaining retrying: %s")
-                            # retries -= 1
+                            retries -= 1
                             time.sleep(2)
-
                     if success:
                         break
                 else:
