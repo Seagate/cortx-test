@@ -651,3 +651,6 @@ CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json $(jq --null-input --comp
 # Procpath Collection
 PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'); procpath " \
            "record -i 45 -d {} -p $pid"
+
+# stat collection through kubectl top
+CMD_PGREP_TOP = 'pgrep "/bin/sh ./{} {}" -fx'

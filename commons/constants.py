@@ -567,3 +567,9 @@ M0D_SVC = "ioservice"
 SERVER_SVC = "rgw_s3"
 STATEFULSET = "StatefulSet"
 REPLICASET = "ReplicaSet"
+
+# stat collection through kubectl top
+PROFILE_FILE_PATH = "scripts/io_stability/profiling.yaml"
+COLLECTION_SCRIPT_PATH = "scripts/io_stability/collect-k8s-stats.sh"
+PROFILE_FILE = "profiling.yaml"
+COLLECTION_FILE = "collect-k8s-stats.sh"
