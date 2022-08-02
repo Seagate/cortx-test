@@ -310,7 +310,7 @@ class TestCorruptDataDetection:
         #
 
         # Todo: Working code -> Enable -> Start --------------------------------
-        for node_pod in node_pod_dict:
+        for index, node_pod in enumerate(node_pod_dict):
             for b_size, (cnt_c, cnt_u), layout, offset in zip(
                 bsize_list, count_list, layout_ids, offsets
             ):
@@ -318,12 +318,12 @@ class TestCorruptDataDetection:
 
                 # # Read objects after
                 self.motr_obj.cat_cmd(
-                    b_size, cnt_c, object_id_list[node_pod.index()], layout, outfile, node_pod, 0
+                    b_size, cnt_c, object_id_list[index], layout, outfile, node_pod, 0
                 )
 
                 self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
 
-                self.motr_obj.unlink_cmd(object_id_list[node_pod.index()], layout, node_pod, 0)
+                self.motr_obj.unlink_cmd(object_id_list[index], layout, node_pod, 0)
 
             logger.info("Stop: Verify emap corruption detection operation")
         # Todo: Working code -> Enable -> End --------------------------------
