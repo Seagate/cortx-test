@@ -264,7 +264,6 @@ class TestCorruptDataDetection:
         remote_script_path = const.CONTAINER_PATH
         motr_container_name = f"{const.MOTR_CONTAINER_PREFIX}-001"
 
-        # Todo: Working code -> Enable
         # For all pods in the system
         for node_pod in node_pod_dict:
 
@@ -275,12 +274,10 @@ class TestCorruptDataDetection:
                 + str(self.system_random.randint(1, 1024 * 1024))
             )
 
-            # Store in object list
-
             for b_size, (cnt_c, cnt_u), layout, offset in zip(bsize_list, count_list, layout_ids,
                                                               offsets):
                 # On the Client POD - cortx - hax container ==========>>>>>>
-                # Create file for m0cp cmd
+                # Create file (object) with dd
                 self.motr_obj.dd_cmd(b_size, cnt_c, infile, node_pod)
                 # Create object
                 object_id_list.append(object_id)  # Store object_id for future delete
@@ -288,10 +285,10 @@ class TestCorruptDataDetection:
                     b_size, cnt_c, object_id, layout, infile, node_pod, 0
                 )  # client_num
 
-                # self.motr_obj.parse_m0trace_log()
-                # self.motr_obj.read_m0trace_log()
+                # Todo
+                # self.motr_obj.dump_m0trace_log(filepath=, node=)
+                # tfid_dict = self.motr_obj.read_m0trace_log(filepath=)
                 logger.debug(f"object_id_list is: ###### {object_id_list}")
-        # Todo: Working code -> Enable -> End --------------------------------
 
         logger.info(f"Copying the error injection script to cortx_motr_io containers in data pods.")
         pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
@@ -318,7 +315,7 @@ class TestCorruptDataDetection:
 
                 # # Read objects after
                 self.motr_obj.cat_cmd(
-                    b_size, cnt_c, object_id_list[index], layout, outfile, node_pod, 0
+                    b_size, cnt_c, object_id_list[index], layout, outfile, node_pod, 0, di_g=True
                 )
 
                 self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
