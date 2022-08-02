@@ -246,6 +246,7 @@ class TestCorruptDataDetection:
         logger.info("STARTED: Emap corruption workflow")
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
+        node_pod_dict = self.motr_obj.get_node_pod_dict()
 
         # ON THE DATA POD: ==========>>>>>>
 
@@ -264,37 +265,35 @@ class TestCorruptDataDetection:
 
         # Todo: Working code -> Enable
         # For all pods in the system
-        # for node_pod in node_pod_dict:
-        #
-        #     # Format the Object ID is xxx:yyy format
-        #     object_id = (
-        #         str(self.system_random.randint(1, 1024 * 1024))
-        #         + ":"
-        #         + str(self.system_random.randint(1, 1024 * 1024))
-        #     )
-        #
-        #     # Store in object list
-        #     object_id_list = []
-        #
-        #     for b_size, (cnt_c, cnt_u), layout, offset in zip(
-        #         bsize_list, count_list, layout_ids, offsets
-        #     ):
-        #
-        #         # On the Client POD - cortx - hax container ==========>>>>>>
-        #         # Create file for m0cp cmd
-        #         self.motr_obj.dd_cmd(b_size, cnt_c, infile, node_pod)
-        #         # Create object
-        #         object_id_list.append(object_id)  # Store object_id for future delete
-        #         self.motr_obj.cp_cmd(
-        #             b_size, cnt_c, object_id, layout, infile, node_pod, 0
-        #         )  # client_num
-        #
-        #         # todo: Remove this object cleaning from here after use:
-        #         self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
-        #
-        #         # self.motr_obj.parse_m0trace_log()
-        #         # self.motr_obj.read_m0trace_log()
-        # logger.debug(f"object_id_list is: ###### {object_id_list}")
+        for node_pod in node_pod_dict:
+
+            # Format the Object ID is xxx:yyy format
+            object_id = (
+                str(self.system_random.randint(1, 1024 * 1024))
+                + ":"
+                + str(self.system_random.randint(1, 1024 * 1024))
+            )
+
+            # Store in object list
+            object_id_list = []
+
+            for b_size, (cnt_c, cnt_u), layout, offset in zip(bsize_list, count_list, layout_ids,
+                                                              offsets):
+                # On the Client POD - cortx - hax container ==========>>>>>>
+                # Create file for m0cp cmd
+                self.motr_obj.dd_cmd(b_size, cnt_c, infile, node_pod)
+                # Create object
+                object_id_list.append(object_id)  # Store object_id for future delete
+                self.motr_obj.cp_cmd(
+                    b_size, cnt_c, object_id, layout, infile, node_pod, 0
+                )  # client_num
+
+                # todo: Remove this object cleaning from here after use:
+                self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
+
+                # self.motr_obj.parse_m0trace_log()
+                # self.motr_obj.read_m0trace_log()
+        logger.debug(f"object_id_list is: ###### {object_id_list}")
         # Todo: Working code -> Enable -> End --------------------------------
 
         logger.info(f"Copying the error injection script to cortx_motr_io containers in data pods.")
@@ -314,21 +313,21 @@ class TestCorruptDataDetection:
         #
 
         # Todo: Working code -> Enable -> Start --------------------------------
-        # for node_pod in node_pod_dict:
-        #     for b_size, (cnt_c, cnt_u), layout, offset in zip(
-        #         bsize_list, count_list, layout_ids, offsets
-        #     ):
-        #         # On the Client POD - cortx - hax container ==========>>>>>>
-        #
-        #         # # Read objects after
-        #         self.motr_obj.cat_cmd(
-        #             b_size, cnt_c, object_id_list[node_pod.index()], layout, outfile, node_pod, 0
-        #         )
-        #
-        #         self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
-        #         self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
-        #
-        #     logger.info("Stop: Verify emap corruption detection operation")
+        for node_pod in node_pod_dict:
+            for b_size, (cnt_c, cnt_u), layout, offset in zip(
+                bsize_list, count_list, layout_ids, offsets
+            ):
+                # On the Client POD - cortx - hax container ==========>>>>>>
+
+                # # Read objects after
+                self.motr_obj.cat_cmd(
+                    b_size, cnt_c, object_id_list[node_pod.index()], layout, outfile, node_pod, 0
+                )
+
+                self.motr_obj.md5sum_cmd(infile, outfile, node_pod, flag=True)
+                self.motr_obj.unlink_cmd(object_id, layout, node_pod, 0)
+
+            logger.info("Stop: Verify emap corruption detection operation")
         # Todo: Working code -> Enable -> End --------------------------------
 
         return True  # Todo: return status to be worked as per responses
