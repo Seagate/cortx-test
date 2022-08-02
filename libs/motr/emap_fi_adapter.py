@@ -112,6 +112,7 @@ class EmapCommandBuilder:
         """
         self._command = EmapCommand()
 
+    @staticmethod
     def build(self, **kwargs) -> EmapCommand:
         """
         Constructs the concrete command with provided options or arguments.
@@ -207,7 +208,7 @@ class MotrCorruptionAdapter(InjectCorruption):
         kwargs = dict(
             corrupt_emap=cob_id, parse_size=10485760, emap_count=1, metadata_db_path=selected_shard
         )
-        cmd = EmapCommandBuilder.build(self, **kwargs)
+        cmd = EmapCommandBuilder.build(**kwargs)
         return cmd
 
     def inject_fault_k8s(self, fault_type: int):
