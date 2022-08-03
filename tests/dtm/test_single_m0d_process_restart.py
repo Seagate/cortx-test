@@ -997,7 +997,7 @@ class TestSingleProcessRestart:
                                                     obj_name=f"{object_name}_{size}",
                                                     file_path=file_path_copy)
             assert_utils.assert_true(resp[0], resp[1])
-            file_name = "{}{}".format("dtm-test-41232-", size)
+            file_name = "{}{}".format("dtm-test-41232", size)
             file_path = os.path.join(self.test_dir_path, file_name)
             resp = validate_checksum(file_path_1=file_path, file_path_2=file_path_copy)
             assert_utils.assert_true(resp, "Checksum validation Failed.")
