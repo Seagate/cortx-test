@@ -403,7 +403,12 @@ M0CP_G = "m0cp -G -l $ep -H $hax_ep -P $fid -p $prof_fid -s $bsize -c $count -o 
          " $layout $file"
 
 M0CP_U = "m0cp -G -l $ep -H $hax_ep -P $fid -p $prof_fid -s $bsize -c $count -o $obj -L" \
-         " $layout -O $off -u $file" 
+         " $layout -O $off -u $file"
+M0TRACE = "m0trace -i $trace > $file"
+LIST_M0TRACE = "ls -ltr| grep m0|awk '{print $9}'"
+GREP_DP_BLOCK_FID = "grep -E \"prepare io fops|UTyp\" $file| cut -d , -f2"
+EMAP_LIST = "python3 /root/error_injection.py -list_emap -m $path -parse_size $size 2>$file"
+FETCH_ID_EMAP = "grep -n {} -e \"{}\"|awk 'END{{print $9}}'"
 
 # m0cp from data unit aligned offset 0
 # m0cp -G -l inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@21201
@@ -645,3 +650,6 @@ CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json $(jq --null-input --comp
 # Procpath Collection
 PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'); procpath " \
            "record -i 45 -d {} -p $pid"
+
+# stat collection through kubectl top
+CMD_PGREP_TOP = 'pgrep "/bin/sh ./{} {}" -fx'
