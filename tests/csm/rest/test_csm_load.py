@@ -22,6 +22,7 @@
 import logging
 import math
 import os
+from http import HTTPStatus
 import pytest
 import secrets
 import shutil
@@ -30,12 +31,10 @@ import time
 from commons import constants as cons
 from commons import cortxlogging
 from commons import configmanager
-from commons.constants import POD_NAME_PREFIX
 from commons import constants as const
 from commons.constants import Rest as rest_const
 from commons.constants import SwAlerts as sw_alerts
 from commons.utils import config_utils
-from http import HTTPStatus
 from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.csm_interface import csm_api_factory
@@ -223,14 +222,15 @@ class TestCsmLoad():
         self.log.info("objects -  %s", t_obj)
         self.log.info("used capacity-  %s", t_size)
         self.log.info("used_rounded capacity-  %s", m_size)
-        assert t_obj != 0, "Number of objects is Zero"
-        assert t_size != 0, "Used Size is Zero"
-        assert m_size != 0, "Total Size is Zero"
+        assert t_obj > 0, "Number of objects is Zero"
+        assert t_size > 0, "Used Size is Zero"
+        assert m_size > 0, "Total Size is Zero"
         assert m_size >= t_size, "Used - Used Rounded Size mismatch found"
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
+    # pylint: disable=too-many-statements
     @pytest.mark.skip(reason="not_in_main_build_yet")
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -248,7 +248,7 @@ class TestCsmLoad():
         users = mgm_ops.create_account_users(nusers=test_cfg["users_count"], use_cortx_cli=False)
         data = mgm_ops.create_buckets(nbuckets=test_cfg["buckets_count"], users=users)
 
-        self.log.info("Step 2: : [Start] Shutdown the data pod safely")
+        self.log.info("Step 2: [Start] Shutdown the data pod safely")
         num_replica = 0
         self.log.info("Get pod to be deleted")
         sts_dict = self.csm_obj.master.get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
@@ -264,7 +264,7 @@ class TestCsmLoad():
             self.num_replica = int(resp[1])
             num_replica = self.num_replica - 1
 
-        self.log.info("Step 2: Shutdown random data pod by making replicas=0 and "
+        self.log.info("Shutdown random data pod by making replicas=0 and "
                     "verify cluster & remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.csm_obj.master, health_obj=self.csm_obj.hlth_master,
