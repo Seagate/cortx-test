@@ -80,7 +80,6 @@ class TestCsmLoad():
         cls.ha_obj = HAK8s()
         cls.failed_pod = []
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
-        cls.num_replica = 1
         cls.system_random = secrets.SystemRandom()
         cls.request_usage = 122
 
@@ -263,7 +262,7 @@ class TestCsmLoad():
             self.num_replica = int(resp[1])
             num_replica = self.num_replica - 1
 
-        self.log.info("Shutdown random data pod by making replicas=0 and "
+        self.log.info("Shutdown random data pod by replica method and "
                     "verify cluster & remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.csm_obj.master, health_obj=self.csm_obj.hlth_master,
