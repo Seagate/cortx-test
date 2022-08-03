@@ -23,12 +23,11 @@ import logging
 import math
 import os
 from http import HTTPStatus
-import pytest
 import secrets
 import shutil
 import time
+import pytest
 
-from commons import constants as cons
 from commons import cortxlogging
 from commons import configmanager
 from commons import constants as const
@@ -665,7 +664,7 @@ class TestCsmLoad():
         self.log.info("\nGenerate CPU usage fault.")
         starttime = time.time()
         self.default_cpu_usage = self.sw_alert_obj.get_conf_store_vals(
-            url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
+            url=const.SSPL_CFG_URL, field=const.CONF_CPU_USAGE)
         resp = self.sw_alert_obj.gen_cpu_usage_fault_thres(test_cfg["delta_cpu_usage"])
         assert resp[0], resp[1]
         self.log.info("\nCPU usage fault is created successfully.\n")
