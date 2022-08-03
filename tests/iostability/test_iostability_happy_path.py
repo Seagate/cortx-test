@@ -32,6 +32,7 @@ from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
 from commons.utils import support_bundle_utils, assert_utils
+from commons.utils.top_stats_collection_utils import TopStatsCollection
 from config import CMN_CFG
 from conftest import LOG_DIR
 from libs.dtm.ProcPathStasCollection import EnableProcPathStatsCollection
@@ -90,6 +91,7 @@ class TestIOWorkload:
         cls.log.info("Setup S3bench")
         resp = s3bench.setup_s3bench()
         assert_utils.assert_true(resp)
+        cls.remote_dir_path = cls.test_cfg['remote_path']
 
     def setup_method(self):
         """Setup Method"""
@@ -97,22 +99,25 @@ class TestIOWorkload:
         self.log.info("Start Procpath collection")
         self.proc_path = EnableProcPathStatsCollection(CMN_CFG)
         self.log_collect = ServerOSLogsCollectLib(CMN_CFG)
+        self.top_stats = TopStatsCollection(CMN_CFG)
         resp = self.proc_path.setup_requirement()
         assert_utils.assert_true(resp[0], resp[1])
         self.proc_path.start_collection()
         time.sleep(30)
         resp = self.proc_path.validate_collection()
         assert_utils.assert_true(resp[0], resp[1])
+        resp = self.top_stats.collect_stats(dir_path=self.remote_dir_path)
+        assert_utils.assert_true(resp)
         self.test_completed = False
         self.log.info("Setup Method Ended")
 
     def teardown_method(self):
         """Teardown method."""
         self.log.info("Teardown method")
+        path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
         if not self.test_completed:
             self.mail_notify.event_fail.set()
             self.log.info("Test Failure observed, collecting support bundle")
-            path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
             resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                                    scripts_path=K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
@@ -125,6 +130,11 @@ class TestIOWorkload:
         self.log.info("Copy files to client")
         resp = self.proc_path.get_stat_files_to_local()
         self.log.debug("Resp : %s", resp)
+        self.log.info("Stop top cmd collection")
+        resp = self.top_stats.stop_collection(dir_path=self.remote_dir_path)
+        assert_utils.assert_true(resp)
+        resp = self.top_stats.copy_remove_files_from_remote(self.remote_dir_path, path)
+        assert_utils.assert_true(resp)
         self.log.info("Teardown method ended.")
 
     @pytest.mark.lc
