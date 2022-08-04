@@ -804,7 +804,7 @@ class TestR2SupportBundle:
 
         self.LOGGER.info("Step 4: Get support bundle tar file size")
         file_size_mb = os.path.getsize(sb_local_full_path) >> 20
-        self.LOGGER.info(f"file size:{file_size_mb}")
+        self.LOGGER.info("file size: %s", file_size_mb)
 
         if file_size_mb > constants.SB_SIZE_MB:
             assert_utils.assert_true(False, f"collected support bundle tar file size: "
@@ -840,7 +840,7 @@ class TestR2SupportBundle:
                                         "TEST-34549", size_limit="500M")
             assert_utils.assert_true(False, f"with invalid size limit given error was expected"
                                             f" but support bundle got collected:{resp}")
-        except Exception as error:
+        except OSError as error:
             if "size limit should be in KB/MB/GB units" not in str(error):
                 assert_utils.assert_true(False, f"support bundle collection failed "
                                                 f"with some other reason:{error}")

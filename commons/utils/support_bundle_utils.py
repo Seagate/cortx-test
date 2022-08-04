@@ -330,13 +330,11 @@ def gen_sb_with_param(sb_identifier: str, pod_name: str = None, container_name: 
 
     dest_dir = "file://" + cm_const.R2_SUPPORT_BUNDLE_PATH
 
-    num_nodes = len(CMN_CFG["nodes"])
-    for node in range(num_nodes):
-        if CMN_CFG["nodes"][node]["node_type"] == "master":
-            host = CMN_CFG["nodes"][node]["hostname"]
-            username = CMN_CFG["nodes"][node]["username"]
-            password = CMN_CFG["nodes"][node]["password"]
-            node_obj = LogicalNode(hostname=host, username=username, password=password)
+    for node in CMN_CFG["nodes"]:
+        if node["node_type"].lower() == "master":
+            node_obj = LogicalNode(hostname=node["hostname"],
+                                   username=node["username"],
+                                   password=node["password"])
 
     if pod_name is None:
         pod_list = node_obj.get_all_pods(pod_prefix=cm_const.POD_NAME_PREFIX)
