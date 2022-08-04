@@ -355,7 +355,6 @@ def gen_sb_with_param(sb_identifier: str, pod_name: str = None, container_name: 
         command_suffix=f"-c {container_name} -- "
                        f"{cmd}",
         decode=True)
-
     return resp
 
 
