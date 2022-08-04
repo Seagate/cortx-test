@@ -271,7 +271,7 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6.1: Successfully downloaded the object %s & verified the checksum",
                     self.object_name)
-        LOGGER.info("Step 6.2: Download the uploaded object %s in degraded cluster & verify "
+        LOGGER.info("Step 6.2: Download the uploaded object %s in step 4 & verify "
                     "checksum", object_name_1)
         resp = self.ha_obj.dnld_obj_verify_chcksm(s3_test_obj, bucket_name_1, object_name_1,
                                                   download_path_2, upload_checksum_2)
@@ -695,7 +695,7 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-        LOGGER.info("Step 3: Download the copied objects & verify etags in degraded mode")
+        LOGGER.info("Step 3: Download the copied objects & verify etags")
         for bkt, obj in bkt_obj_dict.items():
             resp = s3_test_obj.get_object(bucket=bkt, key=obj)
             LOGGER.info("Get object response: %s", resp)
@@ -703,15 +703,15 @@ class TestServerPodRestartAPI:
             assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
                                                           f"Etag for object {obj} of bucket "
                                                           f"{bkt}.")
-        LOGGER.info("Step 3: Downloaded copied objects & verify etags in degraded mode")
+        LOGGER.info("Step 3: Downloaded copied objects & verify etags")
         bkt_obj_dict1 = bkt_obj_dict.copy()
         t_t = int(perf_counter_ns())
         bkt_obj_dict.clear()
         for cnt in range(bkt_cnt):
             bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
         bucket_name = f"ha-mp-bkt-{t_t}-1"
-        LOGGER.info("Step 4: Copy object from the %s bucket to other buckets and verify copy "
-                    "object etags", bucket_name)
+        LOGGER.info("Step 4: Create new buckets and copy object from the %s bucket to other "
+                    "buckets and verify copy object etags", bucket_name)
         resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                   bucket_name=bucket_name,
                                                   object_name=self.object_name,
@@ -719,7 +719,7 @@ class TestServerPodRestartAPI:
                                                   file_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
         put_etag = resp[1]
-        LOGGER.info("Step 4: Successfully created multiple buckets and copied object from the %s "
+        LOGGER.info("Step 4: Successfully created new buckets and copied object from the %s "
                     "bucket to other buckets and verified copy object etags", bucket_name)
         LOGGER.info("Step 5: Restart server pod with replica method")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
