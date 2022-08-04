@@ -385,7 +385,6 @@ class TestCopyObjects:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-44805")
-    @CTFailOn(error_handler)
     def test_44805(self):
         """Test Parallel copy from single source bucket to one or multiple destination buckets"""
         LOGGER.info("STARTED: Test Parallel copy from single source buckets to one or multiple "
@@ -489,7 +488,6 @@ class TestCopyObjects:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-44801")
-    @CTFailOn(error_handler)
     def test_44801(self):
         """Test Cross source and destination bucket copy"""
         LOGGER.info("STARTED: Test Cross source and destination bucket copy"
