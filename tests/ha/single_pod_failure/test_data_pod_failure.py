@@ -245,7 +245,7 @@ class TestDataPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Performed READs and verified DI on the written data")
 
-        LOGGER.info("Step 3: Shutdown random data pod by making replicas=0 and "
+        LOGGER.info("Step 3: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
         num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
@@ -273,6 +273,7 @@ class TestDataPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Method no longer applicable with statefulset")
     @pytest.mark.tags("TEST-23553")
     @CTFailOn(error_handler)
     def test_reads_unsafe_pod_shutdown(self):
@@ -342,16 +343,19 @@ class TestDataPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects.")
 
-        LOGGER.info("Step 2: Shutdown random data pod by making replicas=0 and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0])
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -366,6 +370,7 @@ class TestDataPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Method no longer applicable with statefulset")
     @pytest.mark.tags("TEST-26440")
     @CTFailOn(error_handler)
     def test_writes_unsafe_pod_shutdown(self):
@@ -412,7 +417,6 @@ class TestDataPodFailure:
     # pylint: disable-msg=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-26444")
     @CTFailOn(error_handler)
     def test_deletes_safe_pod_shutdown(self):
@@ -457,16 +461,19 @@ class TestDataPodFailure:
         LOGGER.info("Step 1: Successfully created %s buckets & "
                     "perform WRITEs with variable size objects.", wr_bucket)
 
-        LOGGER.info("Step 2: Shutdown random data pod by making replicas=0 and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0])
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -515,7 +522,7 @@ class TestDataPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
+    @pytest.mark.skip(reason="Method no longer applicable with statefulset")
     @pytest.mark.tags("TEST-26644")
     @CTFailOn(error_handler)
     def test_deletes_unsafe_pod_shutdown(self):
@@ -660,18 +667,19 @@ class TestDataPodFailure:
         LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
-        LOGGER.info("Step 3: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 3: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S, event=event)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -707,6 +715,7 @@ class TestDataPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Method no longer applicable with statefulset")
     @pytest.mark.tags("TEST-32455")
     @CTFailOn(error_handler)
     def test_pod_shutdown_delete_deployment(self):
@@ -766,12 +775,11 @@ class TestDataPodFailure:
     # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-26445")
     @CTFailOn(error_handler)
     def test_deletes_during_pod_down(self):
         """
-        This test tests DELETEs during data pod down by deleting deployment
+        This test tests DELETEs during data pod down with replica method
         """
         LOGGER.info("STARTED: Test to verify DELETEs during data pod down by deleting deployment.")
         event = threading.Event()  # Event to be used to send intimation of data pod deletion
@@ -823,18 +831,19 @@ class TestDataPodFailure:
         thread.start()
         LOGGER.info("Step 3: Successfully started DELETEs in background")
 
-        LOGGER.info("Step 4: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 4: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S, event=event)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 4: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -883,7 +892,7 @@ class TestDataPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
-        LOGGER.info("ENDED: Test to verify DELETEs during data pod down by delete deployment.")
+        LOGGER.info("ENDED: Test to verify DELETEs during data pod down with replica method")
 
     # pylint: disable=C0321
     @pytest.mark.ha
@@ -892,7 +901,7 @@ class TestDataPodFailure:
     @CTFailOn(error_handler)
     def test_writes_during_pod_down(self):
         """
-        This test tests WRITEs during data pod down (delete deployment)
+        This test tests WRITEs during data pod down with replica method
         """
         LOGGER.info("STARTED: Test to verify WRITEs during data pod down by delete deployment.")
         event = threading.Event()  # Event to be used to send intimation of data pod deletion
@@ -915,22 +924,22 @@ class TestDataPodFailure:
         LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S, event=event)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-
         thread.join()
         responses = dict()
         while len(responses) != 2:
@@ -959,7 +968,7 @@ class TestDataPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed IOs with variable sizes objects.")
 
-        LOGGER.info("ENDED: Test to verify WRITEs during data pod down by delete deployment.")
+        LOGGER.info("ENDED: Test to verify WRITEs during data pod down with replica method")
 
     @pytest.mark.ha
     @pytest.mark.lc
@@ -967,7 +976,7 @@ class TestDataPodFailure:
     @CTFailOn(error_handler)
     def test_pod_shutdown_scale_replicas(self):
         """
-        Verify IOs before and after data pod failure; pod shutdown by making replicas=0
+        Verify IOs before and after data pod failure; pod shutdown with replica method
         """
         LOGGER.info("STARTED: Verify IOs before and after data pod failure; pod shutdown "
                     "by making replicas=0")
@@ -981,16 +990,19 @@ class TestDataPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
 
-        LOGGER.info("Step 2: Shutdown random data pod by making replicas=0 and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0])
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1014,7 +1026,7 @@ class TestDataPodFailure:
         LOGGER.info("Step 3: Performed IOs with variable sizes objects.")
 
         LOGGER.info("Completed: Verify IOs before and after data pod failure; pod shutdown "
-                    "by making replicas 0")
+                    "with replica method")
 
     # pylint: disable=C0321
     # pylint: disable=too-many-statements
@@ -1024,7 +1036,7 @@ class TestDataPodFailure:
     @CTFailOn(error_handler)
     def test_reads_writes_during_pod_down(self):
         """
-        This test tests READs and WRITEs during data pod down (delete deployment)
+        This test tests READs and WRITEs during data pod down with replica method
         """
 
         LOGGER.info("STARTED: Test to verify READs/WRITEs during data pod down by "
@@ -1073,18 +1085,19 @@ class TestDataPodFailure:
         LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S, event=event, event_set_clr=event_set_clr)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1139,21 +1152,20 @@ class TestDataPodFailure:
                                                     nsamples=2, nclients=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Successfully ran IOs with variable object sizes.")
-        LOGGER.info("ENDED: Test to verify READs/WRITEs during data pod down by delete deployment.")
+        LOGGER.info("ENDED: Test to verify READs/WRITEs during data pod down with replica method.")
 
     # pylint: disable=C0321
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-26446")
     @CTFailOn(error_handler)
     def test_writes_deletes_during_pod_down(self):
         """
-        This test tests WRITEs and DELETEs during data pod down (delete deployment)
+        This test tests WRITEs and DELETEs during data pod down with replica method
         """
         LOGGER.info("STARTED: Test to verify WRITEs and DELETEs during data pod down "
-                    "by delete deployment.")
+                    "with replica method.")
         event = threading.Event()  # Event to be used to send intimation of data pod deletion
         del_total_bkt = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         wr_bucket = HA_CFG["s3_bucket_data"]["no_bck_writes"]
@@ -1208,23 +1220,23 @@ class TestDataPodFailure:
         thread1.start()
         LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["20sec_delay"])
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
-        LOGGER.info("Step 1: Started WRITEs and DELETEs with variable object sizes "
-                    "during data pod down by delete deployment.")
+        LOGGER.info("Step 1: Started WRITEs and DELETEs with variable object sizes")
 
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 3: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S, event=event)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
+        LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
         thread1.join()
         thread2.join()
@@ -1312,21 +1324,20 @@ class TestDataPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully created multiple buckets and ran IOs")
 
-        LOGGER.info("ENDED: Test to verify WRITEs and DELETEs during data pod down by "
-                    "delete deployment.")
+        LOGGER.info("ENDED: Test to verify WRITEs and DELETEs during data pod down  "
+                    "with replica method")
 
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Buckets cruds won't be supported with DTM0")
     @pytest.mark.tags("TEST-26447")
     @CTFailOn(error_handler)
     def test_reads_deletes_during_pod_down(self):
         """
-        This test tests READs and DELETEs during data pod down (delete deployment)
+        This test tests READs and DELETEs during data pod down with replica method
         """
         LOGGER.info("STARTED: Test to verify READs and DELETEs during data pod down "
-                    "by delete deployment.")
+                    "with replica method.")
         event = threading.Event()  # Event to be used to send intimation of data pod deletion
         del_total_bkt = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
         rd_bucket = HA_CFG["s3_bucket_data"]["no_bck_writes"]
@@ -1346,7 +1357,7 @@ class TestDataPodFailure:
                                 endpoint_url=S3_CFG["s3_url"])
 
         LOGGER.info("Step 1: Performing READs and DELETEs with variable object sizes during data "
-                    "pod down by delete deployment.")
+                    "pod down.")
 
         LOGGER.info("Perform WRITEs on %s buckets for background DELETEs", del_total_bkt)
         args = {'test_prefix': test_del_prefix, 'test_dir_path': self.test_dir_path,
@@ -1398,25 +1409,25 @@ class TestDataPodFailure:
         thread2.start()
         thread1.start()
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
-        LOGGER.info("Step 1: Started READs and DELETEs with variable object sizes "
-                    "during server pod down by delete deployment.")
+        LOGGER.info("Step 1: Started READs and DELETEs with variable object sizes ")
         LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
-        LOGGER.info("Step 2: Shutdown random server pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S, event=event)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
+        LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
         thread1.join()
         thread2.join()
@@ -1515,8 +1526,8 @@ class TestDataPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully created multiple buckets and ran IOs")
 
-        LOGGER.info("ENDED: Test to verify READs and DELETEs during data pod down by "
-                    "delete deployment.")
+        LOGGER.info("ENDED: Test to verify READs and DELETEs during data pod down "
+                    "with replica method")
 
     @pytest.mark.ha
     @pytest.mark.lc
@@ -1561,16 +1572,19 @@ class TestDataPodFailure:
         upload_checksum = str(resp[2])
         LOGGER.info("Step 1: Successfully performed multipart upload for size 5GB.")
 
-        LOGGER.info("Step 2: Shutdown random data pod by making replicas=0 and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0])
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1627,6 +1641,7 @@ class TestDataPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Method no longer available with statefulset")
     @pytest.mark.tags("TEST-32446")
     @CTFailOn(error_handler)
     def test_mpu_after_unsafe_pod_shutdown(self):
@@ -1826,12 +1841,12 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32447")
     @CTFailOn(error_handler)
-    def test_mpu_during_pod_unsafe_shutdown(self):
+    def test_mpu_during_pod_shutdown(self):
         """
-        This test tests multipart upload during data pod shutdown (delete deployment)
+        This test tests multipart upload during data pod shutdown with replica method
         """
-        LOGGER.info("STARTED: Test to verify multipart upload during data pod shutdown by delete "
-                    "deployment")
+        LOGGER.info("STARTED: Test to verify multipart upload during data pod shutdown with "
+                    "replica method")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
         part_numbers = list(range(1, total_parts + 1))
@@ -1869,18 +1884,19 @@ class TestDataPodFailure:
                     "%s sec", HA_CFG["common_params"]["60sec_delay"])
         time.sleep(HA_CFG["common_params"]["60sec_delay"])
 
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S, event=event)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1968,10 +1984,10 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32449")
     @CTFailOn(error_handler)
-    def test_partial_mpu_after_pod_unsafe_shutdown(self):
+    def test_partial_mpu_after_pod_shutdown(self):
         """
         This test tests degraded partial multipart upload after data pod unsafe shutdown
-        by deleting deployment
+        with replica method
         """
         LOGGER.info("STARTED: Test to verify degraded partial multipart upload after data "
                     "pod unsafe shutdown by deleting deployment")
@@ -2025,18 +2041,19 @@ class TestDataPodFailure:
             assert_utils.assert_list_item(part_numbers, part_n["PartNumber"])
         LOGGER.info("Step 2: Listed parts of partial multipart upload: %s", res[1])
 
-        LOGGER.info("Step 3: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 3: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -2098,15 +2115,14 @@ class TestDataPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-32450")
     @CTFailOn(error_handler)
     def test_copy_object_safe_pod_shutdown(self):
         """
-        Verify degraded copy object after data pod down - pod shutdown (make replicas=0)
+        Verify degraded copy object after data pod down - pod shutdown with replica method
         """
         LOGGER.info("STARTED: Verify degraded copy object after data pod down - pod shutdown "
-                    "(make replicas=0) ")
+                    "with replica method ")
 
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
         bkt_obj_dict = dict()
@@ -2140,16 +2156,19 @@ class TestDataPodFailure:
         LOGGER.info("Step 1: successfully created and listed buckets. Performed upload and copy"
                     "object from %s bucket to other buckets.", self.bucket_name)
 
-        LOGGER.info("Step 2: Shutdown random data pod by making replicas=0 and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0])
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -2190,11 +2209,11 @@ class TestDataPodFailure:
                         object3, bucket3)
 
         LOGGER.info("COMPLETED: Verify degraded copy object after data pod down - pod shutdown "
-                    "(make replicas=0) ")
+                    "with replica method ")
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Functionality not available in RGW yet")
+    @pytest.mark.skip(reason="Method no longer applicable with statefulset")
     @pytest.mark.tags("TEST-32451")
     @CTFailOn(error_handler)
     def test_copy_object_unsafe_pod_shutdown(self):
@@ -2480,14 +2499,13 @@ class TestDataPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-32452")
     @CTFailOn(error_handler)
     def test_copy_object_during_pod_shutdown(self):
         """
-        Verify copy object during data pod shutdown (delete deployment)
+        Verify copy object during data pod shutdown with replica method
         """
-        LOGGER.info("STARTED: Verify copy object during data pod shutdown (delete deployment) ")
+        LOGGER.info("STARTED: Verify copy object during data pod shutdown with replica method ")
 
         bkt_obj_dict = dict()
         output = Queue()
@@ -2546,18 +2564,19 @@ class TestDataPodFailure:
         LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["20sec_delay"])
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
 
-        LOGGER.info("Step 3: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 3: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S, event=event)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -2633,6 +2652,7 @@ class TestDataPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Need method for particular pod down")
     @pytest.mark.tags("TEST-33209")
     @CTFailOn(error_handler)
     def test_rc_pod_failover(self):
@@ -2771,18 +2791,19 @@ class TestDataPodFailure:
         LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
-        LOGGER.info("Step 3: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 3: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -2858,10 +2879,10 @@ class TestDataPodFailure:
     @CTFailOn(error_handler)
     def test_object_crud_pod_failure(self):
         """
-        Verify object CRUDs before and after pod failure; pod shutdown by making replicas=0
+        Verify object CRUDs before and after pod failure; pod shutdown with replica method
         """
         LOGGER.info("STARTED: Verify object CRUDs before and after pod failure; pod shutdown "
-                    "by making replicas=0")
+                    "with replica method")
 
         LOGGER.info("Step 1: Perform WRITEs-READs-Verify with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -2871,35 +2892,19 @@ class TestDataPodFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects.")
 
-        num_replica = 0
-        LOGGER.info("Get pod to be deleted")
-        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.node_master_list[0].get_set_type_name(pod_name=delete_pod)
-        if set_type == const.STATEFULSET:
-            resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
-            assert_utils.assert_true(resp[0], resp)
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
-        LOGGER.info("Step 2: Shutdown random data pod by making replicas=0 and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            delete_pod=[delete_pod], num_replica=num_replica)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if set_type == const.STATEFULSET:
-            self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == const.REPLICASET:
-            self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
