@@ -25,6 +25,9 @@ HA test suite for single server pod restart
 import logging
 import os
 import secrets
+import threading
+import time
+from multiprocessing import Queue
 from time import perf_counter_ns
 
 import pytest
@@ -204,7 +207,7 @@ class TestServerPodRestartAPI:
         LOGGER.info("Step 1: Successfully performed multipart upload for size %s MB in total %s "
                     "parts.", file_size, total_parts)
         num_replica = self.num_replica - 1
-        LOGGER.info("Step 2: Shutdown server pod by making replicas=0 and verify cluster & "
+        LOGGER.info("Step 2: Shutdown server pod with replica method and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
@@ -247,12 +250,12 @@ class TestServerPodRestartAPI:
         upload_checksum_2 = str(resp[2])
         LOGGER.info("Step 4: Successfully performed multipart upload for  size %s MB in "
                     "total %s parts.", file_size, total_parts)
-        LOGGER.info("Step 5: Start server pod again by statefulset")
+        LOGGER.info("Step 5: Restart server pod with replica method")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                       self.deployment_backup,
+                                                           self.deployment_backup,
                                                        "num_replica": self.num_replica,
                                                        "set_name": self.set_name},
                                        clstr_status=True)
@@ -260,7 +263,7 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], f"Failed to restore server pod by {self.restore_method} "
                                           f"way")
         self.restore_pod = False
-        LOGGER.info("Step 5: Successfully started server pod again by statefulset")
+        LOGGER.info("Step 5: Successfully Restart server pod with replica method")
         LOGGER.info("Step 6.1: Download the uploaded object %s in healthy cluster & verify "
                     "checksum", self.object_name)
         resp = self.ha_obj.dnld_obj_verify_chcksm(s3_test_obj, self.bucket_name, self.object_name,
@@ -268,7 +271,7 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6.1: Successfully downloaded the object %s & verified the checksum",
                     self.object_name)
-        LOGGER.info("Step 6.2: Download the uploaded object %s in degraded cluster & verify "
+        LOGGER.info("Step 6.2: Download the uploaded object %s in step 4 & verify "
                     "checksum", object_name_1)
         resp = self.ha_obj.dnld_obj_verify_chcksm(s3_test_obj, bucket_name_1, object_name_1,
                                                   download_path_2, upload_checksum_2)
@@ -359,7 +362,7 @@ class TestServerPodRestartAPI:
             assert_utils.assert_list_item(part_numbers, part_n["PartNumber"])
         LOGGER.info("Step 2: Listed parts of partial multipart upload: %s", res[1])
         num_replica = self.num_replica - 1
-        LOGGER.info("Step 3: Shutdown server pod by making replicas=0 and verify cluster & "
+        LOGGER.info("Step 3: Shutdown server pod with replica method and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
@@ -402,12 +405,12 @@ class TestServerPodRestartAPI:
         for part_n in res[1]["Parts"]:
             assert_utils.assert_list_item(part_numbers, part_n["PartNumber"])
         LOGGER.info("Step 5: Listed parts of partial multipart upload: %s", res[1])
-        LOGGER.info("Step 6: Start server pod again by statefulset")
+        LOGGER.info("Step 6: Restart server pod with replica method")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                       self.deployment_backup,
+                                                           self.deployment_backup,
                                                        "num_replica": self.num_replica,
                                                        "set_name": self.set_name},
                                        clstr_status=True)
@@ -415,7 +418,7 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], f"Failed to restore server pod by {self.restore_method}"
                                           "way")
         self.restore_pod = False
-        LOGGER.info("Step 6: Successfully started server pod again by statefulset")
+        LOGGER.info("Step 6: Successfully restart server pod with replica method")
         remaining_parts = list(filter(lambda i: i not in part_numbers,
                                       list(range(1, total_parts + 1))))
         LOGGER.info("Step 7: Upload remaining %s parts out of %s", remaining_parts, total_parts)
@@ -459,3 +462,309 @@ class TestServerPodRestartAPI:
         LOGGER.info("Step 10: Successfully downloaded the object and verified the checksum")
         self.extra_files.extend((self.multipart_obj_path, download_path))
         LOGGER.info("COMPLETED: Test to verify partial multipart upload after server pod restart.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-44843")
+    def test_mpu_during_server_pod_restart(self):
+        """
+        This test verifies multipart upload during server pod restart
+        """
+        LOGGER.info("STARTED: Test to verify multipart upload during server pod restart")
+        file_size = HA_CFG["5gb_mpu_data"]["file_size"]
+        total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
+        part_numbers = list(range(1, total_parts + 1))
+        self.system_random.shuffle(part_numbers)
+        output = Queue()
+        parts_etag = list()
+        download_path = os.path.join(self.test_dir_path, self.test_file + "_download")
+        download_path1 = os.path.join(self.test_dir_path, self.test_file + "_download1")
+        download_path2 = os.path.join(self.test_dir_path, self.test_file + "_download2")
+        event = threading.Event()  # Event to be used to send intimation of pod restart
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
+                                            endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created IAM user")
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+        LOGGER.info("Step 1: Perform multipart upload for size %s MB in total %s parts.",
+                    file_size, total_parts)
+        resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
+                                                         bucket_name=self.bucket_name,
+                                                         object_name=self.object_name,
+                                                         file_size=file_size,
+                                                         total_parts=total_parts,
+                                                         multipart_obj_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], resp)
+        result = s3_test_obj.object_info(self.bucket_name, self.object_name)
+        obj_size = result[1]["ContentLength"]
+        LOGGER.debug("Uploaded object info for %s is %s", self.bucket_name, result)
+        assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
+        upload_checksum1 = str(resp[2])
+        LOGGER.info("Step 1: Successfully performed multipart upload for size %s MB in "
+                    "total %s parts.", file_size, total_parts)
+        num_replica = self.num_replica - 1
+        LOGGER.info("Step 2: Shutdown server pod with replica method and verify cluster & "
+                    "remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
+            num_replica=num_replica)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete server pod")
+        pod_name = list(resp[1].keys())[0]
+        if self.set_type == const.STATEFULSET:
+            self.set_name = resp[1][pod_name]['deployment_name']
+        elif self.set_type == const.REPLICASET:
+            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.restore_pod = True
+        self.restore_method = resp[1][pod_name]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 3: Download the uploaded object in healthy cluster and verify checksum")
+        resp = self.ha_obj.dnld_obj_verify_chcksm(s3_test_obj, self.bucket_name,
+                                                  self.object_name, download_path, upload_checksum1)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Successfully downloaded the object and verified the checksum")
+        LOGGER.info("Step 4: Start multipart upload of %s MB object in background", file_size)
+        object_name_1 = f"ha-mp-obj-{int(perf_counter_ns())}"
+        bucket_name_1 = f"ha-mp-bkt-{int(perf_counter_ns())}"
+        args = {'s3_data': self.s3_clean, 'bucket_name': bucket_name_1,
+                'object_name': object_name_1, 'file_size': file_size, 'total_parts': total_parts,
+                'multipart_obj_path': self.multipart_obj_path, 'part_numbers': part_numbers,
+                'parts_etag': parts_etag, 'output': output}
+        thread = threading.Thread(target=self.ha_obj.start_random_mpu, args=(event,), kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Step 4: Started multipart upload of %s MB object in background", file_size)
+        time.sleep(HA_CFG["common_params"]["60sec_delay"])
+        LOGGER.info("Step 5: Restart server pod with replica method")
+        event.set()
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
+                                       clstr_status=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore server pod by {self.restore_method} "
+                                          "way")
+        LOGGER.info("Step 5: Successfully restart server pod with replica method")
+        self.restore_pod = False
+        LOGGER.info("Step 6: Checking responses from background process")
+        thread.join()
+        responses = tuple()
+        while len(responses) < 4:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not responses:
+            assert_utils.assert_true(False, "Background process failed to do multipart upload")
+        exp_failed_parts = responses[0]
+        failed_parts = responses[1]
+        parts_etag = responses[2]
+        mpu_id = responses[3]
+        LOGGER.debug("Responses received from background process:\nexp_failed_parts: "
+                     "%s\nfailed_parts: %s\nparts_etag: %s\nmpu_id: %s", exp_failed_parts,
+                     failed_parts, parts_etag, mpu_id)
+        if len(exp_failed_parts) == 0 and len(failed_parts) == 0:
+            LOGGER.info("All the parts are uploaded successfully")
+        elif exp_failed_parts or failed_parts:
+            assert_utils.assert_true(False, "Failed to upload parts when cluster was in good "
+                                            f"state. Failed parts: {failed_parts} and "
+                                            f"{exp_failed_parts}")
+        LOGGER.info("Step 6: Successfully checked background process responses")
+        parts_etag = sorted(parts_etag, key=lambda d: d['PartNumber'])
+        LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
+        upload_checksum2 = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
+                                                            compare=False)[0]
+        LOGGER.info("Successfully uploaded all the parts of multipart upload.")
+        LOGGER.info("Step 7: Listing parts of multipart upload")
+        res = s3_mp_test_obj.list_parts(mpu_id, bucket_name_1, object_name_1)
+        assert_utils.assert_true(res[0], res)
+        assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
+        LOGGER.info("Step 7: Listed parts of multipart upload. Count: %s", len(res[1]["Parts"]))
+        LOGGER.info("Step 8: Completing multipart upload")
+        res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, bucket_name_1,
+                                                       object_name_1)
+        assert_utils.assert_true(res[0], res)
+        res = s3_test_obj.object_list(bucket_name_1)
+        assert_utils.assert_in(object_name_1, res[1], res)
+        LOGGER.info("Step 8: Multipart upload completed")
+        LOGGER.info("Step 9: Downloaded the objects and Verify the checksum")
+        LOGGER.info("Step 9.1: Download the uploaded objects in healthy cluster and verify "
+                    "checksum")
+        resp = self.ha_obj.dnld_obj_verify_chcksm(s3_test_obj, self.bucket_name, self.object_name,
+                                                  download_path, upload_checksum1)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 9.2: Download the uploaded objects in step 4 and verify checksum")
+        resp = self.ha_obj.dnld_obj_verify_chcksm(s3_test_obj, bucket_name_1, object_name_1,
+                                                  download_path1, upload_checksum2)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 9: Successfully downloaded the objects and verified the checksum")
+        LOGGER.info("Step 10: Again perform multipart upload for size %s MB in total %s parts and "
+                    "download the object and verify checksum", file_size, total_parts)
+        object_name_2 = f"ha-mp-obj-{int(perf_counter_ns())}"
+        bucket_name_2 = f"ha-mp-bkt-{int(perf_counter_ns())}"
+        resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
+                                                         bucket_name=bucket_name_2,
+                                                         object_name=object_name_2,
+                                                         file_size=file_size,
+                                                         total_parts=total_parts,
+                                                         multipart_obj_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], resp)
+        result = s3_test_obj.object_info(bucket_name_2, object_name_2)
+        obj_size = result[1]["ContentLength"]
+        LOGGER.debug("Uploaded object info for %s is %s", bucket_name_2, result)
+        assert_utils.assert_equal(obj_size, file_size * const.Sizes.MB)
+        upload_checksum = str(resp[2])
+        LOGGER.info("Successfully performed multipart upload for size %s MB in total %s parts.",
+                    file_size, total_parts)
+        resp = self.ha_obj.dnld_obj_verify_chcksm(s3_test_obj, bucket_name_2, object_name_2,
+                                                  download_path2, upload_checksum)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 10: Successfully performed multipart upload and downloaded the object "
+                    "and verified the checksum")
+        self.extra_files.extend((self.multipart_obj_path, download_path, download_path1,
+                                 download_path2))
+        LOGGER.info("ENDED: Test to verify multipart upload during server pod restart")
+
+    # pylint: disable=too-many-branches
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-44845")
+    def test_copy_obj_after_server_pod_restart(self):
+        """
+        This test tests copy object after server pod restart
+        """
+        LOGGER.info("STARTED: Test to verify copy object after server pod restart.")
+        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
+        bkt_obj_dict = dict()
+        t_t = int(perf_counter_ns())
+        for cnt in range(bkt_cnt):
+            bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
+        event = threading.Event()
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+        LOGGER.info("Step 1: Create and list buckets. Upload object to %s & copy object from the"
+                    " same bucket to other buckets and verify copy object etags", self.bucket_name)
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                  bucket_name=self.bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  file_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+        put_etag = resp[1]
+        LOGGER.info("Step 1: Successfully created multiple buckets and uploaded object to %s "
+                    "and copied to other buckets and verified copy object etags", self.bucket_name)
+        num_replica = self.num_replica - 1
+        LOGGER.info("Step 2: Shutdown server pod with replica method and verify cluster & "
+                    "remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
+            num_replica=num_replica)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete server pod")
+        pod_name = list(resp[1].keys())[0]
+        if self.set_type == const.STATEFULSET:
+            self.set_name = resp[1][pod_name]['deployment_name']
+        elif self.set_type == const.REPLICASET:
+            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.restore_pod = True
+        self.restore_method = resp[1][pod_name]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+        LOGGER.info("Step 3: Download the copied objects & verify etags")
+        for bkt, obj in bkt_obj_dict.items():
+            resp = s3_test_obj.get_object(bucket=bkt, key=obj)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {obj} of bucket "
+                                                          f"{bkt}.")
+        LOGGER.info("Step 3: Downloaded copied objects & verify etags")
+        bkt_obj_dict1 = bkt_obj_dict.copy()
+        t_t = int(perf_counter_ns())
+        bkt_obj_dict.clear()
+        for cnt in range(bkt_cnt):
+            bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
+        bucket_name = f"ha-mp-bkt-{t_t}-1"
+        LOGGER.info("Step 4: Create new buckets and copy object from the %s bucket to other "
+                    "buckets and verify copy object etags", bucket_name)
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                  bucket_name=bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  file_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+        put_etag = resp[1]
+        LOGGER.info("Step 4: Successfully created new buckets and copied object from the %s "
+                    "bucket to other buckets and verified copy object etags", bucket_name)
+        LOGGER.info("Step 5: Restart server pod with replica method")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
+                                       clstr_status=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+        self.restore_pod = False
+        LOGGER.info("Step 5: Successfully restart server pod with replica method")
+        LOGGER.info("Step 6: Download the copied objects & verify etags.")
+        bkt_obj_dict.update(bkt_obj_dict1)
+        for bkt, obj in bkt_obj_dict.items():
+            resp = s3_test_obj.get_object(bucket=bkt, key=obj)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {obj} of bucket {bkt}")
+        LOGGER.info("Step 6: Downloaded copied objects & verify etags.")
+        t_t = int(perf_counter_ns())
+        bkt_obj_dict.clear()
+        for cnt in range(bkt_cnt):
+            bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
+        bucket_name = f"ha-mp-bkt-{t_t}-2"
+        LOGGER.info("Step 7: Perform copy object from already created/uploaded %s bucket to other "
+                    "buckets verify copy object etags", bucket_name)
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+                                                  bucket_name=bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict, put_etag=put_etag,
+                                                  file_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+        LOGGER.info("Step 7: Performed copy object from already created/uploaded %s bucket to other"
+                    " buckets verified copy object etags", bucket_name)
+        LOGGER.info("Step 8: Download the copied objects & verify etags.")
+        for bkt, obj in bkt_obj_dict.items():
+            resp = s3_test_obj.get_object(bucket=bkt, key=obj)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {obj} of bucket "
+                                                          f"{bkt}.")
+        LOGGER.info("Step 8: Downloaded copied objects & verify etags.")
+        LOGGER.info("COMPLETED: Test to verify copy object after server pod restart.")
