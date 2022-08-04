@@ -134,7 +134,18 @@ class TestDataPodFailure:
         if not os.path.exists(self.test_dir_path):
             sysutils.make_dirs(self.test_dir_path)
         self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
-        self.num_replica = 1
+        LOGGER.info("Get %s pod to be deleted", const.POD_NAME_PREFIX)
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        self.delete_pod = sts_dict[sts][-1]
+        LOGGER.info("Pod to be deleted is %s", self.delete_pod)
+        self.set_type, self.set_name = self.node_master_list[0].get_set_type_name(
+            pod_name=self.delete_pod)
+        resp = self.node_master_list[0].get_num_replicas(self.set_type, self.set_name)
+        assert_utils.assert_true(resp[0], resp)
+        self.num_replica = int(resp[1])
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -236,14 +247,17 @@ class TestDataPodFailure:
 
         LOGGER.info("Step 3: Shutdown random data pod by making replicas=0 and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0])
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.restore_pod = self.deploy = True
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
