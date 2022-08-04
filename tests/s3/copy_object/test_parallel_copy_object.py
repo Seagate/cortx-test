@@ -128,7 +128,7 @@ class TestCopyObjects:
         pool = multiprocessing.Pool()
         process = []
         for i in range(numproc):
-            LOGGER.info("Parallely, \n%d. From %s copy %s to %s as %s", i,
+            LOGGER.info(f"Parallely, \n{i+1} From %s copy %s to %s as %s",
                         args[i][0], args[i][1], args[i][2], args[i][3])
         for i in range(numproc):
             process.append(pool.apply_async(self.copy_object_wrapper, args=args[i]))
