@@ -832,7 +832,8 @@ class TestR2SupportBundle:
 
         for pod_type in pod_types_to_test:
             pod_list = self.node_obj.get_all_pods(pod_prefix=pod_type)
-            output = self.node_obj.execute_cmd(cmd=comm.KUBECTL_GET_POD_CONTAINERS.format(pod_list[0]),
+            output = self.node_obj.execute_cmd(cmd=
+                                               comm.KUBECTL_GET_POD_CONTAINERS.format(pod_list[0]),
                                                read_lines=True)
             container_list = output[0].split()
 
