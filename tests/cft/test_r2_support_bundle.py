@@ -25,8 +25,8 @@ import logging
 import shutil
 import time
 from multiprocessing import Process
-import pytest
 import random
+import pytest
 
 from commons import constants
 from commons.constants import const
