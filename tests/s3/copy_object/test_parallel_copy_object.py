@@ -26,6 +26,7 @@ import time
 
 import pytest
 
+from commons import error_messages as errmsg
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
@@ -115,6 +116,21 @@ class TestCopyObjects:
             process2 = pool.apply_async(self.put_object_wrapper, args=put_args)
             assert_utils.assert_true(process1.get()[0], process1.get()[1])
             assert_utils.assert_true(process2.get()[0], process2.get()[1])
+
+    def multi_parallel_copy_object(self, *args, numproc=2, assert_flag=True):
+        """Parallel copy object and put object with given arguments"""
+        pool = multiprocessing.Pool()
+        process = []
+        for i in range(numproc):
+            LOGGER.info("Parallely, \n1. From %s copy %s to %s as %s",
+                        args[i][0], args[i][1], args[i][2], args[i][3])
+        for i in range(numproc):
+            process.append(pool.apply_async(self.copy_object_wrapper, args=args[i]))
+        pool.close()
+        pool.join()
+        if assert_flag:
+            for i in range(numproc):
+                assert_utils.assert_true(process[i].get()[0], process[i].get()[1])
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
@@ -365,3 +381,142 @@ class TestCopyObjects:
         buckets.remove("src-bucket1")
         self.s3_obj.delete_multiple_buckets(buckets)
         LOGGER.info("ENDED: Test 10 times chain Copy operation (simple and multipart object)")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
+    @pytest.mark.tags("TEST-44805")
+    @CTFailOn(error_handler)
+    def test_44805(self):
+        """Test Parallel copy from single source bucket to one or multiple destination buckets"""
+        LOGGER.info("STARTED: Test Parallel copy from single source buckets to one or multiple "
+                    "destination buckets (simple and multipart source objects)")
+        for obj_type in ["simple", "multipart"]:
+            if obj_type == "simple":
+                resp1 = self.create_put_object("src-bucket1", f"{obj_type}-obj1", 1000)
+            else:
+                resp1 = self.s3mp_obj.simple_multipart_upload("src-bucket1", f"{obj_type}-obj1",
+                                                              512, self.file_path, 4)
+            LOGGER.info("Uploaded %s-obj1 to src-bucket1", obj_type)
+            self.parallel_copy_object(("src-bucket1", f"{obj_type}-obj1", "dest-bucket1",
+                                      f"{obj_type}-obj2"),
+                                      ("src-bucket1", f"{obj_type}-obj1", "dest-bucket1",
+                                      f"{obj_type}-obj3"))
+            resp = self.s3_obj.object_info("dest-bucket1", f"{obj_type}-obj2")
+            assert_utils.assert_equal(resp1[1]["ETag"], resp[1]["ETag"])
+            resp = self.s3_obj.object_info("dest-bucket1", f"{obj_type}-obj3")
+            assert_utils.assert_equal(resp1[1]["ETag"], resp[1]["ETag"])
+            self.parallel_copy_object(("src-bucket1", f"{obj_type}-obj1", "dest-bucket1",
+                                      f"{obj_type}-obj2"),
+                                      ("src-bucket1", f"{obj_type}-obj1", "dest-bucket2",
+                                      f"{obj_type}-obj3"))
+            resp = self.s3_obj.object_info("dest-bucket1", f"{obj_type}-obj2")
+            assert_utils.assert_equal(resp1[1]["ETag"], resp[1]["ETag"])
+            resp = self.s3_obj.object_info("dest-bucket2", f"{obj_type}-obj3")
+            assert_utils.assert_equal(resp1[1]["ETag"], resp[1]["ETag"])
+            self.parallel_copy_object(("src-bucket1", f"{obj_type}-obj1", "dest-bucket1",
+                                      f"{obj_type}-obj2"),
+                                      ("src-bucket1", f"{obj_type}-obj1", "dest-bucket2",
+                                      f"{obj_type}-obj2"))
+            resp = self.s3_obj.object_info("dest-bucket1", f"{obj_type}-obj2")
+            assert_utils.assert_equal(resp1[1]["ETag"], resp[1]["ETag"])
+            resp = self.s3_obj.object_info("dest-bucket2", f"{obj_type}-obj2")
+            assert_utils.assert_equal(resp1[1]["ETag"], resp[1]["ETag"])
+        LOGGER.info("ENDED: Test Parallel copy from single source buckets to one or multiple "
+                    "destination buckets (simple and multipart source objects)")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
+    @pytest.mark.tags("TEST-44804")
+    @CTFailOn(error_handler)
+    def test_44804(self):
+        """Test Reverse copy operations"""
+        LOGGER.info("STARTED: Test Reverse copy operations (simple and multipart source objects)")
+        for obj_type in ["simple", "multipart"]:
+            if obj_type == "simple":
+                resp1 = self.create_put_object("src-bucket1", f"{obj_type}-obj1", 100)
+                resp2 = self.create_put_object("dest-bucket1", f"{obj_type}-obj3", 1000)
+            else:
+                resp1 = self.s3mp_obj.simple_multipart_upload("src-bucket1", f"{obj_type}-obj1",
+                                                              512, self.file_path, 4)
+                resp2 = self.s3mp_obj.simple_multipart_upload("dest-bucket1", f"{obj_type}-obj3",
+                                                              2048, self.file_path, 4)
+            LOGGER.info("Uploaded %s-obj1 to src-bucket1", obj_type)
+            LOGGER.info("Uploaded %s-obj3 to dest-bucket1", obj_type)
+            try:
+                self.multi_parallel_copy_object(("src-bucket1", f"{obj_type}-obj1", "dest-bucket1",
+                                                f"{obj_type}-obj2"),
+                                                ("dest-bucket1", f"{obj_type}-obj2", "src-bucket1",
+                                                f"{obj_type}-obj1"),
+                                                numproc=2,
+                                                assert_flag=False)
+            except CTException as error:
+                LOGGER.info(error.message)
+                assert_utils.assert_in(errmsg.NO_SUCH_KEY_ERR,error.message, error)
+            LOGGER.info("List %s-obj2 to dest-bucket1", obj_type)
+            self.objects_in_buckets(bucket="src-bucket1", objects=[f"{obj_type}-obj1"])
+            self.objects_in_buckets(bucket="dest-bucket1", objects=[f"{obj_type}-obj2"])
+            self.parallel_copy_object(("src-bucket1", f"{obj_type}-obj1", "dest-bucket1",
+                                      f"{obj_type}-obj2"),
+                                      ("dest-bucket1", f"{obj_type}-obj2", "src-bucket1",
+                                      f"{obj_type}-obj1"))
+            resp = self.s3_obj.object_info("dest-bucket1", f"{obj_type}-obj2")
+            assert_utils.assert_equal(resp1[1]["ETag"], resp[1]["ETag"])
+            self.parallel_copy_object(("src-bucket1", f"{obj_type}-obj1", "dest-bucket1",
+                                      f"{obj_type}-obj2"),
+                                      ("dest-bucket1", f"{obj_type}-obj3", "src-bucket1",
+                                      f"{obj_type}-obj4"))
+            resp = self.s3_obj.object_info("dest-bucket1", f"{obj_type}-obj2")
+            assert_utils.assert_equal(resp1[1]["ETag"], resp[1]["ETag"])
+            src_resp = self.s3_obj.object_info("src-bucket1", f"{obj_type}-obj4")
+            assert_utils.assert_equal(resp2[1]["ETag"], src_resp[1]["ETag"])
+
+            self.multi_parallel_copy_object(("dest-bucket1", f"{obj_type}-obj2", "src-bucket1",
+                                            f"{obj_type}-obj3"),
+                                            ("dest-bucket1", f"{obj_type}-obj2", "src-bucket1",
+                                            f"{obj_type}-obj4"),
+                                            ("dest-bucket1", f"{obj_type}-obj2", "dest-bucket2",
+                                            f"{obj_type}-obj4"),
+                                            numproc=3)
+            dest_resp = self.s3_obj.object_info("dest-bucket1", f"{obj_type}-obj2")
+            src_resp = self.s3_obj.object_info("src-bucket1", f"{obj_type}-obj3")
+            assert_utils.assert_equal(dest_resp[1]["ETag"], src_resp[1]["ETag"])
+            src_resp = self.s3_obj.object_info("src-bucket1", f"{obj_type}-obj4")
+            assert_utils.assert_equal(dest_resp[1]["ETag"], src_resp[1]["ETag"])
+            dest_resp1 = self.s3_obj.object_info("dest-bucket2", f"{obj_type}-obj4")
+            assert_utils.assert_equal(dest_resp[1]["ETag"], src_resp[1]["ETag"])
+        LOGGER.info("ENDED: Test Reverse copy operations (simple and multipart source objects)")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
+    @pytest.mark.tags("TEST-44801")
+    @CTFailOn(error_handler)
+    def test_44801(self):
+        """Test Cross source and destination bucket copy"""
+        LOGGER.info("STARTED: Test Cross source and destination bucket copy"
+                    "(simple and multipart source objects)")
+        for obj_type in ["simple", "multipart"]:
+            if obj_type == "simple":
+                resp1 = self.create_put_object("src-bucket1", f"{obj_type}-obj1", 10)
+                resp2 = self.create_put_object("src-bucket1", f"{obj_type}-obj4", 1000)
+            else:
+                resp1 = self.s3mp_obj.simple_multipart_upload("src-bucket1", f"{obj_type}-obj1",
+                                                              512, self.file_path, 4)
+                resp2 = self.s3mp_obj.simple_multipart_upload("src-bucket1", f"{obj_type}-obj4",
+                                                              2048, self.file_path, 4)
+            LOGGER.info("Uploaded %s-obj1 to src-bucket1", obj_type)
+            LOGGER.info("Uploaded %s-obj1 to src-bucket4", obj_type)
+            self.multi_parallel_copy_object(("src-bucket1", f"{obj_type}-obj1", "dest-bucket1",
+                                            f"{obj_type}-obj2"),
+                                            ("src-bucket1", f"{obj_type}-obj1", "dest-bucket1",
+                                            f"{obj_type}-obj3"),
+                                            ("src-bucket1", f"{obj_type}-obj4", "dest-bucket1",
+                                            f"{obj_type}-obj2"),
+                                            ("src-bucket1", f"{obj_type}-obj4", "dest-bucket1",
+                                            f"{obj_type}-obj3"),
+                                            numproc=4)
+            resp = self.s3_obj.object_info("dest-bucket1", f"{obj_type}-obj2")
+            assert_utils.assert_equal(resp2[1]["ETag"], resp[1]["ETag"])
+            resp = self.s3_obj.object_info("dest-bucket1", f"{obj_type}-obj3")
+            assert_utils.assert_equal(resp2[1]["ETag"], resp[1]["ETag"])
+        LOGGER.info("ENDED: Test Cross source and destination bucket copy"
+                    "(simple and multipart source objects)")
