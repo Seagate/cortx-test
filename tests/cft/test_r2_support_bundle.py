@@ -26,6 +26,7 @@ import shutil
 import time
 from multiprocessing import Process
 import pytest
+import random
 
 from commons import constants
 from commons.constants import const
@@ -770,18 +771,18 @@ class TestR2SupportBundle:
         pod_types_to_test = [constants.POD_NAME_PREFIX, constants.SERVER_POD_NAME_PREFIX]
 
         for pod_type in pod_types_to_test:
-            pod_list = self.node_obj.get_all_pods(pod_prefix=pod_type)
-            machine_id = self.node_obj.get_machine_id_for_pod(pod_list[0])
+            pod = random.choice(self.node_obj.get_all_pods(pod_prefix=pod_type))
+            machine_id = self.node_obj.get_machine_id_for_pod(pod)
             output = self.node_obj.execute_cmd(cmd=
-                                               comm.KUBECTL_GET_POD_CONTAINERS.format(pod_list[0]),
+                                               comm.KUBECTL_GET_POD_CONTAINERS.format(pod),
                                                read_lines=True)
             container_list = output[0].split()
 
-            self.LOGGER.info("Generating support bundle for pod: %s", pod_list[0])
+            self.LOGGER.info("Generating support bundle for pod: %s", pod)
             sb_identifier = system_utils.random_string_generator(10)
             self.LOGGER.info("Support Bundle identifier of : %s", sb_identifier)
 
-            resp = sb.gen_sb_with_param(sb_identifier, pod_list[0], container_list[0],
+            resp = sb.gen_sb_with_param(sb_identifier, pod, container_list[0],
                                         "TEST-34548", size_limit=f"{constants.SB_SIZE_MB}MB")
             self.LOGGER.info("response of support bundle generation: %s", resp)
             sb_local_path = os.path.join(os.getcwd(), "support_bundle_copy")
@@ -797,7 +798,7 @@ class TestR2SupportBundle:
             copy_sb_from_path = constants.R2_SUPPORT_BUNDLE_PATH + sb_identifier
             sb_copy_path = "/root/support_bundle/"
 
-            copy_sb_cmd = comm.K8S_CP_TO_LOCAL_CMD.format(pod_list[0], copy_sb_from_path,
+            copy_sb_cmd = comm.K8S_CP_TO_LOCAL_CMD.format(pod, copy_sb_from_path,
                                                           sb_copy_path, container_list[0])
             self.node_obj.execute_cmd(cmd=copy_sb_cmd, read_lines=True)
 
@@ -831,18 +832,18 @@ class TestR2SupportBundle:
         pod_types_to_test = [constants.POD_NAME_PREFIX, constants.SERVER_POD_NAME_PREFIX]
 
         for pod_type in pod_types_to_test:
-            pod_list = self.node_obj.get_all_pods(pod_prefix=pod_type)
+            pod = random.choice(self.node_obj.get_all_pods(pod_prefix=pod_type))
             output = self.node_obj.execute_cmd(cmd=
-                                               comm.KUBECTL_GET_POD_CONTAINERS.format(pod_list[0]),
+                                               comm.KUBECTL_GET_POD_CONTAINERS.format(pod),
                                                read_lines=True)
             container_list = output[0].split()
 
-            self.LOGGER.info("Generating support bundle for pod: %s", pod_list[0])
+            self.LOGGER.info("Generating support bundle for pod: %s", pod)
             sb_identifier = system_utils.random_string_generator(10)
             self.LOGGER.info("Support Bundle identifier of : %s", sb_identifier)
 
             try:
-                resp = sb.gen_sb_with_param(sb_identifier, pod_list[0], container_list[0],
+                resp = sb.gen_sb_with_param(sb_identifier, pod, container_list[0],
                                             "TEST-34549", size_limit="500M")
                 assert_utils.assert_true(False, f"with invalid size limit given error was expected"
                                                 f" but support bundle got collected:{resp}")
@@ -853,7 +854,6 @@ class TestR2SupportBundle:
 
         self.LOGGER.info("ENDED: Test to validate support bundle 'size_limit' filter "
                          "with invalid format")
-
 
     # pylint: disable-msg=too-many-branches
     # pylint: disable=too-many-statements
