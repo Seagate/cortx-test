@@ -99,7 +99,7 @@ class MotrCoreK8s():
             nodes_data = cluster_info["nodes"]
             for node in nodes_data:
                 if 'client' in node['name']:
-                    nodename = node["name"]
+                    nodename = node["name"].split('.')[0]
                     self.cortx_node_list.append(nodename)
                     node_dict[nodename] = {}
                     node_dict[nodename][common_const.MOTR_CLIENT] = []
