@@ -735,13 +735,8 @@ class TestServerPodRestartAPI:
         self.restore_pod = False
         LOGGER.info("Step 5: Successfully restart server pod with replica method")
         LOGGER.info("Step 6: Download the copied objects & verify etags.")
+        bkt_obj_dict.update(bkt_obj_dict1)
         for bkt, obj in bkt_obj_dict.items():
-            resp = s3_test_obj.get_object(bucket=bkt, key=obj)
-            LOGGER.info("Get object response: %s", resp)
-            get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
-                                                          f"Etag for object {obj} of bucket {bkt}")
-        for bkt, obj in bkt_obj_dict1.items():
             resp = s3_test_obj.get_object(bucket=bkt, key=obj)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
