@@ -532,7 +532,8 @@ K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
 K8S_APPLY_YAML_CONFIG = 'kubectl apply -f {}'
 GET_STATS = "consul kv get -recurse stats"
 GET_BYTECOUNT = "consul kv get -recurse bytecount"
-
+GET_REQUEST_USAGE = "consul kv get -recurse csm/config/usage"
+GET_MAX_USERS = "consul kv get -recurse csm/config/CSM_USERS"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
 KUBECTL_GET_DEPLOYMENT = "kubectl get deployment"
@@ -650,3 +651,6 @@ CHANGE_DISK_STATE_USING_HCTL = "hctl drive-state --json $(jq --null-input --comp
 # Procpath Collection
 PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'); procpath " \
            "record -i 45 -d {} -p $pid"
+
+# stat collection through kubectl top
+CMD_PGREP_TOP = 'pgrep "/bin/sh ./{} {}" -fx'
