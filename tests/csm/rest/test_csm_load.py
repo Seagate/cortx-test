@@ -22,23 +22,28 @@
 import logging
 import math
 import os
+from http import HTTPStatus
+import secrets
 import shutil
 import time
-from http import HTTPStatus
 import pytest
 
-from commons import constants as cons
 from commons import cortxlogging
 from commons import configmanager
+from commons import constants as const
 from commons.constants import Rest as rest_const
-from commons.constants import SwAlerts as const
+from commons.constants import SwAlerts as sw_alerts
 from commons.utils import config_utils
 from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.csm_interface import csm_api_factory
 from libs.csm.rest.csm_rest_alert import SystemAlerts
+from libs.di.di_mgmt_ops import ManagementOPs
+from libs.di.di_run_man import RunDataCheckManager
 from libs.jmeter.jmeter_integration import JmeterInt
+from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.ras.sw_alerts import SoftwareAlert
+from libs.s3 import s3_misc
 
 
 class TestCsmLoad():
@@ -70,21 +75,55 @@ class TestCsmLoad():
         assert s3acc_already_present
         cls.log.info("[Completed]: Setup class")
         cls.default_cpu_usage = False
+        cls.buckets_created = []
         cls.iam_users_created = []
+        cls.ha_obj = HAK8s()
+        cls.failed_pod = []
+        cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
+        cls.system_random = secrets.SystemRandom()
         cls.request_usage = 122
 
     def setup_method(self):
         """
         Setup Method
         """
+        self.log.info("[START] Setup Method")
         self.log.info("Deleting older jmeter logs : %s", self.jmx_obj.jtl_log_path)
         if os.path.exists(self.jmx_obj.jtl_log_path):
             shutil.rmtree(self.jmx_obj.jtl_log_path)
+        self.restore_pod = self.restore_method = self.deployment_name = self.set_name = None
+        self.num_replica = 1
+        self.log.info("[END] Setup Method")
 
     def teardown_method(self):
         """Teardown method
         """
+        self.log.info("STARTED: Teardown Operations.")
         iam_deleted = []
+        buckets_deleted = []
+
+        if self.restore_pod:
+            resp = self.ha_obj.restore_pod(pod_obj=self.csm_obj.master,
+                                           restore_method=self.restore_method,
+                                           restore_params={"deployment_name": self.deployment_name,
+                                                           "deployment_backup":
+                                                               self.deployment_backup,
+                                                           "num_replica": self.num_replica,
+                                                           "set_name": self.set_name})
+            self.log.debug("Response: %s", resp)
+            assert resp[0], f"Failed to restore pod by {self.restore_method} way"
+            self.log.info("Successfully restored pod by %s way", self.restore_method)
+
+        for bucket in self.buckets_created:
+            resp = s3_misc.delete_objects_bucket(bucket[0], bucket[1], bucket[2])
+            if resp:
+                buckets_deleted.append(bucket)
+            else:
+                self.log.error("Bucket deletion failed for %s ", bucket)
+        self.log.info("buckets deleted %s", buckets_deleted)
+        for bucket in buckets_deleted:
+            self.buckets_created.remove(bucket)
+
         admin_usr = CSM_REST_CFG["csm_admin_user"]["username"]
         admin_pwd = CSM_REST_CFG["csm_admin_user"]["password"]
         header = self.csm_obj.get_headers(admin_usr, admin_pwd)
@@ -95,6 +134,9 @@ class TestCsmLoad():
             else:
                 self.log.error("IAM deletion failed for %s ", iam_user)
         self.log.info("IAMs deleted %s", iam_deleted)
+        for iam in iam_deleted:
+            self.iam_users_created.remove(iam)
+
         if self.default_cpu_usage:
             self.log.info("\nStep 4: Resolving CPU usage fault. ")
             self.log.info("Updating default CPU usage threshold value")
@@ -102,6 +144,10 @@ class TestCsmLoad():
             assert resp[0], resp[1]
             self.log.info("\nStep 4: CPU usage fault is resolved.\n")
             self.default_cpu_usage = False
+        assert len(self.buckets_created) == 0, "Bucket deletion failed"
+        assert len(self.iam_users_created) == 0, "IAM deletion failed"
+        self.log.info("Done: Teardown completed.")
+
 
     @pytest.mark.skip("Dummy test")
     @pytest.mark.jmeter
@@ -117,6 +163,161 @@ class TestCsmLoad():
         result = self.jmx_obj.run_verify_jmx(jmx_file)
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.skip(reason="not_in_main_build_yet")
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44788')
+    def test_44788(self):
+        """
+        CSM load testing with Get User Capacity while running IOs in parallel
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_44788"]
+        self.log.info("Step 1: Create account for I/O and GET capacity usage stats")
+        mgm_ops = ManagementOPs()
+        users = mgm_ops.create_account_users(nusers=test_cfg["users_count"], use_cortx_cli=False)
+        data = mgm_ops.create_buckets(nbuckets=test_cfg["buckets_count"], users=users)
+        username = list(data.keys())[0]
+
+        self.log.info("Step 2: Start I/O")
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'test_44788'}
+        run_data_chk_obj.start_io_async(
+            users=data, buckets=None, files_count=test_cfg["files_count"], prefs=pref_dir)
+
+        self.log.info("Step 3: Poll User Capacity")
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        fieldnames = ["user"]
+        content.append({fieldnames[0]: username})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+        jmx_file = "CSM_Poll_User_Capacity.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file,
+            threads=self.request_usage,
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
+        assert result, "Errors reported in the Jmeter execution"
+
+        stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True, eventual_stop=True)
+        self.log.info("stop_res -  %s", stop_res)
+
+        self.log.info("Perform & Verify GET API to get capacity usage stats")
+        resp = self.csm_obj.get_user_capacity_usage("user", username)
+        assert resp.status_code == HTTPStatus.OK, \
+                "Status code check failed for get capacity"
+        t_obj = resp.json()["capacity"]["s3"]["users"][0]["objects"]
+        t_size = resp.json()["capacity"]["s3"]["users"][0]["used"]
+        m_size = resp.json()["capacity"]["s3"]["users"][0]["used_rounded"]
+        self.log.info("objects -  %s", t_obj)
+        self.log.info("used capacity-  %s", t_size)
+        self.log.info("used_rounded capacity-  %s", m_size)
+        assert t_obj > 0, "Number of objects is Zero"
+        assert t_size > 0, "Used Size is Zero"
+        assert m_size > 0, "Total Size is Zero"
+        assert m_size >= t_size, "Used - Used Rounded Size mismatch found"
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    # pylint: disable=too-many-statements
+    @pytest.mark.skip(reason="not_in_main_build_yet")
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44794')
+    def test_44794(self):
+        """
+        CSM load testing in degraded mode to view Degraded capacity
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_44794"]
+        self.log.info("Step 1: Create accounts for I/O")
+        mgm_ops = ManagementOPs()
+        users = mgm_ops.create_account_users(nusers=test_cfg["users_count"], use_cortx_cli=False)
+        data = mgm_ops.create_buckets(nbuckets=test_cfg["buckets_count"], users=users)
+
+        self.log.info("Step 2: [Start] Shutdown the data pod safely")
+        num_replica = 0
+        self.log.info("Get pod to be deleted")
+        sts_dict = self.csm_obj.master.get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        self.log.debug("%s Statefulset: %s", const.POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
+        self.log.info("Pod to be deleted is %s", delete_pod)
+        set_type, set_name = self.csm_obj.master.get_set_type_name(pod_name=delete_pod)
+        if set_type == const.STATEFULSET:
+            resp = self.csm_obj.master.get_num_replicas(set_type, set_name)
+            assert resp[0], resp
+            self.num_replica = int(resp[1])
+            num_replica = self.num_replica - 1
+
+        self.log.info("Shutdown random data pod by replica method and "
+                    "verify cluster & remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.csm_obj.master, health_obj=self.csm_obj.hlth_master,
+            delete_pod=[delete_pod], num_replica=num_replica)
+        # Assert if empty dictionary
+        assert resp[1], "Failed to shutdown/delete pod"
+        pod_name = list(resp[1].keys())[0]
+        if set_type == const.STATEFULSET:
+            self.set_name = resp[1][pod_name]['deployment_name']
+        elif set_type == const.REPLICASET:
+            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.restore_pod = True
+        self.restore_method = resp[1][pod_name]['method']
+        assert resp[0], "Cluster/Services status is not as expected"
+
+        self.log.info("Step 3: Start I/O")
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'test_44794'}
+        run_data_chk_obj.start_io_async(
+            users=data, buckets=None, files_count=test_cfg["files_count"], prefs=pref_dir)
+
+        self.log.info("Step 4: Poll Degraded Capacity")
+        jmx_file = "CSM_Poll_Degraded_Capacity.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file,
+            threads=self.request_usage,
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
+        assert result, "Errors reported in the Jmeter execution"
+
+        stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True, eventual_stop=True)
+        self.log.info("stop_res -  %s", stop_res)
+
+        self.log.info("Step 5: Call degraded capacity api")
+        response = self.csm_obj.get_degraded_capacity(endpoint_param=None)
+        assert response.status_code == HTTPStatus.OK , "Status code check failed"
+        self.log.info("Step 6: Check all variables are present in rest response")
+        resp = self.csm_obj.validate_metrics(response.json(), endpoint_param=None)
+        assert resp, "Rest data metrics check failed in full mode"
+
+        resp = self.ha_obj.restore_pod(pod_obj=self.csm_obj.master,
+                                        restore_method=self.restore_method,
+                                        restore_params={"deployment_name": self.deployment_name,
+                                                        "deployment_backup":
+                                                            self.deployment_backup,
+                                                        "num_replica": self.num_replica,
+                                                        "set_name": self.set_name})
+        self.log.debug("Response: %s", resp)
+        assert resp[0], f"Failed to restore pod by {self.restore_method} way"
+        self.restore_pod = False
+        self.log.info("Successfully restored pod by %s way", self.restore_method)
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.lr
     @pytest.mark.jmeter
@@ -462,7 +663,7 @@ class TestCsmLoad():
         self.log.info("\nGenerate CPU usage fault.")
         starttime = time.time()
         self.default_cpu_usage = self.sw_alert_obj.get_conf_store_vals(
-            url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
+            url=const.SSPL_CFG_URL, field=const.CONF_CPU_USAGE)
         resp = self.sw_alert_obj.gen_cpu_usage_fault_thres(test_cfg["delta_cpu_usage"])
         assert resp[0], resp[1]
         self.log.info("\nCPU usage fault is created successfully.\n")
@@ -476,7 +677,7 @@ class TestCsmLoad():
         self.log.info("\nStep 3: Checking CPU usage fault alerts on CSM REST API ")
         resp = self.csm_alert_obj.wait_for_alert(test_cfg["wait_for_alert"],
                                                  starttime,
-                                                 const.AlertType.FAULT,
+                                                 sw_alerts.AlertType.FAULT,
                                                  False,
                                                  test_cfg["resource_type"])
         assert resp[0], resp[1]
@@ -508,7 +709,7 @@ class TestCsmLoad():
         self.log.info("\nStep 3: Checking CPU usage fault alerts on CSM REST API ")
         resp = self.csm_alert_obj.wait_for_alert(test_cfg["wait_for_alert"],
                                                  starttime,
-                                                 const.AlertType.FAULT,
+                                                 sw_alerts.AlertType.FAULT,
                                                  True,
                                                  test_cfg["resource_type"])
         assert resp[0], resp[1]
