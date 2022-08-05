@@ -43,6 +43,7 @@ from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
@@ -160,6 +161,8 @@ class TestServerPodRestartAPI:
         LOGGER.info("Removing extra files")
         for file in self.extra_files:
             system_utils.remove_file(file)
+        LOGGER.info("Removing all files from %s", self.test_dir_path)
+        system_utils.cleanup_dir(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-locals
@@ -768,3 +771,325 @@ class TestServerPodRestartAPI:
                                                           f"{bkt}.")
         LOGGER.info("Step 8: Downloaded copied objects & verify etags.")
         LOGGER.info("COMPLETED: Test to verify copy object after server pod restart.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-44849")
+    def test_chunk_upload_during_server_pod_restart(self):
+        """
+        Test chunk upload during server pod restart (using jclient)
+        """
+        LOGGER.info("STARTED: Verify chunk upload during server pod restart")
+        file_size = HA_CFG["5gb_mpu_data"]["file_size"]
+        download_path = os.path.join(self.test_dir_path, "test_chunk_upload" + "_download")
+        chunk_obj_path = os.path.join(self.test_dir_path, self.object_name)
+        upload_op = Queue()
+        workload_info = dict()
+
+        LOGGER.info("Step 1: Perform setup steps for jclient")
+        jc_obj = JCloudClient()
+        resp = self.ha_obj.setup_jclient(jc_obj)
+        assert_utils.assert_true(resp, "Failed in setting up jclient")
+        LOGGER.info("Step 1: Successfully setup jcloud/jclient on runner")
+
+        LOGGER.info("Step 2: Create IAM user with name %s, bucket %s and perform chunk upload",
+                    self.s3acc_name, self.bucket_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.test_prefix = 'test-44849'
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+
+        resp = self.ha_obj.create_bucket_chunk_upload(s3_data=self.s3_clean,
+                                                      bucket_name=self.bucket_name,
+                                                      file_size=file_size,
+                                                      chunk_obj_path=chunk_obj_path,
+                                                      background=False)
+        self.extra_files.append(chunk_obj_path)
+        assert_utils.assert_true(resp, "Failure observed in chunk upload in healthy cluster")
+        LOGGER.info("Step 2: Successfully performed chuck upload")
+
+        workload_info[1] = [self.bucket_name, self.object_name]
+
+        LOGGER.info("Calculating checksum of uploaded file %s", chunk_obj_path)
+        upld_chksm_hlt = self.ha_obj.cal_compare_checksum(file_list=[chunk_obj_path],
+                                                          compare=False)[0]
+
+        num_replica = self.num_replica - 1
+        LOGGER.info("Step 3: Shutdown server pod by making replicas=0 and verify cluster & "
+                    "remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
+            num_replica=num_replica)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+        pod_name = list(resp[1].keys())[0]
+        if self.set_type == const.STATEFULSET:
+            self.set_name = resp[1][pod_name]['deployment_name']
+        elif self.set_type == const.REPLICASET:
+            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.restore_pod = True
+        self.restore_method = resp[1][pod_name]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+
+        LOGGER.info("Step 4: Download object which was uploaded in healthy cluster and verify "
+                    "checksum")
+        resp = self.ha_obj.object_download_jclient(s3_data=self.s3_clean,
+                                                   bucket_name=self.bucket_name,
+                                                   object_name=self.object_name,
+                                                   obj_download_path=download_path)
+        LOGGER.info("Download object response: %s", resp)
+        self.extra_files.append(download_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        dnld_chksm = self.ha_obj.cal_compare_checksum(file_list=[download_path], compare=False)[0]
+        assert_utils.assert_equal(upld_chksm_hlt, dnld_chksm,
+                                  f"Expected checksum: {upld_chksm_hlt},"
+                                  f"Actual checksum: {dnld_chksm}")
+        LOGGER.info("Step 4: Successfully downloaded object which was uploaded in healthy cluster "
+                    "and verified checksum")
+
+        t_t = int(perf_counter_ns())
+        bucket_name = f"chunk-upload-bkt-{t_t}"
+        object_name = f"chunk-upload-obj-{t_t}"
+        chunk_obj_path = os.path.join(self.test_dir_path, object_name)
+        LOGGER.info("Step 5: Start chunk upload in background")
+        args = {'s3_data': self.s3_clean, 'bucket_name': bucket_name,
+                'file_size': file_size, 'chunk_obj_path': chunk_obj_path, 'output': upload_op}
+
+        thread = threading.Thread(target=self.ha_obj.create_bucket_chunk_upload, kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+        LOGGER.info("Step 5: Successfully started chuck upload in background")
+
+        LOGGER.info("Step 6: Start server pod again by statefulset")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
+                                       clstr_status=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore server pod by {self.restore_method}"
+                                          "way or failures in cluster status")
+        self.restore_pod = False
+        LOGGER.info("Step 6: Server pod is started successfully and checked cluster status")
+
+        LOGGER.info("Step 7: Verifying response of background chunk upload process")
+        self.extra_files.append(chunk_obj_path)
+        while True:
+            resp = upload_op.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+            if isinstance(resp, bool):
+                break
+
+        if resp is None:
+            assert_utils.assert_true(False, "Background process of chunk upload failed")
+        assert_utils.assert_true(resp, "Failure observed in chunk upload during server pod restart")
+        LOGGER.info("Step 7: Successfully performed chuck upload during server pod restart")
+
+        LOGGER.info("Step 8: Download object which was uploaded in healthy cluster and verify "
+                    "checksum")
+        resp = self.ha_obj.object_download_jclient(s3_data=self.s3_clean,
+                                                   bucket_name=self.bucket_name,
+                                                   object_name=self.object_name,
+                                                   obj_download_path=download_path)
+        LOGGER.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        dnld_chksm = self.ha_obj.cal_compare_checksum(file_list=[download_path], compare=False)[0]
+        assert_utils.assert_equal(upld_chksm_hlt, dnld_chksm,
+                                  f"Expected checksum: {upld_chksm_hlt},"
+                                  f"Actual checksum: {dnld_chksm}")
+        LOGGER.info("Step 8: Successfully downloaded object and verified checksum")
+
+        LOGGER.info("Step 9: Download object which was uploaded in background and verify checksum")
+        LOGGER.info("Calculating checksum of uploaded file %s", chunk_obj_path)
+        upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[chunk_obj_path],
+                                                           compare=False)[0]
+        resp = self.ha_obj.object_download_jclient(s3_data=self.s3_clean,
+                                                   bucket_name=bucket_name,
+                                                   object_name=object_name,
+                                                   obj_download_path=download_path)
+        LOGGER.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                             compare=False)[0]
+        assert_utils.assert_equal(upload_checksum, download_checksum,
+                                  f"Expected checksum: {upload_checksum},"
+                                  f"Actual checksum: {download_checksum}")
+        LOGGER.info("Step 9: Successfully downloaded object and verified checksum")
+        LOGGER.info("ENDED: Verify chunk upload during server pod restart")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-34261")
+    def test_server_pod_restart_kubectl_delete(self):
+        """
+        Verify IOs during pod restart (kubectl delete)
+        """
+        LOGGER.info("STARTED: Verify IOs after server pod restart (kubectl delete)")
+        del_bucket = HA_CFG["bg_bucket_ops"]["no_del_buckets"]
+        del_output = Queue()
+        event = threading.Event()  # Event to be used to send intimation of data pod deletion
+        t_t = int(perf_counter_ns())
+
+        LOGGER.info("Perform IOs with variable object sizes during server pod restart")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.s3_clean.update(users)
+        access_key = list(users.values())[0]["accesskey"]
+        secret_key = list(users.values())[0]["secretkey"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Step 1.1: Perform WRITEs on %s buckets for background DELETEs", del_bucket)
+        test_prefix_del = f'test-del-34261-{t_t}'
+        args = {'test_prefix': test_prefix_del, 'test_dir_path': self.test_dir_path,
+                'skipget': True, 'skipdel': True, 'bkts_to_wr': del_bucket, 'output': del_output}
+        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
+        wr_resp = tuple()
+        while len(wr_resp) != 3:
+            wr_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        written_bck = s3_test_obj.bucket_list()[1]
+        assert_utils.assert_equal(len(written_bck), del_bucket,
+                                  f"Failed to create {del_bucket} number of buckets."
+                                  f"Created {len(written_bck)} number of buckets")
+        LOGGER.info("Step 1.1: Performed WRITEs on %s buckets for background DELETEs", del_bucket)
+
+        LOGGER.info("Step 1.2: Perform WRITEs with variable object sizes for parallel READs")
+        test_prefix_read = f'test-read-34261-{t_t}'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=test_prefix_read, skipread=True,
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1.2: Performed WRITEs with variable sizes objects for parallel READs.")
+
+        LOGGER.info("Step 2.1: Start WRITEs with variable object sizes in background")
+        test_prefix_write = f'test-write-34261-{t_t}'
+        output_wr = Queue()
+        event_set_clr = [False]
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
+                'nclients': 2, 'nsamples': 10, 'skipread': True, 'skipcleanup': True,
+                'output': output_wr, 'setup_s3bench': False, 'event_set_clr': event_set_clr}
+        thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
+                                      kwargs=args)
+        thread_wri.daemon = True  # Daemonize thread
+        LOGGER.info("Step 2.1: Successfully started WRITEs with variable sizes objects"
+                    " in background")
+
+        LOGGER.info("Step 2.2: Start READs and verify DI on the written data in background")
+        output_rd = Queue()
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_read,
+                'nclients': 1, 'nsamples': 10, 'skipwrite': True, 'skipcleanup': True,
+                'output': output_rd, 'setup_s3bench': False, 'event_set_clr': event_set_clr}
+        thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
+                                     kwargs=args)
+        thread_rd.daemon = True  # Daemonize thread
+        LOGGER.info("Step 2.2: Successfully started READs and verify DI on the written data in "
+                    "background")
+
+        LOGGER.info("Step 2.3: Starting DELETEs of %s buckets in background", del_bucket)
+        del_buckets = written_bck.copy()
+        args = {'test_prefix': test_prefix_del, 'test_dir_path': self.test_dir_path,
+                'skipput': True, 'skipget': True, 'bkt_list': del_buckets,
+                'bkts_to_del': del_bucket, 'output': del_output}
+        thread_del = threading.Thread(target=self.ha_obj.put_get_delete,
+                                      args=(event, s3_test_obj,), kwargs=args)
+        thread_del.daemon = True  # Daemonize thread
+        thread_wri.start()
+        thread_rd.start()
+        thread_del.start()
+        LOGGER.info("Step 2.3: Started WRITEs, READs and DELETEs with variable object sizes "
+                    "during server pod restart using kubectl delete")
+        LOGGER.info("Waiting for %s seconds", HA_CFG["common_params"]["10sec_delay"])
+        time.sleep(HA_CFG["common_params"]["10sec_delay"])
+
+        LOGGER.info("Step 3: Restart the server pod by kubectl delete.")
+        LOGGER.info("Get pod name to be deleted")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        pod_name = self.system_random.sample(pod_list, 1)[0]
+        LOGGER.info("Deleting pod %s", pod_name)
+        event.set()
+        resp = self.node_master_list[0].delete_pod(pod_name=pod_name, force=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to delete pod {pod_name} by kubectl delete")
+        LOGGER.info("Step 3: Successfully restarted pod %s by kubectl delete", pod_name)
+
+        LOGGER.info("Step 4: Check cluster status")
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Cluster is in good state")
+        event.clear()
+        thread_wri.join()
+        thread_rd.join()
+        thread_del.join()
+
+        LOGGER.info("Background WRITEs, READs and DELETEs threads joined successfully.")
+        LOGGER.info("Step 5: Verify responses from background processes")
+        LOGGER.info("Step 5.1: Verify status for In-flight WRITEs")
+        responses_wr = dict()
+        while len(responses_wr) != 2:
+            responses_wr = output_wr.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses_wr["pass_res"])
+        fail_logs = list(x[1] for x in responses_wr["fail_res"])
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]), f"WRITEs logs which contain failures: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        LOGGER.debug("WRITEs Response for fail logs: %s", resp)
+        # TODO: Uncomment following once CORTX-28541 is fixed and re-test
+        # assert_utils.assert_true(len(resp[1]) != len(fail_logs), "Some In-flight WRITEs are "
+        #                                                          "expected to fail. No failure is"
+        #                                                          f"observed in {resp[1]}")
+        LOGGER.info("Step 5.1: Verified status for In-flight WRITEs")
+
+        LOGGER.info("Step 5.2: Verifying responses from READs background process")
+        responses_rd = dict()
+        while len(responses_rd) != 2:
+            responses_rd = output_rd.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses_rd["pass_res"])
+        fail_logs = list(x[1] for x in responses_rd["fail_res"])
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]),
+                                  f"READs/VerifyDI logs which contain failures: {resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
+        LOGGER.info("READs Response for fail logs: %s", resp[1])
+        # TODO: Uncomment following once CORTX-28541 is fixed and re-test
+        # assert_utils.assert_true(len(resp[1]) != len(fail_logs), "Some In-flight READs are "
+        #                                                          "expected to fail. No failure is"
+        #                                                          f"observed in {resp[1]}")
+
+        LOGGER.info("Step 5.2: Verified responses from READs background process")
+
+        LOGGER.info("Step 5.3: Verifying responses from DELETEs background process")
+        del_resp = tuple()
+        while len(del_resp) != 2:
+            del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not del_resp:
+            assert_utils.assert_true(False, "Background process failed to do DELETEs")
+        event_del_bkt = del_resp[0]  # Contains buckets when event was set
+        fail_del_bkt = del_resp[1]  # Contains buckets which failed when event was clear
+        assert_utils.assert_false(len(fail_del_bkt), "Expected pass, buckets which failed in "
+                                                     f"DELETEs: {fail_del_bkt}.")
+        # TODO: Uncomment following once CORTX-28541 is fixed and re-test
+        # assert_utils.assert_true(len(event_del_bkt), "Expected FAIL when event was set")
+        LOGGER.info("Failed buckets while in-flight DELETEs operation : %s", event_del_bkt)
+        LOGGER.info("Step 5.3: Verified responses from DELETEs background process")
+        LOGGER.info("Step 5: Verified responses from background processes")
+
+        LOGGER.info("Step 6: Start IOs (create s3 acc, buckets and upload objects) after pod "
+                    "restart by kubectl delete")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.s3_clean.update(users)
+        self.test_prefix = 'test-34261'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    setup_s3bench=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 6: Successfully IOs completed after pod restart by kubectl delete")
+        LOGGER.info("COMPLETED: Verify IOs after server pod restart (kubectl delete)")
