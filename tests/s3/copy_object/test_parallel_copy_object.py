@@ -127,7 +127,7 @@ class TestCopyObjects:
         pool = multiprocessing.Pool()
         process = []
         for i in range(numproc):
-            LOGGER.info("Parallely, \n%d From %s copy %s to %s as %s", i,
+            LOGGER.info("Parallely, \n%d From %s copy %s to %s as %s", i+1,
                         args[i][0], args[i][1], args[i][2], args[i][3])
         for i in range(numproc):
             process.append(pool.apply_async(self.copy_object_wrapper, args=args[i]))
@@ -330,8 +330,6 @@ class TestCopyObjects:
                                       f"{obj_type}-dest-obj2"),
                                       ("src-bucket1", f"{obj_type}-obj3", "dest-bucket1",
                                       f"{obj_type}-dest-obj2"))
-            self.validate_copy_content("src-bucket1", f"{obj_type}-obj1",
-                                       "dest-bucket1", f"{obj_type}-dest-obj2")
             self.validate_copy_content("src-bucket1", f"{obj_type}-obj3",
                                        "dest-bucket1", f"{obj_type}-dest-obj2")
             self.parallel_copy_object(("src-bucket1", f"{obj_type}-obj1", "dest-bucket1",
@@ -346,8 +344,6 @@ class TestCopyObjects:
                                       f"{obj_type}-dest-obj6"),
                                       ("src-bucket2", f"{obj_type}-obj3", "dest-bucket1",
                                       f"{obj_type}-dest-obj6"))
-            self.validate_copy_content("src-bucket1", f"{obj_type}-obj1",
-                                       "dest-bucket1", f"{obj_type}-dest-obj6")
             self.validate_copy_content("src-bucket2", f"{obj_type}-obj3",
                                        "dest-bucket2", f"{obj_type}-dest-obj6")
             self.parallel_copy_object(("src-bucket1", f"{obj_type}-obj1", "dest-bucket1",
