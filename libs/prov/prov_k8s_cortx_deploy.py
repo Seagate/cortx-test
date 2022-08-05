@@ -2004,3 +2004,12 @@ class ProvDeployK8sCortxLib:
             secret_key = secrets["content"]["s3_auth_admin_secret"]
             LOGGER.info("Getting access and secret key")
         return access_key, secret_key
+
+    @staticmethod
+    def close_connections(master_node_list, worker_node_list):
+        """Close connections to target nodes."""
+        if CMN_CFG["product_family"] in ('LR', 'LC') and \
+                CMN_CFG["product_type"] == 'K8S':
+            for conn in master_node_list + worker_node_list:
+                if isinstance(conn, LogicalNode):
+                    conn.disconnect()
