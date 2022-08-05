@@ -371,9 +371,9 @@ class TestCopyObjects:
             self.objects_in_buckets(bucket="dest-bucket1",
                                     objects=[f"{obj_type}-dest-obj2", f"{obj_type}-dest-obj3",
                                              f"{obj_type}-dest-obj4", f"{obj_type}-dest-obj6",
-                                             f"{obj_type}-dest-obj8",  f"{obj_type}-obj9"])
+                                             f"{obj_type}-dest-obj8",  f"{obj_type}-dest-obj9"])
             LOGGER.info("List objects to dest-bucket2")
-            self.objects_in_buckets(bucket="dest-bucket2", objects=[f"{obj_type}-obj4"])
+            self.objects_in_buckets(bucket="dest-bucket2", objects=[f"{obj_type}-dest-obj4"])
         LOGGER.info("ENDED: Test Parallel copy from multiple source buckets to one or multiple "
                     "destination buckets (simple and multipart source objects)")
 
