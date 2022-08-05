@@ -34,8 +34,6 @@ import pytest
 
 from commons import commands as cmd
 from commons import constants as const
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
@@ -69,8 +67,6 @@ class TestDataPodFailure:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations.")
-        cls.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
-        cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.username = []
         cls.password = []
@@ -221,7 +217,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32443")
-    @CTFailOn(error_handler)
     def test_reads_safe_pod_shutdown(self):
         """
         This test tests degraded reads before and after safe pod shutdown
@@ -275,7 +270,6 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Method no longer applicable with statefulset")
     @pytest.mark.tags("TEST-23553")
-    @CTFailOn(error_handler)
     def test_reads_unsafe_pod_shutdown(self):
         """
         This test tests degraded reads before and after unsafe pod shutdown
@@ -327,7 +321,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-23552")
-    @CTFailOn(error_handler)
     def test_writes_safe_pod_shutdown(self):
         """
         This test tests degraded writes before and after safe pod shutdown
@@ -372,7 +365,6 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Method no longer applicable with statefulset")
     @pytest.mark.tags("TEST-26440")
-    @CTFailOn(error_handler)
     def test_writes_unsafe_pod_shutdown(self):
         """
         This test tests degraded writes before and after unsafe pod shutdown
@@ -418,7 +410,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26444")
-    @CTFailOn(error_handler)
     def test_deletes_safe_pod_shutdown(self):
         """
         This test tests degraded deletes before and after safe pod shutdown
@@ -524,7 +515,6 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Method no longer applicable with statefulset")
     @pytest.mark.tags("TEST-26644")
-    @CTFailOn(error_handler)
     def test_deletes_unsafe_pod_shutdown(self):
         """
         This test tests degraded deletes before and after unsafe pod shutdown
@@ -632,7 +622,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32444")
-    @CTFailOn(error_handler)
     def test_reads_during_pod_down(self):
         """
         This test tests degraded reads while pod is going down
@@ -717,7 +706,6 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Method no longer applicable with statefulset")
     @pytest.mark.tags("TEST-32455")
-    @CTFailOn(error_handler)
     def test_pod_shutdown_delete_deployment(self):
         """
         Verify IOs before and after data pod failure; pod shutdown by deleting deployment.
@@ -776,12 +764,11 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26445")
-    @CTFailOn(error_handler)
     def test_deletes_during_pod_down(self):
         """
         This test tests DELETEs during data pod down with replica method
         """
-        LOGGER.info("STARTED: Test to verify DELETEs during data pod down by deleting deployment.")
+        LOGGER.info("STARTED: Test to verify DELETEs during data pod down with replica method.")
         event = threading.Event()  # Event to be used to send intimation of data pod deletion
         LOGGER.info("Create IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
@@ -898,7 +885,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26441")
-    @CTFailOn(error_handler)
     def test_writes_during_pod_down(self):
         """
         This test tests WRITEs during data pod down with replica method
@@ -973,13 +959,12 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32454")
-    @CTFailOn(error_handler)
     def test_pod_shutdown_scale_replicas(self):
         """
         Verify IOs before and after data pod failure; pod shutdown with replica method
         """
         LOGGER.info("STARTED: Verify IOs before and after data pod failure; pod shutdown "
-                    "by making replicas=0")
+                    "with replica method")
 
         LOGGER.info("Step 1: Perform WRITEs-READs-Verify-DELETEs with variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -1033,7 +1018,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26442")
-    @CTFailOn(error_handler)
     def test_reads_writes_during_pod_down(self):
         """
         This test tests READs and WRITEs during data pod down with replica method
@@ -1159,7 +1143,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26446")
-    @CTFailOn(error_handler)
     def test_writes_deletes_during_pod_down(self):
         """
         This test tests WRITEs and DELETEs during data pod down with replica method
@@ -1331,7 +1314,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26447")
-    @CTFailOn(error_handler)
     def test_reads_deletes_during_pod_down(self):
         """
         This test tests READs and DELETEs during data pod down with replica method
@@ -1532,7 +1514,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32445")
-    @CTFailOn(error_handler)
     def test_mpu_after_safe_pod_shutdown(self):
         """
         This test tests degraded multipart upload after data pod safe shutdown
@@ -1643,7 +1624,6 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Method no longer available with statefulset")
     @pytest.mark.tags("TEST-32446")
-    @CTFailOn(error_handler)
     def test_mpu_after_unsafe_pod_shutdown(self):
         """
         This test tests degraded multipart upload after data pod unsafe shutdown
@@ -1751,7 +1731,6 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Functionality not Available")
     @pytest.mark.tags("TEST-32460")
-    @CTFailOn(error_handler)
     def test_ha_pod_failover(self):
         """
         Verify IOs before and after ha pod failure, pod shutdown by making worker node down.
@@ -1840,7 +1819,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32447")
-    @CTFailOn(error_handler)
     def test_mpu_during_pod_shutdown(self):
         """
         This test tests multipart upload during data pod shutdown with replica method
@@ -1977,20 +1955,19 @@ class TestDataPodFailure:
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 6: Successfully downloaded the object and verified the checksum")
 
-        LOGGER.info("COMPLETED: Test to verify multipart upload during data pod shutdown by delete"
-                    " deployment")
+        LOGGER.info("COMPLETED: Test to verify multipart upload during data pod shutdown with"
+                    " replica method")
 
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32449")
-    @CTFailOn(error_handler)
     def test_partial_mpu_after_pod_shutdown(self):
         """
-        This test tests degraded partial multipart upload after data pod unsafe shutdown
+        This test tests degraded partial multipart upload after data pod shutdown
         with replica method
         """
         LOGGER.info("STARTED: Test to verify degraded partial multipart upload after data "
-                    "pod unsafe shutdown by deleting deployment")
+                    "pod shutdown with replica method")
 
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
@@ -2110,13 +2087,12 @@ class TestDataPodFailure:
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 7: Successfully downloaded the object and verified the checksum")
 
-        LOGGER.info("ENDED: Test to verify degraded partial multipart upload after data pod unsafe"
-                    " shutdown by deleting deployment")
+        LOGGER.info("ENDED: Test to verify degraded partial multipart upload after data pod "
+                    " shutdown with replica method")
 
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32450")
-    @CTFailOn(error_handler)
     def test_copy_object_safe_pod_shutdown(self):
         """
         Verify degraded copy object after data pod down - pod shutdown with replica method
@@ -2215,7 +2191,6 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Method no longer applicable with statefulset")
     @pytest.mark.tags("TEST-32451")
-    @CTFailOn(error_handler)
     def test_copy_object_unsafe_pod_shutdown(self):
         """
         Verify degraded copy object after data pod down - pod unsafe
@@ -2315,7 +2290,6 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32458")
     @pytest.mark.skip(reason="VM issue in after Restart(CORTX-32933). Need to be tested on HW.")
-    @CTFailOn(error_handler)
     def test_pod_fail_node_down(self):
         """
         Verify IOs before and after data pod failure, pod shutdown by making worker node down.
@@ -2408,7 +2382,6 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Blocked until 'EOS-27549' resolve")
     @pytest.mark.tags("TEST-32457")
-    @CTFailOn(error_handler)
     def test_pod_fail_node_nw_down(self):
         """
         Verify IOs before and after data pod failure, pod shutdown
@@ -2500,7 +2473,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32452")
-    @CTFailOn(error_handler)
     def test_copy_object_during_pod_shutdown(self):
         """
         Verify copy object during data pod shutdown with replica method
@@ -2654,7 +2626,6 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Need method for particular pod down")
     @pytest.mark.tags("TEST-33209")
-    @CTFailOn(error_handler)
     def test_rc_pod_failover(self):
         """
         Verify IOs before and after pod failure by making RC node down
@@ -2750,7 +2721,6 @@ class TestDataPodFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-35297")
-    @CTFailOn(error_handler)
     def test_chunk_upload_during_pod_down(self):
         """
         Test chunk upload during pod down (using jclient)
@@ -2876,7 +2846,6 @@ class TestDataPodFailure:
     @pytest.mark.lc
     @pytest.mark.nightly_regression
     @pytest.mark.tags("TEST-39976")
-    @CTFailOn(error_handler)
     def test_object_crud_pod_failure(self):
         """
         Verify object CRUDs before and after pod failure; pod shutdown with replica method
@@ -2927,4 +2896,4 @@ class TestDataPodFailure:
         LOGGER.info("Step 4: IOs ran successfully and objects deleted.")
 
         LOGGER.info("Completed: Verify object CRUDs before and after pod failure; pod shutdown "
-                    "by making replicas=0")
+                    "with replica method")
