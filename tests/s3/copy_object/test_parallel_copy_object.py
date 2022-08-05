@@ -97,8 +97,7 @@ class TestCopyObjects:
         """Create and Put object of (size*1M) size and assert"""
         resp = system_utils.create_file(fpath=self.file_path, count=size, b_size=base)
         assert_utils.assert_true(resp[0], resp[1])
-        put_checksum = calc_checksum(self.file_path)
-        return self.s3_obj.put_object(bucket, obj, self.file_path), put_checksum
+        return self.s3_obj.put_object(bucket, obj, self.file_path)
 
     @staticmethod
     def put_object_wrapper(bucket, obj, file_path):
