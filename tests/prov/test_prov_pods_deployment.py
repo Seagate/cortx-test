@@ -81,6 +81,7 @@ class TestProvPodsDeployment:
             resp = self.deploy_obj.destroy_setup(self.master_node_list[0],
                                                  self.worker_node_list)
             assert_utils.assert_true(resp)
+        self.deploy_obj.close_connections(self.master_node_list, self.worker_node_list)
 
     @pytest.mark.lc
     @pytest.mark.cluster_deployment
@@ -135,9 +136,9 @@ class TestProvPodsDeployment:
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
-        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Pod list are %s", resp)
         self.log.info("Pod count is %s", len(resp))
-        assert_utils.assert_equal(len(resp), len(self.worker_node_list))
+        assert_utils.assert_equal(len(resp), config['cvg_count']*len(self.worker_node_list))
         self.collect_sb = False
         self.destroy_flag = False
         self.log.info("===Test Completed===")
@@ -165,9 +166,9 @@ class TestProvPodsDeployment:
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.SERVER_POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
-        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Pod list are %s", resp)
         self.log.info("Pod count is %s", len(resp))
-        assert_utils.assert_equal(len(resp), len(self.worker_node_list))
+        assert_utils.assert_equal(len(resp), 2*len(self.worker_node_list))
         self.collect_sb = False
         self.destroy_flag = False
         self.log.info("===Test Completed===")
@@ -211,8 +212,10 @@ class TestProvPodsDeployment:
         """
         config_list = self.deploy_obj.get_durability_config(num_nodes=
                                                             len(self.worker_node_list))
-        config = secrets.choice(config_list)
-        self.log.info("config is picked :%s", config)
+        for config_set in config_list:
+            if config_set["cvg_count"] == 1:
+                config = config_set
+                self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
@@ -268,8 +271,10 @@ class TestProvPodsDeployment:
         """
         config_list = self.deploy_obj.get_durability_config(num_nodes=
                                                             len(self.worker_node_list))
-        config = secrets.choice(config_list)
-        self.log.info("config is picked :%s", config)
+        for config_set in config_list:
+            if config_set["cvg_count"] == 1:
+                config = config_set
+                self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
