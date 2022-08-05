@@ -534,9 +534,9 @@ class ProvDeployK8sCortxLib:
                 assert False, "The requested data disk is more than" \
                               " the data disk available on the system"
             if log_disk_flag:
-                # the '2' is being added to accumulate the final data disk count
+                # the '2' is being multiplied to accumulate the final data disk count
                 # after excluding the metadata, log disks
-                data_devices_f = device_list[cvg_count + 2:]
+                data_devices_f = device_list[cvg_count+2:]
             else:
                 data_devices_f = device_list[cvg_count:]
             # This condition validated the total available disk count
@@ -684,7 +684,6 @@ class ProvDeployK8sCortxLib:
         size_metadata = kwargs.get("size_metadata")
         size_data_disk = kwargs.get("size_data_disk")
         container_group_size = kwargs.get("container_group_size", 1)
-        # log_device_flag = kwargs.get("log_device", None)
         nks = Template("$data+$parity+$spare").substitute(data=sns_data,
                                                           parity=sns_parity,
                                                           spare=sns_spare)  # Value of N+K+S for sns
@@ -698,7 +697,7 @@ class ProvDeployK8sCortxLib:
             storage = cmn_storage_sets['storage']
             total_cvg = len(storage)
             cmn_storage_sets['container_group_size'] = container_group_size
-            LOGGER.debug("len of storage is %s,%s", total_cvg,cvg_count)
+            LOGGER.debug("len of storage is %s", total_cvg)
             # SNS and dix value update
             cmn_storage_sets['durability']['sns'] = nks
             cmn_storage_sets['durability']['dix'] = dix
