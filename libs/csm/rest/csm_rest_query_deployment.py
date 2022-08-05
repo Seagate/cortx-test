@@ -193,22 +193,21 @@ class QueryDeployment(RestTestLib):
             resp_dix = resp_dix.join([str(storage_set_dix["data"]), str(storage_set_dix["parity"]),
                                       str(storage_set_dix["spare"])])
             input_dix = solution_yaml["solution"]["storage_set"]["durability"]["dix"]
-            
+            self.log.info("Printing dix value from response and solution yaml %s and %s",
+                               resp_dix, input_dix)
             storage_set_sns = get_response[
                 "topology"]["cluster"][0]["storage_set"]["durability"]["sns"]
             resp_sns = resp_sns.join([str(storage_set_sns["data"]), str(storage_set_sns["parity"]),
                                       str(storage_set_sns["spare"])])
             input_sns = solution_yaml["solution"]["storage_set"]["durability"]["sns"]
-            if input_dix != resp_dix and input_sns != resp_sns:
-                err_msg = "Actual and expected response for dix and sns didn't match"
-                self.log.error(err_msg)
-                result = False
-            elif input_dix != resp_dix: 
+            self.log.info("Printing sns value from response and solution yaml %s and %s",
+                               resp_sns, input_sns)
+            if input_dix != resp_dix: 
                 err_msg = "Actual and expected response for dix didnt match"
                 self.log.error(err_msg)
                 result = False
-            elif input_sns != resp_sns:
-                err_msg = "Actual and expected response for sns didnt match"
+            if input_sns != resp_sns:
+                err_msg = err_msg + "Actual and expected response for sns didnt match"
                 self.log.error(err_msg)
                 result = False
         else:
