@@ -54,7 +54,7 @@ class TestQueryDeployment():
         self.log.info("Cleanup: Destroying the cluster ")
         resp = self.deploy_lc_obj.destroy_setup(self.csm_obj.master, self.csm_obj.worker_list,
                                                 K8S_SCRIPTS_PATH)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert resp[0], resp[1]
         self.log.info("Cleanup: Cluster destroyed successfully")
 
         self.log.info("Cleanup: Setting prerequisite")
@@ -70,7 +70,7 @@ class TestQueryDeployment():
         self.log.info("Cleanup: Deploying the Cluster")
         resp_cls = self.deploy_lc_obj.deploy_cluster(self.csm_obj.master,
                                                      K8S_SCRIPTS_PATH)
-        assert_utils.assert_true(resp_cls[0], resp_cls[1])
+        assert resp_cls[0], resp_cls[1]
         self.log.info("Cleanup: Cluster deployment successfully")
 
         self.log.info("[Start] Sleep %s", self.update_seconds)
@@ -79,7 +79,7 @@ class TestQueryDeployment():
 
         self.log.info("Cleanup: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.csm_obj.master)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert resp[0], resp[1]
         self.log.info("Cleanup: Cluster status checked successfully")
 
     @pytest.mark.lc
@@ -93,20 +93,21 @@ class TestQueryDeployment():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Open and parse solution yaml")
         self.log.info("Step 1: Send GET request for fetching system topology"
                       "without storage set id")
-        resp, result = self.csm_obj.verify_storage_set()
-        assert result, "Verification for get system topology failed."
-        self.log.info("Response : %s", resp)
-        self.log.info("Step 2: Send GET request for fetching system topology"
-                      "with storage set id")
-        storage_sets = resp.json()["topology"]["cluster"]["storage_set"]
-        res = [sub['id'] for sub in storage_sets]
-        print("Printing list of storage sets : " + str(res))
-        for storage_set_id in storage_sets:
-            self.log.info("Sending request for %s ", storage_set_id)
-            resp, result = self.csm_obj.verify_storage_set(storage_set_id)
-            assert result, "Verification for get system topology failed."
+        self.log.info("Get cluster id from system topology response")
+        get_topology = self.csm_obj.get_system_topology()
+        for cluster in get_topology["topology"]["cluster"]:
+            resp, result, err_msg = self.csm_obj.verify_storage_set(cluster_id = cluster['id'])
+            assert result, err_msg
             self.log.info("Response : %s", resp)
+            self.log.info("Step 2: Send GET request for fetching system topology"
+                      "with storage set id")
+            storage_sets = resp.json()["topology"]["cluster"][0]["storage_set"]      #need to revisit
+            for storage_set_id in storage_sets:
+                self.log.info("Sending request for %s ", storage_set_id)
+                resp, result, err_msg = self.csm_obj.verify_storage_set(cluster_id = cluster['id'],
+                                                storage_set_id = storage_set_id['id'])
+                assert result, err_msg
+                self.log.info("Response : %s", resp)
         self.log.info("##### Test ended -  %s #####", test_case_name)
