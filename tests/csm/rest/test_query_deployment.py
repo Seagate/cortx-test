@@ -36,7 +36,8 @@ from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 class TestQueryDeployment():
     """Query Deployment Testsuites"""
 
-    def __init__(cls):
+    @classmethod
+    def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
         cls.ha_obj = HAK8s()
