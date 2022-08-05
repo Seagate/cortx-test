@@ -27,7 +27,6 @@ import pytest
 
 from commons import configmanager, cortxlogging
 from commons.constants import K8S_SCRIPTS_PATH, K8S_PRE_DISK
-from commons.utils import assert_utils
 from libs.csm.csm_interface import csm_api_factory
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
@@ -103,7 +102,8 @@ class TestQueryDeployment():
             self.log.info("Response : %s", resp)
             self.log.info("Step 2: Send GET request for fetching system topology"
                       "with storage set id")
-            storage_sets = resp.json()["topology"]["cluster"][0]["storage_set"]      #need to revisit
+            #need to revisit
+            storage_sets = resp.json()["topology"]["cluster"][0]["storage_set"]
             for storage_set_id in storage_sets:
                 self.log.info("Sending request for %s ", storage_set_id)
                 resp, result, err_msg = self.csm_obj.verify_storage_set(cluster_id = cluster['id'],
