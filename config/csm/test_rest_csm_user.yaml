@@ -312,3 +312,8 @@ test_32180:
     message_index: 2
 test_32181:
     current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
+test_44802:
+    current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
+    new_password: "+ZfWaNAnxT4p39QOZ1A2QG+OWYJmgI4dEk9WcG6wS04="
+test_44803:
+    current_password: "puUqs4Ns/l/fh6teILWN1FPFu3RZogVZ0SbtsMpbkOA="
