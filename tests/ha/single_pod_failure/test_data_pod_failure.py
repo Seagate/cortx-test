@@ -903,10 +903,10 @@ class TestDataPodFailure:
         """
         This test tests WRITEs during data pod down with replica method
         """
-        LOGGER.info("STARTED: Test to verify WRITEs during data pod down by delete deployment.")
+        LOGGER.info("STARTED: Test to verify WRITEs during data pod down with replica method.")
         event = threading.Event()  # Event to be used to send intimation of data pod deletion
-        LOGGER.info("Step 1: Perform WRITEs with variable object sizes during data pod down by "
-                    "delete deployment.")
+        LOGGER.info("Step 1: Perform WRITEs with variable object sizes during data pod down "
+                    "with replica method")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-26441'
         self.s3_clean = users
@@ -1039,14 +1039,14 @@ class TestDataPodFailure:
         This test tests READs and WRITEs during data pod down with replica method
         """
 
-        LOGGER.info("STARTED: Test to verify READs/WRITEs during data pod down by "
-                    "delete deployment.")
+        LOGGER.info("STARTED: Test to verify READs/WRITEs during data pod down "
+                    "with replica method.")
         event = threading.Event()  # Event to be used to send intimation of data pod deletion
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean = users
 
         LOGGER.info("Step 1: Perform READs/WRITEs with variable object sizes during "
-                    "data pod down by delete deployment.")
+                    "data pod down with replica method.")
         LOGGER.info("Step 1.1: Perform WRITEs with variable object sizes for parallel READs")
         test_prefix_read = 'test-read-26442'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
@@ -1183,7 +1183,7 @@ class TestDataPodFailure:
                                 endpoint_url=S3_CFG["s3_url"])
 
         LOGGER.info("Step 1: Start WRITEs and DELETEs with variable object sizes "
-                    "during data pod down by delete deployment.")
+                    "during data pod down with replica method")
 
         LOGGER.info("Perform WRITEs on %s buckets for background DELETEs", del_total_bkt)
         args = {'test_prefix': test_del_prefix, 'test_dir_path': self.test_dir_path,
@@ -2648,7 +2648,7 @@ class TestDataPodFailure:
             LOGGER.info("Step 7: Downloaded the uploaded %s on %s & verified etags.",
                         object3, bucket3)
 
-        LOGGER.info("COMPLETED: Verify copy object during data pod shutdown (delete deployment)")
+        LOGGER.info("COMPLETED: Verify copy object during data pod shutdown with replica method")
 
     @pytest.mark.ha
     @pytest.mark.lc
