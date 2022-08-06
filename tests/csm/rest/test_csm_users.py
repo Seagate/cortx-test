@@ -4791,7 +4791,8 @@ class TestCsmUser():
 
             self.log.info("Check Bearer token should be different")
             self.log.info("init_token = %s new_token = %s ", init_token, new_token)
-            assert init_token == new_token, "unexpected token mismatch"
+            assert init_token != new_token, "unexpected token mismatch"
+            # CORTX-33869 for != or ==
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 

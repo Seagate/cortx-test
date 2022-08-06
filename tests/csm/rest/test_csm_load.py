@@ -77,6 +77,7 @@ class TestCsmLoad():
         cls.default_cpu_usage = False
         cls.buckets_created = []
         cls.iam_users_created = []
+        cls.csm_users_created = []
         cls.ha_obj = HAK8s()
         cls.failed_pod = []
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
@@ -100,6 +101,7 @@ class TestCsmLoad():
         """
         self.log.info("STARTED: Teardown Operations.")
         iam_deleted = []
+        csm_deleted = []
         buckets_deleted = []
 
         if self.restore_pod:
@@ -137,6 +139,16 @@ class TestCsmLoad():
         for iam in iam_deleted:
             self.iam_users_created.remove(iam)
 
+        for csm_user in self.csm_users_created:
+            resp = self.csm_obj.delete_csm_user(csm_user)
+            if resp:
+                csm_deleted.append(csm_user)
+            else:
+                self.log.error("IAM deletion failed for %s ", csm_user)
+        self.log.info("CSM user deleted %s", csm_deleted)
+        for csm in csm_deleted:
+            self.csm_users_created.remove(csm)
+
         if self.default_cpu_usage:
             self.log.info("\nStep 4: Resolving CPU usage fault. ")
             self.log.info("Updating default CPU usage threshold value")
@@ -146,6 +158,7 @@ class TestCsmLoad():
             self.default_cpu_usage = False
         assert len(self.buckets_created) == 0, "Bucket deletion failed"
         assert len(self.iam_users_created) == 0, "IAM deletion failed"
+        assert len(self.csm_users_created) == 0, "CSM user deletion failed"
         self.log.info("Done: Teardown completed.")
 
 
@@ -315,6 +328,87 @@ class TestCsmLoad():
         assert resp[0], f"Failed to restore pod by {self.restore_method} way"
         self.restore_pod = False
         self.log.info("Successfully restored pod by %s way", self.restore_method)
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-45719')
+    def test_45719(self):
+        """
+        CSM load testing with Get User Capacity while running IOs in parallel
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info("Step 1: Send multiple create CSM users with same creds requests parallel")
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        fieldnames = ["role", "user", "pswd"]
+        content.append({fieldnames[0]: "admin",
+                        fieldnames[1]: "admin_test_45719",
+                        fieldnames[2]: CSM_REST_CFG["csm_admin_user"]["password"]})
+        content.append({fieldnames[0]: "manage",
+                        fieldnames[1]: "manage_test_45719",
+                        fieldnames[2]: CSM_REST_CFG["csm_user_manage"]["password"]})
+        content.append({fieldnames[0]: "monitor",
+                        fieldnames[1]: "monitor_test_45719",
+                        fieldnames[2]: CSM_REST_CFG["csm_user_monitor"]["password"]})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+        jmx_file = "CSM_Create_N_CSM_Users.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file, expect_error_count = self.request_usage - 3,
+            threads=self.request_usage, rampup=1, loop=1)
+        assert result, "Errors reported in the Jmeter execution"
+
+        self.log.info("Step 2: Add user to list to be deleted")
+        self.csm_users_created.append("admin_test_45719")
+        self.csm_users_created.append("manage_test_45719")
+        self.csm_users_created.append("monitor_test_45719")
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-45718')
+    def test_45718(self):
+        """
+        Test user cant create duplicate IAM user in parallel
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info("Step 1: Find and delete if user already exists")
+        uid = 'test_45718'
+        admin_usr = CSM_REST_CFG["csm_admin_user"]["username"]
+        admin_pwd = CSM_REST_CFG["csm_admin_user"]["password"]
+        header = self.csm_obj.get_headers(admin_usr, admin_pwd)
+        self.csm_obj.delete_iam_user_rgw(uid, header)
+
+        self.log.info("Step 2: Send multiple create IAM user with same user name requests parallel")
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        fieldnames = ["uid"]
+        content.append({fieldnames[0]: uid})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+        jmx_file = "CSM_Create_N_IAM_Users.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file, expect_error_count = self.request_usage - 1,
+            threads=self.request_usage, rampup=1, loop=1)
+        assert result, "Errors reported in the Jmeter execution"
+
+        self.log.info("Step 3: Add user to list to be deleted")
+        self.iam_users_created.append(uid)
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 

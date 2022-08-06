@@ -94,6 +94,7 @@ class JmeterInt():
     def run_verify_jmx(
         self,
         jmx_file: str,
+        expect_error_count = 0,
         threads:int=25,
         rampup:int=1,
         loop:int=1,
@@ -101,16 +102,17 @@ class JmeterInt():
         ):
         """Set the user properties and run the jmx file and verify the logs
         :param jmx_file: jmx file located in the JMX_PATH
-        :return [bool]: True if error count is zero in jmx result log
+        :return [bool]: True if error count is expected in jmx result log
         """
         resp = self.run_jmx(jmx_file, threads, rampup, loop, test_cfg)
         resp = resp.replace("\\n","\n")
-        err_list = re.findall(r"Err:\s*\s*.*", resp)
-        zero_err_list = re.findall(r"Err:\s*0\s*.*", resp)
-        result = (len(err_list) == len(zero_err_list))
+        summary_txt = re.findall(r"summary =\s*.*",resp)[-1]
+        err_list = re.findall(r"Err:[^(]*", summary_txt)[-1]
+        error_count = re.findall(r'\d+', err_list)[-1]
+        result = (int(error_count) == expect_error_count)
         if result is False:
-            self.log.info("err_list : %s", err_list)
-            self.log.info("zero_err_list : %s", zero_err_list)
+            self.log.info("error_counts : %s", error_count)
+            self.log.info("expect_error_count : %s", expect_error_count)
         return result
 
     def update_user_properties(self, content: dict):
