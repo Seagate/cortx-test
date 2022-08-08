@@ -642,16 +642,17 @@ class TestDataPodFailure:
         LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
 
         LOGGER.info("Step 2: Perform READs and verify DI on the written data in background")
+        event_set_clr = [False]
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
                 'nclients': 5, 'nsamples': 20, 'skipwrite': True, 'skipcleanup': True,
-                'output': output}
+                'output': output, 'setup_s3bench': False, 'event_set_clr': event_set_clr}
 
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
 
-        LOGGER.info("Step 2: Successfully started READs/verified-DI on the written data in "
+        LOGGER.info("Step 2: Successfully started READs/verify on the written data in "
                     "background. ")
         LOGGER.info("Sleep for %s sec", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
@@ -661,7 +662,8 @@ class TestDataPodFailure:
         num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            delete_pod=[self.delete_pod], num_replica=num_replica)
+            delete_pod=[self.delete_pod], num_replica=num_replica, event=event,
+            event_set_clr=event_set_clr)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
@@ -823,7 +825,7 @@ class TestDataPodFailure:
         num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            delete_pod=[self.delete_pod], num_replica=num_replica)
+            delete_pod=[self.delete_pod], num_replica=num_replica, event=event)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
@@ -897,10 +899,10 @@ class TestDataPodFailure:
         self.test_prefix = 'test-26441'
         self.s3_clean = users
         output = Queue()
-
+        event_set_clr = [False]
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
                 'nclients': 1, 'nsamples': 20, 'skipread': True, 'skipcleanup': True,
-                'output': output}
+                'output': output, 'event_set_clr': event_set_clr}
 
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
@@ -915,7 +917,8 @@ class TestDataPodFailure:
         num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            delete_pod=[self.delete_pod], num_replica=num_replica)
+            delete_pod=[self.delete_pod], num_replica=num_replica, event=event,
+            event_set_clr=event_set_clr)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
@@ -1074,7 +1077,8 @@ class TestDataPodFailure:
         num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            delete_pod=[self.delete_pod], num_replica=num_replica)
+            delete_pod=[self.delete_pod], num_replica=num_replica, event=event,
+            event_set_clr=event_set_clr)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
@@ -1210,7 +1214,7 @@ class TestDataPodFailure:
         num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            delete_pod=[self.delete_pod], num_replica=num_replica)
+            delete_pod=[self.delete_pod], num_replica=num_replica, event=event)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
@@ -1400,7 +1404,7 @@ class TestDataPodFailure:
         num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            delete_pod=[self.delete_pod], num_replica=num_replica)
+            delete_pod=[self.delete_pod], num_replica=num_replica, event=event)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
@@ -1867,7 +1871,7 @@ class TestDataPodFailure:
         num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            delete_pod=[self.delete_pod], num_replica=num_replica)
+            delete_pod=[self.delete_pod], num_replica=num_replica, event=event)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
@@ -2541,7 +2545,7 @@ class TestDataPodFailure:
         num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            delete_pod=[self.delete_pod], num_replica=num_replica)
+            delete_pod=[self.delete_pod], num_replica=num_replica, event=event)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
