@@ -145,7 +145,7 @@ class TestServerPodRestartAPI:
         LOGGER.info("STARTED: Teardown Operations.")
         if self.version_etag:
             for bucket in list(self.version_etag.keys()):
-                LOGGER.info("Deleleting object versions for %s", bucket)
+                LOGGER.info("Deleting object versions for %s", bucket)
                 for v_etag in self.version_etag[bucket]:
                     v_id = list(v_etag.keys())[0]
                     self.s3_ver.delete_object_version(bucket=bucket, key=self.object_name,
@@ -957,13 +957,13 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Created IAM user and bucket with %s name.", self.bucket_name)
         if self.setup_type == "VM":
-            fs = str(HA_CFG["5gb_mpu_data"]["file_size_512M"]) + "M"
+            f_size = str(HA_CFG["5gb_mpu_data"]["file_size_512M"]) + "M"
         else:
-            fs = str(HA_CFG["5gb_mpu_data"]["file_size"]) + "M"
-        LOGGER.info("Step 1: Upload object of %s size before enabling versioning.", fs)
+            f_size = str(HA_CFG["5gb_mpu_data"]["file_size"]) + "M"
+        LOGGER.info("Step 1: Upload object of %s size before enabling versioning.", f_size)
         if os.path.exists(self.multipart_obj_path):
             os.remove(self.multipart_obj_path)
-        system_utils.create_file(self.multipart_obj_path, b_size=fs, count=1)
+        system_utils.create_file(self.multipart_obj_path, b_size=f_size, count=1)
         self.extra_files.append(self.multipart_obj_path)
         args = {'chk_null_version': True, 'is_unversioned': True, 'file_path':
             self.multipart_obj_path}
@@ -972,7 +972,7 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
         self.version_etag.update({self.bucket_name: []})
         self.version_etag[self.bucket_name].extend(resp[1])
-        LOGGER.info("Step 1: Uploaded object of %s size before enabling versioning.", fs)
+        LOGGER.info("Step 1: Uploaded object of %s size before enabling versioning.", f_size)
         LOGGER.info("Step 2: Enable versioning on %s.", self.bucket_name)
         resp = self.s3_ver.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp)
@@ -1076,14 +1076,14 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
         LOGGER.info("Step 9: Got version of object with VersionID and verified etags.")
         LOGGER.info("Step 10: Create new bucket, upload object of %s size before enabling "
-                    "versioning.", fs)
+                    "versioning.", f_size)
         new_bucket = f"ha-mp-bkt-{int(perf_counter_ns())}"
         resp = s3_test_obj.create_bucket(new_bucket)
         assert_utils.assert_true(resp[0], resp[1])
         download_path = os.path.join(self.test_dir_path, self.test_file + "_new")
         if os.path.exists(download_path):
             os.remove(download_path)
-        system_utils.create_file(download_path, b_size=fs, count=1)
+        system_utils.create_file(download_path, b_size=f_size, count=1)
         self.extra_files.append(download_path)
         args = {'chk_null_version': True, 'is_unversioned': True, 'file_path': download_path}
         resp = self.ha_obj.parallel_put_object(event, s3_test_obj, new_bucket, self.object_name,
@@ -1092,7 +1092,7 @@ class TestServerPodRestartAPI:
         self.version_etag.update({new_bucket: []})
         self.version_etag[new_bucket].extend(resp[1])
         LOGGER.info("Step 10: Created new bucket %s, upload object of %s size before enabling "
-                    "versioning.", new_bucket, fs)
+                    "versioning.", new_bucket, f_size)
         LOGGER.info("Step 11: Enable versioning on %s.", new_bucket)
         resp = self.s3_ver.put_bucket_versioning(bucket_name=new_bucket)
         assert_utils.assert_true(resp[0], resp)
