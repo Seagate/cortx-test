@@ -1007,12 +1007,14 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 4: Successfully shutdown server pod %s. Verified cluster and services "
                     "states are as expected & remaining pods status is online.", pod_name)
-        LOGGER.info("Step 5: Get object versions of %s & verify etags.", self.object_name)
+        LOGGER.info("Step 5: Get object versions of %s with VersionID & verify etags.",
+                    self.object_name)
         resp = self.ha_obj.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
                                                bkt_name=self.bucket_name, obj_name=self.object_name,
                                                ver_etag=self.version_etag[self.bucket_name])
         assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
-        LOGGER.info("Step 5: Got object versions of %s & verified etags.", self.object_name)
+        LOGGER.info("Step 5: Got object versions of %s with VersionID & verified etags.",
+                    self.object_name)
         count = HA_CFG["common_params"]["put_get_version"]
         LOGGER.info("Step 6: Starting background threads for Get and Put Version for count %s "
                     "while server pod restarting.", count)
@@ -1067,12 +1069,12 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(put_resp[0], f"Upload object failed with {put_resp[1]}")
         self.version_etag[self.bucket_name].extend(put_resp[1])
         LOGGER.info("Step 8: Verified background Put & Get Version for %s", self.object_name)
-        LOGGER.info("Step 9: GET all object versions for bucket and verify etags.")
+        LOGGER.info("Step 9: GET version of object with VersionID and verify etags.")
         resp = self.ha_obj.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
                                                bkt_name=self.bucket_name, obj_name=self.object_name,
                                                ver_etag=self.version_etag[self.bucket_name])
         assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
-        LOGGER.info("Step 9: Got all object versions for bucket and verified etags.")
+        LOGGER.info("Step 9: Got version of object with VersionID and verified etags.")
         LOGGER.info("Step 10: Create new bucket, upload object of %s size before enabling "
                     "versioning.", fs)
         new_bucket = f"ha-mp-bkt-{int(perf_counter_ns())}"
