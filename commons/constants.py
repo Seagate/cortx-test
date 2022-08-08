@@ -73,6 +73,8 @@ MOTR_CLIENT="motr_client"
 UPGRADE_IN_PROGRESS_MSG = "An upgrade is already in progress"
 UPGRADE_SUSPEND_MSG = "Upgrade suspended"
 UPGRADE_ALREADY_SUSPENDED = "Upgrade Process Not found on the system, Suspend cannot be performed"
+PARSE_SIZE = "10485760"
+CONTAINER_PATH = "/root/error_injection.py"
 POD_HCTL_POSTFIX = "-headless.cortx.svc.cluster.local"
 
 # common constant.
@@ -454,6 +456,7 @@ SB_POD_PREFIX_AND_COMPONENT_LIST = {POD_NAME_PREFIX: ["hare", "motr", "utils"],
                                     CONTROL_POD_NAME_PREFIX: ["csm", "utils"],
                                     HA_POD_NAME_PREFIX: ["utils"]}
 SB_EXTRACTED_PATH = "/etc/cortx/log/"
+SB_SIZE_MB = 500
 
 # K8s env
 K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
@@ -495,3 +498,9 @@ M0D_SVC = "ioservice"
 SERVER_SVC = "rgw_s3"
 STATEFULSET = "StatefulSet"
 REPLICASET = "ReplicaSet"
+
+# stat collection through kubectl top
+PROFILE_FILE_PATH = "scripts/io_stability/profiling.yaml"
+COLLECTION_SCRIPT_PATH = "scripts/io_stability/collect-k8s-stats.sh"
+PROFILE_FILE = "profiling.yaml"
+COLLECTION_FILE = "collect-k8s-stats.sh"
