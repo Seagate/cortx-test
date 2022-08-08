@@ -136,6 +136,20 @@ class TestServerPodRestartAPI:
             self.num_replica = int(resp[1])
         else:
             self.num_replica = 1
+        LOGGER.info("Create IAM user")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.s3_clean.update(users)
+        access_key = list(users.values())[0]["accesskey"]
+        secret_key = list(users.values())[0]["secretkey"]
+        self.s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                     endpoint_url=S3_CFG["s3_url"])
+        self.s3_ver = S3VersioningTestLib(access_key=access_key, secret_key=secret_key,
+                                          endpoint_url=S3_CFG["s3_url"], region=S3_CFG["region"])
+        LOGGER.info("Created IAM user")
+        if self.setup_type == "VM":
+            self.f_size = str(HA_CFG["5gb_mpu_data"]["file_size_512M"]) + "M"
+        else:
+            self.f_size = str(HA_CFG["5gb_mpu_data"]["file_size"]) + "M"
         LOGGER.info("COMPLETED: Setup operations. ")
 
     def teardown_method(self):
@@ -944,35 +958,23 @@ class TestServerPodRestartAPI:
         event = threading.Event()
         get_output = Queue()
         put_output = Queue()
-        LOGGER.info("Create IAM user and bucket with %s name.", self.bucket_name)
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.s3_clean.update(users)
-        access_key = list(users.values())[0]["accesskey"]
-        secret_key = list(users.values())[0]["secretkey"]
-        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                endpoint_url=S3_CFG["s3_url"])
-        self.s3_ver = S3VersioningTestLib(access_key=access_key, secret_key=secret_key,
-                                         endpoint_url=S3_CFG["s3_url"], region=S3_CFG["region"])
-        resp = s3_test_obj.create_bucket(self.bucket_name)
+        LOGGER.info("Create bucket with %s name.", self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Created IAM user and bucket with %s name.", self.bucket_name)
-        if self.setup_type == "VM":
-            f_size = str(HA_CFG["5gb_mpu_data"]["file_size_512M"]) + "M"
-        else:
-            f_size = str(HA_CFG["5gb_mpu_data"]["file_size"]) + "M"
-        LOGGER.info("Step 1: Upload object of %s size before enabling versioning.", f_size)
+        LOGGER.info("Created bucket with %s name.", self.bucket_name)
+        LOGGER.info("Step 1: Upload object of %s size before enabling versioning.", self.f_size)
         if os.path.exists(self.multipart_obj_path):
             os.remove(self.multipart_obj_path)
-        system_utils.create_file(self.multipart_obj_path, b_size=f_size, count=1)
+        system_utils.create_file(self.multipart_obj_path, b_size=self.f_size, count=1)
         self.extra_files.append(self.multipart_obj_path)
         args = {'chk_null_version': True, 'is_unversioned': True, 'file_path':
             self.multipart_obj_path}
-        resp = self.ha_obj.parallel_put_object(event, s3_test_obj, self.bucket_name,
+        resp = self.ha_obj.parallel_put_object(event, self.s3_test_obj, self.bucket_name,
                                                self.object_name, **args)
         assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
         self.version_etag.update({self.bucket_name: []})
         self.version_etag[self.bucket_name].extend(resp[1])
-        LOGGER.info("Step 1: Uploaded object of %s size before enabling versioning.", f_size)
+        LOGGER.info("Step 1: Uploaded object of %s size before enabling versioning.", self.f_size)
         LOGGER.info("Step 2: Enable versioning on %s.", self.bucket_name)
         resp = self.s3_ver.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp)
@@ -980,7 +982,7 @@ class TestServerPodRestartAPI:
         LOGGER.info("Step 3: Upload same object %s after enabling versioning, list & verify "
                     "the same.", self.object_name)
         args = {'file_path': self.multipart_obj_path}
-        resp = self.ha_obj.parallel_put_object(event, s3_test_obj, self.bucket_name,
+        resp = self.ha_obj.parallel_put_object(event, self.s3_test_obj, self.bucket_name,
                                                self.object_name, **args)
         assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
         self.version_etag[self.bucket_name].extend(resp[1])
@@ -1021,14 +1023,15 @@ class TestServerPodRestartAPI:
         LOGGER.info("Upload same object %s for %s times for background Get.", self.object_name,
                     count)
         args = {'file_path': self.multipart_obj_path, 'count': count}
-        resp = self.ha_obj.parallel_put_object(event, s3_test_obj, self.bucket_name,
+        resp = self.ha_obj.parallel_put_object(event, self.s3_test_obj, self.bucket_name,
                                                self.object_name, **args)
         assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
         self.version_etag[self.bucket_name].extend(resp[1])
         args = {'file_path': self.multipart_obj_path, 'count': count, 'background': True}
         put_thread = threading.Thread(
             target=self.ha_obj.parallel_put_object,
-            args=(event, s3_test_obj, self.bucket_name, self.object_name, put_output), kwargs=args)
+            args=(event, self.s3_test_obj, self.bucket_name, self.object_name, put_output),
+            kwargs=args)
         args = {'background': True}
         get_thread = threading.Thread(
             target=self.ha_obj.parallel_get_object,
@@ -1076,23 +1079,23 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
         LOGGER.info("Step 9: Got version of object with VersionID and verified etags.")
         LOGGER.info("Step 10: Create new bucket, upload object of %s size before enabling "
-                    "versioning.", f_size)
+                    "versioning.", self.f_size)
         new_bucket = f"ha-mp-bkt-{int(perf_counter_ns())}"
-        resp = s3_test_obj.create_bucket(new_bucket)
+        resp = self.s3_test_obj.create_bucket(new_bucket)
         assert_utils.assert_true(resp[0], resp[1])
         download_path = os.path.join(self.test_dir_path, self.test_file + "_new")
         if os.path.exists(download_path):
             os.remove(download_path)
-        system_utils.create_file(download_path, b_size=f_size, count=1)
+        system_utils.create_file(download_path, b_size=self.f_size, count=1)
         self.extra_files.append(download_path)
         args = {'chk_null_version': True, 'is_unversioned': True, 'file_path': download_path}
-        resp = self.ha_obj.parallel_put_object(event, s3_test_obj, new_bucket, self.object_name,
-                                               **args)
+        resp = self.ha_obj.parallel_put_object(event, self.s3_test_obj, new_bucket,
+                                               self.object_name, **args)
         assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
         self.version_etag.update({new_bucket: []})
         self.version_etag[new_bucket].extend(resp[1])
         LOGGER.info("Step 10: Created new bucket %s, upload object of %s size before enabling "
-                    "versioning.", new_bucket, f_size)
+                    "versioning.", new_bucket, self.f_size)
         LOGGER.info("Step 11: Enable versioning on %s.", new_bucket)
         resp = self.s3_ver.put_bucket_versioning(bucket_name=new_bucket)
         assert_utils.assert_true(resp[0], resp)
@@ -1100,8 +1103,8 @@ class TestServerPodRestartAPI:
         LOGGER.info("Step 12: Upload same object %s after enabling versioning, list & verify "
                     "the same.", self.object_name)
         args = {'file_path': download_path}
-        resp = self.ha_obj.parallel_put_object(event, s3_test_obj, new_bucket, self.object_name,
-                                               **args)
+        resp = self.ha_obj.parallel_put_object(event, self.s3_test_obj, new_bucket,
+                                               self.object_name, **args)
         assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
         self.version_etag[new_bucket].extend(resp[1])
         resp = self.ha_obj.list_verify_version(self.s3_ver, new_bucket,
