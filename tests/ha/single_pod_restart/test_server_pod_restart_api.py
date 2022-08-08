@@ -74,9 +74,9 @@ class TestServerPodRestartAPI:
         cls.hlth_master_list = list()
         cls.node_worker_list = list()
         cls.ha_obj = HAK8s()
-        cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = None
+        cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = cls.version_etag = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
-        cls.multipart_obj_path = cls.s3_ver = None
+        cls.multipart_obj_path = cls.s3_ver = cls.f_size = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
@@ -101,7 +101,6 @@ class TestServerPodRestartAPI:
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "ha_mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
-        cls.version_etag = dict()
 
     def setup_method(self):
         """
@@ -109,6 +108,7 @@ class TestServerPodRestartAPI:
         """
         LOGGER.info("STARTED: Setup Operations")
         self.s3_clean = dict()
+        self.version_etag = dict()
         self.s3acc_name = f"ha_s3acc_{int(perf_counter_ns())}"
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
         self.bucket_name = f"ha-mp-bkt-{int(perf_counter_ns())}"
