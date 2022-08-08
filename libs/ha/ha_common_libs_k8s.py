@@ -42,7 +42,8 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import config_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import run_local_cmd
-from config import CMN_CFG, HA_CFG
+from config import CMN_CFG
+from config import HA_CFG
 from config.s3 import S3_BLKBOX_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
@@ -1855,3 +1856,116 @@ class HAK8s:
             return False, download_checksum
         LOGGER.info("Successfully downloaded the object and verified the checksum")
         return True, download_checksum
+
+    @staticmethod
+    def parallel_put_object(event, s3_test_obj, bkt_name: str, obj_name: str, output=None,
+                            **kwargs):
+        """
+        Function to upload object
+        Upload an object to a versioning enabled/suspended bucket and return list of dictionary of
+        uploaded versions in parallel or non parallel.
+        :param event: event to intimate thread about main thread operations
+        :param s3_test_obj: Object of the s3 test lib
+        :param bkt_name: Bucket name for calling PUT Object
+        :param obj_name: Object name for calling PUT Object
+        :param output: Output queue in which results should be put
+        :keyword file_path: File path that can be used for PUT Object call
+        :keyword count: Count for number of PUT object call
+        :keyword chk_null_version: True, if 'null' version id is expected, else False
+        :keyword background: Set to true if background function call
+        :keyword is_unversioned: Set to true if object is uploaded to an unversioned bucket
+        Can be used for setting up pre-existing objects before enabling/suspending bucket
+        versioning
+        :return: Tuple (bool, list)
+        """
+        chk_null_version = kwargs.get("chk_null_version", False)
+        file_path = kwargs.get("file_path")
+        count = kwargs.get("count", 1)
+        is_unversioned = kwargs.get("is_unversioned", False)
+        background = kwargs.get("background", False)
+        pass_put_ver = []
+        fail_put_ver = []
+        for put in range(count):
+            try:
+                put_resp = s3_test_obj.put_object(bucket_name=bkt_name, object_name=obj_name,
+                                                  file_path=file_path)
+                if is_unversioned:
+                    version_id = "null"
+                else:
+                    version_id = put_resp[1].get("VersionId", "null")
+                    if chk_null_version:
+                        if version_id != "null":
+                            return (False, version_id) if not background else sys.exit(1)
+                    else:
+                        if version_id == "null":
+                            return (False, version_id) if not background else sys.exit(1)
+                versions_dict = {version_id: put_resp[1]["ETag"]}
+                pass_put_ver.append(versions_dict)
+            except CTException as error:
+                LOGGER.exception("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                if event.is_set():
+                    continue
+                fail_put_ver.append(put)
+        if fail_put_ver:
+            return False, fail_put_ver if not background else output.put((False, fail_put_ver))
+        return True, pass_put_ver if not background else output.put((True, pass_put_ver))
+
+    @staticmethod
+    def parallel_get_object(event, s3_ver_obj, bkt_name: str, obj_name: str, ver_etag: list,
+                            output=None, **kwargs):
+        """
+        Function to GET a version of an object in parallel or non parallel.
+        :param event: event to intimate thread about main thread operations
+        :param s3_ver_obj: S3VersioningTestLib instance
+        :param bkt_name: Target bucket for GET Object with VersionId call.
+        :param obj_name: Target key for GET Object with VersionId call.
+        :param ver_etag: Target list of dictionary of uploaded versions to be GET
+        :param output: Output queue in which results should be put
+        :return: Tuple (bool, list)
+        """
+        background = kwargs.get("background", False)
+        fail_get_ver = []
+        pass_get_ver = []
+        for v_etag in ver_etag:
+            v_id = list(v_etag.keys())[0]
+            etag = list(v_etag.values())[0]
+            if v_id == "null":
+                continue
+            try:
+                get_resp = s3_ver_obj.get_object_version(bucket=bkt_name, key=obj_name,
+                                                         version_id=v_id)
+                if get_resp[1]["VersionId"] != v_id or get_resp[1]["ETag"] != etag:
+                    failed = {v_id: [get_resp[1]["VersionId"], get_resp[1]["ETag"]]}
+                    fail_get_ver.append(failed)
+                else:
+                    pass_get_ver.append(v_etag)
+            except CTException as error:
+                LOGGER.exception("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                if event.is_set():
+                    continue
+                fail_get_ver.append(v_etag)
+        if fail_get_ver:
+            return False, fail_get_ver if not background else output.put((False, fail_get_ver))
+        return True, pass_get_ver if not background else output.put((True, pass_get_ver))
+
+    @staticmethod
+    def list_verify_version(s3_ver_obj, bucket_name: str, expected_versions: dict):
+        """
+        Function to List all the versions of bucket objects and verify the output with expected
+        version etag values
+        :param s3_ver_obj: S3VersioningTestLib instance
+        :param bucket_name: Target bucket for List Object version
+        :param expected_versions: Target list of dictionary of uploaded versions to be List and
+        verify
+        :return: Tuple (bool, str)
+        """
+        resp = s3_ver_obj.list_object_versions(bucket_name)
+        v_etag = []
+        list_version = resp[1]["Versions"]
+        for v_e in list_version:
+            versions_dict = {v_e["VersionId"]: v_e["ETag"]}
+            v_etag.append(versions_dict)
+        for v_e in v_etag:
+            if v_e not in expected_versions:
+                return False, "Fetched list of VersionId-Etag is not matching with Expected"
+        return True, "Fetched list of VersionId-Etag is as Expected"
