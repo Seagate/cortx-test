@@ -25,7 +25,11 @@ import logging
 import threading
 import time
 from datetime import datetime, timedelta
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.utils import make_msgid, formatdate, COMMASPACE
 
+from commons import commands
 from commons.mail_script_utils import Mail
 from commons.utils import system_utils
 from config.s3 import S3_CFG
@@ -44,7 +48,7 @@ class IOStabilityLib:
         self.log = logging.getLogger(__name__)
         self.s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
         self.max_retries = max_retries
-        self.http_client_timeout  = timeout
+        self.http_client_timeout = timeout
 
     def execute_workload_distribution(self, distribution, clients, total_obj,
                                       duration_in_days, log_file_prefix, buckets_created=None):
@@ -112,7 +116,7 @@ class MailNotification(threading.Thread):
     """
 
     # pylint: disable=too-few-public-methods
-    def __init__(self, sender, receiver, test_id, health_obj):
+    def __init__(self, sender, receiver, test_id, health_obj, build_url):
         """
         Init method:
         :param sender: sender of mail
@@ -124,19 +128,59 @@ class MailNotification(threading.Thread):
         self.event_pass = threading.Event()
         self.event_fail = threading.Event()
         self.mail_obj = Mail(sender=sender, receiver=receiver)
+        self.sender = sender
+        self.receiver = receiver
         self.test_id = test_id
         self.health_obj = health_obj
         self.interval = 4  # Mail to be sent periodically after 4 hours.
+        self.message_id = None
+        self.build_url = build_url
+        self.start_time = datetime.now()
+
+    def prepare_email(self, execution_status) -> MIMEMultipart:
+        """
+        Prepare email message with format and attachment
+        :param execution_status: Execution status. In Progress/Fail
+        :return: Formatted MIME message
+        """
+        hctl_status = json.dumps(self.health_obj.get_hctl_status()[1], indent=4)
+        result, pod_status = self.health_obj.execute_command(commands.CMD_POD_STATUS)
+        status = f"IOStability Test {self.test_id} {execution_status} on {self.health_obj.hostname}"
+        subject = status
+        body = f"<h3>{status}.</h2>\n" \
+               f"<h3>PFA hctl cluster status, pod status & execution status.</h3>\n"
+        body += f"Hours of execution: {datetime.now() - self.start_time}"
+        if self.build_url:
+            body += f"""Visit Jenkins Job: <a href="{self.build_url}">{self.build_url}</a>"""
+        message = MIMEMultipart()
+        message['From'] = self.sender
+        message['To'] = COMMASPACE.join(self.receiver.split(','))
+        message['Date'] = formatdate(localtime=True)
+        message['Subject'] = subject
+        if not self.message_id:
+            self.message_id = make_msgid()
+            message["Message-ID"] = self.message_id
+        else:
+            message["In-Reply-To"] = self.message_id
+            message["References"] = self.message_id
+        attachment = MIMEApplication(hctl_status, Name="hctl_status.txt")
+        attachment['Content-Disposition'] = 'attachment; filename=hctl_status.txt'
+        message.attach(attachment)
+        if result:
+            attachment = MIMEApplication(pod_status, Name="pod_status.txt")
+            attachment['Content-Disposition'] = 'attachment; filename=pod_status.txt'
+            message.attach(attachment)
+        else:
+            body += """<h3>Could not collect pod status</h3>"""
+        return message
 
     def run(self):
         """
         Send Mail notification periodically.
         """
         while not self.event_pass.is_set() and not self.event_fail.is_set():
-            status = json.dumps(self.health_obj.hctl_status_json(), indent=4)
-            subject = f"Test {self.test_id} in progress on {self.health_obj.hostname}"
-            body = f"hctl Status: {status} \n"
-            self.mail_obj.send_mail(subject=subject, body=body)
+            message = self.prepare_email(execution_status="in progress")
+            self.mail_obj.send_mail(message)
             current_time = time.time()
             while time.time() < current_time + self.interval * 60 * 60:
                 if self.event_pass.is_set() or self.event_fail.is_set():
@@ -145,24 +189,24 @@ class MailNotification(threading.Thread):
         test_status = "Failed"
         if self.event_pass.is_set():
             test_status = "Passed"
-        status = json.dumps(self.health_obj.hctl_status_json(), indent=4)
-        subject = f"Test {self.test_id} {test_status} on {self.health_obj.hostname}"
-        body = f"hctl Status: {status} \n"
-        self.mail_obj.send_mail(subject=subject, body=body)
+        message = self.prepare_email(execution_status=test_status)
+        self.mail_obj.send_mail(message)
 
 
-def send_mail_notification(sender_mail_id, receiver_mail_id, test_id, health_obj):
+def send_mail_notification(sender_mail_id, receiver_mail_id, test_id, health_obj, build_url):
     """
     Send mail notification
     :param sender_mail_id: Sender Mail ID
     :param receiver_mail_id: Receiver Mail ID
     :param test_id: Test ID
     :param health_obj: Health object.
+    :param build_url: Jenkins build URL
     :return MailNotification Object.
     """
     mail_notify = MailNotification(sender=sender_mail_id,
                                    receiver=receiver_mail_id,
                                    test_id=test_id,
-                                   health_obj=health_obj)
+                                   health_obj=health_obj,
+                                   build_url=build_url)
     mail_notify.start()
     return mail_notify
