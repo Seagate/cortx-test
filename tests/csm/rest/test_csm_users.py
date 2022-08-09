@@ -4760,14 +4760,15 @@ class TestCsmUser():
 
         user_roles = ["admin", "manage", "monitor"]
         for role in user_roles:
-            self.log.info("Step 1: Create new user")
+            self.log.info("Step 1: Create new %s user", role)
             password = self.csm_conf["test_44802"]["current_password"]
             new_password = self.csm_conf["test_44802"]["new_password"]
             response = self.csm_obj.create_csm_user(user_type="valid",
                                                     user_role=role,
                                                     user_password=password)
             self.log.info("Verifying if user was created successfully")
-            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST, \
+                                                    f'{role} user creation failed'
             username = response.json()["username"]
             self.created_users.append(username)
 
@@ -4781,8 +4782,8 @@ class TestCsmUser():
             self.log.info("Step 3: Changing user password for user %s", username)
             response = self.csm_obj.reset_user_password(username, new_password, True, admin_header)
             self.log.info("Verify success response")
-            assert response.status_code == HTTPStatus.OK, "Status code check failed"
-
+            assert response.status_code == HTTPStatus.OK, \
+                                                    f'{role} password change failed'
             self.log.info("Step 4: Verify that token expires after password changes")
             new_header = self.csm_obj.get_headers(username, new_password)
             self.log.info("Store Authorization Token")
