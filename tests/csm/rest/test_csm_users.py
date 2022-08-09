@@ -4745,14 +4745,13 @@ class TestCsmUser():
             assert init_token != new_token, "unexpected token mismatch"
 
 
-    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-44802')
     def test_44802(self):
         """
-        Verify different token is generated when user changes its password
+        Verify different token is not generated when user changes its password
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -4789,15 +4788,14 @@ class TestCsmUser():
             self.log.info("Store Authorization Token")
             new_token = new_header['Authorization']
 
-            self.log.info("Check Bearer token should be different")
-            self.log.info("init_token = %s new_token = %s ", init_token, new_token)
-            assert init_token != new_token, "unexpected token mismatch"
-            # CORTX-33869 for != or ==
+            self.log.info("Check Bearer token should not be different")
+            self.log.info("token before password change = %s ", init_token)
+            self.log.info("token after password change = %s ", new_token)
+            assert init_token == new_token, "unexpected token mismatch"
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
-    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4830,7 +4828,7 @@ class TestCsmUser():
             self.log.info("Step 3: Sending request to delete csm user %s", username)
             response = self.csm_obj.delete_csm_user(user_id)
             self.log.info("Verify success response")
-            assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            assert response.status_code == HTTPStatus.OK, f'{username} Not Deleted Successfully.'
             self.created_users.remove(username)
 
             self.log.info("Step 4: Recreate user with same creds")
@@ -4850,7 +4848,8 @@ class TestCsmUser():
             new_token = new_header['Authorization']
 
             self.log.info("Check Bearer token should be different")
-            self.log.info("init_token = %s new_token = %s ", init_token, new_token)
+            self.log.info("token before User Recreate = %s ", init_token)
+            self.log.info("token after User Recreate = %s ", new_token)
             assert init_token != new_token, "unexpected token mismatch"
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
