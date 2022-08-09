@@ -1473,15 +1473,22 @@ class TestServerPodRestartAPI:
         for cnt in range(bkt_cnt):
             new_s3_data.update({f"ha-bkt{cnt}-{t_t}": [f"ha-obj{cnt}-{t_t}", file_size]})
         args = {"s3_test_obj": s3_test_obj, "s3_data": new_s3_data, "iteration": 1,
-                "random_size": True, "queue": output, "background": True}
-        thread = threading.Thread(target=self.ha_obj.object_overwrite_dnld, args=(event,),
-                                  kwargs=args)
+                "random_size": True, "queue": output, "background": True, "event": event}
+        thread = threading.Thread(target=self.ha_obj.object_overwrite_dnld, kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 4: Started overwrite object in background")
-        LOGGER.info("Waiting for %s sec for bucket creation",
-                    HA_CFG["common_params"]["bucket_creation_delay"])
-        time.sleep(HA_CFG["common_params"]["bucket_creation_delay"])
+        LOGGER.info("Waiting for bucket creation...")
+        timeout = time.time() + HA_CFG["common_params"]["10min_delay"]
+        while True:
+            time.sleep(HA_CFG["common_params"]["20sec_delay"])
+            bkt_list = s3_test_obj.bucket_list()[1]
+            if all(item in bkt_list for item in list(new_s3_data.keys())):
+                break
+            if timeout < time.time():
+                LOGGER.error("Bucket creation is taking longer than 10 mins")
+                assert_utils.assert_true(False, "Please check background process logs")
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 5: Restart the pod with replica method")
         event.set()
