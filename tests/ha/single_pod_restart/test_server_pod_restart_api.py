@@ -216,10 +216,7 @@ class TestServerPodRestartAPI:
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete server pod")
         pod_name = list(resp[1].keys())[0]
-        if self.set_type == const.STATEFULSET:
-            self.set_name = resp[1][pod_name]['deployment_name']
-        elif self.set_type == const.REPLICASET:
-            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
@@ -250,7 +247,7 @@ class TestServerPodRestartAPI:
         upload_checksum_2 = str(resp[2])
         LOGGER.info("Step 4: Successfully performed multipart upload for  size %s MB in "
                     "total %s parts.", file_size, total_parts)
-        LOGGER.info("Step 5: Restart server pod with replica method")
+        LOGGER.info("Step 5: Restart server pod with replica method and check cluster status")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
@@ -263,7 +260,8 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], f"Failed to restore server pod by {self.restore_method} "
                                           f"way")
         self.restore_pod = False
-        LOGGER.info("Step 5: Successfully Restart server pod with replica method")
+        LOGGER.info("Step 5: Successfully Restart server pod with replica method and checked "
+                    "cluster status")
         LOGGER.info("Step 6.1: Download the uploaded object %s in healthy cluster & verify "
                     "checksum", self.object_name)
         resp = self.ha_obj.dnld_obj_verify_chcksm(s3_test_obj, self.bucket_name, self.object_name,
@@ -371,10 +369,7 @@ class TestServerPodRestartAPI:
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete server pod")
         pod_name = list(resp[1].keys())[0]
-        if self.set_type == const.STATEFULSET:
-            self.set_name = resp[1][pod_name]['deployment_name']
-        elif self.set_type == const.REPLICASET:
-            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
@@ -405,7 +400,7 @@ class TestServerPodRestartAPI:
         for part_n in res[1]["Parts"]:
             assert_utils.assert_list_item(part_numbers, part_n["PartNumber"])
         LOGGER.info("Step 5: Listed parts of partial multipart upload: %s", res[1])
-        LOGGER.info("Step 6: Restart server pod with replica method")
+        LOGGER.info("Step 6: Restart server pod with replica method and checked cluster status")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
@@ -418,7 +413,8 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], f"Failed to restore server pod by {self.restore_method}"
                                           "way")
         self.restore_pod = False
-        LOGGER.info("Step 6: Successfully restart server pod with replica method")
+        LOGGER.info("Step 6: Successfully restart server pod with replica method and checked "
+                    "cluster status")
         remaining_parts = list(filter(lambda i: i not in part_numbers,
                                       list(range(1, total_parts + 1))))
         LOGGER.info("Step 7: Upload remaining %s parts out of %s", remaining_parts, total_parts)
@@ -521,10 +517,7 @@ class TestServerPodRestartAPI:
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete server pod")
         pod_name = list(resp[1].keys())[0]
-        if self.set_type == const.STATEFULSET:
-            self.set_name = resp[1][pod_name]['deployment_name']
-        elif self.set_type == const.REPLICASET:
-            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
@@ -547,7 +540,7 @@ class TestServerPodRestartAPI:
         thread.start()
         LOGGER.info("Step 4: Started multipart upload of %s MB object in background", file_size)
         time.sleep(HA_CFG["common_params"]["60sec_delay"])
-        LOGGER.info("Step 5: Restart server pod with replica method")
+        LOGGER.info("Step 5: Restart server pod with replica method and checked cluster status")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
@@ -560,7 +553,8 @@ class TestServerPodRestartAPI:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore server pod by {self.restore_method} "
                                           "way")
-        LOGGER.info("Step 5: Successfully restart server pod with replica method")
+        LOGGER.info("Step 5: Successfully restart server pod with replica method and checked "
+                    "cluster status")
         self.restore_pod = False
         LOGGER.info("Step 6: Checking responses from background process")
         thread.join()
@@ -686,10 +680,7 @@ class TestServerPodRestartAPI:
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete server pod")
         pod_name = list(resp[1].keys())[0]
-        if self.set_type == const.STATEFULSET:
-            self.set_name = resp[1][pod_name]['deployment_name']
-        elif self.set_type == const.REPLICASET:
-            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
@@ -721,7 +712,7 @@ class TestServerPodRestartAPI:
         put_etag = resp[1]
         LOGGER.info("Step 4: Successfully created new buckets and copied object from the %s "
                     "bucket to other buckets and verified copy object etags", bucket_name)
-        LOGGER.info("Step 5: Restart server pod with replica method")
+        LOGGER.info("Step 5: Restart server pod with replica method and check cluster status")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
@@ -733,7 +724,8 @@ class TestServerPodRestartAPI:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         self.restore_pod = False
-        LOGGER.info("Step 5: Successfully restart server pod with replica method")
+        LOGGER.info("Step 5: Successfully restart server pod with replica method and checked "
+                    "cluster status")
         LOGGER.info("Step 6: Download the copied objects & verify etags.")
         bkt_obj_dict.update(bkt_obj_dict1)
         for bkt, obj in bkt_obj_dict.items():
@@ -770,6 +762,7 @@ class TestServerPodRestartAPI:
         LOGGER.info("COMPLETED: Test to verify copy object after server pod restart.")
 
     # pylint: disable=too-many-branches
+    # pylint: disable=too-many-arguments
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-44846")
@@ -818,10 +811,7 @@ class TestServerPodRestartAPI:
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete server pod")
         pod_name = list(resp[1].keys())[0]
-        if self.set_type == const.STATEFULSET:
-            self.set_name = resp[1][pod_name]['deployment_name']
-        elif self.set_type == const.REPLICASET:
-            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
@@ -838,12 +828,12 @@ class TestServerPodRestartAPI:
         LOGGER.info("Step 3: Downloaded copied objects & verify etags.")
         bkt_obj_dict1 = bkt_obj_dict.copy()
         t_t = int(perf_counter_ns())
-        LOGGER.info("Create and list buckets")
         bkt_obj_dict.clear()
         for cnt in range(bkt_cnt):
             bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
         bucket_name = f"ha-mp-bkt-{t_t}-1"
-        LOGGER.info("Step 4: Copy object from %s to other buckets in background", bucket_name)
+        LOGGER.info("Step 4: Create new buckets and copy object from %s to other buckets in "
+                    "background", bucket_name)
         args = {'s3_test_obj': s3_test_obj, 'bucket_name': bucket_name,
                 'object_name': self.object_name, 'bkt_obj_dict': bkt_obj_dict, 'output': output,
                 'file_path': self.multipart_obj_path, 'background': True, 'put_etag': put_etag}
@@ -860,11 +850,12 @@ class TestServerPodRestartAPI:
             time.sleep(HA_CFG["common_params"]["20sec_delay"])
             bkt_list = s3_test_obj.bucket_list()[1]
             if timeout < time.time():
-                LOGGER.error("Bucket creation is taking longer than 3 mins")
+                LOGGER.error("Bucket creation is taking longer than %s second",
+                             HA_CFG["common_params"]["bucket_creation_delay"])
                 assert_utils.assert_true(False, "Please check background process logs")
         LOGGER.info("Waiting for %s seconds", HA_CFG["common_params"]["20sec_delay"])
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
-        LOGGER.info("Step 5: Restart server pod with replica method")
+        LOGGER.info("Step 5: Restart server pod with replica method and check cluster status")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
@@ -877,6 +868,8 @@ class TestServerPodRestartAPI:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         self.restore_pod = False
+        LOGGER.info("Step 5: Successfully restart server pod with replica method and checked "
+                    "cluster status")
         event.clear()
         LOGGER.info("Step 6: Checking responses from background process")
         thread.join()
@@ -894,20 +887,13 @@ class TestServerPodRestartAPI:
         if len(exp_fail_bkt_obj_dict) == 0 and len(failed_bkts) == 0:
             LOGGER.info("Copy object operation for all the buckets completed successfully. ")
         elif failed_bkts or exp_fail_bkt_obj_dict:
-            assert_utils.assert_true(False, "Failed to do copy object when cluster was in degraded"
-                                            f" state. Failed buckets: \n{failed_bkts}"
+            assert_utils.assert_true(False, "Failed to do copy object when cluster when server pod"
+                                            f" down. Failed buckets: \n{failed_bkts}"
                                             f"\n{exp_fail_bkt_obj_dict}")
         LOGGER.info("Step 6: Successfully completed copy object operation is background")
-        LOGGER.info("Step 7.1: Download the objects copied in healthy cluster and verify checksum")
+        LOGGER.info("Step 7: Download the objects copied in healthy cluster and verify checksum")
+        bkt_obj_dict.update(bkt_obj_dict1)
         for key, val in bkt_obj_dict.items():
-            resp = s3_test_obj.get_object(bucket=key, key=val)
-            LOGGER.info("Get object response: %s", resp)
-            get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
-                                                          f"object {val} of bucket {key}. Put and "
-                                                          f"Get Etag mismatch")
-        LOGGER.info("Step 7.1: Download the objects copied in step 4 and verify checksum")
-        for key, val in bkt_obj_dict1.items():
             resp = s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
@@ -916,13 +902,12 @@ class TestServerPodRestartAPI:
                                                           f"Get Etag mismatch")
         LOGGER.info("Step 7: Successfully downloaded the object and verified the checksum")
         t_t = int(perf_counter_ns())
-        LOGGER.info("Create and list buckets")
         bkt_obj_dict.clear()
         for cnt in range(bkt_cnt):
             bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
         bucket_name = f"ha-mp-bkt-{t_t}-2"
-        LOGGER.info("Step 8: Perform copy object from %s bucket to other buckets verify copy "
-                    "object etags", bucket_name)
+        LOGGER.info("Step 8: Create new buckets and perform copy object from %s bucket to other "
+                    "buckets verify copy object etags", bucket_name)
         resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
                                                   bucket_name=bucket_name,
                                                   object_name=self.object_name,
@@ -930,8 +915,8 @@ class TestServerPodRestartAPI:
                                                   put_etag=put_etag,
                                                   file_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
-        LOGGER.info("Step 8: Performed copy object from %s bucket to other buckets verified copy "
-                    "object etags", bucket_name)
+        LOGGER.info("Step 8: Successfully created new buckets and performed copy object from %s"
+                    " bucket to other buckets verified copy object etags", bucket_name)
         LOGGER.info("Step 9: Download the copied objects & verify etags.")
         for bkt, obj in bkt_obj_dict.items():
             resp = s3_test_obj.get_object(bucket=bkt, key=obj)
