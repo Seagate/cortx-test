@@ -4809,13 +4809,14 @@ class TestCsmUser():
 
         user_roles = ["admin", "manage", "monitor"]
         for role in user_roles:
-            self.log.info("Step 1: Create new user")
+            self.log.info("Step 1: Create new %s user", role)
             password = self.csm_conf["test_44803"]["current_password"]
             response = self.csm_obj.create_csm_user(user_type="valid",
                                                     user_role=role,
                                                     user_password=password)
             self.log.info("Verifying if user was created successfully")
-            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST, \
+                                                    f'{role} user creation failed'
             username = response.json()["username"]
             user_id = response.json()["id"]
             self.created_users.append(username)
@@ -4838,7 +4839,8 @@ class TestCsmUser():
                                                     user_name=username,
                                                     user_password=password)
             self.log.info("Verifying if user was created successfully")
-            assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST, \
+                                                    f'{role} user re-creation failed'
             username = response.json()["username"]
             user_id = response.json()["id"]
             self.created_users.append(username)
