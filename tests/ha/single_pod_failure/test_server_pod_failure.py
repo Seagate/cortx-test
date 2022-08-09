@@ -1368,7 +1368,6 @@ class TestServerPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-39918")
     def test_copy_obj_safe_server_pod_shutdown(self):
         """
@@ -1468,7 +1467,7 @@ class TestServerPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Functionality not available in RGW yet")
+    @pytest.mark.skip(reason="Method no longer applicable with statefulset")
     @pytest.mark.tags("TEST-39919")
     def test_copy_obj_unsafe_server_pod_shutdown(self):
         """
@@ -1567,7 +1566,6 @@ class TestServerPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-39920")
     def test_copy_obj_during_server_pod_shutdown(self):
         """

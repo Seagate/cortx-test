@@ -574,12 +574,13 @@ class HAK8s:
                                                            dest_object=obj_name)
                 LOGGER.info("status is %s with Response: %s", status, response)
                 copy_etag = response['CopyObjectResult']['ETag']
-                if put_etag == copy_etag:
+                if put_etag.strip('"') == copy_etag.strip('"'):
                     LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
                                 object_name, bkt_name, obj_name)
                 else:
                     LOGGER.error("Etags don't match for copy object %s to bucket %s with object "
                                  "name %s", object_name, bkt_name, obj_name)
+                    failed_bkts.append(bkt_name)
             except CTException as error:
                 LOGGER.exception("Error: %s", error)
                 if event.is_set():
