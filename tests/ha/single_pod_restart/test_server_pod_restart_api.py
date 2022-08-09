@@ -1303,7 +1303,6 @@ class TestServerPodRestartAPI:
         """
         LOGGER.info("STARTED: Test to verify object overwrite before and after server pod restart")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
-        output = Queue()
 
         LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
@@ -1322,7 +1321,7 @@ class TestServerPodRestartAPI:
                     "Overwrite the object", self.bucket_name, file_size)
         s3_data = {self.bucket_name: [self.object_name, file_size]}
         resp = self.ha_obj.object_overwrite_dnld(s3_test_obj, s3_data, iteration=1,
-                                                 random_size=False, queue=output)
+                                                 random_size=False)
         assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
         for _, checksum in resp[1].items():
             assert_utils.assert_equal(checksum[0], checksum[1],
@@ -1341,10 +1340,7 @@ class TestServerPodRestartAPI:
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete server pod")
         pod_name = list(resp[1].keys())[0]
-        if self.set_type == const.STATEFULSET:
-            self.set_name = resp[1][pod_name]['deployment_name']
-        elif self.set_type == const.REPLICASET:
-            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
@@ -1358,9 +1354,9 @@ class TestServerPodRestartAPI:
         object_name = f"object-{t_t}"
         s3_data.update({bucket_name: [object_name, file_size]})
         resp = self.ha_obj.object_overwrite_dnld(s3_test_obj, s3_data, iteration=1,
-                                                 random_size=False, queue=output)
+                                                 random_size=False)
         assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
-        for _, checksum in resp[1].items():
+        for checksum in resp[1].values():
             assert_utils.assert_equal(checksum[0], checksum[1],
                                       f"Checksum does not match, Expected: {checksum[0]} "
                                       f"Received: {checksum[1]}")
@@ -1391,9 +1387,9 @@ class TestServerPodRestartAPI:
         object_name = f"object-{t_t}"
         s3_data.update({bucket_name: [object_name, file_size]})
         resp = self.ha_obj.object_overwrite_dnld(s3_test_obj, s3_data, iteration=1,
-                                                 random_size=False, queue=output)
+                                                 random_size=False)
         assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
-        for _, checksum in resp[1].items():
+        for checksum in resp[1].values():
             assert_utils.assert_equal(checksum[0], checksum[1],
                                       f"Checksum does not match, Expected: {checksum[0]} "
                                       f"Received: {checksum[1]}")
@@ -1401,3 +1397,153 @@ class TestServerPodRestartAPI:
                     "bucket %s", self.object_name, self.bucket_name, object_name, bucket_name)
 
         LOGGER.info("ENDED: Test to verify object overwrite before and after server pod restart")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-44848")
+    def test_obj_overwrite_during_server_pod_restart(self):
+        """
+        Verify object overwrite during server pod restart
+        """
+        LOGGER.info("STARTED: Test to verify object overwrite during server pod restart")
+        file_size = HA_CFG["5gb_mpu_data"]["file_size"]
+        output = Queue()
+        event = threading.Event()
+
+        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.debug("Response: %s", resp)
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+        LOGGER.info("Step 1: Create bucket %s and perform upload of object size %s MB and "
+                    "Overwrite the object", self.bucket_name, file_size)
+        s3_data = {self.bucket_name: [self.object_name, file_size]}
+        resp = self.ha_obj.object_overwrite_dnld(s3_test_obj, s3_data, iteration=1,
+                                                 random_size=False)
+        assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
+        upld_chcksm = list(resp[1].values())[0][0]
+        for checksum in resp[1].values():
+            assert_utils.assert_equal(checksum[0], checksum[1],
+                                      f"Checksum does not match, Expected: {checksum[0]} "
+                                      f"Received: {checksum[1]}")
+        LOGGER.info("Step 1: Create bucket %s and perform upload of object size %s MB and "
+                    "Overwrite the object", self.bucket_name, file_size)
+
+        num_replica = self.num_replica - 1
+        LOGGER.info("Step 2: Shutdown server pod with replica method and verify cluster & "
+                    "remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
+            num_replica=num_replica)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete server pod")
+        pod_name = list(resp[1].keys())[0]
+        self.set_name = resp[1][pod_name]['deployment_name']
+        self.restore_pod = True
+        self.restore_method = resp[1][pod_name]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 2: Successfully shutdown server pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+
+        LOGGER.info("Step 3: Read-Verify already overwritten object in healthy cluster")
+        download_path = os.path.join(self.test_dir_path, f"{self.object_name}_download.txt")
+        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        assert_utils.assert_true(resp[0], f"Object download failed. Response: {resp[1]}")
+        dnld_checksum = self.ha_obj.cal_compare_checksum([download_path], compare=False)[0]
+        system_utils.remove_file(file_path=download_path)
+        assert_utils.assert_equal(upld_chcksm, dnld_checksum, "Upload & download checksums don't "
+                                                              f"match. Expected: {upld_chcksm} "
+                                                              f"Actual: {dnld_checksum}")
+        LOGGER.info("Step 3: Successfully Read-Verify already overwritten object in healthy "
+                    "cluster")
+
+        LOGGER.info("Step 4: Start Overwrite operation on new buckets")
+        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_multi"]
+        new_s3_data = dict()
+        t_t = int(perf_counter_ns())
+        for cnt in range(bkt_cnt):
+            new_s3_data.update({f"ha-bkt{cnt}-{t_t}": [f"ha-obj{cnt}-{t_t}", file_size]})
+        args = {"s3_test_obj": s3_test_obj, "s3_data": new_s3_data, "iteration": 1,
+                "random_size": True, "queue": output, "background": True}
+        thread = threading.Thread(target=self.ha_obj.object_overwrite_dnld, args=(event,),
+                                  kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Step 4: Started overwrite object in background")
+        LOGGER.info("Waiting for %s sec for bucket creation",
+                    HA_CFG["common_params"]["bucket_creation_delay"])
+        time.sleep(HA_CFG["common_params"]["bucket_creation_delay"])
+
+        LOGGER.info("Step 5: Restart the pod with replica method")
+        event.set()
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
+                                       clstr_status=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way or "
+                                          f"cluster status is not good")
+        LOGGER.info("Step 5: Successfully restarted the pod with replica method and checked "
+                    "cluster status")
+        self.restore_pod = False
+        event.clear()
+        thread.join()
+
+        LOGGER.info("Step 6: Verify responses from background process")
+        responses = tuple()
+        while len(responses) < 2:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not responses:
+            assert_utils.assert_true(False, "Failure in background process")
+
+        assert_utils.assert_true(responses[0], "Failures observed in overwrite or download in "
+                                               "background process")
+        checksums = responses[1]
+        for checksum in checksums.values():
+            assert_utils.assert_equal(checksum[0], checksum[1],
+                                      f"Checksum does not match, Expected: {checksum[0]} "
+                                      f"Received: {checksum[1]}")
+        LOGGER.info("Step 6: Successfully verified responses from background process")
+
+        LOGGER.info("Step 7: Read-Verify already overwritten object in healthy cluster")
+        download_path = os.path.join(self.test_dir_path, f"{self.object_name}_download.txt")
+        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        assert_utils.assert_true(resp[0], f"Object download failed. Response: {resp[1]}")
+        dnld_checksum = self.ha_obj.cal_compare_checksum([download_path], compare=False)[0]
+        system_utils.remove_file(file_path=download_path)
+        assert_utils.assert_equal(upld_chcksm, dnld_checksum, "Upload & download checksums don't "
+                                                              f"match. Expected: {upld_chcksm} "
+                                                              f"Actual: {dnld_checksum}")
+        LOGGER.info("Step 7: Successfully Read-Verify already overwritten object in healthy "
+                    "cluster")
+
+        t_t = int(perf_counter_ns())
+        bucket_name = f"bucket-{t_t}"
+        object_name = f"object-{t_t}"
+        LOGGER.info("Step 8: Overwrite object %s of bucket %s", object_name, bucket_name)
+        s3_data.clear()
+        s3_data.update({bucket_name: [object_name, file_size]})
+        resp = self.ha_obj.object_overwrite_dnld(s3_test_obj, s3_data, iteration=1,
+                                                 random_size=False)
+        assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
+        for checksum in resp[1].values():
+            assert_utils.assert_equal(checksum[0], checksum[1],
+                                      f"Checksum does not match, Expected: {checksum[0]} "
+                                      f"Received: {checksum[1]}")
+        LOGGER.info("Step 8: Successfully overwritten object %s of bucket %s", object_name,
+                    bucket_name)
+
+        LOGGER.info("ENDED: Test to verify object overwrite during server pod restart")

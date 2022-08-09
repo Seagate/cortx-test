@@ -2052,7 +2052,7 @@ class HAK8s:
         :param event: Event for background IOs
         :param queue: Queue to fill output in case of background IOs
         :param background: Flag to start background process
-        :return: (int, dict)
+        :return: (bool, dict)
         """
         checksums = dict()
         fail_count = 0
@@ -2121,4 +2121,5 @@ class HAK8s:
 
                 system_utils.cleanup_dir(test_dir_path)
         LOGGER.debug("Fail count is : %s", fail_count)
-        return not fail_count, checksums if not background else queue.put((checksums, fail_count))
+        return not fail_count, checksums if not background else queue.put((not fail_count,
+                                                                           checksums))
