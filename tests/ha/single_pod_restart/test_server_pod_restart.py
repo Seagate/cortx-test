@@ -837,10 +837,9 @@ class TestServerPodRestart:
         assert_utils.assert_false(len(resp[1]), f"WRITEs logs which contain failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         LOGGER.debug("WRITEs Response for fail logs: %s", resp)
-        # TODO: Uncomment following once CORTX-28541 is fixed and re-test
-        # assert_utils.assert_true(len(resp[1]) != len(fail_logs), "Some In-flight WRITEs are "
-        #                                                          "expected to fail. No failure is"
-        #                                                          f"observed in {resp[1]}")
+        assert_utils.assert_true(len(resp[1]) <= len(fail_logs), "Some In-flight WRITEs are "
+                                                                 "expected to fail. No failure is"
+                                                                 f"observed in {resp[1]}")
         LOGGER.info("Step 5.1: Verified status for In-flight WRITEs")
 
         LOGGER.info("Step 5.2: Verifying responses from READs background process")
