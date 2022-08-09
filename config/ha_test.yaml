@@ -20,6 +20,7 @@ common_params:
   degraded_wait_delay: 200
   thread_join_delay: 120.0
   bucket_creation_delay: 180
+  10min_delay: 600
 
 s3_operation_data:
   no_csm_users: 10

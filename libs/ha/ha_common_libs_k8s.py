@@ -39,6 +39,7 @@ from commons import pswdmanager
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from commons.helpers.pods_helper import LogicalNode
+from commons.params import TEST_DATA_FOLDER
 from commons.utils import config_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import run_local_cmd
@@ -2038,3 +2039,86 @@ class HAK8s:
                 return False, f"Enabling versioning failed with {resp[1]}"
             LOGGER.info("Enabled versioning on %s.", bkt)
         return put_resp
+
+    def object_overwrite_dnld(self, s3_test_obj, s3_data, iteration, random_size, event=None,
+                              queue=None, background=False):
+        """
+        Function to create bucket, put object and overwrite existing object
+        :param s3_test_obj: Object of s3 test lib
+        :param s3_data: Dict that contains bucket and object info
+        ({self.bucket_name: [self.object_name, file_size]})
+        :param iteration: Number of iterations
+        :param random_size: Flag to select random size of object
+        :param event: Event for background IOs
+        :param queue: Queue to fill output in case of background IOs
+        :param background: Flag to start background process
+        :return: (int, dict)
+        """
+        checksums = dict()
+        fail_count = 0
+        test_dir_path = os.path.join(TEST_DATA_FOLDER, "HAOverWrite")
+        if not os.path.isdir(test_dir_path):
+            LOGGER.debug("Creating file path %s", test_dir_path)
+            system_utils.make_dirs(test_dir_path)
+
+        resp = s3_test_obj.bucket_list()[1]
+        for bkt, value in s3_data.items():
+            object_name = value[0]
+            object_size = value[1]
+            if bkt not in resp:
+                LOGGER.info("Creating a bucket with name %s and uploading object of size %s MB",
+                            bkt, object_size)
+                file_path = os.path.join(test_dir_path, f"{bkt}.txt")
+                _ = s3_test_obj.create_bucket_put_object(bkt, object_name, file_path, object_size)
+                LOGGER.info("Created a bucket with name %s and uploaded object %s of size %s MB",
+                            bkt, object_name, object_size)
+                system_utils.remove_file(file_path)
+
+        LOGGER.info("Total Iteration : %s", iteration)
+        for bucket_name, value in s3_data.items():
+            object_name = value[0]
+            object_size = value[1]
+            LOGGER.info("Bucket Name : %s", bucket_name)
+            LOGGER.info("Object Name : %s", object_name)
+            LOGGER.info("Max Object size : %s MB", object_size)
+            for i_i in range(iteration):
+                loop = i_i + 1
+                LOGGER.info("Iteration : %s", loop)
+                file_size = random.SystemRandom().randint(0, object_size) if random_size \
+                    else object_size
+                upload_path = os.path.join(test_dir_path, f"{object_name}_upload.txt")
+
+                LOGGER.info("Creating a file with name %s", object_name)
+                system_utils.create_file(upload_path, file_size, "/dev/urandom", '1M')
+                LOGGER.info("Retrieving checksum of file %s", object_name)
+                up_checksum = self.cal_compare_checksum([upload_path], compare=False)[0]
+
+                LOGGER.info("Uploading object (Overwriting)...")
+                resp = s3_test_obj.put_object(bucket_name, object_name, upload_path)
+                if not resp[0]:
+                    if event.is_set:
+                        LOGGER.error("Event is set, overwrite failure is expected. Error: %s",
+                                     resp[1])
+                    else:
+                        LOGGER.error("Overwrite failed. \nError: %s", resp[1])
+                        fail_count += 1
+                    break
+
+                LOGGER.info("Downloading object...")
+                download_path = os.path.join(test_dir_path, f"{object_name}_download.txt")
+                resp = s3_test_obj.object_download(bucket_name, object_name, download_path)
+                if not resp[0]:
+                    if event.is_set:
+                        LOGGER.error("Event is set, object download failure is expected. Error: %s",
+                                     resp[1])
+                    else:
+                        LOGGER.error("Object download failed. \nError: %s", resp[1])
+                        fail_count += 1
+                    break
+                else:
+                    dnld_checksum = self.cal_compare_checksum([download_path], compare=False)[0]
+                    checksums[f"{bucket_name}_{loop}"] = [up_checksum, dnld_checksum]
+
+                system_utils.cleanup_dir(test_dir_path)
+        LOGGER.debug("Fail count is : %s", fail_count)
+        return not fail_count, checksums if not background else queue.put((checksums, fail_count))
