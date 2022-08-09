@@ -195,7 +195,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -280,7 +279,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -399,7 +397,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -587,7 +584,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -746,7 +742,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -881,7 +876,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1013,7 +1007,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1163,7 +1156,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1347,7 +1339,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1522,7 +1513,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1699,7 +1689,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1839,7 +1828,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1944,7 +1932,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -2188,7 +2175,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -2344,7 +2330,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -2427,7 +2412,6 @@ class TestDataPodRestart:
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
         pod_name = list(resp[1].keys())[0]
-        self.restore_pod = self.deploy = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
