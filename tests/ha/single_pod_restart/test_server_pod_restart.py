@@ -726,7 +726,7 @@ class TestServerPodRestart:
         """
         Verify IOs during pod restart (kubectl delete)
         """
-        LOGGER.info("STARTED: Verify IOs after server pod restart (kubectl delete)")
+        LOGGER.info("STARTED: Verify IOs during server pod restart (kubectl delete)")
         del_bucket = HA_CFG["bg_bucket_ops"]["no_del_buckets"]
         del_output = Queue()
         event = threading.Event()  # Event to be used to send intimation of data pod deletion
@@ -761,6 +761,8 @@ class TestServerPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1.2: Performed WRITEs with variable sizes objects for parallel READs.")
 
+        LOGGER.info("Step 2: Start WRITEs, READs and DELETEs with variable object sizes "
+                    "during server pod restart using kubectl delete")
         LOGGER.info("Step 2.1: Start WRITEs with variable object sizes in background")
         test_prefix_write = f'test-write-34261-{t_t}'
         output_wr = Queue()
@@ -796,7 +798,9 @@ class TestServerPodRestart:
         thread_wri.start()
         thread_rd.start()
         thread_del.start()
-        LOGGER.info("Step 2.3: Started WRITEs, READs and DELETEs with variable object sizes "
+        LOGGER.info("Step 2.3: Successfully started DELETEs of %s buckets in background",
+                    del_bucket)
+        LOGGER.info("Step 2: Started WRITEs, READs and DELETEs with variable object sizes "
                     "during server pod restart using kubectl delete")
         LOGGER.info("Waiting for %s seconds", HA_CFG["common_params"]["10sec_delay"])
         time.sleep(HA_CFG["common_params"]["10sec_delay"])
@@ -873,7 +877,7 @@ class TestServerPodRestart:
         LOGGER.info("Step 5.3: Verified responses from DELETEs background process")
         LOGGER.info("Step 5: Verified responses from background processes")
 
-        LOGGER.info("Step 6: Start IOs (create s3 acc, buckets and upload objects) after pod "
+        LOGGER.info("Step 6: Start IOs (create IAM user, buckets and upload objects) after pod "
                     "restart by kubectl delete")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(users)
@@ -883,4 +887,4 @@ class TestServerPodRestart:
                                                     setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully IOs completed after pod restart by kubectl delete")
-        LOGGER.info("COMPLETED: Verify IOs after server pod restart (kubectl delete)")
+        LOGGER.info("COMPLETED: Verify IOs during server pod restart (kubectl delete)")

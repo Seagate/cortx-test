@@ -790,7 +790,7 @@ class TestServerPodRestartAPI:
         jc_obj = JCloudClient()
         resp = self.ha_obj.setup_jclient(jc_obj)
         assert_utils.assert_true(resp, "Failed in setting up jclient")
-        LOGGER.info("Step 1: Successfully setup jcloud/jclient on runner")
+        LOGGER.info("Step 1: Successfully setup jclient on runner")
 
         LOGGER.info("Step 2: Create IAM user with name %s, bucket %s and perform chunk upload",
                     self.s3acc_name, self.bucket_name)
@@ -814,13 +814,12 @@ class TestServerPodRestartAPI:
         LOGGER.info("Step 2: Successfully performed chuck upload")
 
         workload_info[1] = [self.bucket_name, self.object_name]
-
         LOGGER.info("Calculating checksum of uploaded file %s", chunk_obj_path)
         upld_chksm_hlt = self.ha_obj.cal_compare_checksum(file_list=[chunk_obj_path],
                                                           compare=False)[0]
 
         num_replica = self.num_replica - 1
-        LOGGER.info("Step 3: Shutdown server pod by making replicas=0 and verify cluster & "
+        LOGGER.info("Step 3: Shutdown server pod by replica method and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
@@ -829,10 +828,7 @@ class TestServerPodRestartAPI:
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        if self.set_type == const.STATEFULSET:
-            self.set_name = resp[1][pod_name]['deployment_name']
-        elif self.set_type == const.REPLICASET:
-            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
