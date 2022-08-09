@@ -1006,7 +1006,8 @@ class TestServerPodRestart:
         """
         This test tests READs/WRITEs/DELETEs in loop during server pod restart
         """
-        LOGGER.info("STARTED: Test to verify READs/WRITEs/DELETEs in loop during server pod restart")
+        LOGGER.info("STARTED: Test to verify READs/WRITEs/DELETEs in loop during server pod "
+                    "restart")
         LOGGER.info("STEP 1: Perform WRITEs/READs/Verify with variable object sizes")
         users_org = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-44841'
@@ -1166,8 +1167,8 @@ class TestServerPodRestart:
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
                                  f"Logs which contain passed IOs: {resp[1]}")
         LOGGER.info("Step 9.3: Verified status for In-flight READs/Verify DI")
-        LOGGER.info("Step 9: Verified status for In-flight READs/WRITEs/DELETEs while server pod %s "
-                    "was restarted.", pod_name)
+        LOGGER.info("Step 9: Verified status for In-flight READs/WRITEs/DELETEs while server pod "
+                    "%s was restarted.", pod_name)
         LOGGER.info("Step 10: Verify READ/Verify for data written in healthy cluster and delete "
                     "buckets")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_org.values())[0],
