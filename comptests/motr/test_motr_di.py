@@ -95,7 +95,7 @@ class TestCorruptDataDetection:
         """ Setup class for running Motr tests"""
         logger.info("STARTED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
-        cls.emap_obj = MotrCorruptionAdapter(CMN_CFG, 0)
+        cls.emap_adapter_obj = MotrCorruptionAdapter(CMN_CFG, 0)
         cls.system_random = secrets.SystemRandom()
         logger.info("ENDED: Setup Operation")
 
@@ -251,13 +251,13 @@ class TestCorruptDataDetection:
                 # Fetch the FID from m0trace log
                 fid_resp = self.motr_obj.read_m0trace_log(filepath)
                 logger.debug("fid_resp is %s", fid_resp)
-            metadata_path = self.emap_obj.get_metadata_shard(self.motr_obj.master_node_list[0])
+            metadata_path = self.emap_adapter_obj.get_metadata_shard(self.motr_obj.master_node_list[0])
             logger.debug("metadata device is %s", metadata_path[0])
-            data_gob_id_resp = self.emap_obj.get_object_gob_id(metadata_path[0], fid=fid_resp)
+            data_gob_id_resp = self.emap_adapter_obj.get_object_gob_id(metadata_path[0], fid=fid_resp)
             logger.debug("metadata device is %s", data_gob_id_resp)
             # Corrupt the data block 1
             for fid in data_gob_id_resp:
-                corrupt_data_resp = self.emap_obj.inject_fault_k8s(fid)
+                corrupt_data_resp = self.emap_adapter_obj.inject_fault_k8s(fid)
                 if not corrupt_data_resp:
                     logger.debug("Failed to corrupt the block %s", fid)
                 assert_utils.assert_true(corrupt_data_resp)

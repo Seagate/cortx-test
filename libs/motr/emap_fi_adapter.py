@@ -210,17 +210,17 @@ class MotrCorruptionAdapter(InjectCorruption):
         """
         pod_list = self.master_node_list[0].get_all_pods(POD_NAME_PREFIX)
         LOGGER.debug("pod list is %s", pod_list)
-        d_fid = []
-        p_fid = []
+        data_fid_list = []
+        parity_fid_list = []
         data_checksum_list = []
         parity_checksum_list = []
         for key, value in fid.items():
             if "DATA" in key:  # fetch the value from dict for data block
                 fid_val = value[7:16]
-                d_fid.append(fid_val)
+                data_fid_list.append(fid_val)
             else:  # fetch the value from dict for parity block
                 fid_val = value[7:16]
-                p_fid.append(fid_val)
+                parity_fid_list.append(fid_val)
         # Iterate over data pods to copy the error_injection.py script on motr container
         for pod in pod_list:
             result = self.master_node_list[0].copy_file_to_container(
@@ -234,12 +234,13 @@ class MotrCorruptionAdapter(InjectCorruption):
                 operation="exec", pod=pod, namespace=NAMESPACE,
                 command_suffix=f"-c {MOTR_CONTAINER_PREFIX}-001 "
                                f"-- {cmd}", decode=True)
-            d_fid = [*set(d_fid)]
-            p_fid = [*set(p_fid)]
-            LOGGER.debug("lists of d_fid, p_fid %s \n %s", d_fid, p_fid)
+            data_fid_list = [*set(data_fid_list)]
+            parity_fid_list = [*set(parity_fid_list)]
+            LOGGER.debug("lists of data_fid_list, parity_fid_list %s \n %s", data_fid_list,
+                         parity_fid_list)
             # Fetch the target fid from emap list output captured in file while running
             # emap list on motr container
-            for data_fid in d_fid:
+            for data_fid in data_fid_list:
                 cmd = common_cmd.FETCH_ID_EMAP.format(
                     f"{pod}-emap_list.txt", data_fid)
                 d_resp = self.master_node_list[0].execute_cmd(cmd)
@@ -247,7 +248,7 @@ class MotrCorruptionAdapter(InjectCorruption):
                 if d_resp:
                     LOGGER.debug("gob data entity %s", d_resp)
                     data_checksum_list.append(d_resp)
-            for parity_fid in p_fid:
+            for parity_fid in parity_fid_list:
                 cmd = common_cmd.FETCH_ID_EMAP.format(
                     f"{pod}-emap_list.txt", parity_fid)
                 p_resp = self.master_node_list[0].execute_cmd(cmd)
