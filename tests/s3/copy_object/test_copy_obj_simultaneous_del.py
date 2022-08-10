@@ -82,9 +82,7 @@ class TestCopyObjectSimultaneousDelete:
         except CTException as err:
             LOGGER.info("Exception in copy object %s", err)
             if exception:
-                LOGGER.info("came here in execept block in exception")
                 return exception in err.message, f"Expected {exception} Received {err}"
-            LOGGER.info("came here in execept block out of exception")
             return False, f"Unexpected exception {err}"
 
     def create_put_object(self, bucket, obj, size, base='1M'):
@@ -120,8 +118,6 @@ class TestCopyObjectSimultaneousDelete:
             with multiprocessing.Pool(processes=2) as pool:
                 process1 = pool.apply_async(self.copy_object_wrapper, args=copy_args[:5])
                 process2 = pool.apply_async(self.delete_object_wrapper, args=delete_args)
-                LOGGER.info("came here in process block in %s and %s ", process1.get()[0],
-                            process1.get()[1])
                 assert_utils.assert_true(process1.get()[0], process1.get()[1])
                 assert_utils.assert_true(process2.get()[0], process2.get()[1])
 
