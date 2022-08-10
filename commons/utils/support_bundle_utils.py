@@ -213,20 +213,23 @@ def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const
     flg = False
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.CLSTR_LOGS_CMD.format(scripts_path), read_lines=True)
     for line in resp:
-        if ".tar" in line:
+        if "date" in line:
+            out = line.split("date:")[1]
+            out2 = out.strip()
             flg = True
-            out = line.split()[1]
-            file = out.strip('\"')
-            LOGGER.info("Support bundle generated: %s", file)
-            remote_path = os.path.join(scripts_path, file)
-            local_path = os.path.join(local_dir_path, file)
-            m_node_obj.copy_file_to_local(remote_path, local_path)
-
+            break
     if flg:
-        LOGGER.info("Support bundle %s generated and copied to %s path.",
-                    file, local_dir_path)
-    else:
-        LOGGER.info("Support Bundle not generated; response: %s", resp)
+        resp1 = m_node_obj.list_dir(scripts_path)
+        for file in resp1:
+            if out2 in file:
+                LOGGER.info("Support bundle filename:%s", file)
+                remote_path = os.path.join(scripts_path, file)
+                local_path = os.path.join(local_dir_path, file)
+                m_node_obj.copy_file_to_local(remote_path, local_path)
+                LOGGER.info("Support bundle %s generated and copied to %s path",
+                            file, local_dir_path)
+                return flg
+    LOGGER.info("Support Bundle not generated; response: %s", resp)
     return flg
 
 
@@ -308,6 +311,49 @@ def generate_sb_lc(dest_dir: str, sb_identifier: str,
         operation="exec", pod=pod_name, namespace=cm_const.NAMESPACE,
         command_suffix=f"-c {container_name} -- "
                        f"{cm_cmd.SUPPORT_BUNDLE_LC.format(dest_dir, sb_identifier, msg)}",
+        decode=True)
+    return resp
+
+
+def gen_sb_with_param(sb_identifier: str, pod_name: str = None, container_name: str = None,
+                      msg: str = "SB", **kwargs):
+    """
+    This function is used to generate support bundle
+    :param sb_identifier: support bundle identifier
+    :param pod_name: name of the pod in which support bundle is generated
+    :param container_name: name of the container
+    :param msg: Relevant comment to link to support bundle request
+    :param kwargs: keyword arguments extra parameters while collecting support bundle
+    :rtype response of support bundle generate command
+    """
+    LOGGER.info("Generating support bundle")
+
+    dest_dir = "file://" + cm_const.R2_SUPPORT_BUNDLE_PATH
+
+    for node in CMN_CFG["nodes"]:
+        if node["node_type"].lower() == "master":
+            node_obj = LogicalNode(hostname=node["hostname"],
+                                   username=node["username"],
+                                   password=node["password"])
+
+    if pod_name is None:
+        pod_list = node_obj.get_all_pods(pod_prefix=cm_const.POD_NAME_PREFIX)
+        pod_name = pod_list[0]
+
+    if container_name is None:
+        output = node_obj.execute_cmd(cmd=cm_cmd.KUBECTL_GET_POD_CONTAINERS.format(pod_name),
+                                      read_lines=True)
+        container_list = output[0].split()
+        container_name = container_list[0]
+    cmd = cm_cmd.SUPPORT_BUNDLE_LC.format(dest_dir, sb_identifier, msg)
+
+    for param, value in kwargs.items():
+        cmd = cmd + " --" + param + " " + value
+
+    resp = node_obj.send_k8s_cmd(
+        operation="exec", pod=pod_name, namespace=cm_const.NAMESPACE,
+        command_suffix=f"-c {container_name} -- "
+                       f"{cmd}",
         decode=True)
     return resp
 

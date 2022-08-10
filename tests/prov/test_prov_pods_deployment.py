@@ -49,7 +49,6 @@ class TestProvPodsDeployment:
         cls.log = logging.getLogger(__name__)
         cls.deploy_obj = ProvDeployK8sCortxLib()
         cls.prov_cfg = PROV_CFG["k8s_cortx_deploy"]
-        cls.test_cfg = DEPLOY_CFG["mutidata_pod"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
         cls.master_node_list = []
@@ -82,6 +81,7 @@ class TestProvPodsDeployment:
             resp = self.deploy_obj.destroy_setup(self.master_node_list[0],
                                                  self.worker_node_list)
             assert_utils.assert_true(resp)
+        self.deploy_obj.close_connections(self.master_node_list, self.worker_node_list)
 
     @pytest.mark.lc
     @pytest.mark.cluster_deployment
@@ -136,9 +136,9 @@ class TestProvPodsDeployment:
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
-        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Pod list are %s", resp)
         self.log.info("Pod count is %s", len(resp))
-        assert_utils.assert_equal(len(resp), len(self.worker_node_list))
+        assert_utils.assert_equal(len(resp), config['cvg_count']*len(self.worker_node_list))
         self.collect_sb = False
         self.destroy_flag = False
         self.log.info("===Test Completed===")
@@ -166,9 +166,9 @@ class TestProvPodsDeployment:
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.SERVER_POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
-        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Pod list are %s", resp)
         self.log.info("Pod count is %s", len(resp))
-        assert_utils.assert_equal(len(resp), len(self.worker_node_list))
+        assert_utils.assert_equal(len(resp), 2*len(self.worker_node_list))
         self.collect_sb = False
         self.destroy_flag = False
         self.log.info("===Test Completed===")
@@ -212,8 +212,10 @@ class TestProvPodsDeployment:
         """
         config_list = self.deploy_obj.get_durability_config(num_nodes=
                                                             len(self.worker_node_list))
-        config = secrets.choice(config_list)
-        self.log.info("config is picked :%s", config)
+        for config_set in config_list:
+            if config_set["cvg_count"] == 1:
+                config = config_set
+                self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
@@ -269,8 +271,10 @@ class TestProvPodsDeployment:
         """
         config_list = self.deploy_obj.get_durability_config(num_nodes=
                                                             len(self.worker_node_list))
-        config = secrets.choice(config_list)
-        self.log.info("config is picked :%s", config)
+        for config_set in config_list:
+            if config_set["cvg_count"] == 1:
+                config = config_set
+                self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", (self.num_nodes - 1),
                       config['sns_data'], config['sns_parity'],
                       config['sns_spare'])
@@ -317,11 +321,11 @@ class TestProvPodsDeployment:
     @pytest.mark.tags("TEST-41907")
     def test_41907(self):
         """
-        Test to verify the multidata pod being deployed
+        Test to verify the 1 data and server pod being deployed with 1 cvg
         """
         config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         for config_set in config_list:
-            if config_set["cvg_count"] == self.test_cfg["test_41907"]["cvg_count"]:
+            if config_set["cvg_count"] == 1:
                 config = config_set
                 self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
@@ -333,12 +337,18 @@ class TestProvPodsDeployment:
             dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
             cvg_count=config["cvg_count"], data_disk_per_cvg=
             config['data_disk_per_cvg'], master_node_list=self.master_node_list,
-            worker_node_list=self.worker_node_list, destroy_setup_flag=False)
+            worker_node_list=self.worker_node_list, destroy_setup_flag=False, s3_instance=1)
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
         self.log.info("Pod list are %s", resp[0])
         self.log.info("Data Pod on %s worker node is %s", len(self.worker_node_list), len(resp))
+        assert_utils.assert_equal(len(resp), len(self.worker_node_list))
+        resp = LogicalNode.get_all_pods(self.master_node_list[0],
+                                        pod_prefix=constants.SERVER_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp[0])
+        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Server Pod on %s worker node is %s", len(self.worker_node_list), len(resp))
         assert_utils.assert_equal(len(resp), len(self.worker_node_list))
         self.collect_sb = False
         self.destroy_flag = True
@@ -349,11 +359,11 @@ class TestProvPodsDeployment:
     @pytest.mark.tags("TEST-41909")
     def test_41909(self):
         """
-        Test to verify the multidata pod being deployed with 2 cvg
+        Test to verify the 2 data and server pod being deployed with 2 cvg
         """
         config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
         for config_set in config_list:
-            if config_set["cvg_count"] == self.test_cfg["test_41909"]["cvg_count"]:
+            if config_set["cvg_count"] == 2:
                 config = config_set
                 self.log.info("config is picked :%s", config)
         self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
@@ -365,12 +375,56 @@ class TestProvPodsDeployment:
             dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
             cvg_count=config["cvg_count"], data_disk_per_cvg=
             config['data_disk_per_cvg'], master_node_list=self.master_node_list,
-            worker_node_list=self.worker_node_list, destroy_setup_flag=False)
+            worker_node_list=self.worker_node_list, destroy_setup_flag=False, s3_instance=2)
         resp = LogicalNode.get_all_pods(self.master_node_list[0],
                                         pod_prefix=constants.POD_NAME_PREFIX)
         assert_utils.assert_true(resp[0])
         self.log.info("Pod list are %s", resp[0])
         self.log.info("Data Pod on %s worker node is %s", len(self.worker_node_list), len(resp))
+        assert_utils.assert_equal(len(resp), 2*len(self.worker_node_list))
+        resp = LogicalNode.get_all_pods(self.master_node_list[0],
+                                        pod_prefix=constants.SERVER_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp[0])
+        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Server Pod on %s worker node is %s", len(self.worker_node_list), len(resp))
+        assert_utils.assert_equal(len(resp), 2*len(self.worker_node_list))
+        self.collect_sb = False
+        self.destroy_flag = True
+        self.log.info("===Test Completed===")
+
+    @pytest.mark.lc
+    @pytest.mark.cluster_deployment
+    @pytest.mark.tags("TEST-44470")
+    def test_44470(self):
+        """
+        Test to verify the single data and with 2 server pod being deployed with 1 cvg
+        """
+        config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
+        for config_set in config_list:
+            if config_set["cvg_count"] == 1:
+                config = config_set
+                self.log.info("config is picked :%s", config)
+        self.log.info("Running %s N with config %s+%s+%s", len(self.worker_node_list),
+                      config['sns_data'], config['sns_parity'],
+                      config['sns_spare'])
+        self.deploy_obj.test_deployment(
+            sns_data=config['sns_data'], sns_parity=config['sns_parity'],
+            sns_spare=config['sns_spare'], dix_data=config['dix_data'],
+            dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
+            cvg_count=config["cvg_count"], data_disk_per_cvg=
+            config['data_disk_per_cvg'], master_node_list=self.master_node_list,
+            worker_node_list=self.worker_node_list, destroy_setup_flag=False, s3_instance=2)
+        resp = LogicalNode.get_all_pods(self.master_node_list[0],
+                                        pod_prefix=constants.POD_NAME_PREFIX)
+        assert_utils.assert_true(resp[0])
+        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Data Pod on %s worker node is %s", len(self.worker_node_list), len(resp))
+        assert_utils.assert_equal(len(resp), len(self.worker_node_list))
+        resp = LogicalNode.get_all_pods(self.master_node_list[0],
+                                        pod_prefix=constants.SERVER_POD_NAME_PREFIX)
+        assert_utils.assert_true(resp[0])
+        self.log.info("Pod list are %s", resp[0])
+        self.log.info("Server Pod on %s worker node is %s", len(self.worker_node_list), len(resp))
         assert_utils.assert_equal(len(resp), 2*len(self.worker_node_list))
         self.collect_sb = False
         self.destroy_flag = True

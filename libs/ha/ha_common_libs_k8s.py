@@ -574,12 +574,13 @@ class HAK8s:
                                                            dest_object=obj_name)
                 LOGGER.info("status is %s with Response: %s", status, response)
                 copy_etag = response['CopyObjectResult']['ETag']
-                if put_etag == copy_etag:
+                if put_etag.strip('"') == copy_etag.strip('"'):
                     LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
                                 object_name, bkt_name, obj_name)
                 else:
                     LOGGER.error("Etags don't match for copy object %s to bucket %s with object "
                                  "name %s", object_name, bkt_name, obj_name)
+                    failed_bkts.append(bkt_name)
             except CTException as error:
                 LOGGER.exception("Error: %s", error)
                 if event.is_set():
@@ -741,22 +742,26 @@ class HAK8s:
         LOGGER.debug("Time taken by cluster restart is %s seconds", int(time.time()) - start_time)
         return resp
 
-    def restore_pod(self, pod_obj, restore_method, restore_params: dict = None, clstr_status=False):
+    def restore_pod(self, pod_obj, restore_method, restore_params: dict = None,
+                    clstr_status=False):
         """
         Helper function to restore pod based on way_to_restore
         :param pod_obj: Object of master node
         :param restore_method: Restore method to be used depending on shutdown method
         ("scale_replicas", "k8s", "helm")
         :param restore_params: Dict which has parameters required to restore pods
-        :clstr_status: Flag to check cluster status after pod restored
+        :param clstr_status: Flag to check cluster status after pod restored
         :return: Bool, response
         """
         resp = False
-        deployment_name = restore_params["deployment_name"]
+        deployment_name = restore_params.get("deployment_name", None)
         deployment_backup = restore_params.get("deployment_backup", None)
+        set_name = restore_params.get("set_name", None)
+        num_replica = restore_params.get("num_replica", 1)
 
         if restore_method == common_const.RESTORE_SCALE_REPLICAS:
-            resp = pod_obj.create_pod_replicas(num_replica=1, deploy=deployment_name)
+            resp = pod_obj.create_pod_replicas(num_replica=num_replica, deploy=deployment_name,
+                                               set_name=set_name)
         elif restore_method == common_const.RESTORE_DEPLOYMENT_K8S:
             resp = pod_obj.recover_deployment_k8s(deployment_name=deployment_name,
                                                   backup_path=deployment_backup)
@@ -1044,8 +1049,8 @@ class HAK8s:
         return False, "Worker node and Fqdn of data node not same"
 
     @staticmethod
-    def create_bucket_chunk_upload(s3_data, bucket_name, file_size, chunk_obj_path, output,
-                                   bkt_op=True):
+    def create_bucket_chunk_upload(s3_data, bucket_name, file_size, chunk_obj_path, output=None,
+                                   bkt_op=True, background=True):
         """
         Helper function to do chunk upload
         :param s3_data: s3 account details
@@ -1054,6 +1059,7 @@ class HAK8s:
         :param chunk_obj_path: Path of the file to be uploaded
         :param output: Queue used to fill output
         :param bkt_op: Flag to create bucket and object
+        :param background: Flag to indicate if background process or not
         :return: response
         """
         jclient_prop = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"]
@@ -1066,6 +1072,8 @@ class HAK8s:
             LOGGER.info("Creating a bucket with name : %s", bucket_name)
             res = s3_test_obj.create_bucket(bucket_name)
             if not res[0] or res[1] != bucket_name:
+                if not background:
+                    return False
                 output.put(False)
                 sys.exit(1)
             LOGGER.info("Created a bucket with name : %s", bucket_name)
@@ -1074,6 +1082,8 @@ class HAK8s:
             resp = system_utils.create_file(chunk_obj_path, file_size)
             LOGGER.info("Response: %s", resp)
             if not resp[0]:
+                if not background:
+                    return False
                 output.put(False)
                 sys.exit(1)
 
@@ -1083,9 +1093,13 @@ class HAK8s:
         LOGGER.info("Running command %s", put_cmd)
         resp = system_utils.execute_cmd(put_cmd)
         if not resp:
+            if not background:
+                return False
             output.put(False)
             sys.exit(1)
 
+        if not background:
+            return True
         output.put(True)
         sys.exit(0)
 
@@ -1353,9 +1367,9 @@ class HAK8s:
         return resp
 
     def delete_kpod_with_shutdown_methods(self, master_node_obj, health_obj,
-                                          pod_prefix=None, kvalue=1,
+                                          pod_prefix=None, kvalue=1, delete_pod=None,
                                           down_method=common_const.RESTORE_SCALE_REPLICAS,
-                                          event=None, event_set_clr=None):
+                                          event=None, event_set_clr=None, num_replica=0):
         """
         Delete K pods by given shutdown method. Check and verify deleted/remaining pod's services
         status, cluster status
@@ -1364,9 +1378,11 @@ class HAK8s:
         :param pod_prefix: Pod prefix to be deleted (Expected List type)
         :param down_method: Pod shutdown/delete method.
         :param kvalue: Number of pod to be shutdown/deleted.
+        :param delete_pod: pod name to be deleted (optional)
         :param event_set_clr: Thread event set-clear flag reference when s3bench workload
         execution miss the event set-clear time window
         :param event: Thread event to set/clear before/after pods/nodes
+        :param num_replica: Number of replicas of the pod to be created
         shutdown with parallel IOs
         return : tuple
         """
@@ -1378,10 +1394,13 @@ class HAK8s:
                     "hostname": None}
         delete_pods = list()
         remaining = list()
-        for ptype in pod_prefix:
-            pod_list = master_node_obj.get_all_pods(pod_prefix=ptype)
-            # Get the list of Kvalue pods to be deleted for given pod_prefix list
-            delete_pods.extend(random.sample(pod_list, kvalue))
+        if delete_pod is not None:
+            delete_pods.extend(delete_pod)
+        else:
+            for ptype in pod_prefix:
+                pod_list = master_node_obj.get_all_pods(pod_prefix=ptype)
+                # Get the list of Kvalue pods to be deleted for given pod_prefix list
+                delete_pods.extend(random.sample(pod_list, kvalue))
 
         LOGGER.info("Get the list of all pods of total pod types.")
         for ptype in total_pod_type:
@@ -1395,7 +1414,7 @@ class HAK8s:
                 event.set()
             LOGGER.info("Deleting pod %s by %s method", pod, down_method)
             if down_method == common_const.RESTORE_SCALE_REPLICAS:
-                resp = master_node_obj.create_pod_replicas(num_replica=0, pod_name=pod)
+                resp = master_node_obj.create_pod_replicas(num_replica=num_replica, pod_name=pod)
                 if resp[0]:
                     return False, pod_info
                 pod_info[pod] = pod_data.copy()
@@ -1418,7 +1437,7 @@ class HAK8s:
             resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
                                                  hostname=pod_info[pod]['hostname'])
             LOGGER.debug("Response: %s", resp)
-            if not resp[0]:
+            if not resp[0] or False in resp[1]:
                 return False, pod_info
         LOGGER.info("Successfully deleted %s by %s method", delete_pods, down_method)
 

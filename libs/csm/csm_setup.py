@@ -107,6 +107,23 @@ class CSMConfigsCheck:
             self._log.error("Error occurred during setup : %s", error)
         return result
 
+    def get_predefined_csm_user_dict(self):
+        """
+        This function will return credentials of pre-defined csm users
+        :return: directory of credentials of pre-defined csm users account
+        """
+        admin_username = self._csm_user.config["csm_admin_user"]["username"]
+        admin_password = self._csm_user.config["csm_admin_user"]["password"]
+        manage_username = self._csm_user.config["csm_user_manage"]["username"]
+        manage_password = self._csm_user.config["csm_user_manage"]["password"]
+        monitor_username = self._csm_user.config["csm_user_monitor"]["username"]
+        monitor_password = self._csm_user.config["csm_user_monitor"]["password"]
+
+        csm_users_dict = {admin_username:admin_password,manage_username:manage_password,
+                            monitor_username:monitor_password}
+
+        return csm_users_dict
+
     def check_predefined_s3account_present(self):
         """
         This function will Check the presence of pre defined s3 account

@@ -34,6 +34,7 @@ import pytest
 
 from commons import configmanager
 from commons import constants as const
+from commons.constants import SERVER_POD_NAME_PREFIX
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
@@ -125,6 +126,19 @@ class TestRGWProcessRestart:
         self.log.info("Created IAM user with name %s", self.s3acc_name)
         if not os.path.exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
+        self.log.info("Edit deployment file to append conditional sleep command to rgw setup "
+                      "command of all server pods.")
+        resp = self.master_node_list[0].get_deployment_name(SERVER_POD_NAME_PREFIX)
+        for each in resp:
+            resp = self.dtm_obj.edit_deployments_for_delay(self.master_node_list[0], each, 'rgw')
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Edit deployment done for all server pods")
+        self.log.info("Sleep of %s secs", self.test_cfg['edit_deployment_delay'])
+        time.sleep(self.test_cfg['edit_deployment_delay'])
+        self.log.info("Check the overall status of the cluster.")
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Cluster status is online.")
 
     def teardown_method(self):
         """Teardown class method."""
@@ -173,11 +187,12 @@ class TestRGWProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 3: Perform rgw_s3 Process Restart During Read Operations")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=True)
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for READ operation to complete.")
@@ -218,11 +233,12 @@ class TestRGWProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 2: Perform rgw_s3 Process Restart During WRITE Operations")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=True)
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 2: Wait for WRITE Operation to complete.")
@@ -278,11 +294,12 @@ class TestRGWProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 3: Perform rgw_s3 Process Restart During DELETE Operations")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=True)
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         event.clear()
         self.log.info("Step 3: Successfully Performed Single rgw_s3 Process Restart During Delete "
@@ -326,11 +343,12 @@ class TestRGWProcessRestart:
             assert_utils.assert_true(resp[0], resp[1])
 
         self.log.info("Step 2: Perform Single rgw Process Restart")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=True)
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart")
         self.log.info("Step 3: Perform Copy Object to bucket-2, download and verify on copied "
                       "Objects")
@@ -390,11 +408,12 @@ class TestRGWProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 3: Perform Single rgw_s3 Process Restart")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=True)
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart")
 
         self.log.info("Step 4: Wait for copy object to finish")
@@ -447,12 +466,13 @@ class TestRGWProcessRestart:
         time.sleep(self.delay)
         self.log.info("Step 3: Perform rgw_s3 Process Restart for %s times During Read "
                       "Operations", self.test_cfg["rgw_restart_cnt"])
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=True,
-                                            restart_cnt=self.test_cfg["rgw_restart_cnt"])
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True,
+                                                       restart_cnt=self.test_cfg["rgw_restart_cnt"])
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 4: Wait for READ Operation to complete.")
@@ -492,12 +512,13 @@ class TestRGWProcessRestart:
         time.sleep(self.delay)
         self.log.info("Step 2: Perform rgw_s3 Process Restart for %s times During Write "
                       "Operations", self.test_cfg["rgw_restart_cnt"])
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=True,
-                                            restart_cnt=self.test_cfg["rgw_restart_cnt"])
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True,
+                                                       restart_cnt=self.test_cfg["rgw_restart_cnt"])
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 3: Wait for WRITE Operation to complete.")
@@ -563,11 +584,13 @@ class TestRGWProcessRestart:
 
             time.sleep(self.delay)
             self.log.info("Step 3: Perform rgw_s3 Process Restart During DELETE Operations")
-            resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                                health_obj=self.health_obj,
-                                                pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                                container_prefix=const.RGW_CONTAINER_NAME,
-                                                process=self.rgw_process, check_proc_state=True)
+            resp = self.dtm_obj.process_restart_with_delay(
+                master_node=self.master_node_list[0],
+                health_obj=self.health_obj,
+                pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                container_prefix=const.RGW_CONTAINER_NAME,
+                process=self.rgw_process,
+                check_proc_state=True)
             assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
             event.clear()
             self.log.info("Step 3: Successfully Performed Single rgw_s3 Process Restart During "
@@ -644,12 +667,13 @@ class TestRGWProcessRestart:
                 rc_serverpod = pod_name
                 break
         self.log.info("RC node %s has server pod: %s ", rc_node_name, rc_serverpod)
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=rc_serverpod,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=True,
-                                            restart_cnt=self.test_cfg["rgw_restart_cnt"])
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=rc_serverpod,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True,
+                                                       restart_cnt=self.test_cfg["rgw_restart_cnt"])
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 2: Successfully performed restart of rgw process %s times during IOs, "
                       "on pod hosted on RC node and checked hctl status",
@@ -729,12 +753,12 @@ class TestRGWProcessRestart:
         time.sleep(self.delay)
         self.log.info(
             "Step 4: Perform Single rgw Process Restart During Write/Read/Delete Operations")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process,
-                                            check_proc_state=True)
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
 
         self.log.info("Step 5: Check if all the operations were successful")
@@ -780,12 +804,12 @@ class TestRGWProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 3 : Perform Single rgw Process Restart during overwrite ")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process,
-                                            check_proc_state=True)
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True)
 
         self.log.info("Step 4: Wait for Overwrite Operation to complete.")
         if proc_overwrite_op.is_alive():
@@ -814,11 +838,12 @@ class TestRGWProcessRestart:
                       "sizes objects.")
 
         self.log.info("Step 2: Perform Single rgw Process Restart")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=True)
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 2: rgw restarted and recovered successfully")
 
@@ -843,11 +868,12 @@ class TestRGWProcessRestart:
         test_prefix = 'test-42256'
 
         self.log.info("Step 1: Perform Single rgw Process Restart")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=True)
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 1: rgw restarted and recovered successfully")
 
@@ -900,11 +926,12 @@ class TestRGWProcessRestart:
         time.sleep(self.delay * 2)
         event.set()
         self.log.info("Step 2: Perform Single rgw Process Restart")
-        resp = self.dtm_obj.process_restart(master_node=self.master_node_list[0],
-                                            health_obj=self.health_obj,
-                                            pod_prefix=const.SERVER_POD_NAME_PREFIX,
-                                            container_prefix=const.RGW_CONTAINER_NAME,
-                                            process=self.rgw_process, check_proc_state=True)
+        resp = self.dtm_obj.process_restart_with_delay(master_node=self.master_node_list[0],
+                                                       health_obj=self.health_obj,
+                                                       pod_prefix=const.SERVER_POD_NAME_PREFIX,
+                                                       container_prefix=const.RGW_CONTAINER_NAME,
+                                                       process=self.rgw_process,
+                                                       check_proc_state=True)
         assert_utils.assert_true(resp, "Failure observed during process restart/recovery")
         self.log.info("Step 2: rgw restarted and recovered successfully")
         event.clear()
