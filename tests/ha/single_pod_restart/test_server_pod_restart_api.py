@@ -803,7 +803,6 @@ class TestServerPodRestartAPI:
         self.test_prefix = 'test-44849'
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
-
         resp = self.ha_obj.create_bucket_chunk_upload(s3_data=self.s3_clean,
                                                       bucket_name=self.bucket_name,
                                                       file_size=file_size,
@@ -858,14 +857,14 @@ class TestServerPodRestartAPI:
         LOGGER.info("Step 5: Start chunk upload in background")
         args = {'s3_data': self.s3_clean, 'bucket_name': bucket_name,
                 'file_size': file_size, 'chunk_obj_path': chunk_obj_path, 'output': upload_op}
-
         thread = threading.Thread(target=self.ha_obj.create_bucket_chunk_upload, kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
+        LOGGER.info("Waiting for %s sec...", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
         LOGGER.info("Step 5: Successfully started chuck upload in background")
 
-        LOGGER.info("Step 6: Start server pod again by statefulset")
+        LOGGER.info("Step 6: Start server pod again by replica method")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
@@ -886,7 +885,6 @@ class TestServerPodRestartAPI:
             resp = upload_op.get(timeout=HA_CFG["common_params"]["60sec_delay"])
             if isinstance(resp, bool):
                 break
-
         if resp is None:
             assert_utils.assert_true(False, "Background process of chunk upload failed")
         assert_utils.assert_true(resp, "Failure observed in chunk upload during server pod restart")

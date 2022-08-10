@@ -839,6 +839,8 @@ class TestServerPodRestart:
                                                 f" {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         LOGGER.debug("WRITEs Response for fail logs: %s", resp)
+        # TODO: Need to change following condition once we start getting failures for background
+        #  IOs during pod deletion and re-test
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs), "Some In-flight WRITEs are "
                                                                  "expected to fail. No failure is"
                                                                  f"observed in {resp[1]}")
@@ -857,6 +859,8 @@ class TestServerPodRestart:
                                   f" {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         LOGGER.info("READs Response for fail logs: %s", resp[1])
+        # TODO: Need to change following condition once we start getting failures for background
+        #  IOs during pod deletion and re-test
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs), "Some In-flight READs are "
                                                                  "expected to fail. No failure is"
                                                                  f"observed in {resp[1]}")
@@ -873,7 +877,8 @@ class TestServerPodRestart:
         assert_utils.assert_false(len(fail_del_bkt), "Expected pass, buckets which failed in "
                                                      f"DELETEs before and after pod deletion:"
                                                      f" {fail_del_bkt}.")
-        # TODO: Uncomment following once CORTX-28541 is fixed and re-test
+        # TODO: Uncomment following once we start getting failures for background IOs during pod
+        #  deletion and re-test
         # assert_utils.assert_true(len(event_del_bkt), "Expected FAIL when event was set")
         LOGGER.info("Failed buckets while in-flight DELETEs operation : %s", event_del_bkt)
         LOGGER.info("Step 5.3: Verified responses from DELETEs background process")
