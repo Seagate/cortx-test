@@ -131,15 +131,11 @@ class JmeterInt():
         """
         self.run_jmx(jmx_file, threads, rampup, loop, test_cfg)
         file = open(self.log_file_path, "r")
-        #read content of file to string
-        data = file.read()
-        #get number of occurrences of the substring in the string
-        occurrences = data.count(expect_message)
-        self.log.info("occurrences : %s", occurrences)
-        result = (occurrences == expect_count)
+        message_count = file.read().count(expect_message)
+        result = (message_count == expect_count)
         self.log.info("self.log_file_path : %s", self.log_file_path)
         if result is False:
-            self.log.info("error_counts : %s", occurrences)
+            self.log.info("error_counts : %s", message_count)
             self.log.info("expect_error_count : %s", expect_count)
         return result
 
