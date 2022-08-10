@@ -834,7 +834,9 @@ class TestServerPodRestart:
         pass_logs = list(x[1] for x in responses_wr["pass_res"])
         fail_logs = list(x[1] for x in responses_wr["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"WRITEs logs which contain failures: {resp[1]}")
+        assert_utils.assert_false(len(resp[1]), "WRITEs before and after pod deletion are "
+                                                "expected to pass. Logs which contain failures:"
+                                                f" {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         LOGGER.debug("WRITEs Response for fail logs: %s", resp)
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs), "Some In-flight WRITEs are "
@@ -850,13 +852,14 @@ class TestServerPodRestart:
         fail_logs = list(x[1] for x in responses_rd["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
         assert_utils.assert_false(len(resp[1]),
-                                  f"READs/VerifyDI logs which contain failures: {resp[1]}")
+                                  f"READs/VerifyDI before and after pod deletion are "
+                                  "expected to pass. Logs which contain failures:"
+                                  f" {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         LOGGER.info("READs Response for fail logs: %s", resp[1])
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs), "Some In-flight READs are "
                                                                  "expected to fail. No failure is"
                                                                  f"observed in {resp[1]}")
-
         LOGGER.info("Step 5.2: Verified responses from READs background process")
 
         LOGGER.info("Step 5.3: Verifying responses from DELETEs background process")
@@ -868,7 +871,8 @@ class TestServerPodRestart:
         event_del_bkt = del_resp[0]  # Contains buckets when event was set
         fail_del_bkt = del_resp[1]  # Contains buckets which failed when event was clear
         assert_utils.assert_false(len(fail_del_bkt), "Expected pass, buckets which failed in "
-                                                     f"DELETEs: {fail_del_bkt}.")
+                                                     f"DELETEs before and after pod deletion:"
+                                                     f" {fail_del_bkt}.")
         # TODO: Uncomment following once CORTX-28541 is fixed and re-test
         # assert_utils.assert_true(len(event_del_bkt), "Expected FAIL when event was set")
         LOGGER.info("Failed buckets while in-flight DELETEs operation : %s", event_del_bkt)
