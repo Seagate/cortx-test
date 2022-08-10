@@ -1947,8 +1947,6 @@ class HAK8s:
         for v_etag in ver_etag:
             v_id = list(v_etag.keys())[0]
             etag = list(v_etag.values())[0]
-            if v_id == "null":
-                continue
             try:
                 get_resp = s3_ver_obj.get_object_version(bucket=bkt_name, key=obj_name,
                                                          version_id=v_id)

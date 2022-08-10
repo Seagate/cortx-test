@@ -1028,7 +1028,7 @@ class TestServerPodRestartAPI:
             target=self.ha_obj.parallel_get_object,
             args=(event, self.s3_ver, self.bucket_name, self.object_name,
                   self.version_etag[self.bucket_name], get_output), kwargs=args)
-        LOGGER.info("Upload same object %s for %s times for background Get.", self.object_name,
+        LOGGER.info("Uploaded same object %s for %s times for background Get.", self.object_name,
                     count)
         put_thread.daemon = True  # Daemonize thread
         get_thread.daemon = True  # Daemonize thread
@@ -1119,7 +1119,7 @@ class TestServerPodRestartAPI:
         This test tests object versioning after server pod restart
         """
         LOGGER.info("STARTED: Test to verify object versioning after server pod restart.")
-        LOGGER.info("COMPLETED: Test to verify object versioning during server pod restart.")
+        LOGGER.info("COMPLETED: Test to verify object versioning after server pod restart.")
 
     @pytest.mark.ha
     @pytest.mark.lc
