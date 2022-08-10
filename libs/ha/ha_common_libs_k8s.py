@@ -187,6 +187,7 @@ class HAK8s:
             max_timeout=self.t_power_off, host=host, exp_resp=False, bmc_obj=bmc_obj)
         return resp
 
+    # pylint: disable-msg=too-many-locals
     def delete_s3_acc_buckets_objects(self, s3_data: dict, obj_crud: bool = False,
                                       is_ver: bool = False, v_etag=None):
         """
@@ -1990,7 +1991,7 @@ class HAK8s:
     def create_bkt_put_object(self, event, s3_test, bkt, obj, **kwargs):
         """
         Function will create a new bucket and upload an new object on un-versioned bucket.
-        If enable_ver is set to true, it will enable versiolning on given bucket.
+        If enable_ver is set to true, it will enable versioning on given bucket.
         :param event: event to intimate thread about main thread operations
         :param s3_test: Object of the s3 test lib
         :param bkt: Bucket name for calling PUT Object
