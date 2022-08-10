@@ -27,9 +27,9 @@ import time
 from datetime import datetime, timedelta
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from email.utils import make_msgid, formatdate, COMMASPACE
 
-from commons import commands
 from commons.mail_script_utils import Mail
 from commons.utils import system_utils
 from config.s3 import S3_CFG
@@ -143,15 +143,14 @@ class MailNotification(threading.Thread):
         :param execution_status: Execution status. In Progress/Fail
         :return: Formatted MIME message
         """
-        hctl_status = json.dumps(self.health_obj.get_hctl_status()[1], indent=4)
-        result, pod_status = self.health_obj.execute_command(commands.CMD_POD_STATUS)
-        status = f"IOStability Test {self.test_id} {execution_status} on {self.health_obj.hostname}"
+        hctl_status = json.dumps(self.health_obj.hctl_status_json(), indent=4)
+        status = f"IOStability: {self.test_id} {execution_status} on {self.health_obj.hostname}"
         subject = status
-        body = f"<h3>{status}.</h2>\n" \
-               f"<h3>PFA hctl cluster status, pod status & execution status.</h3>\n"
-        body += f"Hours of execution: {datetime.now() - self.start_time}"
+        body = f"<p>Hours of execution: {datetime.now() - self.start_time}\n<p>"
         if self.build_url:
-            body += f"""Visit Jenkins Job: <a href="{self.build_url}">{self.build_url}</a>"""
+            body += f"""Jenkins Job: <a href="{self.build_url}">{self.build_url}</a>\n"""
+        body += f"<p>\nPlease find attached hctl status<p>"
+        body += f"<p>\nThanks<p>"
         message = MIMEMultipart()
         message['From'] = self.sender
         message['To'] = COMMASPACE.join(self.receiver.split(','))
@@ -165,13 +164,8 @@ class MailNotification(threading.Thread):
             message["References"] = self.message_id
         attachment = MIMEApplication(hctl_status, Name="hctl_status.txt")
         attachment['Content-Disposition'] = 'attachment; filename=hctl_status.txt'
+        message.attach(MIMEText(body, 'html'))
         message.attach(attachment)
-        if result:
-            attachment = MIMEApplication(pod_status, Name="pod_status.txt")
-            attachment['Content-Disposition'] = 'attachment; filename=pod_status.txt'
-            message.attach(attachment)
-        else:
-            body += """<h3>Could not collect pod status</h3>"""
         return message
 
     def run(self):

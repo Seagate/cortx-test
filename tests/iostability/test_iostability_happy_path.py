@@ -126,6 +126,7 @@ class TestIOWorkload:
             assert_utils.assert_true(resp)
         else:
             self.mail_notify.event_pass.set()
+
         self.log.info("Stop Procpath collection")
         self.proc_path.stop_collection()
         self.log.info("Copy files to client")
@@ -146,6 +147,7 @@ class TestIOWorkload:
         self.log.info("STARTED: Test for Bucket and  Object CRUD operations in loop using "
                       "S3bench for %s days", self.duration_in_days)
         test_case_name = cortxlogging.get_frame()
+
         if self.sender_mail_id and self.receiver_mail_id and self.jenkins_url:
             self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
                                                       test_case_name, self.health_obj_list[0],
