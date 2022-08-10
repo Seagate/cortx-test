@@ -1461,8 +1461,9 @@ class TestServerPodRestartAPI:
                                                ver_etag=self.version_etag[self.bucket_name])
         assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
         resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
-        latest_v = list(self.version_etag[self.bucket_name].keys())[-1]
-        etag = list(self.version_etag[self.bucket_name].keys())[-1]
+        latest_vetag = self.version_etag[self.bucket_name][-1]
+        latest_v = list(latest_vetag.keys())[0]
+        etag = list(latest_vetag.values())[0]
         if resp[1]["VersionId"] != latest_v:
             assert_utils.assert_true(False, "Get Object without VersionID does not match with "
                                             f"latest {latest_v} {resp[1]}")
@@ -1492,8 +1493,10 @@ class TestServerPodRestartAPI:
                                                bkt_name=self.bucket_name, obj_name=self.object_name,
                                                ver_etag=self.version_etag[self.bucket_name])
         assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
-        latest_v = list(self.version_etag[self.bucket_name].keys())[-1]
-        etag = list(self.version_etag[self.bucket_name].keys())[-1]
+        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+        latest_vetag = self.version_etag[self.bucket_name][-1]
+        latest_v = list(latest_vetag.keys())[0]
+        etag = list(latest_vetag.values())[0]
         if resp[1]["VersionId"] != latest_v:
             assert_utils.assert_true(False, "Get Object without VersionID does not match with "
                                             f"latest {latest_v} {resp[1]}")
@@ -1536,8 +1539,10 @@ class TestServerPodRestartAPI:
                                                bkt_name=new_bucket, obj_name=self.object_name,
                                                ver_etag=self.version_etag[new_bucket])
         assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
-        latest_v = list(self.version_etag[new_bucket].keys())[-1]
-        etag = list(self.version_etag[new_bucket].keys())[-1]
+        resp = self.s3_test_obj.get_object(new_bucket, self.object_name)
+        latest_vetag = self.version_etag[new_bucket][-1]
+        latest_v = list(latest_vetag.keys())[0]
+        etag = list(latest_vetag.values())[0]
         if resp[1]["VersionId"] != latest_v:
             assert_utils.assert_true(False, "Get Object without VersionID does not match with "
                                             f"latest {latest_v} {resp[1]}")
@@ -1566,8 +1571,10 @@ class TestServerPodRestartAPI:
                                                bkt_name=new_bucket, obj_name=self.object_name,
                                                ver_etag=self.version_etag[new_bucket])
         assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
-        latest_v = list(self.version_etag[new_bucket].keys())[-1]
-        etag = list(self.version_etag[new_bucket].keys())[-1]
+        resp = self.s3_test_obj.get_object(new_bucket, self.object_name)
+        latest_vetag = self.version_etag[new_bucket][-1]
+        latest_v = list(latest_vetag.keys())[0]
+        etag = list(latest_vetag.values())[0]
         if resp[1]["VersionId"] != latest_v:
             assert_utils.assert_true(False, "Get Object without VersionID does not match with "
                                             f"latest {latest_v} {resp[1]}")
