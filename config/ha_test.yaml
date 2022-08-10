@@ -4,6 +4,7 @@ vm_params:
 
 common_params:
   loop_count: 11
+  put_get_version: 20
   power_on_time: 900
   power_off_time: 900
   pod_eviction_time: 360
@@ -30,6 +31,7 @@ s3_operation_data:
 
 5gb_mpu_data:
   file_size: 4800
+  file_size_512M: 512
   total_parts: 100
 
 copy_obj_data:

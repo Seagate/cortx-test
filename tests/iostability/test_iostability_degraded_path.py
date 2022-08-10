@@ -19,13 +19,14 @@
 """Test Suite for IO stability Degraded Path workloads."""
 import logging
 import os
+import secrets
 import time
 from datetime import datetime, timedelta
 
 import pytest
 
 from commons import configmanager, cortxlogging
-from commons.constants import K8S_SCRIPTS_PATH
+from commons.constants import K8S_SCRIPTS_PATH, POD_NAME_PREFIX, STATEFULSET
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
@@ -94,6 +95,18 @@ class TestIOWorkloadDegradedPath:
         resp = s3bench.setup_s3bench()
         assert_utils.assert_true(resp)
         cls.remote_dir_path = cls.test_cfg['remote_path']
+        cls.log.info("Get %s pod to be deleted", POD_NAME_PREFIX)
+        sts_dict = cls.master_node_list[0].get_sts_pods(pod_prefix=POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        cls.log.debug("%s Statefulset: %s", POD_NAME_PREFIX, sts_list)
+        sts = secrets.SystemRandom().sample(sts_list, 1)[0]
+        cls.delete_pod = sts_dict[sts][-1]
+        cls.log.info("Pod to be deleted is %s", cls.delete_pod)
+        cls.set_type, cls.set_name = cls.master_node_list[0].get_set_type_name(
+            pod_name=cls.delete_pod)
+        resp = cls.master_node_list[0].get_num_replicas(cls.set_type, cls.set_name)
+        assert_utils.assert_true(resp[0], resp)
+        cls.num_replica = int(resp[1])
 
     def setup_method(self):
         """Setup Method"""
@@ -161,8 +174,13 @@ class TestIOWorkloadDegradedPath:
 
         self.log.info("Step 2: Shutdown the data pod safely by making replicas=0,"
                       "check degraded status.")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.master_node_list[0],
-                                                             self.health_obj_list[0])
+                                                             self.health_obj_list[0],
+                                                             pod_prefix=[POD_NAME_PREFIX],
+                                                             delete_pod=[self.delete_pod],
+                                                             num_replica=num_replica
+                                                             )
         assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
         self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
 
@@ -218,8 +236,13 @@ class TestIOWorkloadDegradedPath:
 
         self.log.info("Step 3: Shutdown the data pod safely by making replicas=0, "
                       "check degraded status.")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.master_node_list[0],
-                                                             self.health_obj_list[0])
+                                                             self.health_obj_list[0],
+                                                             pod_prefix=[POD_NAME_PREFIX],
+                                                             delete_pod=[self.delete_pod],
+                                                             num_replica=num_replica
+                                                             )
         assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
         self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
 
@@ -298,8 +321,13 @@ class TestIOWorkloadDegradedPath:
             self.log.info("Write Completed.")
 
         self.log.info("Step 3 : Perform Single pod shutdown")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.master_node_list[0],
-                                                             self.health_obj_list[0])
+                                                             self.health_obj_list[0],
+                                                             pod_prefix=[POD_NAME_PREFIX],
+                                                             delete_pod=[self.delete_pod],
+                                                             num_replica=num_replica
+                                                             )
         assert_utils.assert_true(resp[0], "Failed in shutdown or expected cluster check")
         self.log.info("Deleted pod : %s", list(resp[1].keys())[0])
 
