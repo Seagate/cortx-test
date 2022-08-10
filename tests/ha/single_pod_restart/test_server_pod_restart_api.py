@@ -1451,7 +1451,7 @@ class TestServerPodRestartAPI:
                     "verified the same.", self.object_name)
 
         LOGGER.info("Step 3: Suspend versioning on %s.", self.bucket_name)
-        resp = self.s3_ver.put_bucket_versioning(bucket_name=self.bucket_name)
+        resp = self.s3_ver.put_bucket_versioning(bucket_name=self.bucket_name, status="Suspended")
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Suspended versioning on %s.", self.bucket_name)
 
