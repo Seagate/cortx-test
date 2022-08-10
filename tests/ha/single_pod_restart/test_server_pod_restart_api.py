@@ -1040,7 +1040,7 @@ class TestServerPodRestartAPI:
         if len(exp_fail_bkt_obj_dict) == 0 and len(failed_bkts) == 0:
             LOGGER.info("Copy object operation for all the buckets completed successfully. ")
         elif failed_bkts or exp_fail_bkt_obj_dict:
-            assert_utils.assert_true(False, "Failed to do copy object when server pod down."
+            assert_utils.assert_true(False, "Failed to do copy object when server pod restart."
                                             f"Failed buckets: \n{failed_bkts}"
                                             f"\n{exp_fail_bkt_obj_dict}")
         LOGGER.info("Step 6: Successfully completed copy object operation is background")
