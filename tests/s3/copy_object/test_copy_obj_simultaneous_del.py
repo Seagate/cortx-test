@@ -31,6 +31,9 @@ from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils.system_utils import path_exists
+from commons.utils.system_utils import remove_dirs
+
 from libs.s3 import s3_test_lib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 
@@ -72,6 +75,17 @@ class TestCopyObjectSimultaneousDelete:
         LOGGER.info("Delete the objects and buckets created")
         self.s3_obj.delete_multiple_buckets(self.buckets)
         LOGGER.info("ENDED: Test teardown.")
+
+    @classmethod
+    def teardown_class(cls):
+        """
+        This is called after all tests in this class finished execution
+        """
+        cls.log.info("STARTED: teardown test suite operations.")
+        if path_exists(cls.test_dir_path):
+            remove_dirs(cls.test_dir_path)
+        cls.log.info("Cleanup test directory: %s", cls.test_dir_path)
+        cls.log.info("ENDED: teardown test suite operations.")
 
     @staticmethod
     def copy_object_wrapper(src_bucket, src_obj, dest_bucket, dest_obj, exception=None):
