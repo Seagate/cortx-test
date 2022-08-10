@@ -936,7 +936,7 @@ class TestServerPodRestart:
         LOGGER.info("Step 3: Start WRITEs with variable object sizes in background")
         self.test_prefix_deg = 'test-44837-deg'
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix_deg,
-                'skipread': True, 'skipcleanup': True, 'nclients': 1, 'nsamples': 30,
+                'skipread': True, 'skipcleanup': True, 'nclients': 2, 'nsamples': 30,
                 'setup_s3bench': False, 'output': output}
         thread = threading.Thread(target=self.ha_obj.event_s3_operation,
                                   args=(event,), kwargs=args)
@@ -978,7 +978,7 @@ class TestServerPodRestart:
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix_deg,
                                                     skipwrite=True, skipcleanup=True,
-                                                    setup_s3bench=False)
+                                                    nsamples=30, nclients=30, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Read/Verify successfully on data written in background")
         LOGGER.info("Step 7: Run READ/Verify on data written in healthy cluster")
