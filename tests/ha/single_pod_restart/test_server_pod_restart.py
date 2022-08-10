@@ -967,10 +967,13 @@ class TestServerPodRestart:
         pass_logs = list(x[1] for x in responses_wr["pass_res"])
         fail_logs = list(x[1] for x in responses_wr["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"WRITEs logs which contain failures: {resp[1]}")
+        assert_utils.assert_false(len(resp[1]), f"WRITEs before and after pod deletion are "
+                                                f"expected to pass. Logs which contain "
+                                                f"failures: {resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
-                                 f"WRITEs logs which contain pass: {resp[1]}")
+        assert_utils.assert_true(len(resp[1]) <= len(fail_logs), "Some In-flight WRITEs are "
+                                                                 "expected to fail.Logs which "
+                                                                 f"contain pass: {resp[1]}")
         LOGGER.info("Step 5.1: Verified status for In-flight WRITEs while %s server pod "
                     "restarted", pod_name)
         LOGGER.info("Step 5.2: Verify status for In-flight READs/Verify DI while %s"
@@ -1150,10 +1153,13 @@ class TestServerPodRestart:
         pass_logs = list(x[1] for x in responses_wr["pass_res"])
         fail_logs = list(x[1] for x in responses_wr["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
+        assert_utils.assert_false(len(resp[1]), "WRITEs before and after pod deletion are "
+                                                "expected to pass.Logs which contain failures:"
+                                                f"{resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
-                                 f"Logs which contain passed IOs: {resp[1]}")
+        assert_utils.assert_true(len(resp[1]) <= len(fail_logs), "Some In-flight WRITEs are "
+                                                                 "expected to fail. Logs which "
+                                                                 f"contain passed IOs: {resp[1]}")
         LOGGER.info("Step 9.2: Verified status for In-flight WRITEs")
         LOGGER.info("Step 9.3: Verify status for In-flight READs/Verify DI")
         responses_rd = dict()
@@ -1162,10 +1168,11 @@ class TestServerPodRestart:
         pass_logs = list(x[1] for x in responses_rd["pass_res"])
         fail_logs = list(x[1] for x in responses_rd["fail_res"])
         resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
+        assert_utils.assert_false(len(resp[1]), "READs/VerifyDI logs which contain failures:"
+                                                f"{resp[1]}")
         resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
         assert_utils.assert_true(len(resp[1]) <= len(fail_logs),
-                                 f"Logs which contain passed IOs: {resp[1]}")
+                                 f"READs/VerifyDI logs which contain passed IOs: {resp[1]}")
         LOGGER.info("Step 9.3: Verified status for In-flight READs/Verify DI")
         LOGGER.info("Step 9: Verified status for In-flight READs/WRITEs/DELETEs while server pod "
                     "%s was restarted.", pod_name)
