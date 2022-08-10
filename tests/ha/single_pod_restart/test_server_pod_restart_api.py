@@ -175,9 +175,9 @@ class TestServerPodRestartAPI:
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} "
                                               "way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
-        LOGGER.info("Cleanup: Check cluster status and start it if not up.")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_true(resp[0], resp[1])
+        # LOGGER.info("Cleanup: Check cluster status and start it if not up.")
+        # resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        # assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Removing extra files")
         for file in self.extra_files:
             if os.path.exists(file):
@@ -1582,24 +1582,30 @@ class TestServerPodRestartAPI:
             assert_utils.assert_true(False, "Etag without VersionID does not match with "
                                             f"etag {etag} {resp[1]}")
         LOGGER.info("Step 11: Got versions of %s with & without & verified etag", self.object_name)
+        
+        LOGGER.info("Step 12: Suspend versioning on %s.", new_bucket)
+        resp = self.s3_ver.put_bucket_versioning(bucket_name=new_bucket, status="Suspended")
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 12: Suspended versioning on %s.", new_bucket)
 
-        LOGGER.info("Step 12: Upload same object %s after suspending versioning and verify its "
+        LOGGER.info("Step 13: Upload same object %s after suspending versioning and verify its "
                     "null.", self.object_name)
-        args = {'chk_null_version': True, 'is_unversioned': True, 'file_path': download_path}
+        args = {'file_path': download_path}
         resp = self.ha_obj.parallel_put_object(event, self.s3_test_obj, new_bucket,
                                                self.object_name, **args)
         assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
-        LOGGER.info("Step 12: Uploaded same object %s after suspending versioning and verified its "
+        self.version_etag[new_bucket].extend(resp[1])
+        LOGGER.info("Step 13: Uploaded same object %s after suspending versioning and verified its "
                     "null.", self.object_name)
 
-        LOGGER.info("Step 13: Verify existing versions are remained intact")
+        LOGGER.info("Step 14: Verify existing versions are remained intact")
         for bucket in bucket_list:
             resp = self.ha_obj.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
                                                    bkt_name=bucket, obj_name=self.object_name,
                                                    ver_etag=self.version_etag[bucket])
             assert_utils.assert_true(resp[0], f"Get object with versionID failed {resp[1]} for"
                                               f" {bucket}")
-        LOGGER.info("Step 13: Verified existing versions are remained intact")
+        LOGGER.info("Step 14: Verified existing versions are remained intact")
         LOGGER.info("COMPLETED: Test to verify bucket versioning suspension before & after server "
                     "pod restart.")
 
