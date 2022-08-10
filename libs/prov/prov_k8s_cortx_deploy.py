@@ -502,7 +502,7 @@ class ProvDeployK8sCortxLib:
             device_list[-1] = device_list[-1].replace("\n", "")
             system_disk = device_list.pop(0)
             metadata_devices = device_list[0:cvg_count]
-            LOGGER.info(metadata_devices)
+            LOGGER.info("METADATA DEVICES %s", metadata_devices)
             if log_disk_flag:
                 log_devices = device_list[cvg_count: 2*cvg_count]
                 LOGGER.info("LOG DEVICES %s", log_devices)
@@ -516,12 +516,11 @@ class ProvDeployK8sCortxLib:
             count = cvg_count
             if data_disk_per_cvg == 0:
                 if log_disk_flag:
-                    # Here the increment for 2 is due to 1 disk each reserved
-                    # for metadata and log disk respectively
-                    data_disk_per_cvg = int(len(device_list[cvg_count + 2:]) / cvg_count)
+                    # Here the increment for 1 is due to 1 disk each reserved
+                    # log disk respectively
+                    data_disk_per_cvg = int(len(device_list[cvg_count + 1:]) / cvg_count)
                 else:
-                    # Here the increment for 1 is due to 1 disk reserved for metadata
-                    data_disk_per_cvg = int(len(device_list[cvg_count+1:]) / cvg_count)
+                    data_disk_per_cvg = int(len(device_list[cvg_count:]) / cvg_count)
 
             LOGGER.debug("Data disk per cvg : %s", data_disk_per_cvg)
             # The condition to validate the config.
@@ -534,9 +533,10 @@ class ProvDeployK8sCortxLib:
                 assert False, "The requested data disk is more than" \
                               " the data disk available on the system"
             if log_disk_flag:
-                # the '2' is being multiplied to accumulate the final data disk count
-                # after excluding the metadata, log disks
-                data_devices_f = device_list[cvg_count+2:]
+                # the '1' is being added to accumulate the final data disk count
+                # after excluding the log disks
+                data_devices_f = device_list[cvg_count+1:]
+                LOGGER.debug("The data disk final is %s", data_devices_f)
             else:
                 data_devices_f = device_list[cvg_count:]
             # This condition validated the total available disk count
