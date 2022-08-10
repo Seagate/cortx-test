@@ -138,7 +138,8 @@ class TestServerPodFailure:
         if self.s3_clean:
             LOGGER.info("Cleanup: Cleaning created IAM users and buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-            assert_utils.assert_true(resp[0], resp[1])
+            if not resp[0]:
+                LOGGER.error("Failed to delete objects/buckets")
         if self.restore_pod:
             resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                            restore_method=self.restore_method,
