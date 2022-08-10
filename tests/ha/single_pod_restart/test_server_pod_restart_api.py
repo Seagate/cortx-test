@@ -43,6 +43,7 @@ from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
@@ -160,6 +161,8 @@ class TestServerPodRestartAPI:
         LOGGER.info("Removing extra files")
         for file in self.extra_files:
             system_utils.remove_file(file)
+        LOGGER.info("Removing all files from %s", self.test_dir_path)
+        system_utils.cleanup_dir(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-locals
@@ -768,3 +771,153 @@ class TestServerPodRestartAPI:
                                                           f"{bkt}.")
         LOGGER.info("Step 8: Downloaded copied objects & verify etags.")
         LOGGER.info("COMPLETED: Test to verify copy object after server pod restart.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-44849")
+    def test_chunk_upload_during_server_pod_restart(self):
+        """
+        Test chunk upload during server pod restart (using jclient)
+        """
+        LOGGER.info("STARTED: Verify chunk upload during server pod restart")
+        file_size = HA_CFG["5gb_mpu_data"]["file_size"]
+        download_path = os.path.join(self.test_dir_path, "test_chunk_upload" + "_download")
+        chunk_obj_path = os.path.join(self.test_dir_path, self.object_name)
+        upload_op = Queue()
+        workload_info = dict()
+
+        LOGGER.info("Step 1: Perform setup steps for jclient")
+        jc_obj = JCloudClient()
+        resp = self.ha_obj.setup_jclient(jc_obj)
+        assert_utils.assert_true(resp, "Failed in setting up jclient")
+        LOGGER.info("Step 1: Successfully setup jclient on runner")
+
+        LOGGER.info("Step 2: Create IAM user with name %s, bucket %s and perform chunk upload",
+                    self.s3acc_name, self.bucket_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.test_prefix = 'test-44849'
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+        resp = self.ha_obj.create_bucket_chunk_upload(s3_data=self.s3_clean,
+                                                      bucket_name=self.bucket_name,
+                                                      file_size=file_size,
+                                                      chunk_obj_path=chunk_obj_path,
+                                                      background=False)
+        self.extra_files.append(chunk_obj_path)
+        assert_utils.assert_true(resp, "Failure observed in chunk upload in healthy cluster")
+        LOGGER.info("Step 2: Successfully performed chuck upload")
+
+        workload_info[1] = [self.bucket_name, self.object_name]
+        LOGGER.info("Calculating checksum of uploaded file %s", chunk_obj_path)
+        upld_chksm_hlt = self.ha_obj.cal_compare_checksum(file_list=[chunk_obj_path],
+                                                          compare=False)[0]
+
+        num_replica = self.num_replica - 1
+        LOGGER.info("Step 3: Shutdown server pod by replica method and verify cluster & "
+                    "remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
+            num_replica=num_replica)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+        pod_name = list(resp[1].keys())[0]
+        self.set_name = resp[1][pod_name]['deployment_name']
+        self.restore_pod = True
+        self.restore_method = resp[1][pod_name]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 3: Successfully shutdown server pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+
+        LOGGER.info("Step 4: Download object which was uploaded in healthy cluster and verify "
+                    "checksum")
+        resp = self.ha_obj.object_download_jclient(s3_data=self.s3_clean,
+                                                   bucket_name=self.bucket_name,
+                                                   object_name=self.object_name,
+                                                   obj_download_path=download_path)
+        LOGGER.info("Download object response: %s", resp)
+        self.extra_files.append(download_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        dnld_chksm = self.ha_obj.cal_compare_checksum(file_list=[download_path], compare=False)[0]
+        assert_utils.assert_equal(upld_chksm_hlt, dnld_chksm,
+                                  f"Expected checksum: {upld_chksm_hlt},"
+                                  f"Actual checksum: {dnld_chksm}")
+        LOGGER.info("Step 4: Successfully downloaded object which was uploaded in healthy cluster "
+                    "and verified checksum")
+
+        t_t = int(perf_counter_ns())
+        bucket_name = f"chunk-upload-bkt-{t_t}"
+        object_name = f"chunk-upload-obj-{t_t}"
+        chunk_obj_path = os.path.join(self.test_dir_path, object_name)
+        LOGGER.info("Step 5: Start chunk upload in background")
+        args = {'s3_data': self.s3_clean, 'bucket_name': bucket_name,
+                'file_size': file_size, 'chunk_obj_path': chunk_obj_path, 'output': upload_op}
+        thread = threading.Thread(target=self.ha_obj.create_bucket_chunk_upload, kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Waiting for %s sec...", HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+        LOGGER.info("Step 5: Successfully started chuck upload in background")
+
+        LOGGER.info("Step 6: Start server pod again by replica method")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
+                                       clstr_status=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore server pod by {self.restore_method}"
+                                          "way or failures in cluster status")
+        self.restore_pod = False
+        LOGGER.info("Step 6: Server pod is started successfully and checked cluster status")
+
+        LOGGER.info("Step 7: Verifying response of background chunk upload process")
+        self.extra_files.append(chunk_obj_path)
+        while True:
+            resp = upload_op.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+            if isinstance(resp, bool):
+                break
+        if resp is None:
+            assert_utils.assert_true(False, "Background process of chunk upload failed")
+        assert_utils.assert_true(resp, "Failure observed in chunk upload during server pod restart")
+        LOGGER.info("Step 7: Successfully performed chuck upload during server pod restart")
+
+        LOGGER.info("Step 8: Download object which was uploaded in healthy cluster and verify "
+                    "checksum")
+        resp = self.ha_obj.object_download_jclient(s3_data=self.s3_clean,
+                                                   bucket_name=self.bucket_name,
+                                                   object_name=self.object_name,
+                                                   obj_download_path=download_path)
+        LOGGER.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        dnld_chksm = self.ha_obj.cal_compare_checksum(file_list=[download_path], compare=False)[0]
+        assert_utils.assert_equal(upld_chksm_hlt, dnld_chksm,
+                                  f"Expected checksum: {upld_chksm_hlt},"
+                                  f"Actual checksum: {dnld_chksm}")
+        LOGGER.info("Step 8: Successfully downloaded object and verified checksum")
+
+        LOGGER.info("Step 9: Download object which was uploaded in background and verify checksum")
+        LOGGER.info("Calculating checksum of uploaded file %s", chunk_obj_path)
+        upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[chunk_obj_path],
+                                                           compare=False)[0]
+        resp = self.ha_obj.object_download_jclient(s3_data=self.s3_clean,
+                                                   bucket_name=bucket_name,
+                                                   object_name=object_name,
+                                                   obj_download_path=download_path)
+        LOGGER.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                             compare=False)[0]
+        assert_utils.assert_equal(upload_checksum, download_checksum,
+                                  f"Expected checksum: {upload_checksum},"
+                                  f"Actual checksum: {download_checksum}")
+        LOGGER.info("Step 9: Successfully downloaded object and verified checksum")
+        LOGGER.info("ENDED: Verify chunk upload during server pod restart")

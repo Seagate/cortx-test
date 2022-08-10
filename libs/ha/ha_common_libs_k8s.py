@@ -1049,8 +1049,8 @@ class HAK8s:
         return False, "Worker node and Fqdn of data node not same"
 
     @staticmethod
-    def create_bucket_chunk_upload(s3_data, bucket_name, file_size, chunk_obj_path, output,
-                                   bkt_op=True):
+    def create_bucket_chunk_upload(s3_data, bucket_name, file_size, chunk_obj_path, output=None,
+                                   bkt_op=True, background=True):
         """
         Helper function to do chunk upload
         :param s3_data: s3 account details
@@ -1059,6 +1059,7 @@ class HAK8s:
         :param chunk_obj_path: Path of the file to be uploaded
         :param output: Queue used to fill output
         :param bkt_op: Flag to create bucket and object
+        :param background: Flag to indicate if background process or not
         :return: response
         """
         jclient_prop = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"]
@@ -1071,6 +1072,8 @@ class HAK8s:
             LOGGER.info("Creating a bucket with name : %s", bucket_name)
             res = s3_test_obj.create_bucket(bucket_name)
             if not res[0] or res[1] != bucket_name:
+                if not background:
+                    return False
                 output.put(False)
                 sys.exit(1)
             LOGGER.info("Created a bucket with name : %s", bucket_name)
@@ -1079,6 +1082,8 @@ class HAK8s:
             resp = system_utils.create_file(chunk_obj_path, file_size)
             LOGGER.info("Response: %s", resp)
             if not resp[0]:
+                if not background:
+                    return False
                 output.put(False)
                 sys.exit(1)
 
@@ -1088,9 +1093,13 @@ class HAK8s:
         LOGGER.info("Running command %s", put_cmd)
         resp = system_utils.execute_cmd(put_cmd)
         if not resp:
+            if not background:
+                return False
             output.put(False)
             sys.exit(1)
 
+        if not background:
+            return True
         output.put(True)
         sys.exit(0)
 
