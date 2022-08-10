@@ -2102,7 +2102,7 @@ class HAK8s:
                     else:
                         LOGGER.error("Overwrite failed. \nError: %s", resp[1])
                         fail_count += 1
-                    break
+                    continue
 
                 LOGGER.info("Downloading object...")
                 download_path = os.path.join(test_dir_path, f"{object_name}_download.txt")
@@ -2114,10 +2114,10 @@ class HAK8s:
                     else:
                         LOGGER.error("Object download failed. \nError: %s", resp[1])
                         fail_count += 1
-                    break
-                else:
-                    dnld_checksum = self.cal_compare_checksum([download_path], compare=False)[0]
-                    checksums[f"{bucket_name}_{loop}"] = [up_checksum, dnld_checksum]
+                    continue
+
+                dnld_checksum = self.cal_compare_checksum([download_path], compare=False)[0]
+                checksums[f"{bucket_name}_{loop}"] = [up_checksum, dnld_checksum]
 
                 system_utils.cleanup_dir(test_dir_path)
         LOGGER.debug("Fail count is : %s", fail_count)

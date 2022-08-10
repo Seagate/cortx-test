@@ -867,7 +867,6 @@ class TestServerPodRestartAPI:
         bucket_name = f"chunk-upload-bkt-{t_t}"
         object_name = f"chunk-upload-obj-{t_t}"
         chunk_obj_path = os.path.join(self.test_dir_path, object_name)
-
         LOGGER.info("Step 5: Start chunk upload in background")
         args = {'s3_data': self.s3_clean, 'bucket_name': bucket_name,
                 'file_size': file_size, 'chunk_obj_path': chunk_obj_path, 'output': upload_op}
@@ -1376,12 +1375,12 @@ class TestServerPodRestartAPI:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way or "
                                           f"cluster status is not good")
-        LOGGER.info("Step 4: Successfully restart the pod with replica method")
+        LOGGER.info("Step 4: Successfully restarted the pod with replica method and checked "
+                    "cluster status")
         self.restore_pod = False
 
         LOGGER.info("Step 5: Overwrite object %s of bucket %s and object %s of bucket %s",
                     self.object_name, self.bucket_name, object_name, bucket_name)
-
         t_t = int(perf_counter_ns())
         bucket_name = f"bucket-{t_t}"
         object_name = f"object-{t_t}"
