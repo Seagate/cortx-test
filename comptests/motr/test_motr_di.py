@@ -253,6 +253,7 @@ class TestCorruptDataDetection:
 
             logger.info("Stop: Verify emap corruption detection operation")
 
+    @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.tags("TEST-41739")
     @pytest.mark.motr_di
     def test_m0cp_m0cat_block_corruption(self):
@@ -287,6 +288,7 @@ class TestCorruptDataDetection:
         offsets = [0, 16384]
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
+    @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.tags("TEST-41911")
     @pytest.mark.motr_di
     def test_m0cp_m0cat_block_corruption_unaligned(self):
