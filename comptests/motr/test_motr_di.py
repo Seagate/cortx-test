@@ -52,8 +52,12 @@ import logging
 import secrets
 import pytest
 from config import CMN_CFG
+from commons.constants import POD_NAME_PREFIX
+from commons.constants import MOTR_CONTAINER_PREFIX
+from commons.constants import PID_WATCH_LIST
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
+from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 logger = logging.getLogger(__name__)
 
 
@@ -92,6 +96,7 @@ class TestCorruptDataDetection:
         """ Setup class for running Motr tests"""
         logger.info("STARTED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
+        cls.dtm_obj = DTMRecoveryTestLib()
         cls.system_random = secrets.SystemRandom()
         logger.info("ENDED: Setup Operation")
 
@@ -183,3 +188,58 @@ class TestCorruptDataDetection:
         layout_ids = ['3']
         offsets = [4096]
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
+
+    @pytest.mark.tags("TEST-42910")
+    @pytest.mark.motr_di
+    def test_m0cp_block_corruption_m0cat_degraded_mode(self):
+        """
+        Corrupt data block using m0cp and reading from object with m0cat should error.
+        -s 4096 -c 10 -o 1048583 /root/infile -L 3
+        -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
+        -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
+        """
+        count_list = ['8']
+        bsize_list = ['4K']
+        layout_ids = ['1']
+        proc_restart_delay = 9999
+        process = PID_WATCH_LIST[0]
+        logger.info("STARTED: m0cp, corrupt workflow in healthy state")
+        infile = TEMP_PATH + 'input'
+        outfile = TEMP_PATH + 'output'
+        node_pod_dict = self.motr_obj.get_node_pod_dict()
+        motr_client_num = self.motr_obj.get_number_of_motr_clients()
+        object_id_list = []
+        for client_num in range(motr_client_num):
+            for node in node_pod_dict:
+                object_id = str(self.system_random.randint(1, 1024 * 1024)) + ":" + \
+                            str(self.system_random.randint(1, 1024 * 1024))
+                for b_size, cnt_c, layout in zip(bsize_list, count_list, layout_ids):
+                    self.motr_obj.dd_cmd(
+                        b_size, cnt_c, infile, node)
+                    object_id_list.append(object_id)
+                    self.motr_obj.cp_cmd(
+                        b_size, cnt_c, object_id,
+                        layout, infile, node, client_num)
+        # Degrade the setup by killing the m0d process
+        data_pod_list = self.motr_obj.master_node_list[0].select_random_pod_container(
+            POD_NAME_PREFIX, f"{MOTR_CONTAINER_PREFIX}-001")
+        pod_name, container = secrets.choice(data_pod_list)
+        self.dtm_obj.set_proc_restart_duration(
+            self.motr_obj.master_node_list[0], pod_name, container, proc_restart_delay)
+        try:
+            logger.info("Kill %s from %s pod %s container ", process, pod_name, container)
+            resp = self.motr_obj.master_node_list[0].kill_process_in_container(
+                pod_name=pod_name, container_name=container, process_name=process)
+            logger.debug("Resp : %s", resp)
+        except (ValueError, IOError) as ex:
+            logger.error("Exception Occurred during killing process : %s", ex)
+            self.dtm_obj.set_proc_restart_duration(
+                self.motr_obj.master_node_list[0], pod_name, container, 0)
+            assert False
+        # Read the data using m0cat in degraded mode
+        for client_num in range(motr_client_num):
+            for node in node_pod_dict:
+                for b_size, cnt_c, layout, object_id in zip(bsize_list, count_list, layout_ids,
+                                                            object_id_list):
+                    self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout,
+                                          outfile, node, client_num)
