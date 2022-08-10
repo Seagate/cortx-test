@@ -315,7 +315,7 @@ class TestCorruptDataDetection:
         -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
         -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
         """
-        count_list = [["4", "8"]]
+        count_list = [["16", "8"]]
         bsize_list = ["1M"]
         layout_ids = ["9"]
         offsets = [0]
@@ -395,3 +395,32 @@ class TestCorruptDataDetection:
         assert_utils.assert_true(resp)
         logger.info("Step 1: Successfully performed m0cp and corrupt the parity block")
         logger.info(f"ENDED: {test_prefix} Test Parity corruption in degraded mode - aligned")
+
+    @pytest.mark.skip(reason="Feature Unavailable")
+    @pytest.mark.tags("TEST-45942")
+    @pytest.mark.motr_di
+    def test_corrupt_parity_aligned_big_size(self):
+        """
+        Parity corruption and detection with M0cp and M0cat
+        Bring the setup in degraded mode by restating m0d with delay
+        and then follow next steps:
+        Copy motr object with m0cp
+        Identify parity block using m0trace logs created during m0cp
+        Corrupt parity block using m0cp+error_injection.py script
+        Read from object with m0cat should throw an error.
+        -s 4096 -c 10 -o 1048583 /root/infile -L 3
+        -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
+        -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
+        """
+        count_list = [["32", "4"]]  # Total size = 1GB
+        bsize_list = ["32M"]
+        layout_ids = ["14"]  # 32MB
+        offsets = [0]
+
+        test_prefix = "test-45942"
+        logger.info(f"STARTED: {test_prefix} Test Parity corruption - aligned - big size")
+        logger.info("Step 1: Perform m0cp and corrupt the parity block")
+        resp = self.m0cp_corrupt_parity_m0cat(layout_ids, bsize_list, count_list, offsets)
+        assert_utils.assert_true(resp)
+        logger.info("Step 1: Successfully performed m0cp and corrupt the parity block")
+        logger.info(f"ENDED: {test_prefix} Test Parity corruption in degraded mode - big size")
