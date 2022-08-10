@@ -19,6 +19,7 @@
 
 """S3 copy object for simultaneous delete test module."""
 
+from time import perf_counter_ns
 import logging
 import multiprocessing
 import os
@@ -60,7 +61,9 @@ class TestCopyObjectSimultaneousDelete:
         LOGGER.info("STARTED: Test setup.")
         if not os.path.exists(self.test_dir_path):
             os.makedirs(self.test_dir_path, exist_ok=True)
-        self.buckets = ["src-buck", "dest-buck"]
+        self.srcbuck = "src-buck-{}".format(perf_counter_ns())
+        self.destbuck = "dest-buck-{}".format(perf_counter_ns())
+        self.buckets = [self.srcbuck, self.destbuck]
         for bucket in self.buckets:
             resp = self.s3_obj.create_bucket(bucket)
             assert_utils.assert_true(resp[0], resp[1])
@@ -81,11 +84,11 @@ class TestCopyObjectSimultaneousDelete:
         """
         This is called after all tests in this class finished execution
         """
-        cls.log.info("STARTED: teardown test suite operations.")
+        LOGGER.info("STARTED: teardown test suite operations.")
         if path_exists(cls.test_dir_path):
             remove_dirs(cls.test_dir_path)
-        cls.log.info("Cleanup test directory: %s", cls.test_dir_path)
-        cls.log.info("ENDED: teardown test suite operations.")
+        LOGGER.info("Cleanup test directory: %s", cls.test_dir_path)
+        LOGGER.info("ENDED: teardown test suite operations.")
 
     @staticmethod
     def copy_object_wrapper(src_bucket, src_obj, dest_bucket, dest_obj, exception=None):
@@ -142,9 +145,9 @@ class TestCopyObjectSimultaneousDelete:
     def test_45516(self):
         """Test Parallel copy and put operation from same source bucket"""
         LOGGER.info("STARTED: Test Delete source object when copy simple object is in progress")
-        self.create_put_parallel_copy_and_delete_object(("src-buck", "src-obj", "dest-buck",
+        self.create_put_parallel_copy_and_delete_object((self.srcbuck, "src-obj", self.destbuck,
                                                         "dest-obj", "NoSuchKey"),
-                                                        ("src-buck", "src-obj"))
+                                                        (self.srcbuck, "src-obj"))
         LOGGER.info("ENDED: Test Delete source object when copy simple object is in progress")
 
     @pytest.mark.s3_ops
@@ -155,9 +158,9 @@ class TestCopyObjectSimultaneousDelete:
         """Test Delete destination object when copy simple object is in progress"""
         LOGGER.info("STARTED: Test Delete destination object when copy simple object is in "
                     "progress")
-        self.create_put_parallel_copy_and_delete_object(("src-buck", "src-obj", "dest-buck",
+        self.create_put_parallel_copy_and_delete_object((self.srcbuck, "src-obj", self.destbuck,
                                                          "dest-obj", None),
-                                                        ("dest-buck", "dest-obj"))
+                                                        (self.destbuck, "dest-obj"))
         LOGGER.info("ENDED: Test Delete destination object when copy simple object is in progress")
 
     @pytest.mark.s3_ops
@@ -168,9 +171,9 @@ class TestCopyObjectSimultaneousDelete:
         """Test Delete source object when copy simple object is in progress"""
         LOGGER.info("STARTED: Test Delete source object when copy simple object is in progress in "
                     "the same bucket")
-        self.create_put_parallel_copy_and_delete_object(("src-buck", "src-obj", "src-buck",
+        self.create_put_parallel_copy_and_delete_object((self.srcbuck, "src-obj", self.srcbuck,
                                                          "dest-obj", "NoSuchKey"),
-                                                        ("src-buck", "src-obj"))
+                                                        (self.srcbuck, "src-obj"))
         LOGGER.info("ENDED: Test Delete source object when copy simple object is in progress in "
                     "the same bucket")
 
@@ -182,9 +185,9 @@ class TestCopyObjectSimultaneousDelete:
         """Test Delete source object when copy multipart object is in progress"""
         LOGGER.info("STARTED: Test Delete source object when copy multipart object is in progress")
         LOGGER.info("Upload a large object (~1GB) srcobj to srcbuck")
-        self.create_put_parallel_copy_and_delete_object(("src-buck", "src-obj", "dest-buck",
+        self.create_put_parallel_copy_and_delete_object((self.srcbuck, "src-obj", self.destbuck,
                                                          "dest-obj", "NoSuchKey", 4,
-                                                         self.file_path), ("src-buck", "src-obj"),
+                                                         self.file_path), (self.srcbuck, "src-obj"),
                                                         is_mpu = True)
         LOGGER.info("ENDED: Test Delete source object when copy multipart object is in progress")
 
@@ -196,10 +199,9 @@ class TestCopyObjectSimultaneousDelete:
         """Test Delete destination object when copy multipart object is in progress"""
         LOGGER.info("STARTED: Test Delete destination object when copy multipart object is in "
                     "progress")
-        self.create_put_parallel_copy_and_delete_object(("src-buck", "src-obj", "src-buck",
-                                                         "dest-obj", None, 5,
-                                                         self.file_path), ("dest-buck", "dest-obj"),
-                                                        is_mpu=True)
+        self.create_put_parallel_copy_and_delete_object((self.srcbuck, "src-obj", self.srcbuck,
+                                                         "dest-obj", None, 5, self.file_path),
+                                                        (self.destbuck, "dest-obj"), is_mpu=True)
         LOGGER.info("ENDED: Test Delete destination object when copy multipart object is in "
                     "progress")
 
@@ -211,9 +213,9 @@ class TestCopyObjectSimultaneousDelete:
         """Test Delete source object when copy multipart object is in progress in same bucket"""
         LOGGER.info("STARTED: Test Delete source object when copy multipart object is in "
                     "progress in same bucket")
-        self.create_put_parallel_copy_and_delete_object(("src-buck", "src-obj", "src-buck",
+        self.create_put_parallel_copy_and_delete_object((self.srcbuck, "src-obj", self.srcbuck,
                                                          "dest-obj", "NoSuchKey", 5,
-                                                         self.file_path), ("src-buck", "src-obj"),
+                                                         self.file_path), (self.srcbuck, "src-obj"),
                                                         is_mpu=True)
         LOGGER.info("ENDED: Test Delete source object when copy multipart object is in "
                     "progress in same bucket")
