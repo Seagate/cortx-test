@@ -187,12 +187,15 @@ class HAK8s:
             max_timeout=self.t_power_off, host=host, exp_resp=False, bmc_obj=bmc_obj)
         return resp
 
-    def delete_s3_acc_buckets_objects(self, s3_data: dict, obj_crud: bool = False):
+    def delete_s3_acc_buckets_objects(self, s3_data: dict, obj_crud: bool = False,
+                                      is_ver: bool = False, v_etag=None):
         """
         This function deletes all s3 buckets objects for the s3 account
         and all s3 accounts
         :param s3_data: Dictionary for s3 operation info
         :param obj_crud: If true, it will delete only objects of all buckets
+        :param is_ver: If True, Delete the version object before deleting buckets
+        :param v_etag: Dictionary of object version-etag value list for each bucket
         :return: (bool, response)
         """
         try:
@@ -209,6 +212,17 @@ class HAK8s:
                         response = s3_del.delete_multiple_objects(_bucket, obj_list[1], quiet=True)
                         LOGGER.debug("Delete multiple objects response %s", response)
                 return True, "Successfully performed Objects Delete operation"
+            if is_ver:
+                try:
+                    obj_name = v_etag.pop("obj_name")
+                    s3_ver = v_etag.pop("s3_ver")
+                except KeyError:
+                    return False, "Failed to get required data for deleting versioned objects"
+                for bucket in list(v_etag.keys()):
+                    LOGGER.info("Deleting object versions for %s", bucket)
+                    for v_e in v_etag[bucket]:
+                        v_id = list(v_e.keys())[0]
+                        s3_ver.delete_object_version(bucket=bucket, key=obj_name, version_id=v_id)
             for details in s3_data.values():
                 s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
                                    access_key=details['accesskey'],
@@ -1883,8 +1897,8 @@ class HAK8s:
         count = kwargs.get("count", 1)
         is_unversioned = kwargs.get("is_unversioned", False)
         background = kwargs.get("background", False)
-        pass_put_ver = []
-        fail_put_ver = []
+        pass_put_ver = list()
+        fail_put_ver = list()
         for put in range(count):
             try:
                 put_resp = s3_test_obj.put_object(bucket_name=bkt_name, object_name=obj_name,
@@ -1892,13 +1906,14 @@ class HAK8s:
                 if is_unversioned:
                     version_id = "null"
                 else:
-                    version_id = put_resp[1].get("VersionId", "null")
+                    version_id = put_resp[1].get("VersionId", None)
+                    etag = put_resp[1].get("ETag", None)
                     if chk_null_version:
                         if version_id != "null":
-                            return (False, version_id) if not background else sys.exit(1)
+                            fail_put_ver.append({version_id: etag})
                     else:
-                        if version_id == "null":
-                            return (False, version_id) if not background else sys.exit(1)
+                        if version_id is None:
+                            fail_put_ver.append({version_id: etag})
                 versions_dict = {version_id: put_resp[1]["ETag"]}
                 pass_put_ver.append(versions_dict)
             except CTException as error:
@@ -1906,26 +1921,28 @@ class HAK8s:
                 if event.is_set():
                     continue
                 fail_put_ver.append(put)
-        if fail_put_ver:
-            return False, fail_put_ver if not background else output.put((False, fail_put_ver))
-        return True, pass_put_ver if not background else output.put((True, pass_put_ver))
+        if fail_put_ver and not background:
+            return False, fail_put_ver
+        return True, pass_put_ver if not background else output.put((pass_put_ver, fail_put_ver))
 
     @staticmethod
     def parallel_get_object(event, s3_ver_obj, bkt_name: str, obj_name: str, ver_etag: list,
                             output=None, **kwargs):
         """
-        Function to GET a version of an object in parallel or non parallel.
+        Function to GET a version of an object in parallel or non parallel and verify Etag for
+        the same version object with expected PUT object response in ver_etag list.
         :param event: event to intimate thread about main thread operations
         :param s3_ver_obj: S3VersioningTestLib instance
         :param bkt_name: Target bucket for GET Object with VersionId call.
         :param obj_name: Target key for GET Object with VersionId call.
         :param ver_etag: Target list of dictionary of uploaded versions to be GET
         :param output: Output queue in which results should be put
+        :keyword background: Set to true if background function call
         :return: Tuple (bool, list)
         """
         background = kwargs.get("background", False)
-        fail_get_ver = []
-        pass_get_ver = []
+        fail_get_ver = list()
+        pass_get_ver = list()
         for v_etag in ver_etag:
             v_id = list(v_etag.keys())[0]
             etag = list(v_etag.values())[0]
@@ -1944,9 +1961,9 @@ class HAK8s:
                 if event.is_set():
                     continue
                 fail_get_ver.append(v_etag)
-        if fail_get_ver:
-            return False, fail_get_ver if not background else output.put((False, fail_get_ver))
-        return True, pass_get_ver if not background else output.put((True, pass_get_ver))
+        if fail_get_ver and not background:
+            return False, fail_get_ver
+        return True, pass_get_ver if not background else output.put((pass_get_ver, fail_get_ver))
 
     @staticmethod
     def list_verify_version(s3_ver_obj, bucket_name: str, expected_versions: dict):
@@ -1960,7 +1977,7 @@ class HAK8s:
         :return: Tuple (bool, str)
         """
         resp = s3_ver_obj.list_object_versions(bucket_name)
-        v_etag = []
+        v_etag = list()
         list_version = resp[1]["Versions"]
         for v_e in list_version:
             versions_dict = {v_e["VersionId"]: v_e["ETag"]}
@@ -1969,3 +1986,56 @@ class HAK8s:
             if v_e not in expected_versions:
                 return False, "Fetched list of VersionId-Etag is not matching with Expected"
         return True, "Fetched list of VersionId-Etag is as Expected"
+
+    def create_bkt_put_object(self, event, s3_test, bkt, obj, **kwargs):
+        """
+        Function will create a new bucket and upload an new object on un-versioned bucket.
+        If enable_ver is set to true, it will enable versiolning on given bucket.
+        :param event: event to intimate thread about main thread operations
+        :param s3_test: Object of the s3 test lib
+        :param bkt: Bucket name for calling PUT Object
+        :param obj: Object name for calling PUT Object
+        :keyword file_path: File path that can be used for PUT Object call
+        :keyword count: Count for number of PUT object call
+        :keyword chk_null_version: True, if 'null' version id is expected, else False
+        :keyword background: Set to true if background function call
+        :keyword is_unversioned: Set to true if object is uploaded to an unversioned bucket
+        :keyword enable_ver: Set to true if want to enable versioning on given bucket
+        Can be used for setting up pre-existing objects before enabling/suspending bucket
+        versioning
+        :return: Tuple (bool, response)
+        """
+        chk_null_version = kwargs.get("chk_null_version", False)
+        file_path = kwargs.get("file_path")
+        f_size = kwargs.get("f_size", str(HA_CFG["5gb_mpu_data"]["file_size_512M"]) + "M")
+        f_count = kwargs.get("f_count", 1)
+        put_count = kwargs.get("put_count", 1)
+        is_unversioned = kwargs.get("is_unversioned", False)
+        enable_ver = kwargs.get("enable_ver", False)
+        LOGGER.info("Create bucket with %s name.", bkt)
+        resp = s3_test.create_bucket(bkt)
+        if not resp[1]:
+            return resp
+        LOGGER.info("Created bucket with %s name.", bkt)
+        LOGGER.info("Creating file %s.", file_path)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        system_utils.create_file(file_path, b_size=f_size, count=f_count)
+        args = {'chk_null_version': chk_null_version, 'is_unversioned': is_unversioned,
+                'file_path': file_path, 'count': put_count}
+        LOGGER.info("Upload object %s before enabling versioning", obj)
+        put_resp = self.parallel_put_object(event, s3_test, bkt, obj, **args)
+        if not put_resp[0]:
+            return False, f"Upload Object failed {put_resp[1]}"
+        LOGGER.info("Successfully uploaded object %s", obj)
+        if enable_ver:
+            try:
+                s3_ver = kwargs.get("s3_ver")
+            except KeyError:
+                return False, "Required s3_ver argument is not passed"
+            LOGGER.info("Enable versioning on %s.", bkt)
+            resp = s3_ver.put_bucket_versioning(bucket_name=bkt)
+            if not resp[0]:
+                return False, f"Enabling versioning failed with {resp[1]}"
+            LOGGER.info("Enabled versioning on %s.", bkt)
+        return put_resp
