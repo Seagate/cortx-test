@@ -359,9 +359,10 @@ class TestCsmLoad():
         config_utils.write_csv(fpath, fieldnames, content)
         jmx_file = "CSM_Create_N_CSM_Users.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        result = self.jmx_obj.run_verify_jmx(
+        result = self.jmx_obj.run_verify_jmx_with_message(
             jmx_file,
-            expect_error_count = self.request_usage - test_cfg["users_count"],
+            expect_count = self.request_usage - test_cfg["users_count"],
+            expect_message = test_cfg["expect_message"],
             threads=self.request_usage,
             rampup=test_cfg["rampup"],
             loop=test_cfg["loop"])
@@ -401,9 +402,10 @@ class TestCsmLoad():
         config_utils.write_csv(fpath, fieldnames, content)
         jmx_file = "CSM_Create_N_IAM_Users.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        result = self.jmx_obj.run_verify_jmx(
+        result = self.jmx_obj.run_verify_jmx_with_message(
             jmx_file,
-            expect_error_count = self.request_usage - test_cfg["users_count"],
+            expect_count = self.request_usage - test_cfg["users_count"],
+            expect_message = test_cfg["expect_message"],
             threads=self.request_usage,
             rampup=test_cfg["rampup"],
             loop=test_cfg["loop"])
