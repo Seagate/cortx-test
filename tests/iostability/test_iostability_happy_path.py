@@ -125,6 +125,7 @@ class TestIOWorkload:
             assert_utils.assert_true(resp)
         else:
             self.mail_notify.event_pass.set()
+
         self.log.info("Stop Procpath collection")
         self.proc_path.stop_collection()
         self.log.info("Copy files to client")
@@ -145,8 +146,10 @@ class TestIOWorkload:
         self.log.info("STARTED: Test for Bucket and  Object CRUD operations in loop using "
                       "S3bench for %s days", self.duration_in_days)
         test_case_name = cortxlogging.get_frame()
-        self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
-                                                  test_case_name, self.health_obj_list[0])
+
+        if self.sender_mail_id and self.receiver_mail_id:
+            self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
+                                                      test_case_name, self.health_obj_list[0])
         workload_distribution = self.test_cfg['workloads_distribution']
         total_obj = 10000
         total_clients = len(self.worker_node_list) * self.clients
@@ -171,8 +174,9 @@ class TestIOWorkload:
         self.log.info("STARTED: Perform disk storage near full once and read in loop for %s days.",
                       self.duration_in_days)
         test_case_name = cortxlogging.get_frame()
-        self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
-                                                  test_case_name, self.health_obj_list[0])
+        if self.sender_mail_id and self.receiver_mail_id:
+            self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
+                                                      test_case_name, self.health_obj_list[0])
 
         bucket_prefix = "testbkt-40041"
         client = len(self.worker_node_list) * self.clients
@@ -234,8 +238,9 @@ class TestIOWorkload:
             "%s percent of written data.", write_percent_per_iter, delete_percent_per_iter)
 
         test_case_name = cortxlogging.get_frame()
-        self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
-                                                  test_case_name, self.health_obj_list[0])
+        if self.sender_mail_id and self.receiver_mail_id:
+            self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
+                                                      test_case_name, self.health_obj_list[0])
 
         max_cluster_capacity_percent = self.test_cfg['nearfull_storage_percentage']
         clients = len(self.worker_node_list) * self.clients
@@ -285,7 +290,8 @@ class TestIOWorkload:
                               write_per, max_cluster_capacity_percent)
                 if len(workload_info_list) > 0:
                     self.log.info("Deleting all the written data.")
-                    resp = NearFullStorage.delete_workload(workload_info_list, self.s3userinfo, 100)
+                    resp = self.near_full_storage_obj.delete_workload(workload_info_list,
+                                                                      self.s3userinfo, 100)
                     assert_utils.assert_true(resp[0], resp[1])
                     self.log.info("Deletion completed.")
                     write_per = 0
