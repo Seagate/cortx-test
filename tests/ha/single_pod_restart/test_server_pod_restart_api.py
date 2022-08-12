@@ -1335,7 +1335,7 @@ class TestServerPodRestartAPI:
                                                bkt_name=self.bucket_name, obj_name=self.object_name,
                                                ver_etag=self.version_etag[self.bucket_name])
         assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
-        LOGGER.info("Step 4: Got object with version IDs & verify etags for %s.",self.bucket_name)
+        LOGGER.info("Step 4: Got object with version IDs & verify etags for %s.", self.bucket_name)
 
         LOGGER.info("Step 5: Upload same object %s after server pod shutdown. List & verify "
                     "the VersionID for the same for %s.", self.object_name, self.bucket_name)
