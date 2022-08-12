@@ -85,7 +85,6 @@ class TestIOWorkload:
                 cls.clients = cls.test_cfg['sessions_per_node_vm']
         cls.sender_mail_id = os.getenv("SENDER_MAIL_ID", None)
         cls.receiver_mail_id = os.getenv("RECEIVER_MAIL_ID", None)
-        cls.jenkins_url = os.getenv("BUILD_URL", None)
         cls.start_time = datetime.now()
         cls.mail_notify = None
         cls.s3userinfo = {'accesskey': ACCESS_KEY, 'secretkey': SECRET_KEY}
@@ -148,10 +147,9 @@ class TestIOWorkload:
                       "S3bench for %s days", self.duration_in_days)
         test_case_name = cortxlogging.get_frame()
 
-        if self.sender_mail_id and self.receiver_mail_id and self.jenkins_url:
+        if self.sender_mail_id and self.receiver_mail_id:
             self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
-                                                      test_case_name, self.health_obj_list[0],
-                                                      self.jenkins_url)
+                                                      test_case_name, self.health_obj_list[0])
         workload_distribution = self.test_cfg['workloads_distribution']
         total_obj = 10000
         total_clients = len(self.worker_node_list) * self.clients
@@ -176,10 +174,9 @@ class TestIOWorkload:
         self.log.info("STARTED: Perform disk storage near full once and read in loop for %s days.",
                       self.duration_in_days)
         test_case_name = cortxlogging.get_frame()
-        if self.sender_mail_id and self.receiver_mail_id and self.jenkins_url:
+        if self.sender_mail_id and self.receiver_mail_id:
             self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
-                                                      test_case_name, self.health_obj_list[0],
-                                                      self.jenkins_url)
+                                                      test_case_name, self.health_obj_list[0])
 
         bucket_prefix = "testbkt-40041"
         client = len(self.worker_node_list) * self.clients
@@ -241,10 +238,9 @@ class TestIOWorkload:
             "%s percent of written data.", write_percent_per_iter, delete_percent_per_iter)
 
         test_case_name = cortxlogging.get_frame()
-        if self.sender_mail_id and self.receiver_mail_id and self.jenkins_url:
+        if self.sender_mail_id and self.receiver_mail_id:
             self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
-                                                      test_case_name, self.health_obj_list[0],
-                                                      self.jenkins_url)
+                                                      test_case_name, self.health_obj_list[0])
 
         max_cluster_capacity_percent = self.test_cfg['nearfull_storage_percentage']
         clients = len(self.worker_node_list) * self.clients

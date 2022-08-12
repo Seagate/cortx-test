@@ -22,6 +22,7 @@ Utility Method for IO stability testing
 """
 import json
 import logging
+import os
 import threading
 import time
 from datetime import datetime, timedelta
@@ -116,7 +117,7 @@ class MailNotification(threading.Thread):
     """
 
     # pylint: disable=too-few-public-methods
-    def __init__(self, sender, receiver, test_id, health_obj, build_url):
+    def __init__(self, sender, receiver, test_id, health_obj):
         """
         Init method:
         :param sender: sender of mail
@@ -134,7 +135,7 @@ class MailNotification(threading.Thread):
         self.health_obj = health_obj
         self.interval = 4  # Mail to be sent periodically after 4 hours.
         self.message_id = None
-        self.build_url = build_url
+        self.build_url = os.getenv("BUILD_URL", None)
         self.start_time = datetime.now()
 
     def prepare_email(self, execution_status) -> MIMEMultipart:
@@ -187,20 +188,18 @@ class MailNotification(threading.Thread):
         self.mail_obj.send_mail(message)
 
 
-def send_mail_notification(sender_mail_id, receiver_mail_id, test_id, health_obj, build_url):
+def send_mail_notification(sender_mail_id, receiver_mail_id, test_id, health_obj):
     """
     Send mail notification
     :param sender_mail_id: Sender Mail ID
     :param receiver_mail_id: Receiver Mail ID
     :param test_id: Test ID
     :param health_obj: Health object.
-    :param build_url: Jenkins build URL
     :return MailNotification Object.
     """
     mail_notify = MailNotification(sender=sender_mail_id,
                                    receiver=receiver_mail_id,
                                    test_id=test_id,
-                                   health_obj=health_obj,
-                                   build_url=build_url)
+                                   health_obj=health_obj)
     mail_notify.start()
     return mail_notify

@@ -86,7 +86,6 @@ class TestIOWorkloadDegradedPath:
                 cls.clients = cls.test_cfg['sessions_per_node_vm']
         cls.sender_mail_id = os.getenv("SENDER_MAIL_ID", None)
         cls.receiver_mail_id = os.getenv("RECEIVER_MAIL_ID", None)
-        cls.jenkins_url = os.getenv("BUILD_URL", None)
         cls.start_time = datetime.now()
         cls.mail_notify = None
         cls.s3t_obj = S3TestLib()
@@ -160,10 +159,9 @@ class TestIOWorkloadDegradedPath:
         self.log.info("STARTED: Test for Object CRUD operations in degraded mode in loop using "
                       "S3bench for %s days", self.duration_in_days)
         test_case_name = cortxlogging.get_frame()
-        if self.sender_mail_id and self.receiver_mail_id and self.jenkins_url:
+        if self.sender_mail_id and self.receiver_mail_id:
             self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
-                                                      test_case_name, self.health_obj_list[0],
-                                                      self.jenkins_url)
+                                                      test_case_name, self.health_obj_list[0])
 
         self.log.info("Step 1: Create 50 buckets in healthy mode ")
         bucket_creation_healthy_mode = self.test_cfg['bucket_creation_healthy_mode']
@@ -212,10 +210,9 @@ class TestIOWorkloadDegradedPath:
         self.log.info("STARTED: Perform disk storage near full once in healthy cluster and "
                       "read in degraded cluster in loop for %s days.", self.duration_in_days)
         test_case_name = cortxlogging.get_frame()
-        if self.sender_mail_id and self.receiver_mail_id and self.jenkins_url:
+        if self.sender_mail_id and self.receiver_mail_id:
             self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
-                                                      test_case_name, self.health_obj_list[0],
-                                                      self.jenkins_url)
+                                                      test_case_name, self.health_obj_list[0])
 
         bucket_prefix = "testbkt-40173"
         client = len(self.worker_node_list) * self.clients
@@ -287,11 +284,10 @@ class TestIOWorkloadDegradedPath:
             "and perform Object CRUD(%s write,Read,%s delete) operation(degraded mode)",
             write_percent_per_iter, write_percent_per_iter, delete_percent_per_iter)
 
-        if self.sender_mail_id and self.receiver_mail_id and self.jenkins_url:
+        if self.sender_mail_id and self.receiver_mail_id:
             self.mail_notify = send_mail_notification(self.sender_mail_id, self.receiver_mail_id,
                                                       cortxlogging.get_frame(),
-                                                      self.health_obj_list[0],
-                                                      self.jenkins_url)
+                                                      self.health_obj_list[0])
 
         max_percentage = self.test_cfg['nearfull_storage_percentage']
         clients = (len(self.worker_node_list) - 1) * self.clients
