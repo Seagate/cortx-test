@@ -199,7 +199,7 @@ class TestCopyObjectSimultaneousDelete:
         """Test Delete destination object when copy multipart object is in progress"""
         LOGGER.info("STARTED: Test Delete destination object when copy multipart object is in "
                     "progress")
-        self.create_put_parallel_copy_and_delete_object((self.srcbuck, "src-obj", self.srcbuck,
+        self.create_put_parallel_copy_and_delete_object((self.srcbuck, "src-obj", self.destbuck,
                                                          "dest-obj", None, 5, self.file_path),
                                                         (self.destbuck, "dest-obj"), is_mpu=True)
         LOGGER.info("ENDED: Test Delete destination object when copy multipart object is in "
