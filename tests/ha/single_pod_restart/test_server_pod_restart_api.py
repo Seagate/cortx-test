@@ -1601,7 +1601,7 @@ class TestServerPodRestartAPI:
 
         LOGGER.info("Step 13: Upload same object %s after suspending versioning and verify its "
                     "null for %s.", self.object_name, new_bucket)
-        args = {'file_path': download_path}
+        args = {'file_path': download_path, 'chk_null_version': True, 'is_unversioned': True}
         resp = self.ha_obj.parallel_put_object(event, self.s3_test_obj, new_bucket,
                                                self.object_name, **args)
         assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
