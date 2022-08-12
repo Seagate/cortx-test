@@ -870,47 +870,20 @@ class TestCsmLoad():
         resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
         resp_msg_index = test_cfg["message_index"]
         msg = resp_data[resp_msg_index]
-        jmx_file = "CSM_create_max_manage_users.jmx"
-        self.log.info("Running jmx script: %s", jmx_file)
+        resp = self.csm_obj.list_csm_users(HTTPStatus.OK, return_actual_response=True)
+        existing_user = len(resp.json()['users'])
+        self.csm_obj.create_multi_csm_user(100, existing_user)
 
-        request_usage = test_cfg["request_usage"]
-        total_users = test_cfg["total_users"]
-
-        loop = total_users // request_usage
-        req_in_loops = request_usage * loop
-        req_last = total_users - req_in_loops
-
-        self.log.info("request_usage = %s", request_usage)
-        self.log.info("Total Requests = %s", total_users)
-        self.log.info("Loop = %s", loop)
-        self.log.info("Req_in_loops = %s", req_in_loops)
-        self.log.info("Req_last = %s", req_last)
-        self.log.info("Run intital batch of create csm users")
-        result = self.jmx_obj.run_verify_jmx(
-            jmx_file,
-            threads=request_usage,
-            rampup=test_cfg["rampup"],
-            loop=loop)
-        assert result, "Errors reported in the Jmeter execution"
-
-        self.log.info("Run last batch of create csm users")
-        result = self.jmx_obj.run_verify_jmx(
-            jmx_file,
-            threads=req_last,
-            rampup=test_cfg["rampup"],
-            loop=1)
-        assert result, "Errors reported in the Jmeter execution"
-
-        #TODO: List users to verify if 100 users are present(99 csm+1 admin)
         self.log.info("Create one more user and check for 403 forbidden")
         response = self.csm_obj.create_csm_user(
             user_type="valid", user_role="manage")
         self.log.info("Verifying that user was successfully created")
-        assert response.status_code == const.FORBIDDEN
+        assert response.status_code == HTTPStatus.FORBIDDEN
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
             assert response.json()["error_code"] == resp_error_code, "Error code check failed"
             assert response.json()["message_id"] == resp_msg_id, "Message ID check failed"
             assert response.json()["message"] == msg, "Message check failed"
         #Delete all created users
+        self.csm_obj.delete_multi_csm_user(100, existing_user)
         self.log.info("##### Test completed -  %s #####", test_case_name)
