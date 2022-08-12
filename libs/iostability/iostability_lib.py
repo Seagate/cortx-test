@@ -150,8 +150,8 @@ class MailNotification(threading.Thread):
         body = f"<p>Hours of execution: {datetime.now() - self.start_time}\n<p>"
         if self.build_url:
             body += f"""Jenkins Job: <a href="{self.build_url}">{self.build_url}</a>\n"""
-        body += f"<p>\nPlease find attached hctl status<p>"
-        body += f"<p>\nThanks<p>"
+        body += "<p>\nPlease find attached hctl status<p>"
+        body += "<p>\nThanks<p>"
         message = MIMEMultipart()
         message['From'] = self.sender
         message['To'] = COMMASPACE.join(self.receiver.split(','))
