@@ -75,7 +75,7 @@ class TestDataPodRestart:
         cls.random_time = cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = cls.node_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
-        cls.multipart_obj_path = None
+        cls.multipart_obj_path = cls.set_name = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -121,6 +121,18 @@ class TestDataPodRestart:
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Precondition: Verified cluster is up and running and all pods are online.")
+        LOGGER.info("Get %s pod to be deleted", const.POD_NAME_PREFIX)
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        self.delete_pod = sts_dict[sts][-1]
+        LOGGER.info("Pod to be deleted is %s", self.delete_pod)
+        self.set_type, self.set_name = self.node_master_list[0].get_set_type_name(
+            pod_name=self.delete_pod)
+        resp = self.node_master_list[0].get_num_replicas(self.set_type, self.set_name)
+        assert_utils.assert_true(resp[0], resp)
+        self.num_replica = int(resp[1])
         LOGGER.info("COMPLETED: Setup operations. ")
 
     def teardown_method(self):
@@ -139,7 +151,9 @@ class TestDataPodRestart:
                                            restore_method=self.restore_method,
                                            restore_params={"deployment_name": self.deployment_name,
                                                            "deployment_backup":
-                                                               self.deployment_backup})
+                                                               self.deployment_backup,
+                                                           "num_replica": self.num_replica,
+                                                           "set_name": self.set_name})
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
@@ -169,17 +183,18 @@ class TestDataPodRestart:
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -207,7 +222,9 @@ class TestDataPodRestart:
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
@@ -252,17 +269,18 @@ class TestDataPodRestart:
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -285,7 +303,9 @@ class TestDataPodRestart:
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
@@ -369,17 +389,18 @@ class TestDataPodRestart:
                                                            f"number of buckets")
 
         LOGGER.info("Step 1: Successfully performed WRITEs with variable object sizes.")
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -417,7 +438,9 @@ class TestDataPodRestart:
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
@@ -555,17 +578,18 @@ class TestDataPodRestart:
         upload_checksum_1 = str(resp[2])
         LOGGER.info("Step 1: Successfully performed multipart upload for size %s MB in total %s "
                     "parts.", file_size, total_parts)
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -599,17 +623,19 @@ class TestDataPodRestart:
         upload_checksum_2 = str(resp[2])
         LOGGER.info("Step 4: Successfully performed multipart upload for  size %s MB in "
                     "total %s parts.", file_size, total_parts)
-        LOGGER.info("Step 5: Start pod again by creating deployment.")
+        LOGGER.info("Step 5: Start pod again and check cluster status")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         self.restore_pod = False
-        LOGGER.info("Step 5: Successfully started pod again by creating deployment.")
+        LOGGER.info("Step 5: Successfully started pod again and cluster is online")
 
         LOGGER.info("Step 6.1: Download the uploaded object %s in healthy cluster & verify "
                     "checksum", self.object_name)
@@ -712,17 +738,18 @@ class TestDataPodRestart:
         for part_n in res[1]["Parts"]:
             assert_utils.assert_list_item(part_numbers, part_n["PartNumber"])
         LOGGER.info("Step 2: Listed parts of partial multipart upload: %s", res[1])
-        LOGGER.info("Step 3: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 3: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -752,17 +779,19 @@ class TestDataPodRestart:
         for part_n in res[1]["Parts"]:
             assert_utils.assert_list_item(part_numbers, part_n["PartNumber"])
         LOGGER.info("Step 5: Listed parts of partial multipart upload: %s", res[1])
-        LOGGER.info("Step 6: Start pod again by creating deployment.")
+        LOGGER.info("Step 6: Start pod again and check cluster status")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         self.restore_pod = False
-        LOGGER.info("Step 6: Successfully started pod again by creating deployment.")
+        LOGGER.info("Step 6: Successfully started pod again and cluster is online")
         remaining_parts = list(filter(lambda i: i not in part_numbers,
                                       list(range(1, total_parts + 1))))
         LOGGER.info("Step 7: Upload remaining %s parts out of %s", remaining_parts, total_parts)
@@ -845,17 +874,18 @@ class TestDataPodRestart:
         put_etag = resp[1]
         LOGGER.info("Step 1: Successfully created multiple buckets and uploaded object to %s "
                     "and copied to other buckets and verified copy object etags", self.bucket_name)
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -894,17 +924,19 @@ class TestDataPodRestart:
         put_etag = resp[1]
         LOGGER.info("Step 4: Successfully created multiple buckets and copied object from the %s "
                     "bucket to other buckets and verified copy object etags", self.bucket_name)
-        LOGGER.info("Step 5: Start pod again by creating deployment.")
+        LOGGER.info("Step 5: Start pod again and check cluster status")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         self.restore_pod = False
-        LOGGER.info("Step 5: Successfully started pod again by creating deployment.")
+        LOGGER.info("Step 5: Successfully started pod again and cluster is online")
         LOGGER.info("Step 6: Download the copied objects & verify etags.")
         for bkt, obj in bkt_obj_dict.items():
             resp = s3_test_obj.get_object(bucket=bkt, key=obj)
@@ -959,7 +991,7 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34073")
-    def test_continuous_reads_during_pod_restart(self):
+    def test_reads_during_pod_restart(self):
         """
         This test tests continuous reads during pod restart
         """
@@ -975,17 +1007,18 @@ class TestDataPodRestart:
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs-Verify with variable sizes objects.")
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1026,17 +1059,19 @@ class TestDataPodRestart:
             thread1.start()
         LOGGER.info("Step 5: Successfully started READs and verified DI on the written data in "
                     "background")
-        LOGGER.info("Step 6: Starting pod again by creating deployment using K8s command")
+        LOGGER.info("Step 6: Starting pod again and checking cluster status")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 6: Successfully started the pod")
+        LOGGER.info("Step 6: Successfully started the pod and cluster is online")
         self.restore_pod = False
         event.clear()
         thread.join()
@@ -1123,17 +1158,18 @@ class TestDataPodRestart:
         LOGGER.info("Step 1: Successfully performed multipart upload for  size %s MB in "
                     "total %s parts.", file_size, total_parts)
 
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1164,17 +1200,19 @@ class TestDataPodRestart:
 
         time.sleep(HA_CFG["common_params"]["60sec_delay"])
 
-        LOGGER.info("Step 5: Starting pod again by creating deployment using K8s command")
+        LOGGER.info("Step 5: Starting pod again and checking cluster status")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 5: Successfully started the pod")
+        LOGGER.info("Step 5: Successfully started the pod and cluster is online")
         self.restore_pod = False
 
         LOGGER.info("Step 6: Checking responses from background process")
@@ -1305,17 +1343,18 @@ class TestDataPodRestart:
         LOGGER.info("Step 1: Successfully created multiple buckets and uploaded object to %s "
                     "and copied to other buckets and verified copy object etags", self.bucket_name)
 
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1368,17 +1407,19 @@ class TestDataPodRestart:
                 assert_utils.assert_true(False, "Please check background process logs")
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
 
-        LOGGER.info("Step 5: Starting pod again by creating deployment using K8s command")
+        LOGGER.info("Step 5: Starting pod again and checking cluster status")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 5: Successfully started the pod")
+        LOGGER.info("Step 5: Successfully started the pod and cluster is online")
         self.restore_pod = False
         event.clear()
 
@@ -1478,17 +1519,18 @@ class TestDataPodRestart:
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1567,17 +1609,19 @@ class TestDataPodRestart:
         LOGGER.info("Wait for %s seconds for all background operations to start",
                     HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
-        LOGGER.info("Step 7: Starting pod again by creating deployment using K8s command")
+        LOGGER.info("Step 7: Starting pod again and checking cluster status")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 7: Successfully started the pod again by creating deployment")
+        LOGGER.info("Step 7: Successfully started the pod and cluster is online")
         self.restore_pod = False
         event.clear()
         LOGGER.info("Step 8: Verify status for In-flight READs/WRITEs/DELETEs while data pod %s "
@@ -1653,17 +1697,18 @@ class TestDataPodRestart:
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1711,17 +1756,19 @@ class TestDataPodRestart:
         thread.start()
         LOGGER.info("Step 4: Successfully started continuous DELETEs in background on %s buckets",
                     del_bucket)
-        LOGGER.info("Step 5: Starting pod again by creating deployment using K8s command")
+        LOGGER.info("Step 5: Starting pod again and checking cluster status")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 5: Successfully started the pod again by creating deployment")
+        LOGGER.info("Step 5: Successfully started the pod again and cluster is online")
         self.restore_pod = False
         event.clear()
         thread.join()
@@ -1791,19 +1838,20 @@ class TestDataPodRestart:
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
         output = Queue()
         event = threading.Event()  # Event to be used to send intimation of pod restart
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 3: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
+        LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
         self.restore_pod = True
         LOGGER.info("Step 3: Start WRITEs with variable object sizes in background")
@@ -1820,17 +1868,19 @@ class TestDataPodRestart:
         thread.start()
         LOGGER.info("Step 3: Started WRITEs in degraded mode with variable sizes objects in "
                     "background.")
-        LOGGER.info("Step 4: Starting pod again by creating deployment using K8s command")
+        LOGGER.info("Step 4: Starting pod again and checking cluster status")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
-                                       clstr_status=False)
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
+                                       clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 4: Successfully started the pod and checked cluster and services status")
+        LOGGER.info("Step 4: Successfully started the pod and cluster is online")
         self.restore_pod = False
         event.clear()
         thread.join()
@@ -1894,17 +1944,18 @@ class TestDataPodRestart:
                                                     nsamples=2, nclients=5, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -1939,17 +1990,19 @@ class TestDataPodRestart:
                     "background")
         LOGGER.info("Waiting for %s seconds", HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
-        LOGGER.info("Step 4: Starting pod again by creating deployment using K8s command")
+        LOGGER.info("Step 4: Starting pod again and checking cluster status")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
-                                       clstr_status=False)
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
+                                       clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 4: Successfully started the pod and cluster and services are online")
+        LOGGER.info("Step 4: Successfully started the pod and cluster is online")
         self.restore_pod = False
         event.clear()
         thread_wri.join()
@@ -2008,6 +2061,7 @@ class TestDataPodRestart:
     # pylint: disable=multiple-statements
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Need method for particular pod down")
     @pytest.mark.tags("TEST-34088")
     def test_ios_rc_node_restart(self):
         """
@@ -2117,7 +2171,7 @@ class TestDataPodRestart:
     @pytest.mark.tags("TEST-34087")
     def test_ios_safe_shutdown_pod_restart(self):
         """
-        This test tests IOs before and after data pod restart (pod shutdown by making replicas=0)
+        This test tests IOs before and after data pod restart, pod shutdown with replica method
         """
         LOGGER.info("STARTED: Test to verify IOs before and after data pod restart (pod shutdown "
                     "by making replicas=0).")
@@ -2135,16 +2189,18 @@ class TestDataPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Successfully IOs completed with variable object sizes")
 
-        LOGGER.info("Step 2: Shutdown random data pod by making replicas = 0 and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0])
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -2170,14 +2226,18 @@ class TestDataPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Successfully IOs completed after pod shutdown by making replicas=0.")
 
-        LOGGER.info("Step 5: Starting pod again by making replicas=1")
+        LOGGER.info("Step 5: Starting pod again and checking cluster status")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
-                                       restore_params={"deployment_name": self.deployment_name},
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 5: Successfully started the pod again by making replicas=1")
+        LOGGER.info("Step 5: Successfully started the pod again and cluster is online")
         self.restore_pod = False
 
         LOGGER.info("Step 6: READ-Verify data written in healthy and degraded cluster")
@@ -2288,17 +2348,18 @@ class TestDataPodRestart:
                                                     skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -2311,12 +2372,14 @@ class TestDataPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed READs & Verify DI on written variable object sizes. "
                     "on degraded cluster")
-        LOGGER.info("Step 4: Starting pod again by creating deployment using K8s command")
+        LOGGER.info("Step 4: Starting pod again and checking cluster status")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
@@ -2352,7 +2415,7 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-36004")
-    def test_continuous_reads_during_pod_restart_ros(self):
+    def test_reads_during_pod_restart_ros(self):
         """
         This test tests continuous reads during pod restart (F-26A Read Only Scope)
         """
@@ -2369,17 +2432,18 @@ class TestDataPodRestart:
                                                     skipcleanup=True, nclients=20, nsamples=20)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
-        LOGGER.info("Step 2: Shutdown random data pod by deleting deployment and "
+        LOGGER.info("Step 2: Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            down_method=const.RESTORE_DEPLOYMENT_K8S)
+            delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
         pod_name = list(resp[1].keys())[0]
-        self.deployment_name = resp[1][pod_name]['deployment_name']
-        self.deployment_backup = resp[1][pod_name]['deployment_backup']
+        self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
@@ -2397,19 +2461,19 @@ class TestDataPodRestart:
         time.sleep(HA_CFG["common_params"]["degraded_wait_delay"])
         LOGGER.info("Step 3: Successfully started READs and verify DI on the written data in "
                     "background")
-        LOGGER.info("Step 4: Starting pod again by creating deployment using %s method",
-                    self.restore_method)
+        LOGGER.info("Step 4: Starting pod again and checking cluster status")
         event.set()
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
-                                                           self.deployment_backup},
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
                                        clstr_status=True)
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-        LOGGER.info("Step 4: Successfully started the pod using %s method and cluster is online",
-                    self.restore_method)
+        LOGGER.info("Step 4: Successfully started the pod and cluster is online")
         self.restore_pod = False
         LOGGER.info("Step 5: Check read/verify running in background.")
         event.clear()
