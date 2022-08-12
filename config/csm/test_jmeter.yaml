@@ -50,3 +50,14 @@ test_44788:
   loop: 10
 test_44799:
   thread_request: 2
+test_45719:
+  users_count : 3
+  rampup: 1
+  loop: 1
+  expect_message: "409,Conflict"
+test_45718:
+  users_count : 1
+  rampup: 1
+  loop: 1
+  expect_message: "409,Conflict"
+
