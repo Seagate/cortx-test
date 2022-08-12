@@ -131,7 +131,7 @@ class TestCopyObjectSimultaneousDelete:
                 self.create_put_object(copy_args[0], copy_args[1], obj_size)
             LOGGER.info("Parallely, \n1. From %s copy %s to %s as %s\n2. Delete %s from %s",
                         copy_args[0], copy_args[1], copy_args[2], copy_args[3], delete_args[1],
-                        delete_args[1])
+                        delete_args[0])
             with multiprocessing.Pool(processes=2) as pool:
                 process1 = pool.apply_async(self.copy_object_wrapper, args=copy_args[:5])
                 process2 = pool.apply_async(self.delete_object_wrapper, args=delete_args)
