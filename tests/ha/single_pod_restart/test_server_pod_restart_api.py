@@ -1120,7 +1120,7 @@ class TestServerPodRestartAPI:
         args = {'chk_null_version': True, 'is_unversioned': True, 'file_path':
             self.multipart_obj_path, 'enable_ver': True, 's3_ver': self.s3_ver}
         resp = self.ha_obj.crt_bkt_put_obj_enbl_ver(event, self.s3_test_obj, self.bucket_name,
-                                                 self.object_name, **args)
+                                                    self.object_name, **args)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Created bucket and uploaded object %s of %s size. Enabled "
                     "versioning on %s.", self.object_name, self.f_size, self.bucket_name)
@@ -1244,7 +1244,7 @@ class TestServerPodRestartAPI:
         args = {'chk_null_version': True, 'is_unversioned': True, 'file_path': download_path,
                 'enable_ver': True, 's3_ver': self.s3_ver}
         resp = self.ha_obj.crt_bkt_put_obj_enbl_ver(event, self.s3_test_obj, new_bucket,
-                                                 self.object_name, **args)
+                                                    self.object_name, **args)
         assert_utils.assert_true(resp[0], resp[1])
         self.version_etag.update({new_bucket: []})
         self.version_etag[new_bucket].extend(resp[1])
@@ -1359,7 +1359,7 @@ class TestServerPodRestartAPI:
         args = {'chk_null_version': True, 'is_unversioned': True, 'file_path': download_path,
                 'enable_ver': True, 's3_ver': self.s3_ver}
         resp = self.ha_obj.crt_bkt_put_obj_enbl_ver(event, self.s3_test_obj, new_bucket,
-                                                 self.object_name, **args)
+                                                    self.object_name, **args)
         assert_utils.assert_true(resp[0], resp[1])
         self.version_etag.update({new_bucket: []})
         self.version_etag[new_bucket].extend(resp[1])
@@ -1429,7 +1429,7 @@ class TestServerPodRestartAPI:
         args = {'chk_null_version': True, 'is_unversioned': True, 'file_path':
             self.multipart_obj_path, 'enable_ver': True, 's3_ver': self.s3_ver}
         resp = self.ha_obj.crt_bkt_put_obj_enbl_ver(event, self.s3_test_obj, self.bucket_name,
-                                                 self.object_name, **args)
+                                                    self.object_name, **args)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Created bucket and uploaded object %s of %s size. Enabled "
                     "versioning on %s.", self.object_name, self.f_size, self.bucket_name)
@@ -1458,24 +1458,24 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Suspended versioning on %s.", self.bucket_name)
 
-        LOGGER.info("Step 4: Get versions of %s with & without VersionID & verify etags for %s.",
-                    self.object_name, self.bucket_name)
+        LOGGER.info("Step 4: Get versions of %s with & without specifying VersionID & verify etags "
+                    "for %s.", self.object_name, self.bucket_name)
         resp = self.ha_obj.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
                                                bkt_name=self.bucket_name, obj_name=self.object_name,
                                                ver_etag=self.version_etag[self.bucket_name])
-        assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
+        assert_utils.assert_true(resp[0], f"Get Object with specifying versionID failed {resp[1]}")
         resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
         latest_vetag = self.version_etag[self.bucket_name][-1]
         latest_v = list(latest_vetag.keys())[0]
         etag = list(latest_vetag.values())[0]
         if resp[1]["VersionId"] != latest_v:
-            assert_utils.assert_true(False, "Get Object without VersionID does not match with "
-                                            f"latest {latest_v} {resp[1]}")
+            assert_utils.assert_true(False, "Get Object without specifying VersionID does not "
+                                            f"match with latest {latest_v} {resp[1]}")
         if resp[1]["ETag"] != etag:
-            assert_utils.assert_true(False, "Etag without VersionID does not match with "
+            assert_utils.assert_true(False, "Etag without specifying VersionID does not match with "
                                             f"etag {etag} {resp[1]}")
-        LOGGER.info("Step 4: Got versions of %s with & without VersionID & verified etags for %s.",
-                    self.object_name, self.bucket_name)
+        LOGGER.info("Step 4: Got versions of %s with & without specifying VersionID & verified "
+                    "etags for %s.", self.object_name, self.bucket_name)
 
         LOGGER.info("Step 5: Shutdown server pod with replica method and verify cluster & "
                     "remaining pods status")
@@ -1493,8 +1493,8 @@ class TestServerPodRestartAPI:
         LOGGER.info("Step 5: Successfully shutdown server pod %s. Verified cluster and services "
                     "states are as expected & remaining pods status is online.", pod_name)
 
-        LOGGER.info("Step 6: Get versions of %s with & without VersionID & verify etags for %s.",
-                    self.object_name, self.bucket_name)
+        LOGGER.info("Step 6: Get versions of %s with & without specifying VersionID & verify "
+                    "etags for %s.", self.object_name, self.bucket_name)
         resp = self.ha_obj.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
                                                bkt_name=self.bucket_name, obj_name=self.object_name,
                                                ver_etag=self.version_etag[self.bucket_name])
@@ -1504,13 +1504,13 @@ class TestServerPodRestartAPI:
         latest_v = list(latest_vetag.keys())[0]
         etag = list(latest_vetag.values())[0]
         if resp[1]["VersionId"] != latest_v:
-            assert_utils.assert_true(False, "Get Object without VersionID does not match with "
-                                            f"latest {latest_v} {resp[1]}")
+            assert_utils.assert_true(False, "Get Object without specifying VersionID does not "
+                                            f"match with latest {latest_v} {resp[1]}")
         if resp[1]["ETag"] != etag:
-            assert_utils.assert_true(False, "Etag without VersionID does not match with "
+            assert_utils.assert_true(False, "Etag without specifying VersionID does not match with "
                                             f"etag {etag} {resp[1]}")
-        LOGGER.info("Step 6: Got versions of %s with & without VersionID & verified etags for %s",
-                    self.object_name, self.bucket_name)
+        LOGGER.info("Step 6: Got versions of %s with & without specifying VersionID & verified "
+                    "etags for %s", self.object_name, self.bucket_name)
 
         new_bucket = f"ha-mp-bkt-{int(perf_counter_ns())}"
         download_path = os.path.join(self.test_dir_path, self.test_file + "_new")
@@ -1520,7 +1520,7 @@ class TestServerPodRestartAPI:
         args = {'chk_null_version': True, 'is_unversioned': True, 'file_path': download_path,
                 'enable_ver': True, 's3_ver': self.s3_ver}
         resp = self.ha_obj.crt_bkt_put_obj_enbl_ver(event, self.s3_test_obj, new_bucket,
-                                                 self.object_name, **args)
+                                                    self.object_name, **args)
         assert_utils.assert_true(resp[0], resp[1])
         self.version_etag.update({new_bucket: []})
         self.version_etag[new_bucket].extend(resp[1])
@@ -1541,8 +1541,8 @@ class TestServerPodRestartAPI:
         LOGGER.info("Step 8: Uploaded same object %s after enabling versioning. Listed & verified "
                     "the VersionID for the same for %s.", self.object_name, new_bucket)
 
-        LOGGER.info("Step 9: Get versions of %s with & without VersionID & verify etags for %s.",
-                    self.object_name, new_bucket)
+        LOGGER.info("Step 9: Get versions of %s with & without specifying VersionID & verify "
+                    "etags for %s.", self.object_name, new_bucket)
         resp = self.ha_obj.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
                                                bkt_name=new_bucket, obj_name=self.object_name,
                                                ver_etag=self.version_etag[new_bucket])
@@ -1552,13 +1552,13 @@ class TestServerPodRestartAPI:
         latest_v = list(latest_vetag.keys())[0]
         etag = list(latest_vetag.values())[0]
         if resp[1]["VersionId"] != latest_v:
-            assert_utils.assert_true(False, "Get Object without VersionID does not match with "
-                                            f"latest {latest_v} {resp[1]}")
+            assert_utils.assert_true(False, "Get Object without specifying VersionID does not "
+                                            f"match with latest {latest_v} {resp[1]}")
         if resp[1]["ETag"] != etag:
-            assert_utils.assert_true(False, "Etag without VersionID does not match with "
+            assert_utils.assert_true(False, "Etag without specifying VersionID does not match with "
                                             f"etag {etag} {resp[1]}")
-        LOGGER.info("Step 9: Got versions of %s with & without VersionID & verified etags for %s",
-                    self.object_name, new_bucket)
+        LOGGER.info("Step 9: Got versions of %s with & without specifying VersionID & verified "
+                    "etags for %s", self.object_name, new_bucket)
 
         LOGGER.info("Step 10: Restart server pod with replica method and check cluster status")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
@@ -1575,8 +1575,8 @@ class TestServerPodRestartAPI:
         LOGGER.info("Step 10: Successfully restart server pod with replica method & checked "
                     "cluster status")
 
-        LOGGER.info("Step 11: Get versions of %s with & without VersionID & verify etags for %s.",
-                    self.object_name, new_bucket)
+        LOGGER.info("Step 11: Get versions of %s with & without specifying VersionID & verify "
+                    "etags for %s.", self.object_name, new_bucket)
         resp = self.ha_obj.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
                                                bkt_name=new_bucket, obj_name=self.object_name,
                                                ver_etag=self.version_etag[new_bucket])
@@ -1586,13 +1586,13 @@ class TestServerPodRestartAPI:
         latest_v = list(latest_vetag.keys())[0]
         etag = list(latest_vetag.values())[0]
         if resp[1]["VersionId"] != latest_v:
-            assert_utils.assert_true(False, "Get Object without VersionID does not match with "
-                                            f"latest {latest_v} {resp[1]}")
+            assert_utils.assert_true(False, "Get Object without specifying VersionID does not "
+                                            f"match with latest {latest_v} {resp[1]}")
         if resp[1]["ETag"] != etag:
-            assert_utils.assert_true(False, "Etag without VersionID does not match with "
-                                            f"etag {etag} {resp[1]}")
-        LOGGER.info("Step 11: Got versions of %s with & without VersionID & verified etag for %s",
-                    self.object_name, new_bucket)
+            assert_utils.assert_true(False, "Etag without specifying VersionID does not match with"
+                                            f" etag {etag} {resp[1]}")
+        LOGGER.info("Step 11: Got versions of %s with & without specifying VersionID & verified "
+                    "etag for %s", self.object_name, new_bucket)
 
         LOGGER.info("Step 12: Suspend versioning on %s.", new_bucket)
         resp = self.s3_ver.put_bucket_versioning(bucket_name=new_bucket, status="Suspended")
