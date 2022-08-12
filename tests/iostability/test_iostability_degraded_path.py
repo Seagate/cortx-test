@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from commons import configmanager, cortxlogging
-from commons.constants import K8S_SCRIPTS_PATH, POD_NAME_PREFIX, STATEFULSET
+from commons.constants import K8S_SCRIPTS_PATH, POD_NAME_PREFIX
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LATEST_LOG_FOLDER
