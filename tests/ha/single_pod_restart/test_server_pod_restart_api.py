@@ -1451,7 +1451,8 @@ class TestServerPodRestartAPI:
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 4: Started overwrite object in background")
-        LOGGER.info("Waiting for bucket creation...")
+        LOGGER.info("Waiting for bucket creation for ~ %s sec",
+                    HA_CFG["common_params"]["10min_delay"])
         timeout = time.time() + HA_CFG["common_params"]["10min_delay"]
         while True:
             time.sleep(HA_CFG["common_params"]["20sec_delay"])
