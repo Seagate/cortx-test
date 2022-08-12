@@ -1919,7 +1919,7 @@ class HAK8s:
                 versions_dict = {version_id: put_resp[1]["ETag"]}
                 pass_put_ver.append(versions_dict)
             except CTException as error:
-                LOGGER.exception("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                LOGGER.exception("Error in %s: %s", HAK8s.parallel_put_object.__name__, error)
                 if event.is_set():
                     continue
                 fail_put_ver.append(put)
@@ -1957,7 +1957,7 @@ class HAK8s:
                 else:
                     pass_get_ver.append(v_etag)
             except CTException as error:
-                LOGGER.exception("Error in %s: %s", HAK8s.put_get_delete.__name__, error)
+                LOGGER.exception("Error in %s: %s", HAK8s.parallel_get_object.__name__, error)
                 if event.is_set():
                     continue
                 fail_get_ver.append(v_etag)
@@ -1987,7 +1987,7 @@ class HAK8s:
                 return False, "Fetched list of VersionId-Etag is not matching with Expected"
         return True, "Fetched list of VersionId-Etag is as Expected"
 
-    def create_bkt_put_object(self, event, s3_test, bkt, obj, **kwargs):
+    def crt_bkt_put_obj_enbl_ver(self, event, s3_test, bkt, obj, **kwargs):
         """
         Function will create a new bucket and upload an new object on un-versioned bucket.
         If enable_ver is set to true, it will enable versioning on given bucket.
