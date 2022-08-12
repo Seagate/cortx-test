@@ -2047,7 +2047,7 @@ class HAK8s:
         :param s3_test_obj: Object of s3 test lib
         :param s3_data: Dict that contains bucket and object info
         ({self.bucket_name: [self.object_name, file_size]})
-        :param iteration: Number of iterations
+        :param iteration: Number of iterations for overwrite
         :param random_size: Flag to select random size of object
         :param event: Event for background IOs
         :param queue: Queue to fill output in case of background IOs
@@ -2056,6 +2056,7 @@ class HAK8s:
         """
         checksums = dict()
         fail_count = 0
+        exp_fail_count = 0
         test_dir_path = os.path.join(TEST_DATA_FOLDER, "HAOverWrite")
         if not os.path.isdir(test_dir_path):
             LOGGER.debug("Creating file path %s", test_dir_path)
@@ -2086,40 +2087,31 @@ class HAK8s:
                 LOGGER.info("Iteration : %s", loop)
                 file_size = random.SystemRandom().randint(0, object_size) if random_size \
                     else object_size
-                upload_path = os.path.join(test_dir_path, f"{object_name}_upload.txt")
+                try:
+                    upload_path = os.path.join(test_dir_path, f"{object_name}_upload.txt")
+                    LOGGER.info("Creating a file with name %s", object_name)
+                    system_utils.create_file(upload_path, file_size, "/dev/urandom", '1M')
+                    LOGGER.info("Retrieving checksum of file %s", upload_path)
+                    up_checksum = self.cal_compare_checksum([upload_path], compare=False)[0]
+                    LOGGER.info("Uploading object (Overwriting)...")
+                    _ = s3_test_obj.put_object(bucket_name, object_name, upload_path)
 
-                LOGGER.info("Creating a file with name %s", object_name)
-                system_utils.create_file(upload_path, file_size, "/dev/urandom", '1M')
-                LOGGER.info("Retrieving checksum of file %s", object_name)
-                up_checksum = self.cal_compare_checksum([upload_path], compare=False)[0]
-
-                LOGGER.info("Uploading object (Overwriting)...")
-                resp = s3_test_obj.put_object(bucket_name, object_name, upload_path)
-                if not resp[0]:
+                    LOGGER.info("Downloading object...")
+                    download_path = os.path.join(test_dir_path, f"{object_name}_download.txt")
+                    _ = s3_test_obj.object_download(bucket_name, object_name, download_path)
+                    dnld_checksum = self.cal_compare_checksum([download_path], compare=False)[0]
+                    checksums[f"{bucket_name}_{loop}"] = [up_checksum, dnld_checksum]
+                except CTException as error:
                     if event.is_set:
-                        LOGGER.error("Event is set, overwrite failure is expected. Error: %s",
-                                     resp[1])
+                        LOGGER.error("Event is set, overwrite/object download failure is expected. "
+                                     "Error: %s", error)
+                        exp_fail_count += 1
                     else:
-                        LOGGER.error("Overwrite failed. \nError: %s", resp[1])
+                        LOGGER.error("Event is cleared, Overwrite failed or Object download "
+                                     "failed. \nError: %s", error)
                         fail_count += 1
-                    continue
-
-                LOGGER.info("Downloading object...")
-                download_path = os.path.join(test_dir_path, f"{object_name}_download.txt")
-                resp = s3_test_obj.object_download(bucket_name, object_name, download_path)
-                if not resp[0]:
-                    if event.is_set:
-                        LOGGER.error("Event is set, object download failure is expected. Error: %s",
-                                     resp[1])
-                    else:
-                        LOGGER.error("Object download failed. \nError: %s", resp[1])
-                        fail_count += 1
-                    continue
-
-                dnld_checksum = self.cal_compare_checksum([download_path], compare=False)[0]
-                checksums[f"{bucket_name}_{loop}"] = [up_checksum, dnld_checksum]
-
-                system_utils.cleanup_dir(test_dir_path)
+                finally:
+                    system_utils.cleanup_dir(test_dir_path)
         LOGGER.debug("Fail count is : %s", fail_count)
-        return not fail_count, checksums if not background else queue.put((not fail_count,
-                                                                           checksums))
+        return not fail_count, checksums, exp_fail_count if not background else \
+            queue.put((not fail_count, checksums, exp_fail_count))

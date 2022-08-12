@@ -1484,14 +1484,18 @@ class TestServerPodRestartAPI:
 
         LOGGER.info("Step 6: Verify responses from background process")
         responses = tuple()
-        while len(responses) < 2:
+        while len(responses) < 3:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not responses:
             assert_utils.assert_true(False, "Failure in background process")
 
+        checksums = responses[1]
+        exp_fail_count = responses[2]
         assert_utils.assert_true(responses[0], "Failures observed in overwrite or download in "
                                                "background process")
-        checksums = responses[1]
+        assert_utils.assert_false(exp_fail_count, "Failures observed in overwrite or download "
+                                                  "in background process while event was set")
+
         for checksum in checksums.values():
             assert_utils.assert_equal(checksum[0], checksum[1],
                                       f"Checksum does not match, Expected: {checksum[0]} "
