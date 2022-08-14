@@ -174,7 +174,6 @@ class TestCsmLoad():
 
 
     # pylint: disable-msg=too-many-locals
-    @pytest.mark.skip(reason="not_in_main_build_yet")
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
