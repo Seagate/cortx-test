@@ -282,12 +282,14 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.tags("TEST-45526")
     @CTFailOn(error_handler)
     def test_45526(self):
-        """Test Delete destination object when copy multipart object is in progress in same bucket"""
+        """Test Delete destination object when copy multipart object is in progress
+        in same bucket"""
         LOGGER.info("STARTED: Test Delete destination object when copy multipart object is in "
                     "progress in same bucket")
         self.create_put_parallel_copy_and_delete_object((self.srcbuck, "src-obj", self.srcbuck,
                                                          "dest-obj", "NoSuchKey", 5,
-                                                         self.file_path), (self.srcbuck, "dest-obj"),
+                                                         self.file_path), (self.srcbuck,
+                                                         "dest-obj"),
                                                         is_mpu=True)
         LOGGER.info("ENDED: Test Delete destination object when copy multipart object is in "
                     "progress in same bucket")
@@ -321,4 +323,4 @@ class TestCopyObjectSimultaneousDelete:
                                                          self.file_path), (self.destbuck, "False"),
                                                         is_mpu=True)
         LOGGER.info("ENDED: Test Delete destination bucket when copy multipart object is in "
-                    "progress")        
+                    "progress")
