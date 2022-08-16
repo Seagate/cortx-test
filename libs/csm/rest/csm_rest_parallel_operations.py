@@ -46,7 +46,7 @@ class RestParallelOps(RestTestLib):
         resp = self.master.send_k8s_cmd(operation="exec", pod=data_pod, namespace=NAMESPACE,
                                      command_suffix=cmd_suffix, decode=True)
         self.log.info("Response : %s", resp)
-        resp = resp.split(":")[1]
+        resp = int(resp.split(":")[1])
         self.log.info("CSM request usage limit : %s", resp)
         return resp
 
@@ -70,7 +70,7 @@ class RestParallelOps(RestTestLib):
         return resp
 
 
-    def get_thread_loop(self, users, request_limit):
+    def get_thread_loop(self, users:int, request_limit:int):
         """
         :param request_thread : Request per thread
         :param count: total number of user to be created
@@ -79,6 +79,7 @@ class RestParallelOps(RestTestLib):
         returns dictionary which will distribute count based on request_limit and request_thread
         """
         req_loop = {}
+
         if users < request_limit:
             req_loop = {users : 1}
         else:
@@ -88,7 +89,7 @@ class RestParallelOps(RestTestLib):
         return req_loop
 
 
-    def execute_max_user_loop(self, jmx_file, users, request_limit, ops):
+    def execute_max_user_loop(self, jmx_file:str, users:int, request_limit:int, ops:str):
         """
         Executes jmeter in batches to create max users
         """
@@ -104,23 +105,22 @@ class RestParallelOps(RestTestLib):
             self.counter += batch_cnt
             tmp = self.jmx_obj.run_verify_jmx(jmx_file, threads=thread, rampup=1, loop=loop)
             if tmp:
-                self.log.info("%s Users created", thread * loop)
+                self.log.info("%s Users %s", ops, thread * loop)
             else:
-                self.log.error("Creation failed.")
+                self.log.error("%s failed.", ops)
             result = result and tmp
         self.counter = 0
         return result
 
     @RestTestLib.authenticate_and_login
-    def create_multi_csm_user(self, users:int):
+    def create_multi_csm_user(self, users:int, existing_user:int=3):
         """
         Create count number of CSM in parallel using jmeter libs
         :param users: Number of users to be created
         """
         if users is None:
-            user_limit = self.get_max_csm_user_limit()
-            existing_user = 3
-            users = user_limit - existing_user
+            users = self.get_max_csm_user_limit()
+        users = users - existing_user
 
         jmx_file = "CSM_Create_N_CSM_Users.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
@@ -129,15 +129,14 @@ class RestParallelOps(RestTestLib):
         return result
 
     @RestTestLib.authenticate_and_login
-    def delete_multi_csm_user(self, users:int):
+    def delete_multi_csm_user(self, users:int, existing_user:int=3):
         """
         Create count number of CSM in parallel using jmeter libs
         :param users: Number of users to be created
         """
         if users is None:
-            user_limit = self.get_max_csm_user_limit()
-            existing_user = 3
-            users = user_limit - existing_user
+            users = self.get_max_csm_user_limit()
+        users = users - existing_user
         jmx_file = "CSM_Delete_N_CsmUsers.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
 
@@ -145,7 +144,7 @@ class RestParallelOps(RestTestLib):
         result = self.execute_max_user_loop(jmx_file, users, request_limit, ops = "delete")
         return result
 
-    def write_users_to_delete_csv(self, users):
+    def write_users_to_delete_csv(self, users:int):
         """
         Creates a csv with list of users to be deleted
         """
@@ -158,7 +157,7 @@ class RestParallelOps(RestTestLib):
         self.log.info("Test data content : %s", content)
         config_utils.write_csv(fpath, fieldnames, content)
 
-    def write_users_to_create_csv(self, users):
+    def write_users_to_create_csv(self, users:int):
         """
         Creates a csv with list of user to be created
         """
