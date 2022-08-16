@@ -122,7 +122,7 @@ class RestParallelOps(RestTestLib):
             existing_user = 3
             users = user_limit - existing_user
 
-        jmx_file = "CSM_Create_N_Manage_Users.jmx"
+        jmx_file = "CSM_Create_N_CSM_Users.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
         request_limit = self.get_request_usage_limit()
         result = self.execute_max_user_loop(jmx_file, users, request_limit, ops = "create")

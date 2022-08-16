@@ -24,7 +24,6 @@ Module for generating email
 import logging
 import os
 import smtplib
-from email.mime.text import MIMEText
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -43,20 +42,14 @@ class Mail:
         # param receiver: email address of receiver
         """
         self.mail_host = os.getenv("mail_host")
-        self.port = os.getenv("port")
+        self.port = int(os.getenv("port"))
         self.sender = sender
         self.receiver = receiver
 
-    def send_mail(self, subject, body):
+    def send_mail(self, message):
         """
         function to send mail
-        #param subject: subject of email
-        #param body: body of email
+        #param message: Email message
         """
-        msg = MIMEText(body)
-        msg["Subject"] = subject
-        msg["From"] = self.sender
-        msg["To"] = self.receiver
-        LOGGER.info("Sending mail with Subject %s:", subject)
         with smtplib.SMTP(self.mail_host, self.port) as server:
-            server.sendmail(self.sender, self.receiver.split(','), msg.as_string())
+            server.sendmail(self.sender, self.receiver.split(','), message.as_string())
