@@ -55,11 +55,8 @@ class TestCsmLoad():
         cls.log = logging.getLogger(__name__)
         cls.log.info("[STARTED]: Setup class")
         cls.jmx_obj = JmeterInt()
-        cls.sw_alert_obj = SoftwareAlert(CMN_CFG["nodes"][0]["hostname"],
-                                         CMN_CFG["nodes"][0]["username"],
-                                         CMN_CFG["nodes"][0]["password"])
+
         cls.csm_obj = csm_api_factory("rest")
-        cls.csm_alert_obj = SystemAlerts(cls.sw_alert_obj.node_utils)
         cls.config_chk = CSMConfigsCheck()
         cls.test_cfgs = config_utils.read_yaml('config/csm/test_jmeter.yaml')[1]
         cls.rest_resp_conf = configmanager.get_config_wrapper(
@@ -83,6 +80,7 @@ class TestCsmLoad():
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.system_random = secrets.SystemRandom()
         cls.request_usage = 122
+        cls.sw_alert_obj = None
 
     def setup_method(self):
         """
@@ -757,6 +755,10 @@ class TestCsmLoad():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        self.sw_alert_obj = SoftwareAlert(CMN_CFG["nodes"][0]["hostname"],
+                                    CMN_CFG["nodes"][0]["username"],
+                                    CMN_CFG["nodes"][0]["password"])
+        self.csm_alert_obj = SystemAlerts(cls.sw_alert_obj.node_utils)
         test_cfg = self.test_cfgs["test_22208"]
         self.log.info("\nGenerate CPU usage fault.")
         starttime = time.time()
@@ -872,8 +874,8 @@ class TestCsmLoad():
         msg = resp_data[resp_msg_index]
         resp = self.csm_obj.list_csm_users(HTTPStatus.OK, return_actual_response=True)
         existing_user = len(resp.json()['users'])
-        self.csm_obj.create_multi_csm_user(test_cfg["total_users"], existing_user)
-
+        result = self.csm_obj.create_multi_csm_user(test_cfg["total_users"], existing_user)
+        assert result, "Unable to create max users"
         self.log.info("Create one more user and check for 403 forbidden")
         response = self.csm_obj.create_csm_user(
             user_type="valid", user_role="manage")
@@ -885,5 +887,6 @@ class TestCsmLoad():
             assert response.json()["message_id"] == resp_msg_id, "Message ID check failed"
             assert response.json()["message"] == msg, "Message check failed"
         #Delete all created users
-        self.csm_obj.delete_multi_csm_user(test_cfg["total_users"], existing_user)
+        result = self.csm_obj.delete_multi_csm_user(test_cfg["total_users"], existing_user)
+        assert result, "Unable to delete max users"
         self.log.info("##### Test completed -  %s #####", test_case_name)

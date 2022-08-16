@@ -105,9 +105,9 @@ class RestParallelOps(RestTestLib):
             self.counter += batch_cnt
             tmp = self.jmx_obj.run_verify_jmx(jmx_file, threads=thread, rampup=1, loop=loop)
             if tmp:
-                self.log.info("%s Users created", thread * loop)
+                self.log.info("%s Users %s", ops, thread * loop)
             else:
-                self.log.error("Creation failed.")
+                self.log.error("%s failed.", ops)
             result = result and tmp
         self.counter = 0
         return result
@@ -119,8 +119,8 @@ class RestParallelOps(RestTestLib):
         :param users: Number of users to be created
         """
         if users is None:
-            user_limit = self.get_max_csm_user_limit()
-            users = user_limit - existing_user
+            users = self.get_max_csm_user_limit()
+        users = users - existing_user
 
         jmx_file = "CSM_Create_N_CSM_Users.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
@@ -135,8 +135,8 @@ class RestParallelOps(RestTestLib):
         :param users: Number of users to be created
         """
         if users is None:
-            user_limit = self.get_max_csm_user_limit()
-            users = user_limit - existing_user
+            users = self.get_max_csm_user_limit()
+        users = users - existing_user
         jmx_file = "CSM_Delete_N_CsmUsers.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
 
