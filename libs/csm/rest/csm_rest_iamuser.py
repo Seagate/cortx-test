@@ -32,7 +32,7 @@ from commons.utils import config_utils
 from config import CMN_CFG, CSM_REST_CFG
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
-
+# pylint: disable-msg=unexpected-keyword-arg
 # pylint: disable-msg=too-many-public-methods
 class RestIamUser(RestTestLib):
     """RestIamUser contains all the Rest API calls for iam user operations"""
@@ -125,6 +125,7 @@ class RestIamUser(RestTestLib):
         if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             return self.verify_create_iam_user_rgw(user_type="valid")
         else:
+
             response = self.create_iam_user(
                 user=user, password=password, login_as="s3account_user")
             if response.status_code != expected_status_code:
