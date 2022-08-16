@@ -314,9 +314,8 @@ class MotrCorruptionAdapter(InjectCorruption):
         """
         Inject fault of type checksum or parity.
         :param oid: fid of data or parity block
-        :param fault_type: checksum or parity
         :return boolean :true :if successful
-                          false: if error
+                        false: if error
         """
         try:
             data_pods = self.master_node_list[0].get_all_pods(POD_NAME_PREFIX)
@@ -326,34 +325,29 @@ class MotrCorruptionAdapter(InjectCorruption):
                 # motr_instances = len(motr_containers)  # Todo here and also check for copy to 002
                 # select 1st motr pod
                 logging.debug("pod_name = %s", pod_name)
-                if pod_name == "cortx-data-g0-0":
-                    logging.debug("Inside.......... pod_name = %s", pod_name)
-                    retries = 1
-                    success = False
-                    while retries > 0:
-                        try:
-                            resp = self.master_node_list[0].send_k8s_cmd(
-                                operation="exec",
-                                pod=str(pod_name), namespace=NAMESPACE,
-                                command_suffix=f"-c {motr_containers[0]} -- "
-                                               f"{self.build_emap_command(oid)}",
-                                decode=True,
-                            )
-                            logging.debug("resp =%s", resp)
-                            if resp:
-                                success = True
-                                break
-                            retries -= 1
-                            LOGGER.exception("remaining retrying: %s", retries)
-                        except IOError as ex:
-                            LOGGER.exception("Exception occurred %s", ex)
-                            retries -= 1
-                            time.sleep(2)
-                    if success:
-                        break
-            # Todo:
-            # if self.restart_motr_container(0):
-            #     return True
+                retries = 1
+                success = False
+                while retries > 0:
+                    try:
+                        resp = self.master_node_list[0].send_k8s_cmd(
+                            operation="exec",
+                            pod=str(pod_name), namespace=NAMESPACE,
+                            command_suffix=f"-c {motr_containers[0]} -- "
+                                           f"{self.build_emap_command(oid)}",
+                            decode=True,
+                        )
+                        logging.debug("resp =%s", resp)
+                        if resp:
+                            success = True
+                            break
+                        retries -= 1
+                        LOGGER.exception("remaining retrying: %s", retries)
+                    except IOError as ex:
+                        LOGGER.exception("Exception occurred %s", ex)
+                        retries -= 1
+                        time.sleep(2)
+                if success:
+                    break
         except IOError as ex:
             LOGGER.exception("Exception occurred while injecting emap fault %s", ex)
             return False
