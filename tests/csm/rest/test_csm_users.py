@@ -4681,6 +4681,7 @@ class TestCsmUser():
             self.log.info("Step 5: Check Bearer token should be same")
             self.log.info("init_token = %s new_token = %s ", init_token, new_token)
             assert init_token == new_token, "unexpected token mismatch"
+        self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
     @pytest.mark.skip(reason="not_in_main_build_yet")
@@ -4710,6 +4711,7 @@ class TestCsmUser():
             self.log.info("Step 6: Check Bearer token should be different")
             self.log.info("init_token = %s new_token = %s ", init_token, new_token)
             assert init_token != new_token, "unexpected token mismatch"
+        self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
     @pytest.mark.skip(reason="not_in_main_build_yet")
@@ -4741,6 +4743,119 @@ class TestCsmUser():
             self.log.info("Step 6: Check Bearer token should be different")
             self.log.info("init_token = %s new_token = %s ", init_token, new_token)
             assert init_token != new_token, "unexpected token mismatch"
+
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44802')
+    def test_44802(self):
+        """
+        Verify different token is not generated when user changes its password
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_obj.config["csm_admin_user"]["username"]
+        admin_password = self.csm_obj.config["csm_admin_user"]["password"]
+
+        user_roles = ["admin", "manage", "monitor"]
+        for role in user_roles:
+            self.log.info("Step 1: Create new %s user", role)
+            password = self.csm_conf["test_44802"]["current_password"]
+            new_password = self.csm_conf["test_44802"]["new_password"]
+            response = self.csm_obj.create_csm_user(user_type="valid",
+                                                    user_role=role,
+                                                    user_password=password)
+            self.log.info("Verifying if user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST, \
+                                                    f'{role} user creation failed'
+            username = response.json()["username"]
+            self.created_users.append(username)
+
+            self.log.info("Step 2: Login and get header")
+            init_header = self.csm_obj.get_headers(username, password)
+            self.log.info("Store Authorization Token")
+            init_token = init_header['Authorization']
+
+            self.log.info("Login with default admin user")
+            admin_header = self.csm_obj.get_headers(admin_username, admin_password)
+            self.log.info("Step 3: Changing user password for user %s", username)
+            response = self.csm_obj.reset_user_password(username, new_password, True, admin_header)
+            self.log.info("Verify success response")
+            assert response.status_code == HTTPStatus.OK, \
+                                                    f'{role} password change failed'
+            self.log.info("Step 4: Verify that token expires after password changes")
+            new_header = self.csm_obj.get_headers(username, new_password)
+            self.log.info("Store Authorization Token")
+            new_token = new_header['Authorization']
+
+            self.log.info("Check Bearer token should not be different")
+            self.log.info("token before password change = %s ", init_token)
+            self.log.info("token after password change = %s ", new_token)
+            assert init_token == new_token, "unexpected token mismatch"
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44803')
+    def test_44803(self):
+        """
+        Verify different token is generated when user is recreated.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        user_roles = ["admin", "manage", "monitor"]
+        for role in user_roles:
+            self.log.info("Step 1: Create new %s user", role)
+            password = self.csm_conf["test_44803"]["current_password"]
+            response = self.csm_obj.create_csm_user(user_type="valid",
+                                                    user_role=role,
+                                                    user_password=password)
+            self.log.info("Verifying if user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST, \
+                                                    f'{role} user creation failed'
+            username = response.json()["username"]
+            user_id = response.json()["id"]
+            self.created_users.append(username)
+
+            self.log.info("Step 2: Login and get header")
+            init_header = self.csm_obj.get_headers(username, password)
+            self.log.info("Store Authorization Token")
+            init_token = init_header['Authorization']
+
+            self.log.info("Step 3: Sending request to delete csm user %s", username)
+            response = self.csm_obj.delete_csm_user(user_id)
+            self.log.info("Verify success response")
+            assert response.status_code == HTTPStatus.OK, f'{username} Not Deleted Successfully.'
+            self.created_users.remove(username)
+
+            self.log.info("Step 4: Recreate user with same creds")
+            password = self.csm_conf["test_44803"]["current_password"]
+            response = self.csm_obj.create_csm_user(user_type="valid",
+                                                    user_role=role,
+                                                    user_name=username,
+                                                    user_password=password)
+            self.log.info("Verifying if user was created successfully")
+            assert response.status_code == const.SUCCESS_STATUS_FOR_POST, \
+                                                    f'{role} user re-creation failed'
+            username = response.json()["username"]
+            user_id = response.json()["id"]
+            self.created_users.append(username)
+
+            new_header = self.csm_obj.get_headers(username, password)
+            self.log.info("Store Authorization Token")
+            new_token = new_header['Authorization']
+
+            self.log.info("Check Bearer token should be different")
+            self.log.info("token before User Recreate = %s ", init_token)
+            self.log.info("token after User Recreate = %s ", new_token)
+            assert init_token != new_token, "unexpected token mismatch"
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
     @pytest.mark.lr

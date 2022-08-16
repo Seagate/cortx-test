@@ -23,4 +23,4 @@ prod_family: "LC"
 product_type: "k8s"
 product_family: "LC"
 s3_engine: 1
-dtm0_disabled: False
+dtm0_disabled: True

@@ -129,6 +129,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.sanity
     @pytest.mark.s3_bucket_tags
     @pytest.mark.usefixtures("create_bucket")
     @pytest.mark.tags("TEST-5519")
