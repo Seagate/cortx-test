@@ -765,7 +765,7 @@ class TestServerPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        self.test_prefix_deg = 'test-44840'
+        self.test_prefix_deg = 'test-44840-deg'
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
@@ -818,12 +818,11 @@ class TestServerPodRestart:
         while len(del_resp) != 2:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not del_resp:
-            assert_utils.assert_true(False, "No logs from background DELETEs")
+            assert_utils.assert_true(False, "Background process failed")
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(fail_del_bkt) or len(event_del_bkt),
-                                  "Bucket deletion failed when no server pod restarting"
-                                  f"{fail_del_bkt} {event_del_bkt}")
+                                  f"Bucket deletion failed {fail_del_bkt} {event_del_bkt}")
         buckets = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(wr_bucket - del_bucket, len(buckets),
                                   f"Failed to delete {del_bucket} number of buckets from "
@@ -894,7 +893,7 @@ class TestServerPodRestart:
         test_prefix_write = 'test-44838-write'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=test_prefix_write, skipcleanup=True,
-                                                    nsamples=5, nclients=2, setup_s3bench=False)
+                                                    nsamples=5, nclients=5, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
         num_replica = self.num_replica - 1
@@ -919,7 +918,7 @@ class TestServerPodRestart:
         LOGGER.info("Step 3.1: Start WRITEs with variable object sizes in background")
         output_wr = Queue()
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
-                'nclients': 2, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
+                'nclients': 5, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
                 'output': output_wr, 'setup_s3bench': False}
         thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                       kwargs=args)
@@ -1072,7 +1071,8 @@ class TestServerPodRestart:
                                                     setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3.2: Performed WRITEs with variable sizes objects for parallel READs.")
-        LOGGER.info("Step 4: Starting three independent background threads for READs, WRITEs & DELETEs.")
+        LOGGER.info("Step 4: Starting three independent background threads for READs, WRITEs & "
+                    "DELETEs.")
         LOGGER.info("Step 4.1: Start continuous DELETEs in background on random %s buckets",
                     del_bucket)
         bucket_list = s3_data.keys()
@@ -1083,7 +1083,8 @@ class TestServerPodRestart:
                                       args=(event, s3_test_obj,), kwargs=args)
         thread_del.daemon = True  # Daemonize thread
         thread_del.start()
-        LOGGER.info("Step 4.1: Successfully started DELETEs in background for %s buckets", del_bucket)
+        LOGGER.info("Step 4.1: Successfully started DELETEs in background for %s buckets",
+                    del_bucket)
         LOGGER.info("Step 4.2: Perform WRITEs with variable object sizes in background")
         test_prefix_write = 'test-write-44841'
         output_wr = Queue()
@@ -1094,7 +1095,8 @@ class TestServerPodRestart:
                                       kwargs=args)
         thread_wri.daemon = True  # Daemonize thread
         thread_wri.start()
-        LOGGER.info("Step 4.2: Successfully started WRITEs with variable sizes objects in background")
+        LOGGER.info("Step 4.2: Successfully started WRITEs with variable sizes objects in "
+                    "background")
         LOGGER.info("Step 4.3: Perform READs and verify DI on the written data in background")
         output_rd = Queue()
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_read,
@@ -1142,11 +1144,10 @@ class TestServerPodRestart:
         fail_del_bkt = del_resp[1]
         rem_bkts_aftr_del = s3_test_obj.bucket_list()[1]
         assert_utils.assert_false(len(fail_del_bkt),
-                                  "Bucket deletion failed when server pod restart"
-                                  f" {fail_del_bkt}")
-        assert_utils.assert_equals(len(rem_bkts_aftr_del), del_bucket, "All buckets are expected "
-                                                                       "to be deleted while server "
-                                                                       "pod restarted")
+                                  f"Bucket deletion failed {fail_del_bkt}")
+        assert_utils.assert_equals(len(rem_bkts_aftr_del), wr_bucket - del_bucket,
+                                   "All buckets are expected to be deleted while server pod "
+                                   "restarted")
         LOGGER.info("Step 6.1: Verified status for In-flight DELETEs")
         LOGGER.info("Step 6.2: Verify status for In-flight WRITEs")
         responses_wr = dict()
