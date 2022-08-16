@@ -124,6 +124,7 @@ class TestObjectTagging:
         self.log.info("Bucket is created with name %s", self.bucket_name)
 
     @pytest.mark.s3_ops
+    @pytest.mark.sanity
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5549")
     def test_verify_putobj_tagging_2457(self):
@@ -142,6 +143,7 @@ class TestObjectTagging:
         self.log.info("Verify PUT object tagging")
 
     @pytest.mark.s3_ops
+    @pytest.mark.sanity
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5557")
     def test_getobj_tagging_2458(self):
@@ -160,6 +162,7 @@ class TestObjectTagging:
         self.log.info("Verify GET object tagging")
 
     @pytest.mark.s3_ops
+    @pytest.mark.sanity
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-5561")
     def test_delobj_tagging_2459(self):
@@ -185,6 +188,7 @@ class TestObjectTagging:
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
+    @pytest.mark.sanity
     @pytest.mark.usefixtures("create_bucket")
     @pytest.mark.tags("TEST-5547")
     def test_putobj_taggingsupport_2460(self):
@@ -224,6 +228,7 @@ class TestObjectTagging:
         self.log.info("Verify get object with tagging support")
 
     @pytest.mark.s3_ops
+    @pytest.mark.sanity
     @pytest.mark.s3_object_tags
     @pytest.mark.regression
     @pytest.mark.usefixtures("create_bucket")
@@ -1039,6 +1044,7 @@ class TestObjectTagging:
         self.log.info("verify Get object tags count using GET object on non tagged object")
 
     @pytest.mark.s3_ops
+    @pytest.mark.sanity
     @pytest.mark.s3_object_tags
     @pytest.mark.tags("TEST-42782")
     def test_object_tag_count_get_object_42782(self):

@@ -55,11 +55,8 @@ class TestCsmLoad():
         cls.log = logging.getLogger(__name__)
         cls.log.info("[STARTED]: Setup class")
         cls.jmx_obj = JmeterInt()
-        cls.sw_alert_obj = SoftwareAlert(CMN_CFG["nodes"][0]["hostname"],
-                                         CMN_CFG["nodes"][0]["username"],
-                                         CMN_CFG["nodes"][0]["password"])
+
         cls.csm_obj = csm_api_factory("rest")
-        cls.csm_alert_obj = SystemAlerts(cls.sw_alert_obj.node_utils)
         cls.config_chk = CSMConfigsCheck()
         cls.test_cfgs = config_utils.read_yaml('config/csm/test_jmeter.yaml')[1]
         cls.rest_resp_conf = configmanager.get_config_wrapper(
@@ -77,11 +74,13 @@ class TestCsmLoad():
         cls.default_cpu_usage = False
         cls.buckets_created = []
         cls.iam_users_created = []
+        cls.csm_users_created = []
         cls.ha_obj = HAK8s()
         cls.failed_pod = []
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.system_random = secrets.SystemRandom()
         cls.request_usage = 122
+        cls.sw_alert_obj = None
 
     def setup_method(self):
         """
@@ -100,6 +99,7 @@ class TestCsmLoad():
         """
         self.log.info("STARTED: Teardown Operations.")
         iam_deleted = []
+        csm_deleted = []
         buckets_deleted = []
 
         if self.restore_pod:
@@ -124,11 +124,8 @@ class TestCsmLoad():
         for bucket in buckets_deleted:
             self.buckets_created.remove(bucket)
 
-        admin_usr = CSM_REST_CFG["csm_admin_user"]["username"]
-        admin_pwd = CSM_REST_CFG["csm_admin_user"]["password"]
-        header = self.csm_obj.get_headers(admin_usr, admin_pwd)
         for iam_user in self.iam_users_created:
-            resp = self.csm_obj.delete_iam_user_rgw(iam_user, header)
+            resp = self.csm_obj.delete_iam_user(iam_user)
             if resp:
                 iam_deleted.append(iam_user)
             else:
@@ -136,6 +133,16 @@ class TestCsmLoad():
         self.log.info("IAMs deleted %s", iam_deleted)
         for iam in iam_deleted:
             self.iam_users_created.remove(iam)
+
+        for csm_user in self.csm_users_created:
+            resp = self.csm_obj.delete_csm_user(csm_user)
+            if resp:
+                csm_deleted.append(csm_user)
+            else:
+                self.log.error("CSM user deletion failed for %s ", csm_user)
+        self.log.info("CSM user deleted %s", csm_deleted)
+        for csm in csm_deleted:
+            self.csm_users_created.remove(csm)
 
         if self.default_cpu_usage:
             self.log.info("\nStep 4: Resolving CPU usage fault. ")
@@ -146,6 +153,7 @@ class TestCsmLoad():
             self.default_cpu_usage = False
         assert len(self.buckets_created) == 0, "Bucket deletion failed"
         assert len(self.iam_users_created) == 0, "IAM deletion failed"
+        assert len(self.csm_users_created) == 0, "CSM user deletion failed"
         self.log.info("Done: Teardown completed.")
 
 
@@ -315,6 +323,94 @@ class TestCsmLoad():
         assert resp[0], f"Failed to restore pod by {self.restore_method} way"
         self.restore_pod = False
         self.log.info("Successfully restored pod by %s way", self.restore_method)
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-45719')
+    def test_45719(self):
+        """
+        Test user cant create duplicate CSM user in parallel
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_45719"]
+
+        self.log.info("Step 1: Send multiple create CSM users with same creds requests parallel")
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        fieldnames = ["role", "user", "pswd"]
+        content.append({fieldnames[0]: "admin",
+                        fieldnames[1]: f'admin_{test_case_name}',
+                        fieldnames[2]: CSM_REST_CFG["csm_admin_user"]["password"]})
+        content.append({fieldnames[0]: "manage",
+                        fieldnames[1]: f'manage_{test_case_name}',
+                        fieldnames[2]: CSM_REST_CFG["csm_user_manage"]["password"]})
+        content.append({fieldnames[0]: "monitor",
+                        fieldnames[1]: f'monitor_{test_case_name}',
+                        fieldnames[2]: CSM_REST_CFG["csm_user_monitor"]["password"]})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+        jmx_file = "CSM_Create_N_CSM_Users.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        result = self.jmx_obj.run_verify_jmx_with_message(
+            jmx_file,
+            expect_count = self.request_usage - test_cfg["users_count"],
+            expect_message = test_cfg["expect_message"],
+            threads=self.request_usage,
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
+        assert result, "Errors reported in the Jmeter execution"
+
+        self.log.info("Step 2: Add user to list to be deleted")
+        self.csm_users_created.append(f'admin_{test_case_name}')
+        self.csm_users_created.append(f'manage_{test_case_name}')
+        self.csm_users_created.append(f'monitor_{test_case_name}')
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-45718')
+    def test_45718(self):
+        """
+        Test user cant create duplicate IAM user in parallel
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_45718"]
+
+        self.log.info("Step 1: Find and delete if user already exists")
+        uid = 'test_45718'
+        self.csm_obj.delete_iam_user(uid)
+
+        self.log.info("Step 2: Send multiple create IAM user with same user name requests parallel")
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        fieldnames = ["uid"]
+        content.append({fieldnames[0]: uid})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+        jmx_file = "CSM_Create_N_IAM_Users.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        result = self.jmx_obj.run_verify_jmx_with_message(
+            jmx_file,
+            expect_count = self.request_usage - test_cfg["users_count"],
+            expect_message = test_cfg["expect_message"],
+            threads=self.request_usage,
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
+        assert result, "Errors reported in the Jmeter execution"
+
+        self.log.info("Step 3: Add user to list to be deleted")
+        self.iam_users_created.append(uid)
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -659,6 +755,10 @@ class TestCsmLoad():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        self.sw_alert_obj = SoftwareAlert(CMN_CFG["nodes"][0]["hostname"],
+                                    CMN_CFG["nodes"][0]["username"],
+                                    CMN_CFG["nodes"][0]["password"])
+        self.csm_alert_obj = SystemAlerts(cls.sw_alert_obj.node_utils)
         test_cfg = self.test_cfgs["test_22208"]
         self.log.info("\nGenerate CPU usage fault.")
         starttime = time.time()
@@ -772,47 +872,21 @@ class TestCsmLoad():
         resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
         resp_msg_index = test_cfg["message_index"]
         msg = resp_data[resp_msg_index]
-        jmx_file = "CSM_create_max_manage_users.jmx"
-        self.log.info("Running jmx script: %s", jmx_file)
-
-        request_usage = test_cfg["request_usage"]
-        total_users = test_cfg["total_users"]
-
-        loop = total_users // request_usage
-        req_in_loops = request_usage * loop
-        req_last = total_users - req_in_loops
-
-        self.log.info("request_usage = %s", request_usage)
-        self.log.info("Total Requests = %s", total_users)
-        self.log.info("Loop = %s", loop)
-        self.log.info("Req_in_loops = %s", req_in_loops)
-        self.log.info("Req_last = %s", req_last)
-        self.log.info("Run intital batch of create csm users")
-        result = self.jmx_obj.run_verify_jmx(
-            jmx_file,
-            threads=request_usage,
-            rampup=test_cfg["rampup"],
-            loop=loop)
-        assert result, "Errors reported in the Jmeter execution"
-
-        self.log.info("Run last batch of create csm users")
-        result = self.jmx_obj.run_verify_jmx(
-            jmx_file,
-            threads=req_last,
-            rampup=test_cfg["rampup"],
-            loop=1)
-        assert result, "Errors reported in the Jmeter execution"
-
-        #TODO: List users to verify if 100 users are present(99 csm+1 admin)
+        resp = self.csm_obj.list_csm_users(HTTPStatus.OK, return_actual_response=True)
+        existing_user = len(resp.json()['users'])
+        result = self.csm_obj.create_multi_csm_user(test_cfg["total_users"], existing_user)
+        assert result, "Unable to create max users"
         self.log.info("Create one more user and check for 403 forbidden")
         response = self.csm_obj.create_csm_user(
             user_type="valid", user_role="manage")
         self.log.info("Verifying that user was successfully created")
-        assert response.status_code == const.FORBIDDEN
+        assert response.status_code == HTTPStatus.FORBIDDEN
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
             assert response.json()["error_code"] == resp_error_code, "Error code check failed"
             assert response.json()["message_id"] == resp_msg_id, "Message ID check failed"
             assert response.json()["message"] == msg, "Message check failed"
         #Delete all created users
+        result = self.csm_obj.delete_multi_csm_user(test_cfg["total_users"], existing_user)
+        assert result, "Unable to delete max users"
         self.log.info("##### Test completed -  %s #####", test_case_name)

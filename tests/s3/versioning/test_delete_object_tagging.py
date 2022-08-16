@@ -180,6 +180,7 @@ class TestTaggingDeleteObject:
 
     # pylint:disable-msg=too-many-statements
     @pytest.mark.s3_ops
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-40436")
     @CTFailOn(error_handler)
     def test_del_obj_tag_40436(self):

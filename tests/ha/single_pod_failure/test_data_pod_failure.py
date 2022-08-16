@@ -155,7 +155,8 @@ class TestDataPodFailure:
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
             else:
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean, obj_crud=True)
-            assert_utils.assert_true(resp[0], resp[1])
+            if not resp[0]:
+                LOGGER.error("Failed to delete objects/buckets")
         if self.restore_pod:
             resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                            restore_method=self.restore_method,
@@ -203,6 +204,10 @@ class TestDataPodFailure:
             LOGGER.info("Cleanup: Prerequisite set successfully")
 
             LOGGER.info("Cleanup: Deploying the Cluster")
+            LOGGER.debug("Adding HA pod delay workaround")
+            # TODO: Remove workround once CC is implemented
+            cmd_ha = "export CORTX_DEPLOY_HA_TIMEOUT=1000"
+            self.node_master_list[0].execute_cmd(cmd=cmd_ha)
             resp_cls = self.deploy_lc_obj.deploy_cluster(self.node_master_list[0],
                                                          const.K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp_cls[0], resp_cls[1])
