@@ -55,11 +55,8 @@ class TestCsmLoad():
         cls.log = logging.getLogger(__name__)
         cls.log.info("[STARTED]: Setup class")
         cls.jmx_obj = JmeterInt()
-        cls.sw_alert_obj = SoftwareAlert(CMN_CFG["nodes"][0]["hostname"],
-                                         CMN_CFG["nodes"][0]["username"],
-                                         CMN_CFG["nodes"][0]["password"])
+
         cls.csm_obj = csm_api_factory("rest")
-        cls.csm_alert_obj = SystemAlerts(cls.sw_alert_obj.node_utils)
         cls.config_chk = CSMConfigsCheck()
         cls.test_cfgs = config_utils.read_yaml('config/csm/test_jmeter.yaml')[1]
         cls.rest_resp_conf = configmanager.get_config_wrapper(
@@ -83,6 +80,7 @@ class TestCsmLoad():
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.system_random = secrets.SystemRandom()
         cls.request_usage = 122
+        cls.sw_alert_obj = None
 
     def setup_method(self):
         """
@@ -757,6 +755,10 @@ class TestCsmLoad():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        self.sw_alert_obj = SoftwareAlert(CMN_CFG["nodes"][0]["hostname"],
+                                    CMN_CFG["nodes"][0]["username"],
+                                    CMN_CFG["nodes"][0]["password"])
+        self.csm_alert_obj = SystemAlerts(cls.sw_alert_obj.node_utils)
         test_cfg = self.test_cfgs["test_22208"]
         self.log.info("\nGenerate CPU usage fault.")
         starttime = time.time()
@@ -870,47 +872,21 @@ class TestCsmLoad():
         resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
         resp_msg_index = test_cfg["message_index"]
         msg = resp_data[resp_msg_index]
-        jmx_file = "CSM_create_max_manage_users.jmx"
-        self.log.info("Running jmx script: %s", jmx_file)
-
-        request_usage = test_cfg["request_usage"]
-        total_users = test_cfg["total_users"]
-
-        loop = total_users // request_usage
-        req_in_loops = request_usage * loop
-        req_last = total_users - req_in_loops
-
-        self.log.info("request_usage = %s", request_usage)
-        self.log.info("Total Requests = %s", total_users)
-        self.log.info("Loop = %s", loop)
-        self.log.info("Req_in_loops = %s", req_in_loops)
-        self.log.info("Req_last = %s", req_last)
-        self.log.info("Run intital batch of create csm users")
-        result = self.jmx_obj.run_verify_jmx(
-            jmx_file,
-            threads=request_usage,
-            rampup=test_cfg["rampup"],
-            loop=loop)
-        assert result, "Errors reported in the Jmeter execution"
-
-        self.log.info("Run last batch of create csm users")
-        result = self.jmx_obj.run_verify_jmx(
-            jmx_file,
-            threads=req_last,
-            rampup=test_cfg["rampup"],
-            loop=1)
-        assert result, "Errors reported in the Jmeter execution"
-
-        #TODO: List users to verify if 100 users are present(99 csm+1 admin)
+        resp = self.csm_obj.list_csm_users(HTTPStatus.OK, return_actual_response=True)
+        existing_user = len(resp.json()['users'])
+        result = self.csm_obj.create_multi_csm_user(test_cfg["total_users"], existing_user)
+        assert result, "Unable to create max users"
         self.log.info("Create one more user and check for 403 forbidden")
         response = self.csm_obj.create_csm_user(
             user_type="valid", user_role="manage")
         self.log.info("Verifying that user was successfully created")
-        assert response.status_code == const.FORBIDDEN
+        assert response.status_code == HTTPStatus.FORBIDDEN
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying error response...")
             assert response.json()["error_code"] == resp_error_code, "Error code check failed"
             assert response.json()["message_id"] == resp_msg_id, "Message ID check failed"
             assert response.json()["message"] == msg, "Message check failed"
         #Delete all created users
+        result = self.csm_obj.delete_multi_csm_user(test_cfg["total_users"], existing_user)
+        assert result, "Unable to delete max users"
         self.log.info("##### Test completed -  %s #####", test_case_name)
