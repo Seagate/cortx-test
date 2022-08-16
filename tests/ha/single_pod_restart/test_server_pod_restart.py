@@ -1141,10 +1141,11 @@ class TestServerPodRestart:
             del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         if not del_resp:
             assert_utils.assert_true(False, "Background process failed to do deletes")
+        event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
+        assert_utils.assert_false(len(fail_del_bkt) or len(event_del_bkt),
+                                  f"Bucket deletion failed {fail_del_bkt} {event_del_bkt}")
         rem_bkts_aftr_del = s3_test_obj.bucket_list()[1]
-        assert_utils.assert_false(len(fail_del_bkt),
-                                  f"Bucket deletion failed {fail_del_bkt}")
         assert_utils.assert_equals(len(rem_bkts_aftr_del), wr_bucket - del_bucket,
                                    "All buckets are expected to be deleted while server pod "
                                    "restarted")
