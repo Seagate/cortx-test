@@ -138,7 +138,8 @@ class TestServerPodFailure:
         if self.s3_clean:
             LOGGER.info("Cleanup: Cleaning created IAM users and buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-            assert_utils.assert_true(resp[0], resp[1])
+            if not resp[0]:
+                LOGGER.error("Failed to delete objects/buckets")
         if self.restore_pod:
             resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                            restore_method=self.restore_method,
@@ -1368,7 +1369,6 @@ class TestServerPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-39918")
     def test_copy_obj_safe_server_pod_shutdown(self):
         """
@@ -1468,7 +1468,7 @@ class TestServerPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Functionality not available in RGW yet")
+    @pytest.mark.skip(reason="Method no longer applicable with statefulset")
     @pytest.mark.tags("TEST-39919")
     def test_copy_obj_unsafe_server_pod_shutdown(self):
         """
@@ -1567,7 +1567,6 @@ class TestServerPodFailure:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-39920")
     def test_copy_obj_during_server_pod_shutdown(self):
         """
