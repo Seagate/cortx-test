@@ -24,7 +24,7 @@ from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
 
 class ProvExt():
-    """RestIamUser contains all the Rest API calls for iam user operations"""
+    """ProvExt is creating object and extending functionality of the ProvDeployK8sCortxLib"""
     def __init__(self, master, workers):
         self.master = master
         self.workers = workers
@@ -39,9 +39,13 @@ class ProvExt():
         solution_path = self.master.copy_file_to_local(remote_path=remote_sol_path,local_path=LOCAL_SOLUTION_PATH)
         return solution_path
 
-    def update_csm_res_limit(self, m1,m2,c1,c2):
+    def update_csm_res_limit(self, m1:str, m2:str, c1:str, c2:str):
         """
         Update CSM resource limits
+        :param m1: memory requests
+        :param m1: memory limits
+        :param c1: cpu requests
+        :param c2: cpu limits
         """
         self.log.info("Changing the resource limit in solution.yaml...")
         self.log.info("Changing M1 value to: %s", m1)

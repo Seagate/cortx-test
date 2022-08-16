@@ -872,7 +872,7 @@ class TestCsmLoad():
         msg = resp_data[resp_msg_index]
         resp = self.csm_obj.list_csm_users(HTTPStatus.OK, return_actual_response=True)
         existing_user = len(resp.json()['users'])
-        self.csm_obj.create_multi_csm_user(100, existing_user)
+        self.csm_obj.create_multi_csm_user(test_cfg["total_users"], existing_user)
 
         self.log.info("Create one more user and check for 403 forbidden")
         response = self.csm_obj.create_csm_user(
@@ -885,5 +885,5 @@ class TestCsmLoad():
             assert response.json()["message_id"] == resp_msg_id, "Message ID check failed"
             assert response.json()["message"] == msg, "Message check failed"
         #Delete all created users
-        self.csm_obj.delete_multi_csm_user(100, existing_user)
+        self.csm_obj.delete_multi_csm_user(test_cfg["total_users"], existing_user)
         self.log.info("##### Test completed -  %s #####", test_case_name)
