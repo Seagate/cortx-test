@@ -307,9 +307,8 @@ class TestCorruptDataDetection:
                         b_size, cnt_c, object_id,
                         layout, infile, node, client_num)
         # Degrade the setup by killing the m0d process
-        data_pod_list = self.motr_obj.master_node_list[0].select_random_pod_container(
-            POD_NAME_PREFIX, f"{MOTR_CONTAINER_PREFIX}-001")
-        pod_name, container = secrets.choice(data_pod_list)
+        pod_name, container = self.motr_obj.master_node_list[0].select_random_pod_container(
+            POD_NAME_PREFIX, f"{MOTR_CONTAINER_PREFIX}")
         self.dtm_obj.set_proc_restart_duration(
             self.motr_obj.master_node_list[0], pod_name, container, proc_restart_delay)
         try:
