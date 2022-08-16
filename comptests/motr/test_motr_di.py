@@ -52,12 +52,12 @@ import logging
 import secrets
 import pytest
 
-from commons.utils import assert_utils
 from config import CMN_CFG
 from config import di_cfg
 from commons.constants import POD_NAME_PREFIX
 from commons.constants import MOTR_CONTAINER_PREFIX
 from commons.constants import PID_WATCH_LIST
+from commons.utils import assert_utils
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
@@ -215,7 +215,6 @@ class TestCorruptDataDetection:
         layout_ids = ['3']
         offsets = [4096]
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
-
 
     @pytest.mark.tags("TEST-45716")
     @pytest.mark.motr_di
