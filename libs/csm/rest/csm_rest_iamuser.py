@@ -45,8 +45,8 @@ class RestIamUser(RestTestLib):
         self.cryptogen = SystemRandom()
 
     @RestTestLib.authenticate_and_login
-    def create_iam_user(self, user=const.IAM_USER,
-                        password=const.IAM_PASSWORD,
+    def create_iam_user(self, user=None,
+                        password=None,
                         require_reset_val="true"):
         """
         This function will create payload according to the required type for
@@ -56,6 +56,10 @@ class RestIamUser(RestTestLib):
         :param require_reset_val: set reset value to true or false
         :return: payload
         """
+        if user is None:
+            user = self.config["iam_user"]["username"]
+        if password is None:
+            password = self.config["iam_user"]["password"]
         if S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
             payload = self.iam_user_payload_rgw(user_type="valid")
             response = self.create_iam_user_rgw(payload)

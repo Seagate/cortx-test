@@ -33,6 +33,7 @@ from commons import constants
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from libs.s3 import s3_misc
 
+# pylint: disable-msg=unexpected-keyword-arg
 
 class SystemCapacity(RestTestLib):
     """RestCsmUser contains all the Rest API calls for system health related
