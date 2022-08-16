@@ -20,6 +20,7 @@
 """S3 copy object for simultaneous delete test module."""
 
 from time import perf_counter_ns
+from commons import error_messages as errmsg
 import logging
 import multiprocessing
 import os
@@ -156,7 +157,7 @@ class TestCopyObjectSimultaneousDelete:
                 assert_utils.assert_true(process1.get()[0], process1.get()[1])
                 assert_utils.assert_true(process2.get()[0], process2.get()[1])
             if copy_args[0] == copy_args[2] and copy_args[1] == copy_args[3]:
-                self.head_object_wrapper(copy_args[0], copy_args[1], "404")
+                self.head_object_wrapper(copy_args[0], copy_args[1], errmsg.NOT_FOUND_ERRCODE)
 
     def create_put_parallel_copy_and_delete_bucket(self, copy_args, delete_args, is_mpu=False):
         """Create and upload object to bucket and then Parallel copy object and delete bucket with
@@ -287,7 +288,7 @@ class TestCopyObjectSimultaneousDelete:
         LOGGER.info("STARTED: Test Delete destination object when copy multipart object is in "
                     "progress in same bucket")
         self.create_put_parallel_copy_and_delete_object((self.srcbuck, "src-obj", self.srcbuck,
-                                                         "dest-obj", "NoSuchKey", 5,
+                                                         "dest-obj", errmsg.NO_SUCH_KEY_ERR, 5,
                                                          self.file_path), (self.srcbuck,
                                                          "dest-obj"),
                                                         is_mpu=True)
@@ -304,7 +305,7 @@ class TestCopyObjectSimultaneousDelete:
         LOGGER.info("STARTED: Test Delete destination multipart copied object with the same name "
                     "as source object in the same bucket")
         self.create_put_parallel_copy_and_delete_object((self.srcbuck, "obj1", self.srcbuck,
-                                                         "obj1", "InvalidRequest", 5,
+                                                         "obj1", errmsg.INVALID_REQ_ERR, 5,
                                                          self.file_path), (self.srcbuck, "obj1"),
                                                         is_mpu=True)
         LOGGER.info("ENDED: Test Delete destination multipart copied object with the same name "
@@ -319,7 +320,7 @@ class TestCopyObjectSimultaneousDelete:
         LOGGER.info("STARTED: Test Delete destination bucket when copy multipart object is in "
                     "progress")
         self.create_put_parallel_copy_and_delete_bucket((self.srcbuck, "src-obj", self.destbuck,
-                                                         "dest-obj", "NoSuchBucket", 5,
+                                                         "dest-obj", errmsg.NO_BUCKET_OBJ_ERR_KEY, 5,
                                                          self.file_path), (self.destbuck, "False"),
                                                         is_mpu=True)
         LOGGER.info("ENDED: Test Delete destination bucket when copy multipart object is in "
