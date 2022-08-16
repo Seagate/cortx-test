@@ -189,14 +189,15 @@ class TestCorruptDataDetection:
         offsets = [4096]
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
+    @pytest.mark.skip(reason="Test incomplete without teardown")
     @pytest.mark.tags("TEST-42910")
     @pytest.mark.motr_di
     def test_m0cp_block_corruption_m0cat_degraded_mode(self):
         """
         Corrupt data block using m0cp and reading from object with m0cat should error.
-        -s 4096 -c 10 -o 1048583 /root/infile -L 3
-        -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
-        -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
+        -s 4096 -c 10 -o 1048583 /root/infile -L 1
+        -s 4096 -c 1 -o 1048583 /root/myfile -L 1 -u -O 0
+        -o 1048583 -s 4096 -c 10 -L 1 /root/dest_myfile
         """
         count_list = ['8']
         bsize_list = ['4K']
