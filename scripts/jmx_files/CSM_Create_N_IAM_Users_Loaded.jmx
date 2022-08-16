@@ -172,18 +172,8 @@
         </HeaderManager>
         <hashTree/>
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create IAM user" enabled="true">
-          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
-            <collectionProp name="Arguments.arguments">
-              <elementProp name="" elementType="HTTPArgument">
-                <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                <stringProp name="Argument.value">{&#xd;
-	&quot;uid&quot;: &quot;${uid}&quot;,&#xd;
-	&quot;display_name&quot;: &quot;${uid}&quot;&#xd;
-}</stringProp>
-                <stringProp name="Argument.metadata">=</stringProp>
-              </elementProp>
-            </collectionProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+            <collectionProp name="Arguments.arguments"/>
           </elementProp>
           <stringProp name="HTTPSampler.domain"></stringProp>
           <stringProp name="HTTPSampler.port"></stringProp>
@@ -199,6 +189,52 @@
           <stringProp name="HTTPSampler.connect_timeout"></stringProp>
           <stringProp name="HTTPSampler.response_timeout"></stringProp>
         </HTTPSamplerProxy>
+        <hashTree/>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="JSR223 PreProcessor" enabled="true">
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+          <stringProp name="script">import groovy.json.JsonBuilder
+
+def json = new JsonBuilder()
+Random rand = new Random()
+String alphanum = ((&apos;A&apos;..&apos;Z&apos;)+(&apos;a&apos;..&apos;z&apos;)+(&apos;1&apos;..&apos;9&apos;)).join()
+
+def iam_uid = ${uid}
+def iam_display_name = iam_uid
+def iam_tenant = &quot;t_&quot; + rand.nextInt(1000).toString() + ctx.getThreadNum().toString()
+def iam_email = iam_uid + &quot;@seagate.com&quot;
+def iam_key_type = &quot;s3&quot;
+def iam_user_caps = &quot;users=*&quot;
+def iam_max_buckets = rand.nextInt(1000)
+def iam_generate_key = rand.nextBoolean()
+def iam_suspended = rand.nextBoolean()
+def iam_access_key = rand.with {(1..8).collect {alphanum[ nextInt(alphanum.length() )]}.join()}
+def iam_secret_key = rand.with {(1..16).collect {alphanum[ nextInt(alphanum.length() )]}.join()}
+
+
+json {
+    uid iam_uid
+    display_name iam_display_name
+    email iam_email
+    key_type iam_key_type
+    access_key iam_access_key
+    secret_key iam_secret_key
+    user_caps iam_user_caps
+    generate_key iam_generate_key
+    max_buckets iam_max_buckets
+    suspended iam_suspended
+    tenant iam_tenant
+}
+
+
+log.info(&quot;-------------------------------- &quot; + json.toPrettyString())
+
+
+sampler.addNonEncodedArgument(&quot;&quot;,json.toPrettyString(),&quot;&quot;)
+sampler.setPostBodyRaw(true)</stringProp>
+          <stringProp name="scriptLanguage">groovy</stringProp>
+        </JSR223PreProcessor>
         <hashTree/>
       </hashTree>
     </hashTree>
