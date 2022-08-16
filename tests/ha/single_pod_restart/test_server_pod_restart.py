@@ -822,7 +822,8 @@ class TestServerPodRestart:
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(fail_del_bkt) or len(event_del_bkt),
-                                  f"Bucket deletion failed {fail_del_bkt} {event_del_bkt}")
+                                  "Bucket deletion failed while server pod restart"
+                                  f"{fail_del_bkt} {event_del_bkt}")
         buckets = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equal(wr_bucket - del_bucket, len(buckets),
                                   f"Failed to delete {del_bucket} number of buckets from "
@@ -1144,7 +1145,8 @@ class TestServerPodRestart:
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(fail_del_bkt) or len(event_del_bkt),
-                                  f"Bucket deletion failed {fail_del_bkt} {event_del_bkt}")
+                                  "Bucket deletion failed while server pod restart "
+                                  f"{fail_del_bkt} {event_del_bkt}")
         rem_bkts_aftr_del = s3_test_obj.bucket_list()[1]
         assert_utils.assert_equals(len(rem_bkts_aftr_del), wr_bucket - del_bucket,
                                    "All buckets are expected to be deleted while server pod "
