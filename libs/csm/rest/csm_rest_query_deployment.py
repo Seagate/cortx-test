@@ -85,7 +85,6 @@ class QueryDeployment(RestTestLib):
             result = False
         return result, get_response
 
-    @RestTestLib.authenticate_and_login
     def get_cluster_topology(self, uri_param, cluster_id=None, auth_header=None):
         """
         Get cluster topology
@@ -107,7 +106,6 @@ class QueryDeployment(RestTestLib):
         response = self.get_system_topology(uri_param, auth_header)
         return response
 
-    @RestTestLib.authenticate_and_login
     def get_certificate_topology(self, cluster_id: str, auth_header=None):
         """
         Get certificate topology
@@ -118,10 +116,9 @@ class QueryDeployment(RestTestLib):
         self.log.info("Get certificate topology request....")
         uri_param = '/certificates'
         self.log.info("Logging query parameter for certificate topology: %s", uri_param)
-        response = self.get_cluster_topology(auth_header, cluster_id, uri_param)
+        response = self.get_cluster_topology(uri_param, cluster_id, auth_header)
         return response
 
-    @RestTestLib.authenticate_and_login
     def get_storage_topology(self, cluster_id, storage_set_id=None, auth_header=None):
         """
         Get storage topology
@@ -140,7 +137,6 @@ class QueryDeployment(RestTestLib):
         response = self.get_cluster_topology(uri_param, cluster_id, auth_header)
         return response
 
-    @RestTestLib.authenticate_and_login
     def get_node_topology(self, cluster_id, node_id=None, auth_header=None):
         """
         Get node topology
@@ -155,7 +151,7 @@ class QueryDeployment(RestTestLib):
             uri_param = uri_param + '/' + node_id
         self.log.info("node topology endpoint: %s", uri_param)
         self.log.info("Logging query parameter for node topology: %s", uri_param)
-        response = self.get_cluster_topology(auth_header, cluster_id, uri_param)
+        response = self.get_cluster_topology(uri_param, cluster_id, auth_header)
         return response
 
     #Function Not Ready
