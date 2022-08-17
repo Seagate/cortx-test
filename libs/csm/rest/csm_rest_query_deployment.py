@@ -20,7 +20,7 @@ from http import HTTPStatus
 import yaml
 
 from config import PROV_TEST_CFG
-from commons.constants import LOCAL_SOLUTION_PATH
+from commons.constants import LOCAL_SOLUTION_PATH, K8S_SCRIPTS_PATH
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 
@@ -30,6 +30,7 @@ class QueryDeployment(RestTestLib):
     def __init__(self):
         super(QueryDeployment, self).__init__()
         self.local_sol_path = LOCAL_SOLUTION_PATH
+        self.k8s_scripts_path = K8S_SCRIPTS_PATH
         self.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         self.rest_test_obj = RestTestLib()
 
@@ -37,11 +38,13 @@ class QueryDeployment(RestTestLib):
         """
         Read solution yaml into a dictionary
         """
-        remote_sol_path = self.prov_deploy_cfg["git_remote_path"] + "solution.example.yaml"
+        remote_sol_path = self.k8s_scripts_path + 'solution.yaml'
         self.log.info("Path for solution yaml on remote node: %s", remote_sol_path)
         solution_path = self.rest_test_obj.master.copy_file_to_local(remote_path=remote_sol_path,
                                                                local_path=self.local_sol_path)
-        data = yaml.safe_load(solution_path)
+        self.log.info(solution_path)
+        with open(self.local_sol_path, 'r') as yaml_file:
+            data = yaml.safe_load(yaml_file)
         self.log.info("Printing solution yaml contents: %s", data)
         return data
 
@@ -114,7 +117,7 @@ class QueryDeployment(RestTestLib):
         :return: response
         """
         self.log.info("Get certificate topology request....")
-        uri_param = '/certificates'
+        uri_param = 'certificates'
         self.log.info("Logging query parameter for certificate topology: %s", uri_param)
         response = self.get_cluster_topology(uri_param, cluster_id, auth_header)
         return response
@@ -146,7 +149,7 @@ class QueryDeployment(RestTestLib):
         :return: response
         """
         self.log.info("Get node topology request....")
-        uri_param = '/nodes'
+        uri_param = 'nodes'
         if node_id is not None:
             uri_param = uri_param + '/' + node_id
         self.log.info("node topology endpoint: %s", uri_param)
@@ -164,9 +167,9 @@ class QueryDeployment(RestTestLib):
         result = resp.status_code == expected_response
         if result:
             get_response = resp.json()
-            self.log.info("Verify node names")
+            self.log.info("Verify node names")  
             self.log.info("Verify number of nodes in resp and solution yaml")
-            nodes = len(get_response["topology"]["cluster"]["nodes"])
+            nodes = len(get_response["topology"]["cluster"][0]["nodes"])
             num_nodes = len(solution_yaml["solution"]["storage_set"]["nodes"])
             if num_nodes != nodes:
                 self.log.error("Actual and expected response for number of nodes didnt match")
@@ -183,8 +186,8 @@ class QueryDeployment(RestTestLib):
         resp_dix = ""
         err_msg = ""
         resp = self.get_storage_topology(cluster_id, storage_set_id = storage_set_id)
-        solution_yaml = self.get_solution_yaml()
         result = resp.status_code == expected_response
+        solution_yaml = self.get_solution_yaml()
         if result:
             get_response = resp.json()
             self.log.info("Verifying sns and dix values in resp and solution yaml")
@@ -192,14 +195,14 @@ class QueryDeployment(RestTestLib):
                 "topology"]["cluster"][0]["storage_set"]["durability"]["dix"]
             resp_dix = resp_dix.join([str(storage_set_dix["data"]), str(storage_set_dix["parity"]),
                                       str(storage_set_dix["spare"])])
-            input_dix = solution_yaml["solution"]["storage_set"]["durability"]["dix"]
+            input_dix = solution_yaml["solution"]["storage_sets"][0]["durability"]["dix"]
             self.log.info("Printing dix value from response and solution yaml %s and %s",
                                resp_dix, input_dix)
             storage_set_sns = get_response[
                 "topology"]["cluster"][0]["storage_set"]["durability"]["sns"]
             resp_sns = resp_sns.join([str(storage_set_sns["data"]), str(storage_set_sns["parity"]),
                                       str(storage_set_sns["spare"])])
-            input_sns = solution_yaml["solution"]["storage_set"]["durability"]["sns"]
+            input_sns = solution_yaml["solution"]["storage_sets"][0]["durability"]["sns"]
             self.log.info("Printing sns value from response and solution yaml %s and %s",
                                resp_sns, input_sns)
             if input_dix != resp_dix: 
