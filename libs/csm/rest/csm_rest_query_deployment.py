@@ -86,7 +86,7 @@ class QueryDeployment(RestTestLib):
         return result, get_response
 
     @RestTestLib.authenticate_and_login
-    def get_cluster_topology(self, cluster_id=None, uri_param=None, auth_header=None):
+    def get_cluster_topology(self, uri_param, cluster_id=None, auth_header=None):
         """
         Get cluster topology
         :param header: header for api authentication
@@ -94,13 +94,17 @@ class QueryDeployment(RestTestLib):
         :return: response
         """
         self.log.info("Cluster id in cluster topology %s ", cluster_id)
+        self.log.info("query parameter for storage topology: %s", uri_param)
         self.log.info("Get cluster topology request....")
-        uri_param = 'clusters'
+        cluster_param = 'clusters'
         if cluster_id is not None:
-            uri_param = uri_param + '/' + cluster_id
+            cluster_param = cluster_param + '/' + cluster_id
+            self.log.info("Cluster param is %s", cluster_param)
+        if uri_param is not None:
+            uri_param = cluster_param + '/' + uri_param
         self.log.info("cluster topology endpoint: %s", uri_param)
         self.log.info("Logging query parameter for cluster topology: %s", uri_param)
-        response = self.get_system_topology(auth_header, uri_param)
+        response = self.get_system_topology(uri_param, auth_header)
         return response
 
     @RestTestLib.authenticate_and_login
@@ -133,7 +137,7 @@ class QueryDeployment(RestTestLib):
             uri_param = uri_param + '/' + storage_set_id
         self.log.info("storage topology endpoint: %s", uri_param)
         self.log.info("Logging query parameter for storage topology: %s", uri_param)
-        response = self.get_cluster_topology(auth_header, cluster_id, uri_param)
+        response = self.get_cluster_topology(uri_param, cluster_id, auth_header)
         return response
 
     @RestTestLib.authenticate_and_login
