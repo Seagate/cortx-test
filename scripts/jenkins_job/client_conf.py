@@ -111,7 +111,7 @@ def setup_chrome():
     with ZipFile('chromedriver_linux64.zip', 'r') as zipObj:
         # Extract all the contents of zip file in current directory
         zipObj.extractall()
-    os.chmod("chromedriver", 0o755)
+    os.chmod("chromedriver", 0o700)
     bin_path = os.path.join("venv", "bin")
     shutil.copy("chromedriver", bin_path)
 
