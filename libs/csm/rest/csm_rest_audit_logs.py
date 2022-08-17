@@ -28,7 +28,7 @@ from commons.exceptions import CTException
 from commons.constants import Rest as const
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
-
+# pylint: disable-msg=unexpected-keyword-arg
 class RestAuditLogs(RestTestLib):
     """RestAuditLogs contains all the Rest Api calls for audit logs operations"""
 
@@ -316,7 +316,7 @@ class RestAuditLogs(RestTestLib):
                                         "Key parameter value matched with the expected Key")
                                 if f"PUT /{bucket}" not in element["request_uri"]:
                                     self.log.debug("Request URI parameter value"
-                                                   " returned is: %s %s", element["request_uri"])
+                                                   " returned is: %s", element["request_uri"])
                                     self.log.error(
                                         "Request URI parameter value does not "
                                         "match with the expected Request URI")

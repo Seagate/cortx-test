@@ -97,7 +97,7 @@ class TestS3accountK8s:
         self.log.info("Step 1: Create s3account s3acc.")
         response = self.s3user.create_s3_account(user_type="valid")
         response = response.json()
-        if const.ACCESS_KEY not in response and const.SECRET_KEY not in response:
+        if "access_key" not in response and "secret_key" not in response:
             self.log.debug("secret key and/or access key is not present")
         secret_key = response["secret_key"]
         self.log.info("Step 2: Get cluster IP of openldap")
