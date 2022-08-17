@@ -99,7 +99,7 @@ class MotrCoreK8s():
             nodes_data = cluster_info["nodes"]
             for node in nodes_data:
                 if 'client' in node['name']:
-                    nodename = node["name"]
+                    nodename = node["name"].split('.')[0]
                     self.cortx_node_list.append(nodename)
                     node_dict[nodename] = {}
                     node_dict[nodename][common_const.MOTR_CLIENT] = []
@@ -710,21 +710,22 @@ class MotrCoreK8s():
     def dump_m0trace_log(self, filepath, node):
         """ This method is used to parse the m0trace logs on all the data pods,
         filepath: m0trace log path
+        node: client pod
         """
         list_trace = common_cmd.LIST_M0TRACE
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
+        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=str(self.node_pod_dict[node]),
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                                          f"-- {list_trace}", decode=True)
         latest_trace_file = resp.split("\n")[-1]
         log.debug("Resp: %s", latest_trace_file)
         cmd = Template(common_cmd.M0TRACE).substitute(trace=latest_trace_file, file=filepath)
-        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
+        resp = self.node_obj.send_k8s_cmd(operation="exec", pod=str(self.node_pod_dict[node]),
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                                          f"-- {cmd}", decode=True)
         log.info("Resp of trace: %s", resp)
-        return resp, filepath
+        return filepath
 
     def read_m0trace_log(self, filepath):
         """

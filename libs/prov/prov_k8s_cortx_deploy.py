@@ -467,6 +467,7 @@ class ProvDeployK8sCortxLib:
         dix_spare = kwargs.get("dix_spare", 0)
         size_metadata = kwargs.get("size_metadata", '20Gi')
         size_data_disk = kwargs.get("size_data_disk", '20Gi')
+        log_disk_size = kwargs.get("log_disk_size", '4Gi')
         skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
         third_party_images_dict = kwargs.get("third_party_images",
                                              self.deploy_cfg['third_party_images'])
@@ -483,6 +484,7 @@ class ProvDeployK8sCortxLib:
         s3_instance = kwargs.get('s3_instance', self.deploy_cfg['s3_instances_per_node'])
         container_group_size = kwargs.get('container_group_size',
                                           self.deploy_cfg['container_group_size'])
+        log_disk_flag = kwargs.get("log_disk_flag", None)
         LOGGER.debug("Service type & Ports are %s\n%s\n%s\n%s", service_type,
                      nodeport_http, nodeport_https, control_nodeport_https)
         LOGGER.debug("Client, S3, container_group are %s,%s,%s", client_instance,
@@ -492,22 +494,33 @@ class ProvDeployK8sCortxLib:
         sys_disk_pernode = {}  # empty dict
         data_devices = []  # empty list for data disk
         metadata_devices = []
+        log_devices = []
         for node_count, node_obj in enumerate(worker_obj, start=1):
             LOGGER.info(node_count)
             device_list = node_obj.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
                                                read_lines=True)[0].split(",")
             device_list[-1] = device_list[-1].replace("\n", "")
-            metadata_devices = device_list[1:cvg_count + 1]
-            LOGGER.info(metadata_devices)
+            system_disk = device_list.pop(0)
+            metadata_devices = device_list[0:cvg_count]
+            LOGGER.info("METADATA DEVICES %s", metadata_devices)
+            if log_disk_flag:
+                log_devices = device_list[cvg_count: 2*cvg_count]
+                LOGGER.info("LOG DEVICES %s", log_devices)
+                device_list_len = len(device_list)
+                new_device_lst_len = (device_list_len - 2*cvg_count)
+            else:
+                device_list_len = len(device_list)
+                new_device_lst_len = (device_list_len - cvg_count)
             # This will split the metadata disk list
             # into metadata devices per cvg
-            # 2 is defined the split size based
-            # on disk required for metadata,system
-            device_list_len = len(device_list)
-            new_device_lst_len = (device_list_len - cvg_count - 1)
             count = cvg_count
             if data_disk_per_cvg == 0:
-                data_disk_per_cvg = int(len(device_list[cvg_count + 1:]) / cvg_count)
+                if log_disk_flag:
+                    # Here the increment for 1 is due to 1 disk each reserved
+                    # log disk respectively
+                    data_disk_per_cvg = int(len(device_list[cvg_count + 1:]) / cvg_count)
+                else:
+                    data_disk_per_cvg = int(len(device_list[cvg_count:]) / cvg_count)
 
             LOGGER.debug("Data disk per cvg : %s", data_disk_per_cvg)
             # The condition to validate the config.
@@ -519,9 +532,15 @@ class ProvDeployK8sCortxLib:
             if new_device_lst_len < data_disk_per_cvg * cvg_count:
                 assert False, "The requested data disk is more than" \
                               " the data disk available on the system"
+            if log_disk_flag:
+                # the '1' is being added to accumulate the final data disk count
+                # after excluding the log disks
+                data_devices_f = device_list[cvg_count+1:]
+                LOGGER.debug("The data disk final is %s", data_devices_f)
+            else:
+                data_devices_f = device_list[cvg_count:]
             # This condition validated the total available disk count
             # and split the disks per cvg.
-            data_devices_f = device_list[cvg_count + 1:]
             if (data_disk_per_cvg * cvg_count) < new_device_lst_len:
                 count_end = int(data_disk_per_cvg)
                 data_devices.append(data_devices_f[0:count_end])
@@ -539,7 +558,6 @@ class ProvDeployK8sCortxLib:
                 data_devices = [data_devices_f[i:i + data_disk_per_cvg]
                                 for i in range(0, len(data_devices_f), data_disk_per_cvg)]
             # Create dict for host and disk
-            system_disk = device_list[0]
             schema = {node_obj.hostname: system_disk}
             sys_disk_pernode.update(schema)
         LOGGER.info("Metadata disk %s", metadata_devices)
@@ -575,19 +593,23 @@ class ProvDeployK8sCortxLib:
             assert False, "Failed to update images in solution file"
 
         # Update the solution yaml file with cvg
-        resp_cvg = self.update_cvg_sol_file(filepath, metadata_devices,
-                                            data_devices, data_disk_per_cvg,
-                                            cvg_count=cvg_count,
-                                            cvg_type=cvg_type,
-                                            sns_data=sns_data,
-                                            sns_parity=sns_parity,
-                                            sns_spare=sns_spare,
-                                            dix_data=dix_data,
-                                            dix_parity=dix_parity,
-                                            dix_spare=dix_spare,
-                                            size_metadata=size_metadata,
-                                            size_data_disk=size_data_disk,
-                                            container_group_size=container_group_size)
+        if log_disk_flag:
+            LOGGER.debug("In flag %s", log_disk_flag)
+            LOGGER.debug("log device %s", log_devices)
+            resp_cvg = self.update_cvg_sol_file(
+                filepath, metadata_devices, data_devices, data_disk_per_cvg,
+                cvg_count=cvg_count, cvg_type=cvg_type, sns_data=sns_data,
+                sns_parity=sns_parity, sns_spare=sns_spare, dix_data=dix_data,
+                dix_parity=dix_parity, dix_spare=dix_spare, size_metadata=size_metadata,
+                size_data_disk=size_data_disk, container_group_size=container_group_size,
+                log_device=log_devices, log_disk_size=log_disk_size, log_disk_flag=log_disk_flag)
+        else:
+            resp_cvg = self.update_cvg_sol_file(
+                filepath, metadata_devices, data_devices, data_disk_per_cvg,
+                cvg_count=cvg_count, cvg_type=cvg_type, sns_data=sns_data,
+                sns_parity=sns_parity, sns_spare=sns_spare, dix_data=dix_data,
+                dix_parity=dix_parity, dix_spare=dix_spare, size_metadata=size_metadata,
+                size_data_disk=size_data_disk, container_group_size=container_group_size)
         if not resp_cvg[0]:
             assert False, "Fail to update the cvg details in solution file"
 
@@ -656,6 +678,9 @@ class ProvDeployK8sCortxLib:
         dix_data = kwargs.get("dix_data")
         dix_parity = kwargs.get("dix_parity")
         dix_spare = kwargs.get("dix_spare")
+        log_devices = kwargs.get("log_device")
+        log_disk_flag = kwargs.get("log_disk_flag")
+        log_disk_size = kwargs.get("log_disk_size")
         size_metadata = kwargs.get("size_metadata")
         size_data_disk = kwargs.get("size_data_disk")
         container_group_size = kwargs.get("container_group_size", 1)
@@ -679,15 +704,24 @@ class ProvDeployK8sCortxLib:
             storage = []
             for cvg in range(0, cvg_count):
                 cvg_dict = {}
-                metadata_schema =[]
+                metadata_schema = []
                 metadata_schema_upd = {'path': metadata_devices[cvg], 'size': size_metadata}
                 metadata_schema.append(metadata_schema_upd)
                 data_schema = []
                 for disk in range(0, data_disk_per_cvg):
+                    LOGGER.debug("data dis in loop is %s", data_devices[cvg][disk])
                     disk_schema_upd = \
                         {'path': data_devices[cvg][disk], 'size': size_data_disk}
                     data_schema.append(disk_schema_upd)
-                c_device_schema = {'metadata': metadata_schema, 'data': data_schema}
+                if log_disk_flag:
+                    LOGGER.debug("In cvg update %s", log_devices)
+                    log_schema = []
+                    log_schema_upd = {'path': log_devices[cvg], 'size': log_disk_size}
+                    log_schema.append(log_schema_upd)
+                    c_device_schema = {'metadata': metadata_schema, 'data': data_schema,
+                                       'log': log_schema}
+                else:
+                    c_device_schema = {'metadata': metadata_schema, 'data': data_schema}
                 key_cvg_devices = {'devices': c_device_schema}
                 cvg_type_schema = {'type': cvg_type}
                 cvg_name = {'name': Template('cvg-0$num').substitute(num=cvg + 1)}
@@ -1364,6 +1398,8 @@ class ProvDeployK8sCortxLib:
         report_path = kwargs.get("report_filepath", self.deploy_cfg["report_file"])
         data_disk_size = kwargs.get("data_disk_size", self.deploy_cfg["data_disk_size"])
         metadata_disk_size = kwargs.get("meta_disk_size", self.deploy_cfg["metadata_disk_size"])
+        log_disk_size = kwargs.get("log_disk_size", self.deploy_cfg["log_disk_size"])
+        log_disk_flag = kwargs.get("log_disk_flag", None)
         deployment_type = kwargs.get("deployment_type", self.deployment_type)
         client_instance = kwargs.get("client_instances", self.client_instance)
         s3_instance = kwargs.get("s3_instance", self.s3_instance)
@@ -1399,26 +1435,33 @@ class ProvDeployK8sCortxLib:
             LOGGER.info("Step to Download solution file template")
             path = self.checkout_solution_file(self.git_script_tag)
             LOGGER.info("Step to Update solution file template")
-            resp = self.update_sol_yaml(worker_obj=worker_node_list, filepath=path,
-                                        cortx_image=self.cortx_image,
-                                        sns_data=sns_data, sns_parity=sns_parity,
-                                        sns_spare=sns_spare, dix_data=dix_data,
-                                        dix_parity=dix_parity, dix_spare=dix_spare,
-                                        cvg_count=cvg_count, data_disk_per_cvg=data_disk_per_cvg,
-                                        size_data_disk=data_disk_size,
-                                        size_metadata=metadata_disk_size,
-                                        log_path=log_path,
-                                        cortx_server_image=self.cortx_server_image,
-                                        cortx_data_image=self.cortx_data_image,
-                                        service_type=self.service_type,
-                                        namespace=namespace,
-                                        https_port=self.nodeport_https,
-                                        http_port=self.nodeport_http,
-                                        control_https_port=self.control_nodeport_https,
-                                        deployment_type=deployment_type,
-                                        client_instance=client_instance,
-                                        s3_instance=s3_instance,
-                                        container_group_size=container_group_size)
+            if log_disk_flag:
+                resp = self.update_sol_yaml(
+                    worker_obj=worker_node_list, filepath=path, cortx_image=self.cortx_image,
+                    sns_data=sns_data, sns_parity=sns_parity, sns_spare=sns_spare,
+                    dix_data=dix_data, dix_parity=dix_parity, dix_spare=dix_spare,
+                    cvg_count=cvg_count, data_disk_per_cvg=data_disk_per_cvg,
+                    size_data_disk=data_disk_size, size_metadata=metadata_disk_size,
+                    log_path=log_path, cortx_server_image=self.cortx_server_image,
+                    cortx_data_image=self.cortx_data_image, service_type=self.service_type,
+                    namespace=namespace, https_port=self.nodeport_https,
+                    http_port=self.nodeport_http, control_https_port=self.control_nodeport_https,
+                    deployment_type=deployment_type, client_instance=client_instance,
+                    s3_instance=s3_instance, container_group_size=container_group_size,
+                    log_disk_flag=True, log_disk_size=log_disk_size)
+            else:
+                resp = self.update_sol_yaml(
+                    worker_obj=worker_node_list, filepath=path, cortx_image=self.cortx_image,
+                    sns_data=sns_data, sns_parity=sns_parity, sns_spare=sns_spare,
+                    dix_data=dix_data, dix_parity=dix_parity, dix_spare=dix_spare,
+                    cvg_count=cvg_count, data_disk_per_cvg=data_disk_per_cvg,
+                    size_data_disk=data_disk_size, size_metadata=metadata_disk_size,
+                    log_path=log_path, cortx_server_image=self.cortx_server_image,
+                    cortx_data_image=self.cortx_data_image, service_type=self.service_type,
+                    namespace=namespace, https_port=self.nodeport_https,
+                    http_port=self.nodeport_http, control_https_port=self.control_nodeport_https,
+                    deployment_type=deployment_type, client_instance=client_instance,
+                    s3_instance=s3_instance, container_group_size=container_group_size)
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
             with open(resp[1]) as file:
                 LOGGER.info("The detailed solution yaml file is\n")
@@ -2004,3 +2047,12 @@ class ProvDeployK8sCortxLib:
             secret_key = secrets["content"]["s3_auth_admin_secret"]
             LOGGER.info("Getting access and secret key")
         return access_key, secret_key
+
+    @staticmethod
+    def close_connections(master_node_list, worker_node_list):
+        """Close connections to target nodes."""
+        if CMN_CFG["product_family"] in ('LR', 'LC') and \
+                CMN_CFG["product_type"] == 'K8S':
+            for conn in master_node_list + worker_node_list:
+                if isinstance(conn, LogicalNode):
+                    conn.disconnect()

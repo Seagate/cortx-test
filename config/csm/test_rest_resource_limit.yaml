@@ -1,0 +1,12 @@
+test_44795:
+  m1: 367Mi
+  m2: 522Mi
+  loop: 10
+test_44796:
+  err_msg: "Error: INSTALLATION FAILED: Deployment.apps \"cortx-control\" is invalid: spec.template.spec.containers[0].resources.requests"
+test_44797:
+  c1: 500m
+  c2: 1000m
+  loop: 10
+test_44798:
+  err_msg: "Error: INSTALLATION FAILED: Deployment.apps \"cortx-control\" is invalid: spec.template.spec.containers[0].resources.requests"

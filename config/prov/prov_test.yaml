@@ -130,7 +130,7 @@ k8s_cortx_deploy:
   log_path: "/etc/cortx/log"
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 240
-  s3_instances_per_node: 3
+  s3_instances_per_node: 2
   container_group_size: 1
   sleep_time: 60
   service_delay: 120
@@ -149,6 +149,7 @@ k8s_cortx_deploy:
   deployment_type: "standard"
   data_disk_size: "20Gi"
   metadata_disk_size: "20Gi"
+  log_disk_size: "4Gi"
   git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"
   git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/$tag/k8_cortx_cloud/$file"
   k8s_dir: "/root/deploy-scripts/k8_cortx_cloud/"

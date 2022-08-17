@@ -30,9 +30,7 @@ test_44257:
   rampup: 2
   loop: 10
 test_44782:
-  request_usage: 30
-  total_users: 97
-  rampup: 1
+  total_users: 100
   error_code: 4104
   message_id: "PermissionDenied"
   message_index: 2
@@ -50,3 +48,14 @@ test_44788:
   loop: 10
 test_44799:
   thread_request: 2
+test_45719:
+  users_count : 3
+  rampup: 1
+  loop: 1
+  expect_message: "409,Conflict"
+test_45718:
+  users_count : 1
+  rampup: 1
+  loop: 1
+  expect_message: "409,Conflict"
+
