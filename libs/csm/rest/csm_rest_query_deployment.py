@@ -29,21 +29,19 @@ class QueryDeployment(RestTestLib):
 
     def __init__(self):
         super(QueryDeployment, self).__init__()
-        self.local_sol_path = LOCAL_SOLUTION_PATH
-        self.k8s_scripts_path = K8S_SCRIPTS_PATH
         self.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
-        self.rest_test_obj = RestTestLib()
 
     def get_solution_yaml(self):
         """
         Read solution yaml into a dictionary
         """
-        remote_sol_path = self.k8s_scripts_path + 'solution.yaml'
+        local_sol_path = LOCAL_SOLUTION_PATH 
+        remote_sol_path = K8S_SCRIPTS_PATH + 'solution.yaml'
         self.log.info("Path for solution yaml on remote node: %s", remote_sol_path)
-        solution_path = self.rest_test_obj.master.copy_file_to_local(remote_path=remote_sol_path,
-                                                               local_path=self.local_sol_path)
+        solution_path = self.master.copy_file_to_local(remote_path=remote_sol_path,
+                                                               local_path=local_sol_path)
         self.log.info(solution_path)
-        with open(self.local_sol_path, 'r') as yaml_file:
+        with open(local_sol_path, 'r') as yaml_file:
             data = yaml.safe_load(yaml_file)
         self.log.info("Printing solution yaml contents: %s", data)
         return data
