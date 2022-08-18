@@ -24,11 +24,11 @@ import os
 import configparser
 import logging
 import shutil
-import subprocess
 from time import perf_counter_ns
 from multiprocessing import Process
 from commons import pswdmanager
 from commons.utils import support_bundle_utils as sb
+from commons.utils import system_utils as sysutils
 from commons import constants as const
 from config import CMN_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
@@ -42,54 +42,6 @@ config = configparser.ConfigParser()
 config.read(config_file)
 rest_obj = S3AccountOperationsRestAPI()
 config_chk = CSMConfigsCheck()
-
-
-def run_cmd(cmd):
-    """
-    Execute bash commands on the host
-    :param str cmd: command to be executed
-    :return: command output
-    :rtype: string
-    """
-    print("Executing command: {}".format(cmd))
-    proc = subprocess.Popen(cmd, shell=True,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-
-    result = str(proc.communicate())
-    return result
-
-
-def configure_awscli(access_key, secret_key):
-    """
-    Method to configure awscli on the host
-    :return: None
-    """
-    run_cmd("python3.7 -m pip install awscli -i https://pypi.python.org/simple/.")
-    run_cmd("python3.7 -m pip install awscli-plugin-endpoint -i https://pypi.python.org/simple/.")
-    aws_configure = "aws configure"
-    local_s3_cert_path = "/etc/ssl/stx-s3-clients/s3/ca.crt"
-    proc = subprocess.Popen(aws_configure, shell=True,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            stdin=subprocess.PIPE)
-
-    proc.stdin.write(str.encode(access_key) + b"\n")
-    proc.stdin.flush()
-    proc.stdin.write(str.encode(secret_key) + b"\n")
-    proc.stdin.flush()
-    proc.stdin.write(b"US\n")
-    proc.stdin.flush()
-    proc.stdin.write(b"json\n")
-    proc.stdin.flush()
-
-    result = str(proc.communicate())
-    print("output = {}".format(result))
-    run_cmd("aws configure set plugins.endpoint awscli_plugin_endpoint")
-    run_cmd("aws configure set s3.endpoint_url https://s3.seagate.com")
-    run_cmd("aws configure set s3api.endpoint_url https://s3.seagate.com")
-    run_cmd("aws configure set ca_bundle {}".format(local_s3_cert_path))
-
 
 def create_s3_account():
     LOGGER.info("Getting access and secret key for configuring AWS")
@@ -118,11 +70,12 @@ def test_create_acc_aws_conf():
     s3_engine = CMN_CFG["s3_engine"]
     print("Installing s3 tools")
     if s3_engine == const.S3_ENGINE_RGW: # for RGW
-        resp = run_cmd("make all-rgw --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} "
-                   "endpoint={}".format(access_key, secret_key, endpoint))
+        resp = sysutils.execute_cmd(cmd="make all-rgw --makefile=scripts/s3_tools/Makefile "
+                                        "ACCESS={} SECRET={} "
+                                        "endpoint={}".format(access_key, secret_key, endpoint))
     else:
-        resp = run_cmd("make all --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={} "
-                       .format(access_key, secret_key))
+        resp = sysutils.execute_cmd(cmd="make all --makefile=scripts/s3_tools/Makefile ACCESS={} "
+                                        "SECRET={}".format(access_key, secret_key))
     print("Response for tools install: {}".format(resp))
 
 

@@ -55,7 +55,7 @@ class Provisioner:
         :return: build info dict
         """
         username = pswdmanager.decrypt(common_cnst.JENKINS_USERNAME)
-        password = pswdmanager.decrypt(common_cnst.JENKINS_PASSWORD)
+        password = pswdmanager.decrypt(common_cnst.JENKINS_PWD)
         try:
             LOGGER.debug("JENKINS URL %s", jen_url)
             jenkins_server_obj = jenkins.Jenkins(
