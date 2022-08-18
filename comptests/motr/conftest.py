@@ -24,8 +24,8 @@ from libs.motr import FILE_BLOCK_COUNT
 from libs.motr.layouts import BSIZE_LAYOUT_MAP
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
-@pytest.fixture(name="motr", scope="module")
-def motr_lib_object():
+@pytest.fixture(scope="module")
+def motr():
     """
     To initiate the motr core lib instance
     """
