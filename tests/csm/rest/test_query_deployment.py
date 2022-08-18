@@ -111,3 +111,4 @@ class TestQueryDeployment():
                 assert result, err_msg
                 self.log.info("Response : %s", resp)
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
