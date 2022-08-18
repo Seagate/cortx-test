@@ -75,6 +75,9 @@ Restcall_LC:
     email: "accounts323.admin@seagate.com"
     access_key: "abcdefghijkl123456"
     secret_key: "abcdefgh"
+  iam_user:
+    username: "test_iam_user"
+    password: "yqI7PYuCer0alJlTPJtaOJLejOIrg4ymC+Y8gUxMJAU="
   Login_headers:
     Content-Type: 'application/json'
   test_s3account_password : "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="

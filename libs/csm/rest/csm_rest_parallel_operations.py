@@ -24,6 +24,7 @@ from commons.commands import GET_REQUEST_USAGE
 from libs.jmeter.jmeter_integration import JmeterInt
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
+# pylint: disable-msg=unexpected-keyword-arg
 class RestParallelOps(RestTestLib):
     """RestIamUser contains all the Rest API calls for iam user operations"""
 

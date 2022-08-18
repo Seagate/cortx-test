@@ -51,14 +51,9 @@ CORTX_ERR_COPY_OBJ_METADATA = ("An error occurred (InvalidRequest) when calling 
                                "operation: This copy request is illegal because it is trying to "
                                "copy an object to itself without changing the object's metadata, "
                                "storage class, website redirect location or encryption attributes.")
-RGW_ERR_CPY_IF_MATCH_FALSE  = ("An error occurred (PreconditionFailed) when calling the "
-                               "CopyObject operation: Unknown")
-RGW_ERR_CPY_IF_NONE_MATCH_FALSE  = ("An error occurred (304) when calling the CopyObject "
-                                    "operation: Not Modified")
-RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE = ("An error occurred (304) when calling the CopyObject "
-                                       "operation: Not Modified")
-RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE = ("An error occurred (PreconditionFailed) when calling the "
-                                         "CopyObject operation: Unknown")
+RGW_ERR_CPY_IF_COND_FALSE  = ("An error occurred (PreconditionFailed) when calling the "
+                               "CopyObject operation: At least one of the pre-conditions you "
+                               "specified did not hold")
 RGW_HEAD_OBJ_ERR = "An error occurred (404) when calling the HeadObject operation: Not Found"
 CORTX_HEAD_OBJ_ERR = "An error occurred (404) when calling the HeadObject operation: Not Found"
 CORTX_INVALD_BYTERANGE = ("An error occurred (InvalidRange) when calling the GetObject operation: "

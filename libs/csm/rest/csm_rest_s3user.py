@@ -31,6 +31,7 @@ from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from config import CSM_REST_CFG, CMN_CFG
 
+# pylint: disable-msg=unexpected-keyword-arg
 class RestS3user(RestTestLib):
     """RestS3user contains all the Rest Api calls for s3 account operations"""
 
@@ -221,7 +222,7 @@ class RestS3user(RestTestLib):
 
         # Checking presence of access key and secret key
         response = response.json()
-        if const.ACCESS_KEY not in response and const.SECRET_KEY not in response:
+        if "access_key" not in response and "secret_key" not in response:
             self.log.debug("secret key and/or access key is not present")
             return False, response
 
@@ -347,8 +348,8 @@ class RestS3user(RestTestLib):
             # For edit user without changing access secret key and access
             # key should not be visible
             return (response[const.ACC_NAME] == account_name) and (
-                const.ACCESS_KEY not in response) and (
-                const.SECRET_KEY not in response), account_name
+                "access_key" not in response) and (
+                "secret_key" not in response), account_name
 
         # Handling specific scenarios
         if user_payload != "valid":
@@ -365,7 +366,7 @@ class RestS3user(RestTestLib):
 
         # Checking presence of access key and secret key
         response = response.json()
-        if const.ACCESS_KEY not in response and const.SECRET_KEY not in response:
+        if "access_key" not in response and "secret_key" not in response:
             self.log.debug("secret key and/or access key is not present")
             return False, account_name
 

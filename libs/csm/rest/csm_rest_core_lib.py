@@ -21,14 +21,11 @@
 
 import json
 import logging
-
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-
 from commons import constants
 from commons.constants import Rest as const
 from config import CMN_CFG
-
 
 class RestClient:
     """
