@@ -85,7 +85,7 @@ class TestQueryDeployment():
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
-    @pytest.mark.tags('TEST-45672')
+    @pytest.mark.tags('TEST-45675')
     def test_45675(self):
         """
         Verify GET cluster topology with valid storage id
