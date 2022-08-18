@@ -26,7 +26,7 @@ import pytest
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons import constants as cons
 from commons import cortxlogging
-from commons.utils.assert_utils import *
+from commons.utils.assert_utils import assert_equals
 from commons import Globals
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib

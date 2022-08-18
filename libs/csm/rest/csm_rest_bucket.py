@@ -26,6 +26,8 @@ import commons.errorcodes as err
 from commons.exceptions import CTException
 from commons.utils import config_utils
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
+# pylint: disable-msg=unexpected-keyword-arg
+
 class RestS3Bucket(RestTestLib):
     """RestS3Bucket contains all the Rest Api calls for s3 account operations"""
 

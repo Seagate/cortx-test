@@ -22,13 +22,13 @@ import time
 from http import HTTPStatus
 from random import Random
 from string import Template
-
 from botocore.exceptions import ClientError
 from commons import configmanager
 from commons.constants import Rest as const
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from libs.s3 import s3_misc
 
+# pylint: disable-msg=unexpected-keyword-arg
 class GetSetQuota(RestTestLib):
     """RestIamUser contains all the Rest API calls for iam user operations"""
 

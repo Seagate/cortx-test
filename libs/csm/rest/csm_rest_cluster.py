@@ -21,9 +21,7 @@
 import os
 import re
 import time
-
 import yaml
-
 from commons import commands as common_cmd
 from commons import constants as cons
 from commons.utils import assert_utils
@@ -32,7 +30,7 @@ from commons.helpers.node_helper import Node
 from config import CMN_CFG
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
-
+# pylint: disable-msg=unexpected-keyword-arg
 class RestCsmCluster(RestTestLib):
     """
     RestCsmUser contains the Rest API calls for csm cluster operations
