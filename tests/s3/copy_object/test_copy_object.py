@@ -2059,22 +2059,22 @@ class TestCopyObjects:
                     "x-amz-copy-source-if-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_im", is_expect_err=True, is_match=etag+"_",
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 4: Copy object to different bucket with condition"                              
                     "x-amz-copy-source-if-none-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2 + "_inm", is_expect_err=True, is_none_match=etag,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_NONE_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 5: Copy object to different bucket with condition "                             
                     "x-amz-copy-source-if-modified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_ims", is_expect_err=True, is_modified=post_date,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 6: Copy object to different bucket with condition "                             
                     "x-amz-copy-source-if-unmodified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_iums", is_expect_err=True, is_unmodified=pre_date,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("ENDED: Copy simple object with all conditional headers as false")
 
     @pytest.mark.parallel
@@ -2099,22 +2099,22 @@ class TestCopyObjects:
                     "x-amz-copy-source-if-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_im", is_expect_err=True, is_match=etag+"_",
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 4: Copy object to different bucket with condition"
                     "x-amz-copy-source-if-none-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_inm", is_expect_err=True, is_none_match=etag,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_NONE_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 5: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-modified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_ims", is_expect_err=True, is_modified=post_date,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 6: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-unmodified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_iums", is_expect_err=True, is_unmodified=pre_date,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("ENDED: Copy multipart object with all conditional headers as false")
 
     @pytest.mark.parallel
@@ -2147,7 +2147,7 @@ class TestCopyObjects:
                     "modified-since (True) and x-amz-copy-source-if-none-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_ims_nm", is_expect_err=True, is_none_match=etag,
-                         is_modified=pre_date, errmsg=errmsg.RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE)
+                         is_modified=pre_date, errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 5: Upload multipart object to bucket")
         etag, pre_date, _ = self.upload_mpu_copy_obj(self.bucket_name1,self.object_name1+"mpu",
                                                      self.bucket_name2, self.object_name2+"mpu1",
@@ -2163,7 +2163,7 @@ class TestCopyObjects:
                     "modified-since (True) and x-amz-copy-source-if-none-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2+"mpu_ims_nm", is_expect_err=True, is_none_match=etag,
-                         is_modified=pre_date, errmsg=errmsg.RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE)
+                         is_modified=pre_date, errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("ENDED: Test to check exceptions for certain conditions  to copy simple and "
                     "multipart objects")
 
@@ -2199,19 +2199,19 @@ class TestCopyObjects:
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_im_msf", is_expect_err=True,
                          is_modified=post_date, is_match=etag,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 5: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "modified-since (True) and x-amz-copy-source-if-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2 + "_imf_msf", is_expect_err=True,
                          is_modified=pre_date, is_match=etag+"_",
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 6: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "modified-since (False) and x-amz-copy-source-if-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2 + "_imsf_mf", is_expect_err=True,
                          is_modified=post_date, is_match=etag+"_",
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MODIFIED_SINCE_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 7: Upload multipart object to bucket")
         etag, pre_date, _ = self.upload_mpu_copy_obj(self.bucket_name1, self.object_name1+"mpu",
                                                      self.bucket_name2, self.object_name2+"mpu1",
@@ -2234,7 +2234,7 @@ class TestCopyObjects:
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2+"mpu_im_mst", is_expect_err=True,
                          is_modified=pre_date, is_match=etag+"_",
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("ENDED: Test to check exceptions for certain conditions  to copy simple and "
                     "multipart objects")
 
@@ -2270,13 +2270,13 @@ class TestCopyObjects:
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2 + "_imf_umst", is_expect_err=True,
                          is_unmodified=pre_date, is_match=etag+"_",
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 5: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "match (False) and x-amz-copy-source-if-unmodified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2 + "_imf_umsf", is_expect_err=True,
                          is_unmodified=post_date, is_match=etag+"_",
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 6: Upload multipart object to bucket")
         etag, pre_date, post_date = self.upload_mpu_copy_obj(self.bucket_name1,
                                                              self.object_name1+"mpu",
@@ -2295,13 +2295,13 @@ class TestCopyObjects:
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2 + "mpu_imf_umst", is_expect_err=True,
                          is_unmodified=pre_date, is_match=etag+"_",
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 9: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "match (False) and x-amz-copy-source-if-unmodified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2+"mpu_imf_umsf", is_expect_err=True,
                          is_unmodified=post_date, is_match=etag+"_",
-                         errmsg=errmsg.RGW_ERR_CPY_IF_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("ENDED: Test to validate the combinations of conditions with "
                     "x-amz-copy-source-if-match and x-amz-copy-source-if-unmodified-since for "
                     "copying simple and multipart object")
@@ -2343,7 +2343,7 @@ class TestCopyObjects:
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2 + "_inmf_msf", is_expect_err=True,
                          is_modified=post_date, is_none_match=etag,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_NONE_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 6: Upload multipart object to bucket")
         etag, pre_date, post_date = self.upload_mpu_copy_obj(self.bucket_name1,
                                                              self.object_name1+"mpu",
@@ -2367,7 +2367,7 @@ class TestCopyObjects:
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2 + "_inmf_msf", is_expect_err=True,
                          is_modified=post_date, is_none_match=etag,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_NONE_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("ENDED: Test to validate the combinations of conditions with "
                     "x-amz-copy-source-if-match and x-amz-copy-source-if-unmodified-since for "
                     "copying simple and multipart object")
@@ -2404,19 +2404,19 @@ class TestCopyObjects:
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_inmt_umsf", is_expect_err=True,
                          is_unmodified=pre_date, is_none_match=etag+"_",
-                         errmsg=errmsg.RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 5: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (False) and x-amz-copy-source-if-unmodified-since (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_inmf_umst", is_expect_err=True,
                          is_unmodified=post_date, is_none_match=etag,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_NONE_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 6: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (False) and x-amz-copy-source-if-unmodified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_inmf_umsf", is_expect_err = True,
                          is_unmodified=pre_date, is_none_match=etag,
-                         errmsg = errmsg.RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE)
+                         errmsg = errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 7: Upload multipart object to bucket")
         etag, pre_date, post_date = self.upload_mpu_copy_obj (self.bucket_name1,
                                                               self.object_name1+"mpu",
@@ -2430,25 +2430,25 @@ class TestCopyObjects:
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2 + "mpu_inmt_umst", is_expect_err=False,
                          is_unmodified=post_date, is_none_match=etag+"_",
-                         errmsg=errmsg.RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 9: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (True) and x-amz-copy-source-if-unmodified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2 + "mpu_inmt_umsf", is_expect_err=True,
                          is_unmodified=pre_date, is_none_match=etag+"_",
-                         errmsg=errmsg.RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 10: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (False) and x-amz-copy-source-if-unmodified-since (True)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2+"mpu_inmf_umst", is_expect_err=True,
                          is_unmodified=post_date, is_none_match=etag,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_NONE_MATCH_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 11: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (False) and x-amz-copy-source-if-unmodified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2 + "mpu_inmf_umsf", is_expect_err=True,
                          is_unmodified=pre_date, is_none_match=etag,
-                         errmsg=errmsg.RGW_ERR_CPY_IF_UNMODIFIED_SINCE_FALSE)
+                         errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("ENDED: Test to validate the combinations of conditions with "
                     "x-amz-copy-source-if-none-match and x-amz-copy-source-if-unmodified-since for "
                     "copying simple and multipart object")
