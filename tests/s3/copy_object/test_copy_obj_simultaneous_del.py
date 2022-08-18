@@ -178,13 +178,13 @@ class TestCopyObjectSimultaneousDelete:
             resp = self.s3_obj.create_bucket(destbuck)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Parallely, \n1. From %s copy %s to %s as %s\n2. Delete %s",
-                        copy_args[0], copy_args[1], copy_args[2], copy_args[3], destbuck)
+                        copy_args[0], copy_args[1], destbuck, copy_args[3], destbuck)
             with multiprocessing.Pool(processes=2) as pool:
                 process1 = pool.apply_async(self.copy_object_wrapper, args=(copy_args[0],
                                             copy_args[1], destbuck, copy_args[3],
                                             copy_args[4]))
                 process2 = pool.apply_async(self.delete_bucket_wrapper, args=(destbuck,
-                                            delete_args))
+                                            delete_args[0]))
                 assert_utils.assert_true(process1.get()[0], process1.get()[1])
                 assert_utils.assert_true(process2.get()[0], process2.get()[1])
 
@@ -309,7 +309,7 @@ class TestCopyObjectSimultaneousDelete:
         LOGGER.info("STARTED: Test Delete destination bucket when copy multipart object is in "
                     "progress")
         self.create_put_parallel_copy_and_delete_bucket(
-            (self.srcbuck, "src-obj", "destbuck", "dest-obj", errmsg.NO_BUCKET_OBJ_ERR_KEY,
+            (self.srcbuck, "src-obj", "destbuck", "dest-obj", errmsg.NO_SUCH_KEY_ERR,
              5, self.file_path), ("False",), is_mpu=True)
         LOGGER.info("ENDED: Test Delete destination bucket when copy multipart object is in "
                     "progress")
