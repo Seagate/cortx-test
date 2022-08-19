@@ -2864,7 +2864,7 @@ class TestDataPodFailure:
 
         LOGGER.info("Step 1: Perform WRITEs-READs-Verify with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = f'test-39976-{perf_counter_ns()}'
+        self.test_prefix = 'test-39976'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
