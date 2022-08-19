@@ -73,6 +73,8 @@ elif proc_name == 'pytest' and '--target' in pytest_args:
 elif proc_name == 'pytest' and os.getenv('TARGET') is not None:  # test runner process
     # This condition will execute when target is passed from environment
     target = os.environ["TARGET"]
+elif proc_name == "ceph_s3tests_runner.py":
+    target = pytest_args[pytest_args.index("--target") + 1].lower()
 elif proc_name not in ["testrunner.py", "testrunner"]:
     target = os.environ.get("TARGET")
 # Will revisit this once we fix the singleton/s3helper issue
