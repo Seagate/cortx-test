@@ -36,6 +36,7 @@ from commons.utils.system_utils import remove_dirs
 
 from libs.s3 import s3_test_lib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_common_test_lib import copy_obj_di_check
 
 LOGGER = logging.getLogger(__name__)
 

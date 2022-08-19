@@ -338,6 +338,64 @@ def create_attach_list_iam_policy(access, secret, policy_name, iam_policy, iam_u
     resp = iam_policy_test_lib.check_policy_in_attached_policies(iam_user, policy.arn)
     assert_utils.assert_true(resp)
 
+def copy_obj_di_check(src_bucket, src_object, dest_bucket, dest_object, **kwargs):
+    """
+    Helper function is used to put object and set object tags.
+    :param src_bucket: Source bucket
+    :param src_object: Source Object
+    :param dest_bucket: Destination bucket
+    :param dest_object: Destination object
+    :param put_etag: Etag of source object
+    :param copy_etag: Etag of destination object
+    """
+    put_etag = kwargs.get("put_etag", None)
+    copy_etag = kwargs.get("copy_etag", None)
+    s3_test_object = kwargs.get("s3_testobj", "None")
+    if (put_etag == None) and (copy_etag == None):
+        src_resp = s3_test_object.object_info(src_bucket, src_object)
+        dest_resp = s3_test_object.object_info(dest_bucket, dest_object)
+        put_etag = src_resp[1]["ETag"]
+        copy_etag = dest_resp[1]["ETag"]
+    LOG.info("Verify ETags of source and destination object")
+    LOG.info("ETags: Source Object: %s, Destination Object: %s", put_etag, copy_etag)
+    assert_utils.assert_equal(put_etag, copy_etag, f"Failed to match ETag: {put_etag}, {copy_etag}")
+    LOG.info("Matched ETag: %s, %s", put_etag, copy_etag)
+    LOG.info("Get metadata of the destination object and check metadata is same as source object.")
+    resp_meta1 = s3_test_object.object_info(src_bucket, src_object)
+    assert_utils.assert_true(resp_meta1[0], resp_meta1[1])
+    resp_meta2 = s3_test_object.object_info(dest_bucket, dest_object)
+    assert_utils.assert_true(resp_meta2[0], resp_meta2[1])
+    assert_utils.assert_dict_equal(resp_meta1[1]["Metadata"], resp_meta2[1]["Metadata"])
+
+
+def validate_copy_content(src_bucket, src_object, dest_bucket, dest_object, **kwargs):
+    """Validate content of copy object"""
+    s3_test_object = kwargs.get("s3_testobj", "None")
+    down_path1 = kwargs.get("down_path1", "None")
+    down_path2 = kwargs.get("down_path2", "None")
+    src_resp = s3_test_object.object_info(src_bucket, src_object)
+    dest_resp = s3_test_object.object_info(dest_bucket, dest_object)
+    LOG.debug("ETag of source copy object %s", src_resp[1]["ETag"])
+    LOG.debug("ETag of destination copy object %s", dest_resp[1]["ETag"])
+    LOG.info("Compare ETag of source and destination copy object")
+    assert_utils.assert_equal(src_resp[1]["ETag"], dest_resp[1]["ETag"])
+    LOG.info("Compare content of source and destination copy object")
+    resp = s3_test_object.object_download(src_bucket, src_object, down_path1)
+    assert_utils.assert_true(resp[0], resp[1])
+    srcchecksum = calculate_checksum(down_path1)
+    resp = s3_test_object.object_download(dest_bucket, dest_object, down_path2)
+    assert_utils.assert_true(resp[0], resp[1])
+    destchecksum = calculate_checksum(down_path2)
+    assert_utils.assert_equal(srcchecksum, destchecksum, "Checksum match failed.")
+    LOG.info("Validated content of copy object")
+
+
+def objects_in_buckets(bucket, objects, s3_test_obj):
+    """Assert if any of the given object not listed in given bucket"""
+    listed_objects = s3_test_obj.object_list(bucket)[1]
+    for obj in objects:
+        assert_utils.assert_true(obj in listed_objects, f"{obj} not present in {bucket}")
+
 
 class S3BackgroundIO:
     """Class to perform/handle background S3 IOs for S3 tests using S3bench."""
