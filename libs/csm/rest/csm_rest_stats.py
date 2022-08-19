@@ -23,10 +23,8 @@
 from __future__ import division
 import datetime
 import math
-
 import dateutil.relativedelta
 from prometheus_client.parser import text_string_to_metric_families
-
 import commons.errorcodes as err
 from commons.constants import Rest as const
 from commons.exceptions import CTException
@@ -34,6 +32,7 @@ from commons.configmanager import get_config_wrapper
 from commons.utils.config_utils import read_yaml
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
+# pylint: disable-msg=unexpected-keyword-arg
 
 class SystemStats(RestTestLib):
     """SystemStats contains all the Rest API calls for reading system stats"""

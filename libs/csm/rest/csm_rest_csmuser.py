@@ -27,7 +27,7 @@ from commons.exceptions import CTException
 from commons.utils import config_utils
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
-
+# pylint: disable-msg=unexpected-keyword-arg
 # pylint: disable-msg=too-many-public-methods
 class RestCsmUser(RestTestLib):
     """RestCsmUser contains all the Rest API calls for csm user operations"""
