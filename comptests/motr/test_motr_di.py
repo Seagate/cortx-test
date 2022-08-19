@@ -236,6 +236,7 @@ class TestCorruptDataDetection:
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
         object_list = []
+        log_file_list = []
         for client_num in range(motr_client_num):
             for node in node_pod_dict:
                 object_id = str(self.system_random.randint(1, 1024 * 1024)) + ":" + \
@@ -249,11 +250,9 @@ class TestCorruptDataDetection:
                         b_size, cnt_c, object_id,
                         layout, infile, node, client_num,
                         di_g=True)
-                    self.motr_obj.cat_cmd(
-                        b_size, cnt_c, object_id,
-                        layout, outfile, node, client_num)
                 filepath = self.motr_obj.dump_m0trace_log(f"{node}-trace_log.txt", node)
                 logger.debug("filepath is %s", filepath)
+                log_file_list.append(filepath)
                 # Fetch the FID from m0trace log
                 fid_resp = self.motr_obj.read_m0trace_log(filepath)
                 logger.debug("fid_resp is %s", fid_resp)
