@@ -34,7 +34,6 @@ from libs.motr.layouts import BSIZE_LAYOUT_MAP
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from config import CMN_CFG
-from config import di_cfg
 from commons.utils import system_utils
 from commons.utils import config_utils
 from commons.utils import assert_utils
@@ -823,23 +822,3 @@ class MotrCoreK8s():
         log.debug("gob data %s", data_checksum_list)
         log.debug("gob Parity %s", parity_checksum_list)
         return data_checksum_list, parity_checksum_list
-
-    def switch_to_degrade_mode(self, proc_restart_delay=di_cfg['wait_time_m0d_restart']):
-        """
-        This method is used to degrade the setup by killing m0d process
-        """
-        process = common_const.PID_WATCH_LIST[0]
-        pod_name, container = self.master_node_list[0].select_random_pod_container(
-            common_const.POD_NAME_PREFIX, f"{common_const.MOTR_CONTAINER_PREFIX}")
-        self.dtm_obj.set_proc_restart_duration(
-            self.master_node_list[0], pod_name, container, proc_restart_delay)
-        try:
-            log.info("Kill %s from %s pod %s container ", process, pod_name, container)
-            resp = self.master_node_list[0].kill_process_in_container(
-                pod_name=pod_name, container_name=container, process_name=process)
-            log.debug("Resp : %s", resp)
-        except (ValueError, IOError) as ex:
-            log.error("Exception Occurred during killing process : %s", ex)
-            self.dtm_obj.set_proc_restart_duration(
-                self.master_node_list[0], pod_name, container, 0)
-            assert False

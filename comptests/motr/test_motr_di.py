@@ -53,6 +53,11 @@ import logging
 import secrets
 import pytest
 
+from commons.constants import POD_NAME_PREFIX
+from commons.constants import  MOTR_CONTAINER_PREFIX
+from commons.constants import  PID_WATCH_LIST
+from commons.helpers.health_helper import Health
+from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
 from config import di_cfg
 from commons.utils import assert_utils
@@ -97,10 +102,24 @@ class TestCorruptDataDetection:
     def setup_class(cls):
         """ Setup class for running Motr tests"""
         logger.info("STARTED: Setup Operation")
+        cls.master_node_list = []
+        cls.worker_node_list = []
+        for node in CMN_CFG['nodes']:
+            node_obj = LogicalNode(hostname=node["hostname"],
+                                   username=node["username"],
+                                   password=node["password"])
+            if node["node_type"].lower() == "master":
+                cls.master_node_list.append(node_obj)
+            else:
+                cls.worker_node_list.append(node_obj)
+
         cls.motr_obj = MotrCoreK8s()
         cls.dtm_obj = DTMRecoveryTestLib()
         cls.emap_adapter_obj = MotrCorruptionAdapter(CMN_CFG, 0)
         cls.system_random = secrets.SystemRandom()
+        cls.health_obj = Health(cls.master_node_list[0].hostname,
+                                cls.master_node_list[0].username,
+                                cls.master_node_list[0].password)
         logger.info("ENDED: Setup Operation")
 
     def teardown_class(self):
@@ -255,7 +274,7 @@ class TestCorruptDataDetection:
                 fid_resp = self.motr_obj.read_m0trace_log(filepath)
                 logger.debug("fid_resp is %s", fid_resp)
             metadata_path = self.emap_adapter_obj.get_metadata_shard(
-                self.motr_obj.master_node_list[0])
+                self.master_node_list[0])
             logger.debug("metadata device is %s", metadata_path[0])
             data_gob_id_resp = self.emap_adapter_obj.get_object_gob_id(
                 metadata_path[0], fid=fid_resp)
@@ -268,7 +287,7 @@ class TestCorruptDataDetection:
                 assert_utils.assert_true(corrupt_data_resp)
             # Read the data using m0cp utility
             self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids, object_list,
-                                       client_num=client_num)
+                                       client_num=client_num, outfile=outfile)
 
     @pytest.mark.skip(reason="Test incomplete without teardown")
     @pytest.mark.tags("TEST-42910")
@@ -283,7 +302,6 @@ class TestCorruptDataDetection:
         count_list = ['8']
         bsize_list = ['4K']
         layout_ids = ['2']
-        proc_restart_delay = di_cfg['wait_time_m0d_restart']
         logger.info("STARTED: m0cp, corrupt workflow in healthy state")
         infile = TEMP_PATH + 'input'
         outfile = TEMP_PATH + 'output'
@@ -302,7 +320,11 @@ class TestCorruptDataDetection:
                         b_size, cnt_c, object_id,
                         layout, infile, node, client_num)
         # Degrade the setup by killing the m0d process
-        self.motr_obj.switch_to_degrade_mode(proc_restart_delay)
+        self.dtm_obj.process_restart_with_delay(
+            self.master_node_list[0], health_obj=self.health_obj,
+            pod_prefix=POD_NAME_PREFIX, container_prefix=MOTR_CONTAINER_PREFIX,
+            process=PID_WATCH_LIST[0], check_proc_state=True,
+            proc_restart_delay=di_cfg['wait_time_m0d_restart'])
         # Read the data using m0cat in degraded mode
         for client_num in range(motr_client_num):
             self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids, object_id_list,
@@ -324,7 +346,11 @@ class TestCorruptDataDetection:
         layout_ids = ['1', '1']
         offsets = [0, 4096]
         # Degrade the setup by killing the m0d process
-        self.motr_obj.switch_to_degrade_mode()
+        self.dtm_obj.process_restart_with_delay(
+            self.master_node_list[0], health_obj=self.health_obj,
+            pod_prefix=POD_NAME_PREFIX, container_prefix=MOTR_CONTAINER_PREFIX,
+            process=PID_WATCH_LIST[0], check_proc_state=True,
+            proc_restart_delay=di_cfg['wait_time_m0d_restart'])
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
     @pytest.mark.skip(reason="Test incomplete without teardown")
@@ -342,6 +368,7 @@ class TestCorruptDataDetection:
         bsize_list = ['4K', '4K']
         layout_ids = ['1', '1']
         offsets = [0, 4096]
+        infile_size = ['2K', '2K']
         logger.info("STARTED: m0cp, corrupt and m0cat workflow")
         infile = TEMP_PATH + 'input'
         outfile = TEMP_PATH + 'output'
@@ -350,13 +377,12 @@ class TestCorruptDataDetection:
         object_id = str(self.system_random.randint(1, 1024 * 1024)) + ":" + \
                     str(self.system_random.randint(1, 1024 * 1024))
         object_id_list = []
-        proc_restart_delay = di_cfg["wait_time_m0d_restart"]
         for client_num in range(motr_client_num):
             for node in node_pod_dict:
-                for b_size, (cnt_c, cnt_u), layout, offset in zip(bsize_list, count_list,
-                                                                  layout_ids, offsets):
+                for b_size, infile_size, (cnt_c, cnt_u), layout, offset in zip(
+                        bsize_list, count_list, layout_ids, offsets, infile_size):
                     self.motr_obj.dd_cmd(
-                        b_size, cnt_c, infile, node)
+                        infile_size, cnt_c, infile, node)
                     self.motr_obj.cp_cmd(
                         b_size, cnt_c, object_id,
                         layout, infile, node, client_num)
@@ -372,7 +398,11 @@ class TestCorruptDataDetection:
                         client_num=client_num, offset=offset)
                     object_id_list.append(object_id)
         # Degrade the setup by killing the m0d process
-        self.motr_obj.switch_to_degrade_mode(proc_restart_delay)
+        self.dtm_obj.process_restart_with_delay(
+            self.master_node_list[0], health_obj=self.health_obj,
+            pod_prefix=POD_NAME_PREFIX, container_prefix=MOTR_CONTAINER_PREFIX,
+            process=PID_WATCH_LIST[0], check_proc_state=True,
+            proc_restart_delay=di_cfg['wait_time_m0d_restart'])
         # Read the data using m0cat in degraded mode
         for client_num in range(motr_client_num):
             self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids,
