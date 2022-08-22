@@ -79,7 +79,7 @@ class TestCsmLoad():
         cls.failed_pod = []
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.system_random = secrets.SystemRandom()
-        cls.request_usage = 122
+        cls.request_usage = cls.csm_obj.get_request_usage_limit()
         cls.sw_alert_obj = None
 
     def setup_method(self):
@@ -174,6 +174,7 @@ class TestCsmLoad():
 
 
     # pylint: disable-msg=too-many-locals
+    @pytest.mark.skip("Skipped until CORTX-33861 is fixed")
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -592,6 +593,7 @@ class TestCsmLoad():
 
 
     # pylint: disable=too-many-statements
+    @pytest.mark.skip("Skipped until CORTX-33861 is fixed")
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -615,8 +617,14 @@ class TestCsmLoad():
         self.log.info("New users to create: %s", new_iam_users)
 
         self.log.info("Step 2: Create users in parallel")
-        self.csm_obj.create_multi_iam_user_loaded(new_iam_users, existing_user)
+        result = self.csm_obj.create_multi_iam_user_loaded(new_iam_users, existing_user)
+        assert result, "Unable to create users"
 
+        # Try to Delete all created users in parallel
+        result = self.csm_obj.delete_multi_iam_user_loaded()
+        assert result, "Unable to delete users"
+
+        # in case deletion failed in parallel
         self.log.info("Find all newly created users")
         resp = self.csm_obj.list_iam_users_rgw()
         assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
