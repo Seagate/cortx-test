@@ -308,21 +308,21 @@ class TestCorruptDataDetection:
             self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids, object_id_list,
                                        client_num=client_num, infile=infile, outfile=outfile)
 
-    @pytest.mark.skip(reason="Test incomplete without teardown")
+    @pytest.mark.skip(reason="Feature not available")
     @pytest.mark.tags("TEST-41912")
     @pytest.mark.motr_di
     def test_m0cp_m0cat_short_block_corruption_degraded_mode(self):
         """
         Corrupt data block using m0cp and reading from object with m0cat should error
          in degraded mode.
-        -s 4096 -c 10 -o 1048583 /root/infile -L 3
-        -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
-        -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
+        -s 4096 -c 10 -o 1048583 /root/infile -L 1
+        -s 4096 -c 1 -o 1048583 /root/myfile -L 1 -u -O 0
+        -o 1048583 -s 4096 -c 10 -L 1 /root/dest_myfile
         """
-        count_list = [['10', '10']]
-        bsize_list = ['4K']
-        layout_ids = ['1']
-        offsets = [4096]
+        count_list = [['10', '1'], ['10', '1']]
+        bsize_list = ['4K', '4K']
+        layout_ids = ['1', '1']
+        offsets = [0, 4096]
         # Degrade the setup by killing the m0d process
         self.motr_obj.switch_to_degrade_mode()
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
@@ -334,14 +334,14 @@ class TestCorruptDataDetection:
         """
         Corrupt data block using m0cp and reading from object with m0cat in degraded mode
         should error
-        -s 4096 -c 10 -o 1048583 /root/infile -L 3
-        -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
-        -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
+        -s 4096 -c 10 -o 1048583 /root/infile -L 1
+        -s 4096 -c 1 -o 1048583 /root/myfile -L 1 -u -O 0
+        -o 1048583 -s 4096 -c 10 -L 1 /root/dest_myfile
         """
-        count_list = [['10', '10']]
-        bsize_list = ['4K']
-        layout_ids = ['1']
-        offsets = [4096]
+        count_list = [['10', '1'], ['10', '1']]
+        bsize_list = ['4K', '4K']
+        layout_ids = ['1', '1']
+        offsets = [0, 4096]
         logger.info("STARTED: m0cp, corrupt and m0cat workflow")
         infile = TEMP_PATH + 'input'
         outfile = TEMP_PATH + 'output'
