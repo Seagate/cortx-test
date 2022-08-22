@@ -715,7 +715,7 @@ class TestServerPodRestart:
         LOGGER.info("STARTED: Verify IOs during server pod restart (kubectl delete)")
         del_bucket = HA_CFG["bg_bucket_ops"]["no_del_buckets"]
         del_output = Queue()
-        event = threading.Event()  # Event to be used to send intimation of data pod deletion
+        event = threading.Event()  # Event to be used to send intimation of pod restart
         t_t = int(perf_counter_ns())
 
         LOGGER.info("Perform IOs with variable object sizes during server pod restart")
@@ -1467,7 +1467,7 @@ class TestServerPodRestart:
         LOGGER.info("STARTED: Verify IOs with retries during server pod restart (kubectl delete)")
         del_bucket = HA_CFG["bg_bucket_ops"]["no_del_buckets"]
         del_output = Queue()
-        event = threading.Event()  # Event to be used to send intimation of data pod deletion
+        event = threading.Event()  # Event to be used to send intimation of pod restart
         t_t = int(perf_counter_ns())
 
         LOGGER.info("Perform IOs with variable object sizes during server pod restart")
