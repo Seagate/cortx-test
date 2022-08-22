@@ -34,6 +34,7 @@ from time import perf_counter_ns
 import pytest
 
 from commons import constants as const
+from commons import commands as cmd
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
@@ -82,7 +83,7 @@ class TestControlPodRestart:
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
-        cls.restore_node = cls.deploy = cls.restore_pod = None
+        cls.restore_node = cls.deploy = cls.restore_pod = cls.repl_num = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.rest_iam_user = RestIamUser()
@@ -152,7 +153,7 @@ class TestControlPodRestart:
         assert_utils.assert_true(resp[0], resp)
         self.modified_yaml = resp[1]
         self.backup_yaml = resp[2]
-
+        self.repl_num = len(self.node_worker_list) / 2 + 1
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -353,7 +354,6 @@ class TestControlPodRestart:
         """
         LOGGER.info("STARTED: Verify IOs before and after control pod fails over, verify control "
                     "pod failover. (using kubectl command)")
-
         LOGGER.info("Step 1: Create IAM user and perform WRITEs-READs-Verify with "
                     "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -364,49 +364,53 @@ class TestControlPodRestart:
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects.")
-
         LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name, self.control_node)
-
-        failover_node = self.system_random.choice([ele for ele in self.host_worker_list if ele !=
-                                                   self.control_node])
-        LOGGER.debug("Fail over node is: %s", failover_node)
-
-        LOGGER.info("Step 2: Failover control pod %s to node %s and check cluster status",
-                    self.control_pod_name, failover_node)
-        pod_yaml = {self.control_pod_name: self.modified_yaml}
-        resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
-                                        failover_node=failover_node)
+        LOGGER.info("Step 2: Taint the control node %s and delete control pod %s",
+                    self.control_node, self.control_pod_name)
+        self.node_master_list[0].execute_cmd(cmd=cmd.K8S_TAINT_CTRL)
+        LOGGER.info("Restart the control pod by kubectl delete.")
+        resp = self.node_master_list[0].delete_pod(pod_name=self.control_pod_name, force=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to delete pod {self.control_pod_name} by "
+                                          "kubectl delete")
+        LOGGER.info("Step 2: Tainted the control node %s and deleted control pod %s",
+                    self.control_node, self.control_pod_name)
+        LOGGER.info("Sep 3: Check cluster status and new control node hosting control pod")
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=60)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 2: Successfully failed over control pod to %s. Cluster is in good state",
-                    failover_node)
-
-        self.restore_pod = self.deploy = True
-        LOGGER.info("Step 3: Verify if IAM users %s are persistent across control pod failover",
+        LOGGER.info("Cluster is in healthy state.")
+        LOGGER.info("Check new control node hosting failed over control pod")
+        control_pods = self.node_master_list[0].get_pods_node_fqdn(
+            const.CONTROL_POD_NAME_PREFIX)
+        control_pod_name = list(control_pods.keys())[0]
+        control_node = control_pods.get(control_pod_name)
+        LOGGER.info("Step 3: Control pod %s failed over to new node %s from old node %s",
+                    control_pod_name, control_node, self.control_node)
+        LOGGER.info("Step 4: Verify if IAM users %s are persistent across control pod failover",
                     uids)
         for user in uids:
             resp = self.rest_iam_user.get_iam_user(user)
             assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
                                       f"Couldn't find user {user} after control pod failover")
             LOGGER.info("User %s is persistent: %s", user, resp)
-        LOGGER.info("Step 3: Verified all IAM users %s are persistent across control pod "
+        LOGGER.info("Step 4: Verified all IAM users %s are persistent across control pod "
                     "failover", uids)
-
-        LOGGER.info("Step 4: Perform READ-Verify-DELETE on already written data")
+        LOGGER.info("Step 5: Perform READ-Verify-DELETE on already written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True)
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Performed READ-Verify-DELETE on already written data")
-
-        LOGGER.info("Step 5: Create new IAM user and perform WRITEs-READs-Verify-DELETEs with "
+        LOGGER.info("Step 5: Performed READ-Verify-DELETE on already written data")
+        LOGGER.info("Step 6: Create new IAM user and perform WRITEs-READs-Verify-DELETEs with "
                     "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40369-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
-
+        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
         LOGGER.info("ENDED: Verify IOs before and after control pod fails over, verify control "
                     "pod failover. (using kubectl command)")
 
