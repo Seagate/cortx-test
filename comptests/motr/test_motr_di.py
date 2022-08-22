@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -52,10 +53,12 @@ import logging
 import secrets
 import pytest
 
-from commons.utils import assert_utils
 from config import CMN_CFG
+from config import di_cfg
+from commons.utils import assert_utils
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
+from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from libs.motr.emap_fi_adapter import MotrCorruptionAdapter
 logger = logging.getLogger(__name__)
 
@@ -95,6 +98,7 @@ class TestCorruptDataDetection:
         """ Setup class for running Motr tests"""
         logger.info("STARTED: Setup Operation")
         cls.motr_obj = MotrCoreK8s()
+        cls.dtm_obj = DTMRecoveryTestLib()
         cls.emap_adapter_obj = MotrCorruptionAdapter(CMN_CFG, 0)
         cls.system_random = secrets.SystemRandom()
         logger.info("ENDED: Setup Operation")
@@ -230,6 +234,7 @@ class TestCorruptDataDetection:
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
         object_list = []
+        log_file_list = []
         for client_num in range(motr_client_num):
             for node in node_pod_dict:
                 object_id = str(self.system_random.randint(1, 1024 * 1024)) + ":" + \
@@ -243,11 +248,9 @@ class TestCorruptDataDetection:
                         b_size, cnt_c, object_id,
                         layout, infile, node, client_num,
                         di_g=True)
-                    self.motr_obj.cat_cmd(
-                        b_size, cnt_c, object_id,
-                        layout, outfile, node, client_num)
                 filepath = self.motr_obj.dump_m0trace_log(f"{node}-trace_log.txt", node)
                 logger.debug("filepath is %s", filepath)
+                log_file_list.append(filepath)
                 # Fetch the FID from m0trace log
                 fid_resp = self.motr_obj.read_m0trace_log(filepath)
                 logger.debug("fid_resp is %s", fid_resp)
@@ -266,3 +269,112 @@ class TestCorruptDataDetection:
             # Read the data using m0cp utility
             self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids, object_list,
                                        client_num=client_num)
+
+    @pytest.mark.skip(reason="Test incomplete without teardown")
+    @pytest.mark.tags("TEST-42910")
+    @pytest.mark.motr_di
+    def test_m0cp_block_corruption_m0cat_degraded_mode(self):
+        """
+        Corrupt data block using m0cp and reading from object with m0cat should error.
+        -s 4096 -c 10 -o 1048583 /root/infile -L 1
+        -s 4096 -c 1 -o 1048583 /root/myfile -L 1 -u -O 0
+        -o 1048583 -s 4096 -c 10 -L 1 /root/dest_myfile
+        """
+        count_list = ['8']
+        bsize_list = ['4K']
+        layout_ids = ['2']
+        proc_restart_delay = di_cfg['wait_time_m0d_restart']
+        logger.info("STARTED: m0cp, corrupt workflow in healthy state")
+        infile = TEMP_PATH + 'input'
+        outfile = TEMP_PATH + 'output'
+        node_pod_dict = self.motr_obj.get_node_pod_dict()
+        motr_client_num = self.motr_obj.get_number_of_motr_clients()
+        object_id_list = []
+        for client_num in range(motr_client_num):
+            for node in node_pod_dict:
+                object_id = str(self.system_random.randint(1, 1024 * 1024)) + ":" + \
+                            str(self.system_random.randint(1, 1024 * 1024))
+                for b_size, cnt_c, layout in zip(bsize_list, count_list, layout_ids):
+                    self.motr_obj.dd_cmd(
+                        b_size, cnt_c, infile, node)
+                    object_id_list.append(object_id)
+                    self.motr_obj.cp_cmd(
+                        b_size, cnt_c, object_id,
+                        layout, infile, node, client_num)
+        # Degrade the setup by killing the m0d process
+        self.motr_obj.switch_to_degrade_mode(proc_restart_delay)
+        # Read the data using m0cat in degraded mode
+        for client_num in range(motr_client_num):
+            self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids, object_id_list,
+                                       client_num=client_num, infile=infile, outfile=outfile)
+
+    @pytest.mark.skip(reason="Test incomplete without teardown")
+    @pytest.mark.tags("TEST-41912")
+    @pytest.mark.motr_di
+    def test_m0cp_m0cat_short_block_corruption_degraded_mode(self):
+        """
+        Corrupt data block using m0cp and reading from object with m0cat should error
+         in degraded mode.
+        -s 4096 -c 10 -o 1048583 /root/infile -L 3
+        -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
+        -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
+        """
+        count_list = [['10', '10']]
+        bsize_list = ['4K']
+        layout_ids = ['1']
+        offsets = [4096]
+        # Degrade the setup by killing the m0d process
+        self.motr_obj.switch_to_degrade_mode()
+        self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
+
+    @pytest.mark.skip(reason="Test incomplete without teardown")
+    @pytest.mark.tags("TEST-41913")
+    @pytest.mark.motr_di
+    def test_m0cp_m0cat_degraded_mode_short_block_corruption(self):
+        """
+        Corrupt data block using m0cp and reading from object with m0cat in degraded mode
+        should error
+        -s 4096 -c 10 -o 1048583 /root/infile -L 3
+        -s 4096 -c 1 -o 1048583 /root/myfile -L 3 -u -O 0
+        -o 1048583 -s 4096 -c 10 -L 3 /root/dest_myfile
+        """
+        count_list = [['10', '10']]
+        bsize_list = ['4K']
+        layout_ids = ['1']
+        offsets = [4096]
+        logger.info("STARTED: m0cp, corrupt and m0cat workflow")
+        infile = TEMP_PATH + 'input'
+        outfile = TEMP_PATH + 'output'
+        node_pod_dict = self.motr_obj.get_node_pod_dict()
+        motr_client_num = self.motr_obj.get_number_of_motr_clients()
+        object_id = str(self.system_random.randint(1, 1024 * 1024)) + ":" + \
+                    str(self.system_random.randint(1, 1024 * 1024))
+        object_id_list = []
+        proc_restart_delay = di_cfg["wait_time_m0d_restart"]
+        for client_num in range(motr_client_num):
+            for node in node_pod_dict:
+                for b_size, (cnt_c, cnt_u), layout, offset in zip(bsize_list, count_list,
+                                                                  layout_ids, offsets):
+                    self.motr_obj.dd_cmd(
+                        b_size, cnt_c, infile, node)
+                    self.motr_obj.cp_cmd(
+                        b_size, cnt_c, object_id,
+                        layout, infile, node, client_num)
+                    self.motr_obj.cat_cmd(
+                        b_size, cnt_c, object_id,
+                        layout, outfile, node, client_num)
+                    # To corrupt the data
+                    logger.info("Step to Corrupt the data\n")
+                    self.motr_obj.cp_update_cmd(
+                        b_size=b_size, count=cnt_u,
+                        obj=object_id, layout=layout,
+                        file=infile, node=node,
+                        client_num=client_num, offset=offset)
+                    object_id_list.append(object_id)
+        # Degrade the setup by killing the m0d process
+        self.motr_obj.switch_to_degrade_mode(proc_restart_delay)
+        # Read the data using m0cat in degraded mode
+        for client_num in range(motr_client_num):
+            self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids,
+                                       object_id_list, client_num=client_num,
+                                       infile=infile, outfile=outfile)
