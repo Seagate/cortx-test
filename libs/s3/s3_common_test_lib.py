@@ -351,7 +351,7 @@ def copy_obj_di_check(src_bucket, src_object, dest_bucket, dest_object, **kwargs
     put_etag = kwargs.get("put_etag", None)
     copy_etag = kwargs.get("copy_etag", None)
     s3_test_object = kwargs.get("s3_testobj", "None")
-    if (put_etag == None) and (copy_etag == None):
+    if (put_etag is None) and (copy_etag is None):
         src_resp = s3_test_object.object_info(src_bucket, src_object)
         dest_resp = s3_test_object.object_info(dest_bucket, dest_object)
         put_etag = src_resp[1]["ETag"]
