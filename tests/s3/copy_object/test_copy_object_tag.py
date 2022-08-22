@@ -633,7 +633,7 @@ class TestCopyObjectsTag():
         assert_utils.assert_equal(copy_resp[1][0]["Value"], self.value_src, self.value_src)
         self.log.info("Step 4: Compared and verified tag of source and destination object")
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1, 
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
                           self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
                           s3_testobj=self.s3_test_obj)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
