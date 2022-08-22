@@ -209,9 +209,7 @@ class Rest:
     S3_ACCOUNTS = "s3_accounts"
     ACC_NAME = "account_name"
     ACC_EMAIL = "account_email"
-    SECRET_KEY = "secret_key"
     IAMUSERS = "iam_users"
-    ACCESS_KEY = "access_key"
     USER_NAME = "user_name"
     USER_ID = "user_id"
     IAM_USER = "test_iam_user"
@@ -380,7 +378,7 @@ CSM_USER_HELP = [
 
 # Prov Constants:
 JENKINS_USERNAME = "6LS9f5yJ1IFpxbasg/wPKG4p5ycaBT6x/j7Kj7anTSk="
-JENKINS_PASSWORD = "/AxML7GgiVqRSmKGcPSJSorUq0X9FLZrfrlEyw6tjKnccwT67II+SwOcKBWPV6SWoBwM/46rAky+fXKumyX41Q=="
+JENKINS_PWD = "/AxML7GgiVqRSmKGcPSJSorUq0X9FLZrfrlEyw6tjKnccwT67II+SwOcKBWPV6SWoBwM/46rAky+fXKumyX41Q=="
 TOKEN_NAME = "10Mnx/XE4tEN8xrzQTNp2iSGQxPjpcHXbIdZgJyIN7Y="
 PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "True"}
 PIP_CONFIG = "/etc/pip.conf"

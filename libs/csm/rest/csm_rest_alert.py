@@ -29,7 +29,7 @@ from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
-
+# pylint: disable-msg=unexpected-keyword-arg
 
 class SystemAlerts(RestTestLib):
     """SystemAlerts contains all the Rest API calls for system health related operations"""

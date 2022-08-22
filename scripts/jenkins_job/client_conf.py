@@ -24,34 +24,17 @@ Setup file for client configuration for executing the R2 regression.
 import os
 import logging
 import json
-import subprocess
 import shutil
 import configparser
 from zipfile import ZipFile
 from commons.helpers.node_helper import Node
+from commons.utils import system_utils as sysutils
 
 # Global Constants
 config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
 config.read(config_file)
 LOGGER = logging.getLogger(__name__)
-
-
-def run_cmd(cmd):
-    """
-    Execute bash commands on the host
-    :param str cmd: command to be executed
-    :return: command output
-    :rtype: string
-    """
-    print("Executing command: {}".format(cmd))
-    proc = subprocess.Popen(cmd, shell=True,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-
-    result = str(proc.communicate())
-    return result
-
 
 def create_db_entry(hostname, username, password, ip_addr,
                     admin_user, admin_passwd, public_ip, private_ip):
@@ -107,7 +90,7 @@ def set_s3_endpoints(cluster_ip):
     """
     # Removing contents of /etc/hosts file and writing new contents
     print("Setting s3 endpoints on client.")
-    run_cmd(cmd="rm -f /etc/hosts")
+    sysutils.execute_cmd(cmd="rm -f /etc/hosts")
     with open("/etc/hosts", 'w') as file:
         file.write("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n")
         file.write("::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n")
@@ -120,13 +103,16 @@ def setup_chrome():
     Method to install chrome and chromedriver
     :return: none
     """
-    run_cmd(cmd="wget -N https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm")
-    run_cmd(cmd="yum install -y google-chrome-stable_current_x86_64.rpm")
-    run_cmd(cmd="wget -N https://chromedriver.storage.googleapis.com/91.0.4472.19/chromedriver_linux64.zip")
+    cmd = "wget -N https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm"
+    sysutils.execute_cmd(cmd=cmd)
+    sysutils.execute_cmd(cmd="yum install -y google-chrome-stable_current_x86_64.rpm")
+    cmd = "wget -N " \
+          "https://chromedriver.storage.googleapis.com/91.0.4472.19/chromedriver_linux64.zip"
+    sysutils.execute_cmd(cmd=cmd)
     with ZipFile('chromedriver_linux64.zip', 'r') as zipObj:
         # Extract all the contents of zip file in current directory
         zipObj.extractall()
-    os.chmod("chromedriver", 0o777)
+    os.chmod("chromedriver", 0o700)
     bin_path = os.path.join("venv", "bin")
     shutil.copy("chromedriver", bin_path)
 
@@ -146,7 +132,7 @@ def configure_server_node(obj, mg_ip):
     remote_path = "/etc/haproxy/haproxy.cfg"
     local_path = "/tmp/haproxy.cfg"
     if os.path.exists(local_path):
-        run_cmd("rm -f {}".format(local_path))
+        sysutils.execute_cmd("rm -f {}".format(local_path))
     obj.copy_file_to_local(remote_path=remote_path, local_path=local_path)
     line_src = "option forwardfor"
     with open(local_path) as file:
@@ -185,23 +171,23 @@ def main():
             private_ip = line.split( )[0]
     os.environ["CLUSTR_IP"] = clstr_ip
     os.environ["CSM_MGMT_IP"] = mgmnt_ip
-    run_cmd("mkdir -p /etc/ssl/stx-s3-clients/s3/")
+    sysutils.execute_cmd("mkdir -p /etc/ssl/stx-s3-clients/s3/")
     remote_path= "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
     local_path= "/etc/ssl/stx-s3-clients/s3/ca.crt"
     if os.path.exists(local_path):
-        run_cmd("rm -f {}".format(local_path))
+        sysutils.execute_cmd("rm -f {}".format(local_path))
     nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
     set_s3_endpoints(clstr_ip)
     setupname = create_db_entry(host, uname, host_passwd, mgmnt_ip,
                                 admin_user, admin_passwd, clstr_ip, private_ip)
-    run_cmd("cp /root/secrets.json .")
+    sysutils.execute_cmd("cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
         json_data = json.load(file)
-    output = run_cmd("python3.7 tools/setup_update/setup_entry.py "
+    output = sysutils.execute_cmd("python3.7 tools/setup_update/setup_entry.py "
                      "--dbuser {} --dbpassword {}".format(json_data['DB_USER'], json_data['DB_PASSWORD']))
     if "Entry already exits" in str(output):
         print("DB already exists for target: {}, so will update it.".format(setupname))
-        run_cmd("python3.7 tools/setup_update/setup_entry.py "
+        sysutils.execute_cmd("python3.7 tools/setup_update/setup_entry.py "
                 "--dbuser {} --dbpassword {} --new_entry False".format(json_data['DB_USER'], json_data['DB_PASSWORD']))
     os.environ["TARGET"] = setupname
     print("Setting up chrome")

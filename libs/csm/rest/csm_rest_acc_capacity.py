@@ -34,7 +34,7 @@ from libs.s3 import s3_test_lib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_test_lib import S3TestLib
 
-
+# pylint: disable-msg=unexpected-keyword-arg
 class AccountCapacity(RestTestLib):
     """
     RestCsmUser contains all the Rest API calls for account capacity related operations

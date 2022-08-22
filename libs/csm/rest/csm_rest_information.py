@@ -17,6 +17,8 @@
 """Test library for Information related operations."""
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
+# pylint: disable-msg=unexpected-keyword-arg
+
 class RestInformation(RestTestLib):
     """RestInformation contains all the Rest API calls for information related operations"""
 
