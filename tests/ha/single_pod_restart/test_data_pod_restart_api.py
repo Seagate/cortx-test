@@ -24,7 +24,6 @@ HA test suite for single data Pod restart for API tests
 
 import logging
 import os
-import random
 import secrets
 import threading
 import time
@@ -76,8 +75,8 @@ class TestDataPodRestartAPI:
         cls.s3_clean = cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.multipart_obj_path = cls.set_name = cls.version_etag = cls.extra_files = None
-        cls.delete_pod = cls.set_type = cls.num_replica = cls.s3_test_obj = None
-        cls.s3_ver = cls.f_size = cls.num_replica = cls.s3_test_obj = None
+        cls.delete_pod = cls.set_type = cls.num_replica = cls.s3_test_obj = cls.s3_ver = None
+        cls.f_size = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -846,21 +845,9 @@ class TestDataPodRestartAPI:
         output = Queue()
         event = threading.Event()
 
-        LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                endpoint_url=S3_CFG["s3_url"])
-        LOGGER.info("Successfully created IAM user with name %s", self.s3acc_name)
-        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                    'user_name': self.s3acc_name}}
         LOGGER.info("Step 1: Create and list buckets. Upload object to %s & copy object from the"
                     " same bucket to other buckets and verify copy object etags", self.bucket_name)
-        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=self.s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
                                                   bkt_obj_dict=bkt_obj_dict,
@@ -889,7 +876,7 @@ class TestDataPodRestartAPI:
 
         LOGGER.info("Step 3: Download the copied objects & verify etags.")
         for bkt, obj in bkt_obj_dict.items():
-            resp = s3_test_obj.get_object(bucket=bkt, key=obj)
+            resp = self.s3_test_obj.get_object(bucket=bkt, key=obj)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
             assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
@@ -913,10 +900,9 @@ class TestDataPodRestartAPI:
                 bkt_obj_dict[bkt] = f"ha-obj{idx}-{t_t}"
 
         LOGGER.info("Step 4: Copy object from %s to other buckets in background", bucket_name)
-        args = {'s3_test_obj': s3_test_obj, 'bucket_name': bucket_name,
+        args = {'s3_test_obj': self.s3_test_obj, 'bucket_name': bucket_name, 'put_etag': put_etag,
                 'object_name': self.object_name, 'bkt_obj_dict': bkt_obj_dict, 'output': output,
-                'file_path': self.multipart_obj_path, 'background': True, 'bkt_op': bkt_op,
-                'put_etag': put_etag}
+                'file_path': self.multipart_obj_path, 'background': True, 'bkt_op': bkt_op}
         thread = threading.Thread(target=self.ha_obj.create_bucket_copy_obj, args=(event,),
                                   kwargs=args)
         thread.daemon = True  # Daemonize thread
@@ -928,7 +914,7 @@ class TestDataPodRestartAPI:
         timeout = time.time() + 60 * 3
         while len(bkt_list) < bkt_cnt:
             time.sleep(HA_CFG["common_params"]["20sec_delay"])
-            bkt_list = s3_test_obj.bucket_list()[1]
+            bkt_list = self.s3_test_obj.bucket_list()[1]
             if timeout < time.time():
                 LOGGER.error("Bucket creation is taking longer than 3 mins")
                 assert_utils.assert_true(False, "Please check background process logs")
@@ -975,7 +961,7 @@ class TestDataPodRestartAPI:
 
         LOGGER.info("Step 7.1: Download the objects copied in healthy cluster and verify checksum")
         for key, val in bkt_obj_dict.items():
-            resp = s3_test_obj.get_object(bucket=key, key=val)
+            resp = self.s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
             assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
@@ -983,7 +969,7 @@ class TestDataPodRestartAPI:
                                                           f"Get Etag mismatch")
         LOGGER.info("Step 7.1: Download the objects copied in step 4 and verify checksum")
         for key, val in bkt_obj_dict1.items():
-            resp = s3_test_obj.get_object(bucket=key, key=val)
+            resp = self.s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
             assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
@@ -1007,24 +993,22 @@ class TestDataPodRestartAPI:
 
         LOGGER.info("Step 8: Perform copy object from %s bucket to other buckets verify copy object"
                     " etags", bucket_name)
-        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=s3_test_obj,
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=self.s3_test_obj,
                                                   bucket_name=bucket_name,
                                                   object_name=self.object_name,
                                                   bkt_obj_dict=bkt_obj_dict,
-                                                  put_etag=put_etag,
-                                                  bkt_op=bkt_op)
+                                                  put_etag=put_etag, bkt_op=bkt_op)
         assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
         LOGGER.info("Step 8: Performed copy object from %s bucket to other buckets verified copy "
                     "object etags", bucket_name)
 
         LOGGER.info("Step 9: Download the copied objects & verify etags.")
         for bkt, obj in bkt_obj_dict.items():
-            resp = s3_test_obj.get_object(bucket=bkt, key=obj)
+            resp = self.s3_test_obj.get_object(bucket=bkt, key=obj)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
-                                                          f"Etag for object {obj} of bucket "
-                                                          f"{bkt}.")
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag"
+                                                          f"for object {obj} of bucket {bkt}.")
         LOGGER.info("Step 9: Downloaded copied objects & verify etags.")
 
         LOGGER.info("ENDED: Test to verify copy object during data pod restart")
