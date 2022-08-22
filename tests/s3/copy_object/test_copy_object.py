@@ -2120,9 +2120,9 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
-    @pytest.mark.tags("TEST-44755 ")
+    @pytest.mark.tags("TEST-44755")
     @CTFailOn(error_handler)
-    def test_44755 (self):
+    def test_44755(self):
         """ Copy object Conditional params: exceptions per aws for simple and multipart copy """
         LOGGER.info("STARTED: Test to check exceptions for certain conditions  to copy simple and "
                     "multipart objects")
