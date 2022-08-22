@@ -154,13 +154,11 @@ class TestDataPodRestart:
         """
         This function will be invoked after each test function in the module.
         """
+        LOGGER.info("STARTED: Teardown Operations.")
         if self.s3_clean:
             LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
             assert_utils.assert_true(resp[0], resp[1])
-        if os.path.exists(self.test_dir_path):
-            system_utils.remove_dirs(self.test_dir_path)
-        LOGGER.info("STARTED: Teardown Operations.")
         if self.restore_pod:
             resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                            restore_method=self.restore_method,
@@ -178,6 +176,9 @@ class TestDataPodRestart:
         LOGGER.info("Removing extra files")
         for file in self.extra_files:
             system_utils.remove_file(file)
+        LOGGER.info("Removing all files from %s", self.test_dir_path)
+        if os.path.exists(self.test_dir_path):
+            system_utils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-locals
