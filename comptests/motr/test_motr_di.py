@@ -46,20 +46,15 @@ m0cp  -s 4096 -c 4 -o 1048587 /root/myfile -L 3 -u -O 4096
 m0cat -o 1048587 -s 4096 -c 10 -L 3 /root/dest_myfile
 
 """
-
 import os
 import csv
 import logging
 import secrets
 import pytest
 
-from commons.constants import POD_NAME_PREFIX
-from commons.constants import  MOTR_CONTAINER_PREFIX
-from commons.constants import  PID_WATCH_LIST
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
-from config import di_cfg
 from commons.utils import assert_utils
 from libs.motr import TEMP_PATH
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
@@ -172,19 +167,21 @@ class TestCorruptDataDetection:
         logger.info("STARTED: m0cat workflow")
         infile = kwargs.get("infile", TEMP_PATH + 'input')
         outfile = kwargs.get("outfile", TEMP_PATH + 'output')
-        client_num = kwargs.get("client_num", 1)
+        # client_num = kwargs.get("client_num", 1)
         node_pod_dict = self.motr_obj.get_node_pod_dict()
-        for node in node_pod_dict:
-            for b_size, cnt_c, layout, obj_id in zip(bsize_list, count_list,
-                                                     layout_ids, object_list):
-                self.motr_obj.cat_cmd(b_size, cnt_c, obj_id,
-                                      layout, outfile, node,
-                                      client_num)
-                # Verify the md5sum
-                self.motr_obj.md5sum_cmd(infile, outfile, node, flag=True)
-                # Delete the object
-                self.motr_obj.unlink_cmd(obj_id, layout, node, client_num)
-                logger.info("Stop: Verify m0cat operation")
+        motr_client_num = self.motr_obj.get_number_of_motr_clients()
+        for client_num in range(motr_client_num):
+            for node in node_pod_dict:
+                for b_size, cnt_c, layout, obj_id in zip(bsize_list, count_list,
+                                                         layout_ids, object_list):
+                    self.motr_obj.cat_cmd(b_size, cnt_c, obj_id,
+                                          layout, outfile, node,
+                                          client_num)
+                    # Verify the md5sum
+                    self.motr_obj.md5sum_cmd(infile, outfile, node, flag=True)
+                    # Delete the object
+                    self.motr_obj.unlink_cmd(obj_id, layout, node, client_num)
+                    logger.info("Stop: Verify m0cat operation")
 
     @pytest.mark.tags("TEST-41739")
     @pytest.mark.motr_di
@@ -285,9 +282,9 @@ class TestCorruptDataDetection:
                 if not corrupt_data_resp:
                     logger.debug("Failed to corrupt the block %s", fid)
                 assert_utils.assert_true(corrupt_data_resp)
-            # Read the data using m0cp utility
-            self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids, object_list,
-                                       client_num=client_num, outfile=outfile)
+        # Read the data using m0cp utility
+        self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids, object_list,
+                                   outfile=outfile)
 
     @pytest.mark.skip(reason="Test incomplete without teardown")
     @pytest.mark.tags("TEST-42910")
@@ -320,15 +317,12 @@ class TestCorruptDataDetection:
                         b_size, cnt_c, object_id,
                         layout, infile, node, client_num)
         # Degrade the setup by killing the m0d process
-        self.dtm_obj.process_restart_with_delay(
-            self.master_node_list[0], health_obj=self.health_obj,
-            pod_prefix=POD_NAME_PREFIX, container_prefix=MOTR_CONTAINER_PREFIX,
-            process=PID_WATCH_LIST[0], check_proc_state=True,
-            proc_restart_delay=di_cfg['wait_time_m0d_restart'])
+        resp = self.motr_obj.switch_to_degraded_mode()
+        if resp:
+            logger.debug("Switched the setup to degraded mode")
         # Read the data using m0cat in degraded mode
-        for client_num in range(motr_client_num):
-            self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids, object_id_list,
-                                       client_num=client_num, infile=infile, outfile=outfile)
+        self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids, object_id_list,
+                                   client_num=client_num, infile=infile, outfile=outfile)
 
     @pytest.mark.skip(reason="Feature not available")
     @pytest.mark.tags("TEST-41912")
@@ -346,11 +340,9 @@ class TestCorruptDataDetection:
         layout_ids = ['1', '1']
         offsets = [0, 4096]
         # Degrade the setup by killing the m0d process
-        self.dtm_obj.process_restart_with_delay(
-            self.master_node_list[0], health_obj=self.health_obj,
-            pod_prefix=POD_NAME_PREFIX, container_prefix=MOTR_CONTAINER_PREFIX,
-            process=PID_WATCH_LIST[0], check_proc_state=True,
-            proc_restart_delay=di_cfg['wait_time_m0d_restart'])
+        resp = self.motr_obj.switch_to_degraded_mode()
+        if resp:
+            logger.debug("Switched the setup to degraded mode")
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
     @pytest.mark.skip(reason="Test incomplete without teardown")
@@ -398,13 +390,9 @@ class TestCorruptDataDetection:
                         client_num=client_num, offset=offset)
                     object_id_list.append(object_id)
         # Degrade the setup by killing the m0d process
-        self.dtm_obj.process_restart_with_delay(
-            self.master_node_list[0], health_obj=self.health_obj,
-            pod_prefix=POD_NAME_PREFIX, container_prefix=MOTR_CONTAINER_PREFIX,
-            process=PID_WATCH_LIST[0], check_proc_state=True,
-            proc_restart_delay=di_cfg['wait_time_m0d_restart'])
+        resp = self.motr_obj.switch_to_degraded_mode()
+        if resp:
+            logger.debug("Switched the setup to Degraded mode")
         # Read the data using m0cat in degraded mode
-        for client_num in range(motr_client_num):
-            self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids,
-                                       object_id_list, client_num=client_num,
-                                       infile=infile, outfile=outfile)
+        self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids,
+                                   object_id_list, infile=infile, outfile=outfile)

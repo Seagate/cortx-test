@@ -24,6 +24,7 @@ Python library contains methods which provides the services endpoints.
 import json
 import logging
 import os
+import time
 from random import SystemRandom
 from string import Template
 
@@ -34,9 +35,13 @@ from libs.motr.layouts import BSIZE_LAYOUT_MAP
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from config import CMN_CFG
+from config import di_cfg
 from commons.utils import system_utils
 from commons.utils import config_utils
 from commons.utils import assert_utils
+from commons.constants import POD_NAME_PREFIX
+from commons.constants import MOTR_CONTAINER_PREFIX
+from commons.constants import PID_WATCH_LIST
 from commons.helpers.pods_helper import LogicalNode
 from commons.helpers.health_helper import Health
 from commons import commands as common_cmd
@@ -822,3 +827,28 @@ class MotrCoreK8s():
         log.debug("gob data %s", data_checksum_list)
         log.debug("gob Parity %s", parity_checksum_list)
         return data_checksum_list, parity_checksum_list
+
+    def switch_to_degraded_mode(self):
+        """
+        This method kill's m0d process and make setup to degraded mode
+        """
+        process = PID_WATCH_LIST[0]
+        pod_selected, container = self.master_node_list[0].select_random_pod_container(
+            POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX)
+        self.dtm_obj.set_proc_restart_duration(
+            self.master_node_list[0], pod_selected, container, di_cfg['wait_time_m0d_restart'])
+        try:
+            log.info("Kill %s from %s pod %s container ", process, pod_selected, container)
+            resp = self.master_node_list[0].kill_process_in_container(pod_name=pod_selected,
+                                                                      container_name=container,
+                                                                      process_name=process)
+            log.debug("Resp : %s", resp)
+            log.info("Sleep till %s", di_cfg['wait_time_m0d_restart'])
+            # added 20 seconds delay for container to restart.
+            time.sleep(di_cfg['wait_time_m0d_restart'] + 20)
+            return True
+        except (ValueError, IOError) as ex:
+            log.error("Exception Occurred during killing process : %s", ex)
+            self.dtm_obj.set_proc_restart_duration(self.master_node_list[0],
+                                                   pod_selected, container, 0)
+            return False
