@@ -1687,7 +1687,7 @@ class TestDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-45641")
-    def test_obj_ver_suspension_server_pod_restart(self):
+    def test_obj_ver_suspension_data_pod_restart(self):
         """
         Verify bucket versioning suspension before and after data pod restart
         """
@@ -1748,20 +1748,19 @@ class TestDataPodRestart:
         LOGGER.info("Step 4: Got versions of %s with & without specifying VersionID & verified "
                     "etags for %s.", self.object_name, self.bucket_name)
 
-        LOGGER.info("Step 5: Shutdown server pod with replica method and verify cluster & "
+        LOGGER.info("Step 5: Shutdown data pod with replica method and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-            pod_prefix=[const.SERVER_POD_NAME_PREFIX], delete_pod=[self.delete_pod],
-            num_replica=self.num_replica - 1)
+            delete_pod=[self.delete_pod], num_replica=self.num_replica - 1)
         # Assert if empty dictionary
-        assert_utils.assert_true(resp[1], "Failed to shutdown/delete server pod")
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete data pod")
         pod_name = list(resp[1].keys())[0]
         self.set_name = resp[1][pod_name]['deployment_name']
         self.restore_pod = True
         self.restore_method = resp[1][pod_name]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 5: Successfully shutdown server pod %s. Verified cluster and services "
+        LOGGER.info("Step 5: Successfully shutdown data pod %s. Verified cluster and services "
                     "states are as expected & remaining pods status is online.", pod_name)
 
         LOGGER.info("Step 6: Get versions of %s with & without specifying VersionID & verify "
@@ -1830,7 +1829,7 @@ class TestDataPodRestart:
                                             f"etag {etag} {resp[1]}")
         LOGGER.info("Step 9: Got versions of %s with & without specifying VersionID & verified "
                     "etags for %s", self.object_name, new_bucket)
-        LOGGER.info("Step 10: Restart server pod with replica method and check cluster status")
+        LOGGER.info("Step 10: Restart data pod with replica method and check cluster status")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
@@ -1842,7 +1841,7 @@ class TestDataPodRestart:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
         self.restore_pod = False
-        LOGGER.info("Step 10: Successfully restart server pod with replica method & checked "
+        LOGGER.info("Step 10: Successfully restart data pod with replica method & checked "
                     "cluster status")
         LOGGER.info("Step 11: Get versions of %s with & without specifying VersionID & verify "
                     "etags for %s.", self.object_name, new_bucket)
