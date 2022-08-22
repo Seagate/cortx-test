@@ -367,7 +367,7 @@ class TestControlPodRestart:
         LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name, self.control_node)
         LOGGER.info("Step 2: Taint the control node %s and delete control pod %s",
                     self.control_node, self.control_pod_name)
-        self.node_master_list[0].execute_cmd(cmd=cmd.K8S_TAINT_CTRL)
+        self.node_master_list[0].execute_cmd(cmd=cmd.K8S_TAINT_CTRL.format(self.control_node))
         LOGGER.info("Restart the control pod by kubectl delete.")
         resp = self.node_master_list[0].delete_pod(pod_name=self.control_pod_name, force=True)
         LOGGER.debug("Response: %s", resp)
@@ -411,6 +411,8 @@ class TestControlPodRestart:
                                                     setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
+        LOGGER.info("Untaint the node back which was tainted in step 2: %s", self.control_node)
+        self.node_master_list[0].execute_cmd(cmd=cmd.K8S_UNTAINT_CTRL.format(self.control_node))
         LOGGER.info("ENDED: Verify IOs before and after control pod fails over, verify control "
                     "pod failover. (using kubectl command)")
 
