@@ -35,7 +35,6 @@ from config.s3 import S3_OBJ_TST
 from libs.s3 import s3_test_lib
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.s3.s3_common_test_lib import copy_obj_di_check
 
 
 # pylint: disable=too-many-public-methods
@@ -122,6 +121,40 @@ class TestCopyObjectsTag():
         resp = self.tag_obj.set_object_tag(bucket_name, obj_name, key, value, tag_count=tag_count)
         assert resp[0], resp[1]
         return put_etag
+
+    def copy_obj_di_check(self, src_bucket, src_object, dest_bucket, dest_object, **kwargs):
+        """
+        Helper function is used to put object and set object tags.
+
+        :param src_bucket: Source bucket
+        :param src_object: Source Object
+        :param dest_bucket: Destination bucket
+        :param dest_object: Destination object
+        :param put_etag: Etag of source object
+        :param copy_etag: Etag of destination object
+        """
+        put_etag = kwargs.get("put_etag", None)
+        copy_etag = kwargs.get("copy_etag", None)
+        self.log.info("Verify ETags of source and destination object")
+        self.log.info("ETags: Source Object: %s, Destination Object: %s",
+                      put_etag, copy_etag)
+        assert_utils.assert_equal(put_etag, copy_etag,
+                                  f"Failed to match ETag: {put_etag}, {copy_etag}")
+        self.log.info("Matched ETag: %s, %s", put_etag, copy_etag)
+        self.log.info("Get metadata of the destination object and check metadata is same"
+                      " as source object.")
+        resp_meta1 = self.s3_test_obj.object_info(src_bucket, src_object)
+        assert_utils.assert_true(resp_meta1[0], resp_meta1[1])
+        resp_meta2 = self.s3_test_obj.object_info(dest_bucket, dest_object)
+        assert_utils.assert_true(resp_meta2[0], resp_meta2[1])
+        assert_utils.assert_dict_equal(resp_meta1[1]["Metadata"],
+                                       resp_meta2[1]["Metadata"])
+        # self.log.info("Step 6: Get Object ACL of the destination object and Check that ACL is set"
+        #               " to private for the user making the request.")
+        # resp_acl = self.s3_acl_obj.get_object_acl(dest_bucket, dest_object)
+        # assert_utils.assert_true(resp_acl[0], resp_acl[1])
+        # assert_utils.assert_equal(resp_acl[1]["Grants"][0]["Grantee"]["ID"], self.response1[0])
+        # assert_utils.assert_equal(resp_acl[1]["Grants"][0]["Permission"], "FULL_CONTROL")
 
     # pylint: disable=too-many-arguments
     def complete_multipart_upload_with_tagging(self,
@@ -220,15 +253,17 @@ class TestCopyObjectsTag():
                                   put_resp[1][0]["Value"])
         self.log.info("Step 4: Compared and verified tag of source and destination object")
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
         self.log.info("Simple Copy-object with destination tag set same as source object"
                       "in the different bucket")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name2, self.object_name2,
-                                                        TaggingDirective='COPY', Tagging=tag_str)
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name2,
+                                                        self.object_name2,
+                                                        TaggingDirective='COPY',
+                                                        Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
@@ -242,9 +277,8 @@ class TestCopyObjectsTag():
                                   put_resp[1][0]["Value"])
         self.log.info("Step 7: Compared and verified tag of source and destination object")
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
         self.log.info("ENDED: copy-object with destination tag set same as source object"
                       " (--tagging-directive=COPY)")
@@ -264,18 +298,24 @@ class TestCopyObjectsTag():
                       " in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         tag_str = self.key_dest + "=" + self.value_dest
-        put_etag = self.create_put_set_object_tag(self.bucket_name1, self.object_name1,
-                                                  self.file_path, mb_count=self.mb_count,
-                                                  key=self.key_src, value=self.value_src)
+        put_etag = self.create_put_set_object_tag(self.bucket_name1,
+                                                  self.object_name1,
+                                                  self.file_path,
+                                                  mb_count=self.mb_count,
+                                                  key=self.key_src,
+                                                  value=self.value_src)
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
         put_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name1)
         assert_utils.assert_true(put_resp[0], put_resp[1])
         self.log.debug("Retrieved tag of an object")
         self.log.info("Step 2: Copy object to same bucket with different object.")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name1, self.object_name2,
-                                                        TaggingDirective='REPLACE', Tagging=tag_str)
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name1,
+                                                        self.object_name2,
+                                                        TaggingDirective='REPLACE',
+                                                        Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
         self.log.info("Step 3: Retrieving tag of a destination object %s", self.object_name2)
@@ -293,15 +333,17 @@ class TestCopyObjectsTag():
         assert_utils.assert_equal(copy_resp[1][0]["Key"], self.key_dest, self.key_dest)
         assert_utils.assert_equal(copy_resp[1][0]["Value"], self.value_dest, self.value_dest)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
         self.log.info("Simple Copy-object with destination tag set replaces source object tag"
                       "in the different bucket")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name2, self.object_name2,
-                                                        TaggingDirective='REPLACE', Tagging=tag_str)
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name2,
+                                                        self.object_name2,
+                                                        TaggingDirective='REPLACE',
+                                                        Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
@@ -319,9 +361,8 @@ class TestCopyObjectsTag():
         self.log.info("Step 7: Compared and verified tags of source and destination object"
                       "are different and do not match")
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
         self.log.info("ENDED: Test simple copy-object with destination tag set replaces source"
                       " object tag(--tagging-directive=REPLACE)")
@@ -341,9 +382,12 @@ class TestCopyObjectsTag():
                       " in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         tag_str = ""
-        put_etag = self.create_put_set_object_tag(self.bucket_name1, self.object_name1,
-                                                  self.file_path, mb_count=self.mb_count,
-                                                  key=self.key_src, value=self.value_src,
+        put_etag = self.create_put_set_object_tag(self.bucket_name1,
+                                                  self.object_name1,
+                                                  self.file_path,
+                                                  mb_count=self.mb_count,
+                                                  key=self.key_src,
+                                                  value=self.value_src,
                                                   tag_count=10)
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
@@ -353,8 +397,10 @@ class TestCopyObjectsTag():
         self.log.info("Step 2: Copy object to same bucket with different object.")
         for num in range(len(put_resp[1])):
             tag_str = tag_str + put_resp[1][num]["Key"] + "=" + put_resp[1][num]["Value"] + "&"
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name1, self.object_name2,
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name1,
+                                                        self.object_name2,
                                                         TaggingDirective='COPY',
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
@@ -372,14 +418,15 @@ class TestCopyObjectsTag():
                                       put_resp[1][num]["Value"], put_resp[1][num]["Value"])
         self.log.info("Step 4: Compared and verified tag of source and destination object")
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
         self.log.info("Step 5: Copy-object with destination tag set same as source object"
                       "in the different bucket")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name2, self.object_name2,
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name2,
+                                                        self.object_name2,
                                                         TaggingDirective='COPY',
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
@@ -397,9 +444,8 @@ class TestCopyObjectsTag():
                                       put_resp[1][num]["Value"], put_resp[1][num]["Value"])
         self.log.info("Step 7: Compared and verified tag of source and destination object")
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
         self.log.info("STARTED:Test simple copy-object with source object having max number of"
                       " tags(10) and parameter (--tagging-directive=COPY)")
@@ -419,9 +465,12 @@ class TestCopyObjectsTag():
                       " in the same bucket")
         self.log.info("Step 1: Uploading an object and setting tag for object")
         tag_str = ""
-        put_etag = self.create_put_set_object_tag(self.bucket_name1, self.object_name1,
-                                                  self.file_path, mb_count=self.mb_count,
-                                                  key=self.key_src, value=self.value_src,
+        put_etag = self.create_put_set_object_tag(self.bucket_name1,
+                                                  self.object_name1,
+                                                  self.file_path,
+                                                  mb_count=self.mb_count,
+                                                  key=self.key_src,
+                                                  value=self.value_src,
                                                   tag_count=10)
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
@@ -432,8 +481,10 @@ class TestCopyObjectsTag():
         for num in range(len(put_resp[1])):
             tag_str = tag_str + "{}{}".format(self.key_dest, str(num)) + "=" \
                       + "{}{}".format(self.value_dest, str(num)) + "&"
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name1, self.object_name2,
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name1,
+                                                        self.object_name2,
                                                         TaggingDirective='REPLACE',
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
@@ -461,14 +512,15 @@ class TestCopyObjectsTag():
                                       "{}{}".format(self.value_dest, str(num)),
                                       "{}{}".format(self.value_dest, str(num)))
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
         self.log.info("Simple copy-object with destination tag set same as source object"
                       "in the different bucket")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name2, self.object_name2,
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name2,
+                                                        self.object_name2,
                                                         TaggingDirective='REPLACE',
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
@@ -495,9 +547,8 @@ class TestCopyObjectsTag():
                                       "{}{}".format(self.value_dest, str(num)),
                                       "{}{}".format(self.value_dest, str(num)))
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
         self.log.info("ENDED: Test simple copy-object with source object having max number of"
                       " tags(10) and parameter (--tagging-directive=REPLACE)")
@@ -520,9 +571,12 @@ class TestCopyObjectsTag():
         secret_range = random.SystemRandom()
         tag_count_src = secret_range.randint(1, 10)
         tag_count_dest = secret_range.randint(1, 10)
-        put_etag = self.create_put_set_object_tag(self.bucket_name1, self.object_name1,
-                                                  self.file_path, mb_count=self.mb_count,
-                                                  key=self.key_src, value=self.value_src,
+        put_etag = self.create_put_set_object_tag(self.bucket_name1,
+                                                  self.object_name1,
+                                                  self.file_path,
+                                                  mb_count=self.mb_count,
+                                                  key=self.key_src,
+                                                  value=self.value_src,
                                                   tag_count=tag_count_src)
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
@@ -533,8 +587,10 @@ class TestCopyObjectsTag():
         for num in range(tag_count_dest):
             tag_str = tag_str + "{}{}".format(self.key_dest, str(num)) + "=" \
                       + "{}{}".format(self.value_dest, str(num)) + "&"
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name1, self.object_name2,
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name1,
+                                                        self.object_name2,
                                                         TaggingDirective='REPLACE',
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
@@ -557,14 +613,15 @@ class TestCopyObjectsTag():
                                       "{}{}".format(self.value_dest, str(num)),
                                       "{}{}".format(self.value_dest, str(num)))
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
         self.log.info("Simple copy-object with destination tag set same as source object"
                       "in the different bucket")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name2, self.object_name2,
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name2,
+                                                        self.object_name2,
                                                         TaggingDirective='REPLACE',
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
@@ -587,9 +644,8 @@ class TestCopyObjectsTag():
                                       "{}{}".format(self.value_dest, str(num)),
                                       "{}{}".format(self.value_dest, str(num)))
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
         self.log.info("ENDED: Test simple copy-object with source object tag count"
                       " different than destination object. (--tagging-directive=REPLACE)")
@@ -609,18 +665,24 @@ class TestCopyObjectsTag():
                       " object in the same bucket")
         self.log.info("Step 1:Upload multipart object to bucket")
         tag_str = self.key_src + "=" + self.value_src
-        resp = self.complete_multipart_upload_with_tagging(self.bucket_name1, self.object_name1,
-                                                          self.file_path, total_parts=2,
-                                                          file_size=10, object_tag=tag_str)
+        resp = self.complete_multipart_upload_with_tagging(self.bucket_name1,
+                                                          self.object_name1,
+                                                          self.file_path,
+                                                          total_parts=2,
+                                                          file_size=10,
+                                                          object_tag=tag_str)
         self.log.info("Step 1: Uploaded multipart object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
         put_resp = self.tag_obj.get_object_tags(self.bucket_name1, self.object_name1)
         assert_utils.assert_true(put_resp[0], put_resp[1])
         self.log.debug("Retrieved tag of an object")
         self.log.info("Step 2: Copy object to same bucket with different object.")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name1, self.object_name2,
-                                                        TaggingDirective='COPY', Tagging=tag_str)
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name1,
+                                                        self.object_name2,
+                                                        TaggingDirective='COPY',
+                                                        Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
         put_etag = resp[1]["ETag"].replace('"', '')
@@ -633,15 +695,19 @@ class TestCopyObjectsTag():
         assert_utils.assert_equal(copy_resp[1][0]["Value"], self.value_src, self.value_src)
         self.log.info("Step 4: Compared and verified tag of source and destination object")
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
+                                                  self.object_name2,
+                                                  put_etag=put_etag,
+                                                  copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
         self.log.info("Multipart copy-object with destination tag set same as source object"
                       "in the different bucket")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name2, self.object_name2,
-                                                        TaggingDirective='COPY', Tagging=tag_str)
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name2,
+                                                        self.object_name2,
+                                                        TaggingDirective='COPY',
+                                                        Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
@@ -653,9 +719,8 @@ class TestCopyObjectsTag():
         assert_utils.assert_equal(copy_resp[1][0]["Value"], self.value_src, self.value_src)
         self.log.info("Step 7: Compared and verified tag of source and destination object")
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verified of etag and metadata for data integrity check")
         self.log.info("ENDED: Test multipart copy-object with multipart upload and destination"
                       " tag set same as source object (--tagging-directive=COPY)")
@@ -675,9 +740,12 @@ class TestCopyObjectsTag():
                       " tag set in the same bucket")
         self.log.info("Step 1: Uploading an multipart object and setting tag for object")
         tag_str =self.key_src + "=" + self.value_src
-        resp = self.complete_multipart_upload_with_tagging(self.bucket_name1, self.object_name1,
-                                                          self.file_path, total_parts=2,
-                                                          file_size=10, object_tag=tag_str)
+        resp = self.complete_multipart_upload_with_tagging(self.bucket_name1,
+                                                          self.object_name1,
+                                                          self.file_path,
+                                                          total_parts=2,
+                                                          file_size=10,
+                                                          object_tag=tag_str)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Uploaded an multipart object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
@@ -686,9 +754,12 @@ class TestCopyObjectsTag():
         self.log.debug("Retrieved tag of an object")
         self.log.info("Step 2: Copy object to same bucket with different object.")
         tag_str = self.key_dest + "=" + self.value_dest
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name1, self.object_name2,
-                                                        TaggingDirective='REPLACE', Tagging=tag_str)
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name1,
+                                                        self.object_name2,
+                                                        TaggingDirective='REPLACE',
+                                                        Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
         put_etag = resp[1]["ETag"].replace('"', '')
@@ -705,15 +776,17 @@ class TestCopyObjectsTag():
         assert_utils.assert_equal(copy_resp[1][0]["Key"], self.key_dest, self.key_dest)
         assert_utils.assert_equal(copy_resp[1][0]["Value"], self.value_dest, self.value_dest)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
         self.log.info("Step 5: Copy-object with destination tag set same as source object"
                       "in the different bucket")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name2, self.object_name2,
-                                                        TaggingDirective='REPLACE', Tagging=tag_str)
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name2,
+                                                        self.object_name2,
+                                                        TaggingDirective='REPLACE',
+                                                        Tagging=tag_str)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
         self.log.info("Step 6: Retrieving tag of a destination object %s", self.object_name2)
@@ -726,9 +799,8 @@ class TestCopyObjectsTag():
         self.log.info("Step 7: Compared and verified tags of source and destination object"
                       "are different and do not match")
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
         self.log.info("ENDED: Test multipart Copy-object with destination tag set replaces "
                       "source object tag set(--tagging-directive=REPLACE)")
@@ -751,9 +823,12 @@ class TestCopyObjectsTag():
         for num in range(10):
             tag_str = tag_str + "{}{}".format(self.key_src, str(num)) + "=" \
                       + "{}{}".format(self.value_src, str(num)) + "&"
-        resp = self.complete_multipart_upload_with_tagging(self.bucket_name1, self.object_name1,
-                                                          self.file_path, total_parts=2,
-                                                          file_size=10, object_tag=tag_str[:-1])
+        resp = self.complete_multipart_upload_with_tagging(self.bucket_name1,
+                                                          self.object_name1,
+                                                          self.file_path,
+                                                          total_parts=2,
+                                                          file_size=10,
+                                                          object_tag=tag_str[:-1])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
@@ -761,8 +836,10 @@ class TestCopyObjectsTag():
         assert_utils.assert_true(put_resp[0], put_resp[1])
         self.log.debug("Retrieved tag of an object")
         self.log.info("Step 2: Copy object to same bucket with different object.")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name1, self.object_name2,
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name1,
+                                                        self.object_name2,
                                                         TaggingDirective='COPY',
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
@@ -775,20 +852,21 @@ class TestCopyObjectsTag():
         self.log.info("Step 4: Compare tagset of source and destination object")
         assert_utils.assert_equal(len(copy_resp[1]), len(put_resp[1]), len(put_resp[1]))
         for num in range(len(copy_resp[1])):
-            assert_utils.assert_equal(copy_resp[1][num]["Key"], put_resp[1][num]["Key"],
-                                      put_resp[1][num]["Key"])
-            assert_utils.assert_equal(copy_resp[1][num]["Value"], put_resp[1][num]["Value"],
-                                      put_resp[1][num]["Value"])
+            assert_utils.assert_equal(copy_resp[1][num]["Key"],
+                                      put_resp[1][num]["Key"], put_resp[1][num]["Key"])
+            assert_utils.assert_equal(copy_resp[1][num]["Value"],
+                                      put_resp[1][num]["Value"], put_resp[1][num]["Value"])
         self.log.info("Step 4: Compared and verified tag of source and destination object")
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
         self.log.info("Multipart copy-object with destination tag set same as source object"
                       "in the different bucket")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name2, self.object_name2,
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name2,
+                                                        self.object_name2,
                                                         TaggingDirective='COPY',
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
@@ -800,15 +878,14 @@ class TestCopyObjectsTag():
         self.log.info("Step 7: Compare tagset of source and destination object")
         assert_utils.assert_equal(len(copy_resp[1]), len(put_resp[1]), len(put_resp[1]))
         for num in range(len(copy_resp[1])):
-            assert_utils.assert_equal(copy_resp[1][num]["Key"], put_resp[1][num]["Key"],
-                                      put_resp[1][num]["Key"])
-            assert_utils.assert_equal(copy_resp[1][num]["Value"], put_resp[1][num]["Value"],
-                                      put_resp[1][num]["Value"])
+            assert_utils.assert_equal(copy_resp[1][num]["Key"],
+                                      put_resp[1][num]["Key"], put_resp[1][num]["Key"])
+            assert_utils.assert_equal(copy_resp[1][num]["Value"],
+                                      put_resp[1][num]["Value"], put_resp[1][num]["Value"])
         self.log.info("Step 7: Compared and verified tag of source and destination object")
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
         self.log.info("ENDED: Test multipart copy-object with source object having max number"
                       " of tags(10) and parameter (--tagging-directive=COPY)")
@@ -831,9 +908,12 @@ class TestCopyObjectsTag():
         for num in range(10):
             tag_str = tag_str + "{}{}".format(self.key_src, str(num)) + "=" \
                       + "{}{}".format(self.value_src, str(num)) + "&"
-        resp = self.complete_multipart_upload_with_tagging(self.bucket_name1, self.object_name1,
-                                                           self.file_path, total_parts=2,
-                                                           file_size=10, object_tag=tag_str[:-1])
+        resp = self.complete_multipart_upload_with_tagging(self.bucket_name1,
+                                                           self.object_name1,
+                                                           self.file_path,
+                                                           total_parts=2,
+                                                           file_size=10,
+                                                           object_tag=tag_str[:-1])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
@@ -845,8 +925,10 @@ class TestCopyObjectsTag():
         for num in range(10):
             tag_str = tag_str + "{}{}".format(self.key_dest, str(num)) + "=" \
                       + "{}{}".format(self.value_dest, str(num)) + "&"
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name1, self.object_name2,
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name1,
+                                                        self.object_name2,
                                                         TaggingDirective='REPLACE',
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
@@ -859,10 +941,10 @@ class TestCopyObjectsTag():
         self.log.info("Step 4: Compare tagset of source and destination object")
         assert_utils.assert_equal(len(copy_resp[1]), len(put_resp[1]), len(put_resp[1]))
         for num in range(len(copy_resp[1])):
-            assert_utils.assert_not_equal(copy_resp[1][num]["Key"], put_resp[1][num]["Key"],
-                                          put_resp[1][num]["Key"])
-            assert_utils.assert_not_equal(copy_resp[1][num]["Value"], put_resp[1][num]["Value"],
-                                          put_resp[1][num]["Value"])
+            assert_utils.assert_not_equal(copy_resp[1][num]["Key"],
+                                          put_resp[1][num]["Key"], put_resp[1][num]["Key"])
+            assert_utils.assert_not_equal(copy_resp[1][num]["Value"],
+                                          put_resp[1][num]["Value"], put_resp[1][num]["Value"])
         self.log.info("Step 4: Compared and verified tag of source and destination object"
                       "are different and do not match")
         self.log.info("Step : Verify tag set of destination object should match with tagset"
@@ -875,14 +957,15 @@ class TestCopyObjectsTag():
                                       "{}{}".format(self.value_dest, str(num)),
                                       "{}{}".format(self.value_dest, str(num)))
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
         self.log.info("Multipart copy-object with destination tag set same as source object"
                       "in the different bucket")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name2, self.object_name2,
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name2,
+                                                        self.object_name2,
                                                         TaggingDirective='REPLACE',
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
@@ -910,9 +993,8 @@ class TestCopyObjectsTag():
                                       "{}{}".format(self.value_dest, str(num)),
                                       "{}{}".format(self.value_dest, str(num)))
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
         self.log.info("ENDED: Test multipart copy-object with source object having max number"
                       " of tags(10) and parameter (--tagging-directive=REPLACE)")
@@ -938,9 +1020,12 @@ class TestCopyObjectsTag():
         for num in range(tag_count_src):
             tag_str = tag_str + "{}{}".format(self.key_src, str(num)) + "=" \
                       + "{}{}".format(self.value_src, str(num)) + "&"
-        resp = self.complete_multipart_upload_with_tagging(self.bucket_name1, self.object_name1,
-                                                           self.file_path, total_parts=2,
-                                                           file_size=10, object_tag=tag_str[:-1])
+        resp = self.complete_multipart_upload_with_tagging(self.bucket_name1,
+                                                           self.object_name1,
+                                                           self.file_path,
+                                                           total_parts=2,
+                                                           file_size=10,
+                                                           object_tag=tag_str[:-1])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Uploaded an object and tag is set for object")
         self.log.debug("Retrieving tag of an object %s", self.object_name1)
@@ -952,8 +1037,10 @@ class TestCopyObjectsTag():
         for num in range(tag_count_dest):
             tag_str = tag_str + "{}{}".format(self.key_dest, str(num)) + "=" \
                       + "{}{}".format(self.value_dest, str(num)) + "&"
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name1, self.object_name2,
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name1,
+                                                        self.object_name2,
                                                         TaggingDirective='REPLACE',
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
@@ -977,14 +1064,15 @@ class TestCopyObjectsTag():
                                       "{}{}".format(self.value_dest, str(num)),
                                       "{}{}".format(self.value_dest, str(num)))
         self.log.info("Step : Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name1,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step : Verification of etag and metadata for data integrity check")
         self.log.info("Multipart copy-object with destination tag set same as source object"
                       "in the different bucket")
-        status, response = self.s3_test_obj.copy_object(self.bucket_name1, self.object_name1,
-                                                        self.bucket_name2, self.object_name2,
+        status, response = self.s3_test_obj.copy_object(self.bucket_name1,
+                                                        self.object_name1,
+                                                        self.bucket_name2,
+                                                        self.object_name2,
                                                         TaggingDirective='REPLACE',
                                                         Tagging=tag_str[:-1])
         assert_utils.assert_true(status, response)
@@ -1007,9 +1095,8 @@ class TestCopyObjectsTag():
                                       "{}{}".format(self.value_dest, str(num)),
                                       "{}{}".format(self.value_dest, str(num)))
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
-        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
-                          self.object_name2, put_etag=put_etag, copy_etag=copy_etag,
-                          s3_testobj=self.s3_test_obj)
+        self.copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                               self.object_name2, put_etag=put_etag, copy_etag=copy_etag)
         self.log.info("Step 8: Verification of etag and metadata for data integrity check")
         self.log.info("ENDED: Test multipart copy-object with source object tag count"
                       " different than destination object. (--tagging-directive=REPLACE).")

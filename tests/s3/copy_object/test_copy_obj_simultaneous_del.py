@@ -37,7 +37,6 @@ from commons.utils.system_utils import remove_dirs
 
 from libs.s3 import s3_test_lib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.s3.s3_common_test_lib import copy_obj_di_check
 
 LOGGER = logging.getLogger(__name__)
 
@@ -96,8 +95,7 @@ class TestCopyObjectSimultaneousDelete:
         """Copy object wrapper for multiprocessing"""
         s3_obj = s3_test_lib.S3TestLib()
         try:
-            ret = s3_obj.copy_object(src_bucket, src_obj, dest_bucket, dest_obj)
-            return ret
+            return s3_obj.copy_object(src_bucket, src_obj, dest_bucket, dest_obj)
         except CTException as err:
             LOGGER.info("Exception in copy object %s", err)
             if exception:
@@ -117,7 +115,7 @@ class TestCopyObjectSimultaneousDelete:
         return s3_obj.delete_object(bucket, obj)
 
     def create_put_parallel_copy_and_delete_object(self, copy_args, delete_args, is_mpu=False):
-        """Create and upload object to bucket and then Parallel copy object and put object with
+        """Create and uplaod object to bucket and then Parallel copy object and put object with
         given arguments"""
         for obj_size in [1024, 5*1024]:
             if obj_size == 1024:
@@ -139,11 +137,6 @@ class TestCopyObjectSimultaneousDelete:
                 process2 = pool.apply_async(self.delete_object_wrapper, args=delete_args)
                 assert_utils.assert_true(process1.get()[0], process1.get()[1])
                 assert_utils.assert_true(process2.get()[0], process2.get()[1])
-            list_dest = self.s3_obj.object_list(copy_args[2])
-            list_src = self.s3_obj.object_list(copy_args[0])
-            if (copy_args[1] in list_src) and (copy_args[3] in list_dest):
-                copy_obj_di_check(copy_args[0], copy_args[1], copy_args[2], copy_args[3],
-                                  s3_testobj=self.s3_obj)
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
