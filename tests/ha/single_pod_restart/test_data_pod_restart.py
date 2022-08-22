@@ -68,6 +68,7 @@ class TestDataPodRestart:
         """
         LOGGER.info("STARTED: Setup Module operations.")
         cls.num_nodes = len(CMN_CFG["nodes"])
+        cls.setup_type = CMN_CFG["setup_type"]
         cls.username = []
         cls.password = []
         cls.node_master_list = []
@@ -78,6 +79,7 @@ class TestDataPodRestart:
         cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = cls.set_name = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = cls.node_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
+        cls.multipart_obj_path = cls.set_name = cls.version_etag = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -1725,13 +1727,13 @@ class TestDataPodRestart:
                     " the VersionID for the same for %s.", self.object_name, self.bucket_name)
 
         LOGGER.info("Step 3: Suspend versioning on %s.", self.bucket_name)
-        resp = self.ha_api.put_bucket_versioning(bucket_name=self.bucket_name, status="Suspended")
+        resp = self.s3_ver.put_bucket_versioning(bucket_name=self.bucket_name, status="Suspended")
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 3: Suspended versioning on %s.", self.bucket_name)
 
         LOGGER.info("Step 4: Get versions of %s with & without specifying VersionID & verify etags "
                     "for %s.", self.object_name, self.bucket_name)
-        resp = self.ha_obj.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
+        resp = self.ha_api.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
                                                bkt_name=self.bucket_name, obj_name=self.object_name,
                                                ver_etag=self.version_etag[self.bucket_name])
         assert_utils.assert_true(resp[0], f"Get Object with specifying versionID failed {resp[1]}")
