@@ -75,6 +75,9 @@ Restcall_LC:
     email: "accounts323.admin@seagate.com"
     access_key: "abcdefghijkl123456"
     secret_key: "abcdefgh"
+  iam_user:
+    username: "test_iam_user"
+    password: "yqI7PYuCer0alJlTPJtaOJLejOIrg4ymC+Y8gUxMJAU="
   Login_headers:
     Content-Type: 'application/json'
   test_s3account_password : "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
@@ -93,6 +96,7 @@ Restcall_LC:
   csmuser_permission_endpoint: "/api/v2/permissions"
   bucket_policy_endpoint : "/api/v2/s3/bucket_policy/{}"
   perf_stats_endpoint: "/api/v2/metrics/perf"
+  system_topology_endpoint: "/api/v2/system/topology"
   accounts_capacity_endpoint: "/api/v2/metrics/capacity/account"
   account_capacity_endpoint: "/api/v2/metrics/capacity/account/{}"
   degraded_cap_endpoint: "/api/v2/capacity/status"
