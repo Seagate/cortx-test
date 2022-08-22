@@ -846,7 +846,7 @@ class MotrCoreK8s():
             log.info("Sleep till %s", di_cfg['wait_time_m0d_restart'])
             # added 20 seconds delay for container to restart.
             time.sleep(di_cfg['wait_time_m0d_restart'] + 20)
-            return True
+            return True, pod_selected, container
         except (ValueError, IOError) as ex:
             log.error("Exception Occurred during killing process : %s", ex)
             self.dtm_obj.set_proc_restart_duration(self.master_node_list[0],

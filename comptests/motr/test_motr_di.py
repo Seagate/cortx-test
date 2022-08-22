@@ -115,10 +115,14 @@ class TestCorruptDataDetection:
         cls.health_obj = Health(cls.master_node_list[0].hostname,
                                 cls.master_node_list[0].username,
                                 cls.master_node_list[0].password)
+        cls.container = ''
+        cls.pod_selected = ''
         logger.info("ENDED: Setup Operation")
 
     def teardown_class(self):
         """Teardown Node object"""
+        self.dtm_obj.set_proc_restart_duration(
+            self.master_node_list[0], self.pod_selected, self.container, 0)
         self.motr_obj.close_connections()
         del self.motr_obj
 
@@ -318,11 +322,13 @@ class TestCorruptDataDetection:
                         layout, infile, node, client_num)
         # Degrade the setup by killing the m0d process
         resp = self.motr_obj.switch_to_degraded_mode()
-        if resp:
-            logger.debug("Switched the setup to degraded mode")
+        if resp[0]:
+            logger.debug("Switched the setup to Degraded mode")
+            self.pod_selected = resp[1]
+            self.container = resp[2]
         # Read the data using m0cat in degraded mode
         self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids, object_id_list,
-                                   client_num=client_num, infile=infile, outfile=outfile)
+                                   infile=infile, outfile=outfile)
 
     @pytest.mark.skip(reason="Feature not available")
     @pytest.mark.tags("TEST-41912")
@@ -341,8 +347,10 @@ class TestCorruptDataDetection:
         offsets = [0, 4096]
         # Degrade the setup by killing the m0d process
         resp = self.motr_obj.switch_to_degraded_mode()
-        if resp:
-            logger.debug("Switched the setup to degraded mode")
+        if resp[0]:
+            logger.debug("Switched the setup to Degraded mode")
+            self.pod_selected = resp[1]
+            self.container = resp[2]
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
     @pytest.mark.skip(reason="Test incomplete without teardown")
@@ -391,8 +399,10 @@ class TestCorruptDataDetection:
                     object_id_list.append(object_id)
         # Degrade the setup by killing the m0d process
         resp = self.motr_obj.switch_to_degraded_mode()
-        if resp:
+        if resp[0]:
             logger.debug("Switched the setup to Degraded mode")
+            self.pod_selected = resp[1]
+            self.container = resp[2]
         # Read the data using m0cat in degraded mode
         self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids,
                                    object_id_list, infile=infile, outfile=outfile)
