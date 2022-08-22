@@ -51,9 +51,9 @@ from libs.di.di_mgmt_ops import ManagementOPs
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
-from scripts.s3_bench import s3bench
 from libs.s3.s3_versioning_common_test_lib import empty_versioned_bucket
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
+from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
 
