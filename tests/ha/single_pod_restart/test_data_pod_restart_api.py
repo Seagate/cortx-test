@@ -54,7 +54,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=too-many-lines
-# pylint: disable=attribute-defined-outside-init
 class TestDataPodRestartAPI:
     """
     Test suite for single Data Pod Restart for API tests
@@ -76,7 +75,9 @@ class TestDataPodRestartAPI:
         cls.ha_obj = HAK8s()
         cls.s3_clean = cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
-        cls.multipart_obj_path = cls.set_name = cls.version_etag = None
+        cls.multipart_obj_path = cls.set_name = cls.version_etag = cls.extra_files = None
+        cls.delete_pod = cls.set_type = cls.num_replica = cls.s3_test_obj = None
+        cls.s3_ver = cls.f_size = cls.num_replica = cls.s3_test_obj = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -184,7 +185,6 @@ class TestDataPodRestartAPI:
     # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Multipart upload is not supported with DTMInt0")
     @pytest.mark.tags("TEST-34080")
     def test_mpu_after_pod_restart(self):
         """
@@ -333,7 +333,6 @@ class TestDataPodRestartAPI:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Multipart upload is not supported with DTMInt0")
     @pytest.mark.tags("TEST-34082")
     def test_partial_mpu_after_pod_restart(self):
         """
@@ -637,7 +636,6 @@ class TestDataPodRestartAPI:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Multipart upload is not supported with DTMInt0")
     @pytest.mark.tags("TEST-34081")
     def test_mpu_during_pod_restart(self):
         """
@@ -648,7 +646,7 @@ class TestDataPodRestartAPI:
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
         part_numbers = list(range(1, total_parts + 1))
-        random.shuffle(part_numbers)
+        self.system_random.shuffle(part_numbers)
         output = Queue()
         parts_etag = list()
         download_path = os.path.join(self.test_dir_path, self.test_file + "_download")
