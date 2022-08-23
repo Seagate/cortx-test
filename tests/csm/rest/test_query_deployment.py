@@ -59,7 +59,7 @@ class TestQueryDeployment():
         """
         Setup method
         """
-        '''self.log.info("Prerequisite: Deploy cortx cluster")
+        self.log.info("Prerequisite: Deploy cortx cluster")
         deploy_start_time = time.time()
         self.log.info("Printing start time for deployment %s: ", deploy_start_time)
         self.log.info("Cleanup: Destroying the cluster ")
@@ -102,7 +102,7 @@ class TestQueryDeployment():
         else:
             self.log.info("Failed to get parity value, will use 1.")
             self.kvalue = 1
-        self.log.info("The cluster has %s parity pods", self.kvalue)'''
+        self.log.info("The cluster has %s parity pods", self.kvalue)
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -182,11 +182,11 @@ class TestQueryDeployment():
         invalid_ids = ['cluster', self.random_string, self.random_number, self.random_symbols, 0]
         for ids in invalid_ids:
             resp = self.csm_obj.get_cluster_topology(cluster_id = str(ids))
-            #assert resp.status_code == HTTPStatus.NOT_FOUND, \
-            #                   "Status code check failed for get cluster topology"
-            #resp = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
-            #                                         resp_msg_index)
-            #assert resp, "Error msg verify failed"
+            assert resp.status_code == HTTPStatus.NOT_FOUND, \
+                               "Status code check failed for get cluster topology"
+            resp = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
+                                                     resp_msg_index)
+            assert resp, "Error msg verify failed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
