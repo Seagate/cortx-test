@@ -453,7 +453,7 @@ R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
                                  "manifest", "uds", "elasticsearch", "utils", "HA"]
 SB_POD_PREFIX_AND_COMPONENT_LIST = {POD_NAME_PREFIX: ["hare", "motr", "utils"],
-                                    SERVER_POD_NAME_PREFIX: ["rgw", "hare", "utils"],
+                                    SERVER_POD_NAME_PREFIX: ["hare", "utils"],
                                     CONTROL_POD_NAME_PREFIX: ["csm", "utils"],
                                     HA_POD_NAME_PREFIX: ["utils"]}
 SB_EXTRACTED_PATH = "/etc/cortx/log/"
