@@ -355,8 +355,8 @@ class TestCopyObjectSimultaneousDelete:
                     "as source object in the same bucket")
         self.create_put_parallel_copy_and_delete_object(
             (self.srcbuck, "obj1", self.srcbuck, "obj1", errmsg.INVALID_REQ_ERR, 5,
-             self.file_path, errmsg.NOT_FOUND_ERRCODE), (self.srcbuck, "obj1"), is_mpu=True,
-             expect_copy_fail_always=True)
+             self.file_path, errmsg.NOT_FOUND_ERRCODE), (self.srcbuck, "obj1"),
+            is_mpu=True, expect_copy_fail_always=True)
         LOGGER.info("ENDED: Test Delete destination multipart copied object with the same name "
                     "as source object in the same bucket")
 
