@@ -20,13 +20,12 @@
 """S3 copy object for simultaneous delete test module."""
 
 from time import perf_counter_ns
-from commons import error_messages as errmsg
 import logging
 import multiprocessing
 import os
 
 import pytest
-
+from commons import error_messages as errmsg
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
@@ -43,6 +42,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=too-many-public-methods
+# pylint: disable=too-many-arguments
 class TestCopyObjectSimultaneousDelete:
     """S3 copy object for simultaneous delete class."""
 
