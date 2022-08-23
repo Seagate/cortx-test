@@ -310,7 +310,7 @@ class MotrCorruptionAdapter(InjectCorruption):
         cmd = EmapCommandBuilder.build(**kwargs)
         return cmd
 
-    def inject_fault_k8s(self, oid):
+    def inject_fault_k8s(self, oid, metadata_device):
         """
         Inject fault of type checksum or parity.
         :param oid: fid of data or parity block
@@ -333,7 +333,7 @@ class MotrCorruptionAdapter(InjectCorruption):
                             operation="exec",
                             pod=str(pod_name), namespace=NAMESPACE,
                             command_suffix=f"-c {motr_containers[0]} -- "
-                                           f"{self.build_emap_command(oid)}",
+                                           f"{self.build_emap_command(oid, selected_shard=metadata_device)}",
                             decode=True,
                         )
                         logging.debug("resp =%s", resp)
