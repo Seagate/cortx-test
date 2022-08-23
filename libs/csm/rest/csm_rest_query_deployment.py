@@ -19,7 +19,8 @@
 from http import HTTPStatus
 import yaml
 
-from config import PROV_TEST_CFG
+from config import CSM_REST_CFG, PROV_TEST_CFG
+from commons import configmanager
 from commons.constants import LOCAL_SOLUTION_PATH, K8S_SCRIPTS_PATH
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
@@ -30,12 +31,14 @@ class QueryDeployment(RestTestLib):
     def __init__(self):
         super(QueryDeployment, self).__init__()
         self.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        self.rest_resp_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/rest_response_data.yaml")
 
     def get_solution_yaml(self):
         """
         Read solution yaml into a dictionary
         """
-        local_sol_path = LOCAL_SOLUTION_PATH 
+        local_sol_path = LOCAL_SOLUTION_PATH
         remote_sol_path = K8S_SCRIPTS_PATH + 'solution.yaml'
         self.log.info("Path for solution yaml on remote node: %s", remote_sol_path)
         solution_path = self.master.copy_file_to_local(remote_path=remote_sol_path,
@@ -73,20 +76,29 @@ class QueryDeployment(RestTestLib):
         """
         Verify Get system topology
         """
+        unique_list = []
         resp = self.get_system_topology()
         result = True
         if resp.status_code == expected_response:
             result = True
             get_response = resp.json()
             self.log.info("Verify id fields have unique values")
-            self.log.info("Verfying cvg and devices in resp and solution yaml")
-            # Verify deployment version and deployment time
+            for elements in get_response["topology"]["clusters"]:
+                if 'id' in elements.keys():
+                    unique_list.append(elements['id'])
+            if len(set(unique_list)) == len(unique_list):
+                self.log.info("id fields have unique values")
+            else:
+                self.log.error("duplicate values found for id fields")
+            self.log.info("Verify deployment version and time")
         else:
             self.log.error("Status code check failed.")
+            #resp_version = get_response["topology"]["clusters"][0]["version"]
+            #compare after running kubectl version command
             result = False
         return result, get_response
 
-    def get_cluster_topology(self, uri_param, cluster_id=None, auth_header=None):
+    def get_cluster_topology(self, uri_param=None, cluster_id=None, auth_header=None):
         """
         Get cluster topology
         :param header: header for api authentication
@@ -101,10 +113,10 @@ class QueryDeployment(RestTestLib):
             cluster_param = cluster_param + '/' + cluster_id
             self.log.info("Cluster param is %s", cluster_param)
         if uri_param is not None:
-            uri_param = cluster_param + '/' + uri_param
-        self.log.info("cluster topology endpoint: %s", uri_param)
-        self.log.info("Logging query parameter for cluster topology: %s", uri_param)
-        response = self.get_system_topology(uri_param, auth_header)
+            cluster_param = cluster_param + '/' + uri_param
+            self.log.info("cluster topology endpoint: %s", cluster_param)
+        self.log.info("Logging query parameter for cluster topology: %s", cluster_param)
+        response = self.get_system_topology(cluster_param, auth_header)
         return response
 
     def get_certificate_topology(self, cluster_id: str, auth_header=None):
@@ -165,7 +177,8 @@ class QueryDeployment(RestTestLib):
         result = resp.status_code == expected_response
         if result:
             get_response = resp.json()
-            self.log.info("Verify node names")  
+            self.log.info("Verify node names")
+            #need confirmation from dev for node names in query deployment response
             self.log.info("Verify number of nodes in resp and solution yaml")
             nodes = len(get_response["topology"]["cluster"][0]["nodes"])
             num_nodes = len(solution_yaml["solution"]["storage_set"]["nodes"])
@@ -203,7 +216,7 @@ class QueryDeployment(RestTestLib):
             input_sns = solution_yaml["solution"]["storage_sets"][0]["durability"]["sns"]
             self.log.info("Printing sns value from response and solution yaml %s and %s",
                                resp_sns, input_sns)
-            if input_dix != resp_dix: 
+            if input_dix != resp_dix:
                 err_msg = "Actual and expected response for dix didnt match"
                 self.log.error(err_msg)
                 result = False
@@ -216,3 +229,30 @@ class QueryDeployment(RestTestLib):
             self.log.error(err_msg)
             result = False
         return resp, result, err_msg
+
+    def verify_error_message(self, resp, resp_error_code, resp_msg_id, resp_msg_index):
+        """
+        Verify error details
+        """
+        result = True
+        if CSM_REST_CFG["msg_check"] == "enable":
+            resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+            msg = resp_data[resp_msg_index]
+            if resp.json()["error_code"] != resp_error_code:
+                self.log.error("Error code check failed")
+                result = False
+            else:
+                self.log.info("Error code check passed")
+            if resp.json()["message_id"] != resp_msg_id:
+                self.log.error("Message id check failed")
+                result = False
+            else:
+                self.log.info("Message id check passed")
+            if resp.json()["message"] != msg:
+                self.log.error("Message check failed")
+                result = False
+            else:
+                self.log.info("Message check passed")
+        else:
+            result = True
+        return result
