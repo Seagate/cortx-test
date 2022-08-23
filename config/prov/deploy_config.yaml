@@ -63,6 +63,15 @@ nodes_3:
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
+  config_6:
+    sns_data: 4
+    sns_parity: 2
+    sns_spare: 0
+    dix_data: 1
+    dix_parity: 2
+    dix_spare: 0
+    cvg_per_node: 2
+    data_disk_per_cvg: 1
 
 nodes_4:
   config_1:
@@ -175,6 +184,33 @@ nodes_5:
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
+  config_7:
+    sns_data: 8
+    sns_parity: 2
+    sns_spare: 0
+    dix_data: 1
+    dix_parity: 2
+    dix_spare: 0
+    cvg_per_node: 2
+    data_disk_per_cvg: 2
+  config_8:
+    sns_data: 8
+    sns_parity: 2
+    sns_spare: 0
+    dix_data: 1
+    dix_parity: 2
+    dix_spare: 0
+    cvg_per_node: 2
+    data_disk_per_cvg: 1
+  config_9:
+    sns_data: 6
+    sns_parity: 4
+    sns_spare: 0
+    dix_data: 1
+    dix_parity: 2
+    dix_spare: 0
+    cvg_per_node: 2
+    data_disk_per_cvg: 1
 
 nodes_6:
   config_1:

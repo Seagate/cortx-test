@@ -533,9 +533,9 @@ class ProvDeployK8sCortxLib:
                 assert False, "The requested data disk is more than" \
                               " the data disk available on the system"
             if log_disk_flag:
-                # the '1' is being added to accumulate the final data disk count
+                # the '2' is being added to accumulate the final data disk count
                 # after excluding the log disks
-                data_devices_f = device_list[cvg_count+1:]
+                data_devices_f = device_list[cvg_count+2:]
                 LOGGER.debug("The data disk final is %s", data_devices_f)
             else:
                 data_devices_f = device_list[cvg_count:]
