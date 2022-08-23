@@ -219,6 +219,7 @@ class HAK8s:
                                              secret_key=details['secretkey'],
                                              endpoint_url=S3_CFG["s3_url"])
                 buckets = s3_del.bucket_list()[1]
+                LOGGER.info("Delete all versions and delete markers present for all the buckets.")
                 for _bucket in buckets:
                     empty_versioned_bucket(s3_ver, _bucket)
                     obj_list = s3_del.object_list(_bucket)
