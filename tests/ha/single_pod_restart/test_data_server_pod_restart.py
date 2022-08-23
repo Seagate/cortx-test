@@ -62,7 +62,6 @@ class TestDataServerPodRestart:
         cls.node_master_list = list()
         cls.hlth_master_list = list()
         cls.node_worker_list = list()
-        cls.pod_name_list = list()
         cls.ha_obj = HAK8s()
         cls.random_time = cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = cls.node_name = None
@@ -446,9 +445,8 @@ class TestDataServerPodRestart:
             LOGGER.info("successfully shutdown pod %s", self.pod_dict.get(pod_prefix)[0])
         self.restore_pod = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown data and server pod - %s. Verified cluster and "
-                    "services states are as expected & remaining pods status is online.",
-                    self.pod_name_list)
+        LOGGER.info("Step 2: Successfully shutdown data and server pod. Verified cluster and "
+                    "services states are as expected & remaining pods status is online")
         LOGGER.info("STEP 3: Perform READs/Verify on data written in healthy cluster.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
