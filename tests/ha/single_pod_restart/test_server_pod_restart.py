@@ -1478,7 +1478,7 @@ class TestServerPodRestart:
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("Step 1.1: Perform WRITEs on %s buckets for background DELETEs", del_bucket)
-        test_prefix_del = f'test-del-44854-{t_t}'
+        test_prefix_del = f'test-44854-del-{t_t}'
         args = {'test_prefix': test_prefix_del, 'test_dir_path': self.test_dir_path,
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': del_bucket, 'output': del_output}
         self.ha_obj.put_get_delete(event, s3_test_obj, **args)
@@ -1492,7 +1492,7 @@ class TestServerPodRestart:
         LOGGER.info("Step 1.1: Performed WRITEs on %s buckets for background DELETEs", del_bucket)
 
         LOGGER.info("Step 1.2: Perform WRITEs with variable object sizes for parallel READs")
-        test_prefix_read = f'test-read-44854-{t_t}'
+        test_prefix_read = f'test-44854-read-{t_t}'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=test_prefix_read, skipread=True,
                                                     skipcleanup=True)
@@ -1502,7 +1502,7 @@ class TestServerPodRestart:
         LOGGER.info("Step 2: Start WRITEs, READs and DELETEs with variable object sizes "
                     "during server pod restart using kubectl delete")
         LOGGER.info("Step 2.1: Start WRITEs with variable object sizes in background")
-        test_prefix_write = f'test-write-44854-{t_t}'
+        test_prefix_write = f'test-44854-write-{t_t}'
         output_wr = Queue()
         event_set_clr = [False]
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
@@ -1512,8 +1512,6 @@ class TestServerPodRestart:
         thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                       kwargs=args)
         thread_wri.daemon = True  # Daemonize thread
-        LOGGER.info("Step 2.1: Successfully started WRITEs with variable sizes objects"
-                    " in background")
 
         LOGGER.info("Step 2.2: Start READs and verify DI on the written data in background")
         output_rd = Queue()
@@ -1524,8 +1522,6 @@ class TestServerPodRestart:
         thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                      kwargs=args)
         thread_rd.daemon = True  # Daemonize thread
-        LOGGER.info("Step 2.2: Successfully started READs and verify DI on the written data in "
-                    "background")
 
         LOGGER.info("Step 2.3: Starting DELETEs of %s buckets in background", del_bucket)
         del_buckets = written_bck.copy()
@@ -1538,9 +1534,7 @@ class TestServerPodRestart:
         thread_wri.start()
         thread_rd.start()
         thread_del.start()
-        LOGGER.info("Step 2.3: Successfully started DELETEs of %s buckets in background",
-                    del_bucket)
-        LOGGER.info("Step 2: Started WRITEs, READs and DELETEs with variable object sizes "
+        LOGGER.info("Step 2: Started WRITEs, READs-Verify and DELETEs with variable object sizes "
                     "during server pod restart using kubectl delete")
         LOGGER.info("Waiting for %s seconds", HA_CFG["common_params"]["10sec_delay"])
         time.sleep(HA_CFG["common_params"]["10sec_delay"])
