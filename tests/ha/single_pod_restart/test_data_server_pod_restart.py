@@ -459,12 +459,12 @@ class TestDataServerPodRestart:
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix_deg,
                                                         skipcleanup=True, setup_s3bench=False)
-        else:
-            LOGGER.info("Step 4: Create new objects and perform WRITEs/READs/Verify with variable "
-                        "object sizes in degraded mode")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix,
-                                                        skipcleanup=True, setup_s3bench=False)
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Create new objects and perform WRITEs/READs/Verify with variable "
+                    "object sizes in degraded mode")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs/READs/Verify with variable sizes objects in "
                     "degraded mode")
