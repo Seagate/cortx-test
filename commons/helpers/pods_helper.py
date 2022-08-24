@@ -656,5 +656,3 @@ class LogicalNode(Host):
                         pod_ip_dict[pod] = j_obj["containerPort"]
 
         return pod_ip_dict
-
-
