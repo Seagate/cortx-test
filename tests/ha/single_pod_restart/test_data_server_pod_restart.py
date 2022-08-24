@@ -99,7 +99,6 @@ class TestDataServerPodRestart:
         self.s3_clean = dict()
         self.restore_pod = self.restore_method = self.deployment_name = self.set_name = None
         self.deployment_backup = None
-        self.num_replica = 1
         self.s3acc_name = f"ha_s3acc_{int(perf_counter_ns())}"
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
         LOGGER.info("Precondition: Verify cluster is up and running and all pods are online.")
@@ -137,15 +136,16 @@ class TestDataServerPodRestart:
         """
         LOGGER.info("STARTED: Teardown Operations.")
         if self.restore_pod:
-            for pod in self.pod_dict:
-                self.restore_method = self.pod_dict.get(pod)[-1]
+            for pod_prefix in self.pod_dict:
+                self.restore_method = self.pod_dict.get(pod_prefix)[-1]
                 resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                                restore_method=self.restore_method,
                                                restore_params={
-                                                   "deployment_name": self.pod_dict.get(pod)[-2],
+                                                   "deployment_name":
+                                                       self.pod_dict.get(pod_prefix)[-2],
                                                    "deployment_backup": self.deployment_backup,
-                                                   "num_replica": self.pod_dict.get(pod)[2],
-                                                   "set_name": self.pod_dict.get(pod)[1]})
+                                                   "num_replica": self.pod_dict.get(pod_prefix)[2],
+                                                   "set_name": self.pod_dict.get(pod_prefix)[1]})
                 LOGGER.debug("Response: %s", resp)
                 assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method}"
                                                   " way")
@@ -469,15 +469,15 @@ class TestDataServerPodRestart:
         LOGGER.info("Step 4: Performed WRITEs/READs/Verify with variable sizes objects in "
                     "degraded mode")
         LOGGER.info("Step 5: Restore data and server pod and check cluster status.")
-        for pod in self.pod_dict:
-            self.restore_method = self.pod_dict.get(pod)[-1]
+        for pod_prefix in self.pod_dict:
+            self.restore_method = self.pod_dict.get(pod_prefix)[-1]
             resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                            restore_method=self.restore_method,
                                            restore_params={
-                                               "deployment_name": self.pod_dict.get(pod)[-2],
+                                               "deployment_name": self.pod_dict.get(pod_prefix)[-2],
                                                "deployment_backup": self.deployment_backup,
-                                               "num_replica": self.pod_dict.get(pod)[2],
-                                               "set_name": self.pod_dict.get(pod)[1]})
+                                               "num_replica": self.pod_dict.get(pod_prefix)[2],
+                                               "set_name": self.pod_dict.get(pod_prefix)[1]})
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
