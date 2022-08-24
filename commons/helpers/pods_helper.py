@@ -26,6 +26,7 @@ import os
 import random
 import time
 from typing import Tuple
+import json
 
 from commons import commands
 from commons import constants as const
@@ -634,3 +635,26 @@ class LogicalNode(Host):
             sts_dict[sts] = self.get_all_pods(sts)
         log.debug("Statefulsets with pods: %s", sts_dict)
         return sts_dict
+
+    def get_pod_ports(self, pod_list, port_name="rgw-https"):
+        """
+        Function to get endpoint/container ports for given port name
+        :param pod_list: List of the pods
+        :param port_name: Name of the port
+        :return: dict
+        """
+        pod_ip_dict = dict()
+        for pod in pod_list:
+            cmd = commands.KUBECTL_GET_POD_PORTS.format(pod)
+            output = self.execute_cmd(cmd=cmd, read_lines=True)
+            log.info("Response: %s", output)
+            output = output[0].split()
+            for out in output:
+                json_obj = json.loads(out)
+                for j_obj in json_obj:
+                    if j_obj["name"] == port_name:
+                        pod_ip_dict[pod] = j_obj["containerPort"]
+
+        return pod_ip_dict
+
+

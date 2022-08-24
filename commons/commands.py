@@ -575,6 +575,8 @@ KUBECTL_DEL_NAMESPACE = "kubectl delete ns {}"
 KUBECTL_DESCRIBE_POD_CMD = "kubectl describe pod {}"
 KUBECTL_GET_STATEFULSET = "kubectl get sts | grep '{}'"
 KUBECTL_CREATE_STATEFULSET_REPLICA = "kubectl scale statefulset {} --replicas {}"
+KUBECTL_GET_POD_PORTS = "kubectl get pods cortx-server-0 -o jsonpath='{{.spec.containers[" \
+                        "*].ports}}'"
 
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
