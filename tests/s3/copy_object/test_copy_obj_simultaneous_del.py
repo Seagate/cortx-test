@@ -92,7 +92,7 @@ class TestCopyObjectSimultaneousDelete:
         LOGGER.info("ENDED: teardown test suite operations.")
 
     @staticmethod
-    def copy_object_wrapper(src_bucket, src_obj, dest_bucket, dest_obj, exception=None,
+    def copy_object_wrapper(src_bucket, src_obj, dest_bucket, dest_obj, exception=(None,),
                             expect_copy_failure=False):
         """Copy object wrapper for multiprocessing"""
         s3_obj = s3_test_lib.S3TestLib()
@@ -103,8 +103,9 @@ class TestCopyObjectSimultaneousDelete:
             return resp
         except CTException as err:
             LOGGER.info("Exception in copy object %s", err)
-            if exception:
-                return exception in err.message, f"Expected {exception} Received {err}"
+            for ele in exception:
+                if ele != None and ele in err.message:
+                    return ele in err.message, f"Expected {ele} Received {err}"
             return False, f"Unexpected exception {err}"
 
     def create_put_object(self, bucket, obj, size, base='1M'):
@@ -161,7 +162,7 @@ class TestCopyObjectSimultaneousDelete:
             with multiprocessing.Pool(processes=2) as pool:
                 process1 = pool.apply_async(self.copy_object_wrapper, args=(copy_args[0],
                                             copy_args[1], copy_args[2], copy_args[3],
-                                            copy_args[4], expect_copy_failure))
+                                           (copy_args[4],), expect_copy_failure))
                 process2 = pool.apply_async(self.delete_object_wrapper, args=delete_args)
                 assert_utils.assert_true(process1.get()[0], process1.get()[1])
                 assert_utils.assert_true(process2.get()[0], process2.get()[1])
@@ -182,10 +183,10 @@ class TestCopyObjectSimultaneousDelete:
             else:
                 LOGGER.info("Upload a large object (~5GB) srcobj to srcbuck")
             if is_mpu:
-                resp = system_utils.create_file(fpath=copy_args[6], count=obj_size, b_size="1M")
+                resp = system_utils.create_file(fpath=copy_args[7], count=obj_size, b_size="1M")
                 assert_utils.assert_true(resp[0], resp[1])
                 resp = self.s3mp_obj.simple_multipart_upload(copy_args[0], copy_args[1], obj_size,
-                                                             copy_args[6], copy_args[5])
+                                                             copy_args[7], copy_args[6])
             else:
                 self.create_put_object(copy_args[0], copy_args[1], obj_size)
             destbuck = f"{copy_args[2]}-{perf_counter_ns()}"
@@ -196,7 +197,8 @@ class TestCopyObjectSimultaneousDelete:
             with multiprocessing.Pool(processes=2) as pool:
                 process1 = pool.apply_async(self.copy_object_wrapper, args=(copy_args[0],
                                             copy_args[1], destbuck, copy_args[3],
-                                            copy_args[4], expect_copy_failure))
+                                           (copy_args[4], copy_args[5]),
+                                            expect_copy_failure))
                 process2 = pool.apply_async(self.delete_bucket_wrapper, args=(destbuck,
                                             delete_args[0]))
                 assert_utils.assert_true(process1.get()[0], process1.get()[1])
@@ -282,7 +284,8 @@ class TestCopyObjectSimultaneousDelete:
         LOGGER.info("STARTED: Test Delete destination bucket when copy simple object in "
                     "progress")
         self.create_put_parallel_copy_and_delete_bucket((self.srcbuck, "src-obj", "destbuck",
-                                                         "dest-obj", errmsg.NO_SUCH_KEY_ERR),
+                                                         "dest-obj", errmsg.NO_SUCH_KEY_ERR,
+                                                         errmsg.NO_BUCKET_OBJ_ERR_KEY),
                                                         ("False",),
                                                          expect_copy_failure=True)
         LOGGER.info("ENDED: Test Delete destination bucket when copy simple object in "
@@ -379,7 +382,8 @@ class TestCopyObjectSimultaneousDelete:
                     "progress")
         self.create_put_parallel_copy_and_delete_bucket((self.srcbuck, "src-obj", "destbuck",
                                                          "dest-obj", errmsg.NO_SUCH_KEY_ERR,
-                                                         5, self.file_path),
+                                                         errmsg.NO_BUCKET_OBJ_ERR_KEY,5,
+                                                         self.file_path),
                                                         ("False",),
                                                          is_mpu=True,
                                                          expect_copy_failure=True)
