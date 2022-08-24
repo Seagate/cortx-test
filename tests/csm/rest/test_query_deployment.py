@@ -95,15 +95,6 @@ class TestQueryDeployment():
         deploy_end_time = time.time()
         self.log.info("Printing end time for deployment %s: ", deploy_end_time)
 
-        self.log.info("Getting k value from config")
-        resp = self.ha_obj.get_config_value(self.csm_obj.master)
-        if resp[0]:
-            self.kvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['parity'])
-        else:
-            self.log.info("Failed to get parity value, will use 1.")
-            self.kvalue = 1
-        self.log.info("The cluster has %s parity pods", self.kvalue)
-
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -117,22 +108,19 @@ class TestQueryDeployment():
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Send GET request for fetching system topology"
                       "without storage set id")
-        self.log.info("Get cluster id from system topology response")
-        get_topology = self.csm_obj.get_system_topology()
-        for cluster in get_topology["topology"]["clusters"]:
-            resp, result, err_msg = self.csm_obj.verify_storage_set(cluster_id = cluster['id'])
+        resp, result, err_msg = self.csm_obj.verify_storage_set()
+        assert result, err_msg
+        self.log.info("Response : %s", resp)
+        self.log.info("Step 2: Send GET request for fetching system topology"
+                    "with storage set id")
+        #need to revisit
+        storage_sets = resp.json()["topology"]["storage_sets"]
+        for storage_set_id in storage_sets:
+            self.log.info("Sending request for %s ", storage_set_id)
+            resp, result, err_msg = self.csm_obj.verify_storage_set(
+                                      storage_set_id = storage_set_id['id'])
             assert result, err_msg
             self.log.info("Response : %s", resp)
-            self.log.info("Step 2: Send GET request for fetching system topology"
-                      "with storage set id")
-            #need to revisit
-            storage_sets = resp.json()["topology"]["clusters"][0]["storage_set"]
-            for storage_set_id in storage_sets:
-                self.log.info("Sending request for %s ", storage_set_id)
-                resp, result, err_msg = self.csm_obj.verify_storage_set(cluster_id = cluster['id'],
-                                                storage_set_id = storage_set_id['id'])
-                assert result, err_msg
-                self.log.info("Response : %s", resp)
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -166,37 +154,10 @@ class TestQueryDeployment():
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
-    @pytest.mark.tags('TEST-45673')
-    def test_45673(self):
-        """
-        Verify GET cluster topology with invalid cluster id
-        """
-        test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_45673"]
-        resp_error_code = test_cfg["error_code"]
-        resp_msg_id = test_cfg["message_id"]
-        resp_msg_index = test_cfg["message_index"]
-        self.log.info("Step 1: Send GET request with invalid cluster ID")
-        invalid_ids = []
-        invalid_ids = ['cluster', self.random_string, self.random_number, self.random_symbols, 0]
-        for ids in invalid_ids:
-            resp = self.csm_obj.get_cluster_topology(cluster_id = str(ids))
-            assert resp.status_code == HTTPStatus.NOT_FOUND, \
-                               "Status code check failed for get cluster topology"
-            resp = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
-                                                     resp_msg_index)
-            assert resp, "Error msg verify failed"
-        self.log.info("##### Test ended -  %s #####", test_case_name)
-
-    @pytest.mark.lc
-    @pytest.mark.csmrest
-    @pytest.mark.cluster_user_ops
-    @pytest.mark.parallel
     @pytest.mark.tags('TEST-45676')
     def test_45676(self):
         """
-        Verify GET cluster topology with invalid storage id
+        Verify GET cluster topology with invalid storage set id
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -207,17 +168,13 @@ class TestQueryDeployment():
         invalid_ids = []
         invalid_ids = [self.random_string, self.random_number, self.random_symbols]
         self.log.info("Step 1: Send GET request with invalid storage ID")
-        self.log.info("Get cluster id from system topology response")
-        get_topology = self.csm_obj.get_system_topology()
-        for cluster in get_topology["topology"]["clusters"]:
-            for ids in invalid_ids:
-                resp = self.csm_obj.get_storage_topology(cluster_id = cluster['id'],
-                                                         storage_set_id = str(ids))
-                assert resp.status_code == HTTPStatus.NOT_FOUND, \
-                               "Status code check failed for get storage topology"
-                result = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
-                                                     resp_msg_index)
-                assert result, "Error msg verify failed"
+        for ids in invalid_ids:
+            resp = self.csm_obj.get_storage_topology(storage_set_id = str(ids))
+            assert resp.status_code == HTTPStatus.NOT_FOUND, \
+                            "Status code check failed for get storage topology"
+            result = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
+                                                    resp_msg_index)
+            assert result, "Error msg verify failed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -238,50 +195,54 @@ class TestQueryDeployment():
         invalid_ids = []
         invalid_ids = [self.random_string, self.random_number, self.random_symbols]
         self.log.info("Step 1: Send GET request with invalid storage ID")
-        self.log.info("Get cluster id from system topology response")
-        get_topology = self.csm_obj.get_system_topology()
-        for cluster in get_topology["topology"]["clusters"]:
-            for ids in invalid_ids:
-                resp = self.csm_obj.get_node_topology(cluster_id = cluster['id'],
-                                                      node_id = str(ids))
-                assert resp.status_code == HTTPStatus.NOT_FOUND, \
-                               "Status code check failed for get node topology"
-                resp = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
-                                                     resp_msg_index)
-                assert resp, "Error msg verify failed"
+        for ids in invalid_ids:
+            resp = self.csm_obj.get_node_topology(node_id = str(ids))
+            assert resp.status_code == HTTPStatus.NOT_FOUND, \
+                            "Status code check failed for get node topology"
+            resp = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
+                                                    resp_msg_index)
+            assert resp, "Error msg verify failed"
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    #Test not ready
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
-    @pytest.mark.tags('TEST-45679')
-    def test_45679(self):
+    @pytest.mark.tags('TEST-45677')
+    def test_45677(self):
         """
-        Verify GET cluster topology in degraded mode
+        Verify GET cluster topology with valid node id
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("[START] Failure loop")
-        for failure_cnt in range(1, self.kvalue + 2):
-            self.log.info("Starting failure loop for iteration %s ", failure_cnt)
-            self.log.info("Step 1: Send Get cluster topology")
-            resp = self.csm_obj.get_cluster_topology()
+        node_id_list = []
+        get_topology = self.csm_obj.get_system_topology()
+        self.log.info("Step 1: Send node details query request")
+        resp = self.csm_obj.get_node_topology()
+        assert resp.status_code == HTTPStatus.OK, \
+						   "Status code check failed for get node topology"
+        self.log.info("Step 2: Send same request with node id")
+        for ids in get_topology["topology"]["nodes"].keys():
+            if 'id' in ids:
+                node_id_list.append(ids)
+        for node_ids in node_id_list:
+            resp = self.csm_obj.get_node_topology(node_id = node_ids)
             assert resp.status_code == HTTPStatus.OK, \
-                               "Status code check failed for get cluster topology"
-            self.log.info("Step 2: Shutdown data pod safely")
-            deploy_name = self.deploy_list[failure_cnt]
-            self.log.info("[Start] Shutdown the data pod safely")
-            self.log.info("Deleting pod %s", deploy_name)
-            resp = self.csm_obj.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
-            assert not resp[0], f"Failed to delete pod {deploy_name}"
-            self.log.info("[End] Successfully deleted pod %s", deploy_name)
-
-            self.failed_pod.append(deploy_name)
-
-            self.log.info("Step 3: Send Get cluster topology")
-            resp = self.csm_obj.get_cluster_topology()
-            assert resp.status_code == HTTPStatus.OK, \
-                               "Status code check failed for get cluster topology"
-        self.log.info("[END] Failure loop")
+						   "Status code check failed for get node topology"
+            self.log.info("Verify only one node is present in response")
+        self.log.info("Get pod names")
+        pod_list = self.csm_obj.master.get_all_pods(pod_prefix=POD_NAME_PREFIX)
+        for pod_name in pod_list[1]:
+            self.log.info(" Step 3: login to each pod and get machine-id")
+            resp = self.csm_obj.master.get_machine_id_for_pod(pod_name)
+            for node_id in node_id_list:
+                assert node_id == resp[1], "Machine id mismatch found"
+            self.log.info("Step 4: login to each pod and check hostname")
+            resp = self.csm_obj.master.get_pod_hostname(pod_name=pod_name)
+            resp_node = get_topology["topology"]["nodes"]
+            for hostnames in resp_node:
+                assert hostnames["hostname"] == resp[1], "Hostname mismatch found"
+            self.log.info("Step 5: Check services list")
+            self.log.info("Step 6: Check component list")
         self.log.info("##### Test ended -  %s #####", test_case_name)

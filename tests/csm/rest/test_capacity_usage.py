@@ -1524,3 +1524,39 @@ class TestSystemCapacityFixedPlacement():
             assert result[0], f"{result[1]} for {failure_cnt} failures"
 
         self.deploy = True
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-45679')
+    def test_45679(self):
+        """
+        Verify GET cluster topology in degraded mode
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Failure loop")
+        for failure_cnt in range(1, self.kvalue + 2):
+            self.log.info("Starting failure loop for iteration %s ", failure_cnt)
+            self.log.info("Step 1: Send Get cluster topology")
+            resp = self.csm_obj.get_system_topology()
+            assert resp.status_code == HTTPStatus.OK, \
+                               "Status code check failed for get system topology"
+            self.log.info("Step 2: Shutdown data pod safely")
+            deploy_name = self.deploy_list[failure_cnt]
+            self.log.info("[Start] Shutdown the data pod safely")
+            self.log.info("Deleting pod %s", deploy_name)
+            resp = self.csm_obj.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
+            assert not resp[0], f"Failed to delete pod {deploy_name}"
+            self.log.info("[End] Successfully deleted pod %s", deploy_name)
+
+            self.failed_pod.append(deploy_name)
+
+            self.log.info("Step 3: Send Get cluster topology")
+            resp = self.csm_obj.get_system_topology()
+            assert resp.status_code == HTTPStatus.OK, \
+                               "Status code check failed for get system topology"
+        self.log.info("[END] Failure loop")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
