@@ -421,8 +421,7 @@ class TestDataServerPodRestart:
                     "replica method")
         LOGGER.info("STEP 1: Perform WRITEs/READs/Verify with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        t_t = str(perf_counter_ns())
-        self.test_prefix = f'test-45510-{t_t}'
+        self.test_prefix = f'test-45510-{int(perf_counter_ns())}'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True)
@@ -453,15 +452,16 @@ class TestDataServerPodRestart:
                                                     skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed READs/Verify on data written in healthy cluster.")
-        LOGGER.info("Step 4: Create new bucket and perform WRITEs/READs/Verify with variable "
-                    "object sizes in degraded mode")
         if CMN_CFG["dtm0_disabled"]:
-            t_t = str(perf_counter_ns())
-            self.test_prefix_deg = f'test-45510-deg-{t_t}'
+            LOGGER.info("Step 4: Create new bucket and perform WRITEs/READs/Verify with variable "
+                        "object sizes in degraded mode")
+            self.test_prefix_deg = f'test-45510-deg-{int(perf_counter_ns())}'
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix_deg,
                                                         skipcleanup=True, setup_s3bench=False)
         else:
+            LOGGER.info("Step 4: Create new objects and perform WRITEs/READs/Verify with variable "
+                        "object sizes in degraded mode")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
                                                         skipcleanup=True, setup_s3bench=False)
@@ -484,26 +484,32 @@ class TestDataServerPodRestart:
         LOGGER.info("Step 5: Successfully started data and server pod and cluster is online.")
         self.restore_pod = False
         if CMN_CFG["dtm0_disabled"]:
-            LOGGER.info("Step 6: Perform READs and verify DI on the data written in degraded mode")
+            LOGGER.info("Step 6: Perform READs and verify DI on the data written on buckets "
+                        "created in degraded mode")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix_deg,
                                                         skipwrite=True, skipcleanup=True,
                                                         setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 6: Successfully run READ/Verify on data written in degraded mode")
-        LOGGER.info("Step 7: Perform READ/Verify on data written in healthy mode")
+            LOGGER.info("Step 6: Successfully run READ/Verify on data written on buckets created "
+                        "in degraded mode")
+        LOGGER.info("Step 7: Perform READ/Verify on data written with buckets created in healthy "
+                    "mode")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
                                                     skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Successfully run READ/Verify on data written in healthy mode")
-        LOGGER.info("Step 8: Create new IAM user and buckets, Perform WRITEs-READs-Verify with "
-                    "variable object sizes after data and server pod restart")
+        LOGGER.info("Step 7: Successfully run READ/Verify on data written with buckets created in "
+                    "healthy mode")
         if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 8: Create new IAM user and buckets, Perform WRITEs-READs-Verify with "
+                        "variable object sizes after data and server pod restart")
             users = self.mgnt_ops.create_account_users(nusers=1)
-            t_t = str(perf_counter_ns())
-            self.test_prefix = f'test-45510-restart-{t_t}'
+            self.test_prefix = f'test-45510-restart-{int(perf_counter_ns())}'
             self.s3_clean.update(users)
+        else:
+            LOGGER.info("Step 8: Create new objects, Perform WRITEs-READs-Verify with variable "
+                        "object sizes after data and server pod restart")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipcleanup=True, setup_s3bench=False)
