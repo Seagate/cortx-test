@@ -427,8 +427,8 @@ class TestDataServerPodRestart:
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects")
-        LOGGER.info("Step 2: Shutdown data and server pod with replica method and verify cluster &"
-                    " remaining pods status")
+        LOGGER.info("Step 2: Shutdown one data and one server pod with replica method and verify"
+                    " cluster & remaining pods status")
         for pod_prefix in self.pod_dict:
             num_replica = self.pod_dict[pod_prefix][-1] - 1
             resp = self.ha_obj.delete_kpod_with_shutdown_methods(
@@ -444,8 +444,8 @@ class TestDataServerPodRestart:
             LOGGER.info("successfully shutdown pod %s", self.pod_dict.get(pod_prefix)[0])
         self.restore_pod = True
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-        LOGGER.info("Step 2: Successfully shutdown data and server pod. Verified cluster and "
-                    "services states are as expected & remaining pods status is online")
+        LOGGER.info("Step 2: Successfully shutdown one data and one server pod. Verified cluster "
+                    "and services states are as expected & remaining pods status is online")
         LOGGER.info("STEP 3: Perform READs/Verify on data written in healthy cluster.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
