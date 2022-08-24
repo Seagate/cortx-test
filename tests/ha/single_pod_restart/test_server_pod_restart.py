@@ -1508,7 +1508,7 @@ class TestServerPodRestart:
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
                 'nclients': 2, 'nsamples': 10, 'skipread': True, 'skipcleanup': True,
                 'output': output_wr, 'setup_s3bench': False, 'event_set_clr': event_set_clr,
-                'max_retries': 5}
+                'max_retries': HA_CFG["common_params"]["io_retry_count"]}
         thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                       kwargs=args)
         thread_wri.daemon = True  # Daemonize thread
@@ -1518,7 +1518,7 @@ class TestServerPodRestart:
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_read,
                 'nclients': 1, 'nsamples': 10, 'skipwrite': True, 'skipcleanup': True,
                 'output': output_rd, 'setup_s3bench': False, 'event_set_clr': event_set_clr,
-                'max_retries': 5}
+                'max_retries': HA_CFG["common_params"]["io_retry_count"]}
         thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                      kwargs=args)
         thread_rd.daemon = True  # Daemonize thread
