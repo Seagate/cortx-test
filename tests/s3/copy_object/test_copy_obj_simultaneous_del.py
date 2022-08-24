@@ -328,7 +328,7 @@ class TestCopyObjectSimultaneousDelete:
                     "progress in same bucket")
         self.create_put_parallel_copy_and_delete_object((self.srcbuck, "src-obj", self.srcbuck,
                                                          "dest-obj", errmsg.NO_SUCH_KEY_ERR, 5,
-                                                         self.file_path), 
+                                                         self.file_path),
                                                         (self.srcbuck, "src-obj"),
                                                          is_mpu=True)
         LOGGER.info("ENDED: Test Delete source object when copy multipart object is in "
