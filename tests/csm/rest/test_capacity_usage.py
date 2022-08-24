@@ -1559,4 +1559,3 @@ class TestSystemCapacityFixedPlacement():
                                "Status code check failed for get system topology"
         self.log.info("[END] Failure loop")
         self.log.info("##### Test ended -  %s #####", test_case_name)
-
