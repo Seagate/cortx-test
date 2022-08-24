@@ -105,7 +105,7 @@ class TestCopyObjectSimultaneousDelete:
             LOGGER.info("Exception in copy object %s", err)
             for ele in exception:
                 if ele is not None and ele in err.message:
-                    return ele in err.message, f"Expected {ele} Received {err}"
+                    return True, err.message
             return False, f"Unexpected exception {err}"
 
     def create_put_object(self, bucket, obj, size, base='1M'):
