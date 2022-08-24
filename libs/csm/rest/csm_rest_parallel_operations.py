@@ -156,8 +156,7 @@ class RestParallelOps(RestTestLib):
 
     def delete_multi_iam_user_loaded(self):
         """
-        Create count number of CSM in parallel using jmeter libs
-        :param users: Number of users to be created
+        Delete IAM users in parallel using jmeter libs
         """
         users = len(self.created_iam_users)
         jmx_file = "CSM_Delete_N_IAM_Users_Loaded.jmx"
