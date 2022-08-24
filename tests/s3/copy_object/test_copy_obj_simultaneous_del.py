@@ -104,7 +104,7 @@ class TestCopyObjectSimultaneousDelete:
         except CTException as err:
             LOGGER.info("Exception in copy object %s", err)
             for ele in exception:
-                if ele != None and ele in err.message:
+                if ele is not None and ele in err.message:
                     return ele in err.message, f"Expected {ele} Received {err}"
             return False, f"Unexpected exception {err}"
 
