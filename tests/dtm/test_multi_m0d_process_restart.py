@@ -25,9 +25,7 @@ import logging
 import multiprocessing
 import os
 import secrets
-import threading
 import time
-from multiprocessing import Queue
 from time import perf_counter_ns
 
 import pytest
@@ -42,10 +40,7 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import support_bundle_utils
 from commons.utils import system_utils
-from commons.utils.system_utils import validate_checksum
 from config import CMN_CFG
-from config import DTM_CFG
-from config import HA_CFG
 from config.s3 import S3_CFG
 from conftest import LOG_DIR
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
@@ -167,7 +162,7 @@ class TestMultiProcessRestart:
     @pytest.mark.dtm
     def test_write_during_multi_m0d_restart(self):
         """Verify write during multiple m0d restart using pkill."""
-        self.log.info("STARTED: Verify write during m0d restart using pkill")
+        self.log.info("STARTED: Verify write during multiple m0d restart using pkill")
         log_file_prefix = 'test-XXXXX'
         que = multiprocessing.Queue()
 
@@ -185,15 +180,14 @@ class TestMultiProcessRestart:
 
         time.sleep(self.delay)
         self.log.info("Step 2 : Perform multiple m0d Process Restarts During Write Operations")
-        rest_cnt = 0
-        while rest_cnt <= self.kvalue:
-            resp_proc = self.dtm_obj.process_restart_with_delay(
-                master_node=self.master_node_list[0],
-                health_obj=self.health_obj,
-                pod_prefix=const.POD_NAME_PREFIX,
-                container_prefix=const.MOTR_CONTAINER_PREFIX,
-                process=self.m0d_process,
-                check_proc_state=True)
+        resp_proc = self.dtm_obj.multi_process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True,
+            k_value=self.kvalue)
 
         self.log.info("Step 3: Wait for Write Operation to complete.")
         if proc_write_op.is_alive():
