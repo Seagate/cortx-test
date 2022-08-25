@@ -582,7 +582,7 @@ class TestDataServerPodRestart:
         self.s3_clean.update(users)
         access_key = list(users.values())[0]['accesskey']
         secret_key = list(users.values())[0]['secretkey']
-        test_prefix_del = f'test-delete-45517-{int(perf_counter_ns())}'
+        test_prefix_del = f'test-45517-delete-{int(perf_counter_ns())}'
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("Create %s buckets and put variable size objects.", wr_bucket)
@@ -600,7 +600,7 @@ class TestDataServerPodRestart:
         LOGGER.info("Step 3.1: Successfully performed WRITEs with variable object sizes on %s "
                     "buckets for parallel DELETEs.", wr_bucket)
         LOGGER.info("Step 3.2: Perform WRITEs with variable object sizes for parallel READs")
-        test_prefix_read = f'test-read-45517-{int(perf_counter_ns())}'
+        test_prefix_read = f'test-45517-read-{int(perf_counter_ns())}'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=test_prefix_read, skipread=True,
                                                     skipcleanup=True, nclients=5, nsamples=5,
@@ -622,7 +622,7 @@ class TestDataServerPodRestart:
         LOGGER.info("Step 4.1: Successfully started DELETEs in background for %s buckets",
                     del_bucket)
         LOGGER.info("Step 4.2: Perform WRITEs with variable object sizes in background")
-        test_prefix_write = f'test-write-45517-{int(perf_counter_ns())}'
+        test_prefix_write = f'test-45517-write-{int(perf_counter_ns())}'
         output_wr = Queue()
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
                 'nclients': 1, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
