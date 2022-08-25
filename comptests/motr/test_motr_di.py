@@ -379,7 +379,6 @@ class TestCorruptDataDetection:
         bsize_list = ["4K", "4K"]
         layout_ids = ["3", "3"]
         offsets = [0, 16384]
-        # Todo logging steps
 
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
@@ -444,7 +443,7 @@ class TestCorruptDataDetection:
                                                     ft_type=2)
         assert_utils.assert_true(resp)
         logger.info("Step 2: Successfully performed m0cp and corrupt the parity block")
-        logger.info(f"ENDED:{test_prefix} Test Parity corruption in degraded mode - aligned")
+        logger.info("ENDED: %s Test Parity corruption in degraded mode - aligned", test_prefix)
 
     # @pytest.mark.skip(reason="Feature Unavailable")
     @pytest.mark.tags("TEST-45162")
@@ -488,7 +487,7 @@ class TestCorruptDataDetection:
         count_list = ["8"]
         bsize_list = ["4K"]
         layout_ids = ["1"]
-        logger.info("STARTED: m0cp, corrupt and m0cat workflow of " "each Data block one by one")
+        logger.info("STARTED: m0cp, corrupt and m0cat workflow of each Data block one by one")
         infile = TEMP_PATH + "input"
         outfile = TEMP_PATH + "output"
         node_pod_dict = self.motr_obj.get_node_pod_dict()
@@ -536,7 +535,8 @@ class TestCorruptDataDetection:
                 assert_utils.assert_true(corrupt_data_resp)
             # Read the data using m0cp utility
             self.m0cat_md5sum_m0unlink(
-                bsize_list, count_list, layout_ids, object_list, client_num=client_num, outfile=outfile
+                bsize_list, count_list, layout_ids, object_list, client_num=client_num,
+                outfile=outfile
             )
 
     @pytest.mark.skip(reason="Test incomplete without teardown")
