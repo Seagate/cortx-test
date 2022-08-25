@@ -138,6 +138,7 @@ class TestQueryDeployment():
         invalid_ids = ['Clusters', random_string, random_number, random_symbols]
         self.log.info("Printing list of invalid resource names: %s", invalid_ids)
         for ids in invalid_ids:
+            self.log.info("Sending request for: %s", ids)
             resp = self.csm_obj.get_system_topology(uri_param = str(ids))
             assert resp.status_code == HTTPStatus.NOT_FOUND, \
                                "Status code check failed for get system topology"
@@ -168,6 +169,7 @@ class TestQueryDeployment():
         self.log.info("Printing list of invalid storage set ids: %s", invalid_ids)
         self.log.info("Step 1: Send GET request with invalid storage ID")
         for ids in invalid_ids:
+            self.log.info("Sending request for: %s", ids)
             resp = self.csm_obj.get_storage_topology(storage_set_id = str(ids))
             assert resp.status_code == HTTPStatus.NOT_FOUND, \
                             "Status code check failed for get storage topology"
@@ -198,6 +200,7 @@ class TestQueryDeployment():
         self.log.info("Printing list of invalid node ids: %s", invalid_ids)
         self.log.info("Step 1: Send GET request with invalid storage ID")
         for ids in invalid_ids:
+            self.log.info("Sending request for: %s", ids)
             resp = self.csm_obj.get_node_topology(node_id = str(ids))
             assert resp.status_code == HTTPStatus.NOT_FOUND, \
                             "Status code check failed for get node topology"
