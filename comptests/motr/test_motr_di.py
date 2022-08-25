@@ -52,21 +52,20 @@ import logging
 import secrets
 import pytest
 
-from builtins import list
 from commons import constants as const
 from commons.helpers.pods_helper import LogicalNode
-from libs.motr import TEMP_PATH
-from libs.motr.motr_core_k8s_lib import MotrCoreK8s
-from libs.motr.emap_fi_adapter import MotrCorruptionAdapter
-from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from commons.utils import assert_utils
 from commons.helpers.health_helper import Health
-from config import CMN_CFG
-from config import di_cfg
 from commons.constants import POD_NAME_PREFIX
 from commons.constants import MOTR_CONTAINER_PREFIX
 from commons.constants import PID_WATCH_LIST
 from commons.params import MOTR_DI_ERR_INJ_LOCAL_PATH
+from config import CMN_CFG
+from config import di_cfg
+from libs.motr import TEMP_PATH
+from libs.motr.motr_core_k8s_lib import MotrCoreK8s
+from libs.motr.emap_fi_adapter import MotrCorruptionAdapter
+from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 
 logger = logging.getLogger(__name__)
 
@@ -99,8 +98,8 @@ class TestCorruptDataDetection:
     3. Parity
     """
 
-    worker_node_list = None
-    master_node_list = None
+    # worker_node_list = None
+    # master_node_list = None
     passwd = None
     uname = None
     hostname = None
@@ -116,8 +115,8 @@ class TestCorruptDataDetection:
         cls.motr_obj = MotrCoreK8s()
         cls.emap_adapter_obj = MotrCorruptionAdapter(CMN_CFG, oid="1234:1234")
         cls.dtm_obj = DTMRecoveryTestLib(max_attempts=0)
-        cls.master_node_list = list()
-        cls.worker_node_list = list()
+        cls.master_node_list = []
+        cls.worker_node_list = []
 
         for node in CMN_CFG["nodes"]:
             node_obj = LogicalNode(
@@ -192,6 +191,7 @@ class TestCorruptDataDetection:
             logger.info("Stop: Verify multiple m0cp/cat operation")
 
     # pylint: disable=R0914
+    # pylint: disable=too-many-arguments
     def motr_inject_checksum_corruption(self, layout_ids, bsize_list, count_list, offsets,
                                         ft_type=1):
         """
@@ -216,10 +216,9 @@ class TestCorruptDataDetection:
         )
         if not copy_status:
             return copy_status, resp
-        else:
-            logger.debug(f"Error Injection Script File already exists...")
+        logger.debug("Error Injection Script File already exists...")
 
-        logger.info(f"Copying the error injection script to cortx_motr_io containers in data pods.")
+        logger.info("Copying the error injection script to cortx_motr_io containers in data pods.")
         pod_list = self.motr_obj.node_obj.get_all_pods(const.POD_NAME_PREFIX)
         for pod in pod_list:
             result = self.motr_obj.master_node_list[0].copy_file_to_container(
@@ -248,9 +247,8 @@ class TestCorruptDataDetection:
                 self.motr_obj.cp_cmd(
                     b_size, cnt_c, object_id, layout, infile, node_pod, 0, di_g=True
                 )  # client_num
+                logger.info("cnt_u = %s", cnt_u)
 
-                logger.debug(f"object_id_list is: ###### {object_id_list}")
-            # ====================
             filepath = self.motr_obj.dump_m0trace_log(f"{node_pod}-trace_log.txt", node_pod)
             logger.debug("filepath is %s", filepath)
             # Fetch the FID from m0trace log
@@ -258,14 +256,11 @@ class TestCorruptDataDetection:
             logger.debug("fid_resp is %s", fid_resp)
 
         metadata_path = self.emap_adapter_obj.get_metadata_device(self.motr_obj.master_node_list[0])
-        # ==============
         # Run Emap on all objects, Object id list determines the parity or data
-        # self.emap_adapter_obj.inject_checksum_corruption(object_id_list)
         data_gob_id_resp, parity_gob_id_resp = self.emap_adapter_obj.get_object_gob_id(
             metadata_path[0], fid=fid_resp
         )
         logger.debug("data gob id resp is %s", data_gob_id_resp)
-        # ==============
         if ft_type == 1:
             corrupt_resp = self.emap_adapter_obj.inject_fault_k8s(
                 data_gob_id_resp, metadata_device=metadata_path[0]
@@ -339,7 +334,6 @@ class TestCorruptDataDetection:
         bsize_list = ["1M"]
         layout_ids = ["9"]
         offsets = [0]
-        # Todo logging steps
 
         self.motr_inject_checksum_corruption(layout_ids, bsize_list, count_list, offsets)
 
@@ -357,7 +351,6 @@ class TestCorruptDataDetection:
         bsize_list = ["4K", "4K"]
         layout_ids = ["3", "3"]
         offsets = [0, 16384]
-        # Todo logging steps
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
     # @pytest.mark.skip(reason="Test incomplete without teardown")
@@ -372,7 +365,6 @@ class TestCorruptDataDetection:
             "Step 1: Shutdown random data pod by making replicas=0 and "
             "verify cluster & remaining pods status"
         )
-        # Todo: Enable - Restart m0d process to degrade once the code and product is stable
         # self.dtm_obj.process_restart_with_delay(
         #     master_node=self.master_node_list[0],
         #     health_obj=self.health_obj,
@@ -544,8 +536,7 @@ class TestCorruptDataDetection:
                 assert_utils.assert_true(corrupt_data_resp)
             # Read the data using m0cp utility
             self.m0cat_md5sum_m0unlink(
-                bsize_list, count_list, layout_ids, object_list, client_num=client_num,
-                outfile=outfile
+                bsize_list, count_list, layout_ids, object_list, client_num=client_num, outfile=outfile
             )
 
     @pytest.mark.skip(reason="Test incomplete without teardown")
