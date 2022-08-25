@@ -27,7 +27,6 @@ import os
 import secrets
 import threading
 import time
-import random
 from http import HTTPStatus
 from multiprocessing import Queue
 from time import perf_counter_ns
@@ -764,10 +763,10 @@ class TestControlPodRestart:
         LOGGER.info("Step 1: Create %s IAM user and perform WRITEs-READs-Verify with "
                     "variable object sizes.", num_users)
         users = self.mgnt_ops.create_account_users(nusers=num_users)
-        self.test_prefix = 'test-40369'
+        self.test_prefix = 'test-40387'
         self.s3_clean = users
         uids = list(users.keys())
-        for count in range(10):
+        for count in range(num_users):
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[count],
                                                         log_prefix=self.test_prefix,
                                                         skipcleanup=True)
@@ -782,7 +781,7 @@ class TestControlPodRestart:
             LOGGER.info("Shutting down %s control pods for loop: %s", self.repl_num - 1, loop)
             delete_pods = list()
             while pod_left not in delete_pods:
-                delete_pods.extend(random.sample(pod_list, self.repl_num - 1))
+                delete_pods.extend(self.system_random.sample(pod_list, self.repl_num - 1))
             for pod in delete_pods:
                 resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod)
                 assert_utils.assert_true(resp[0], resp[1])
@@ -794,8 +793,8 @@ class TestControlPodRestart:
             users_loop = self.mgnt_ops.create_account_users(nusers=num_users)
             self.s3_clean = users_loop
             created_list = list(users_loop.keys())
-            num = random.randint(1, num_users)
-            delete_list = random.sample(created_list, num)
+            num = self.system_random.randint(1, num_users)
+            delete_list = self.system_random.sample(created_list, num)
             for buck in range(num):
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(delete_list[buck])
                 assert_utils.assert_true(resp[0], resp[1])
@@ -831,14 +830,14 @@ class TestControlPodRestart:
         LOGGER.info("Step 6: Create New IAM user and perform WRITEs-READs-Verify-Deletes with "
                     "variable object sizes.")
         users_new = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-40369-new'
+        self.test_prefix = 'test-40387-new'
         self.s3_clean = users_new
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_new.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed WRITEs-READs-Verify-Deletes with variable sizes objects")
-        LOGGER.info("ENDED: Verify control pod failover in loop")
+        LOGGER.info("ENDED: Verify N-1 control pods shutdown in loop")
 
     # pylint: disable=too-many-branches
     @pytest.mark.ha
