@@ -79,7 +79,7 @@ class TestCsmLoad():
         cls.failed_pod = []
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.system_random = secrets.SystemRandom()
-        cls.request_usage = 122
+        cls.request_usage = cls.csm_obj.get_request_usage_limit()
         cls.sw_alert_obj = None
 
     def setup_method(self):
@@ -174,7 +174,7 @@ class TestCsmLoad():
 
 
     # pylint: disable-msg=too-many-locals
-    @pytest.mark.skip(reason="not_in_main_build_yet")
+    @pytest.mark.skip("Skipped until CORTX-33861 is fixed")
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -454,6 +454,7 @@ class TestCsmLoad():
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -490,6 +491,7 @@ class TestCsmLoad():
             loop=test_cfg["loop"])
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.lr
     @pytest.mark.jmeter
@@ -591,7 +593,7 @@ class TestCsmLoad():
 
 
     # pylint: disable=too-many-statements
-    @pytest.mark.skip(reason="not_in_main_build_yet")
+    @pytest.mark.skip("Skipped until CORTX-33861 is fixed")
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -603,9 +605,6 @@ class TestCsmLoad():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.test_cfgs["test_44799"]
-        jmx_file = "CSM_create_IAM_user_Loaded.jmx"
-        self.log.info("Running jmx script: %s", jmx_file)
 
         resp = self.csm_obj.list_iam_users_rgw()
         assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
@@ -616,46 +615,16 @@ class TestCsmLoad():
         self.log.info("Max iam users : %s", rest_const.MAX_IAM_USERS)
         new_iam_users = rest_const.MAX_IAM_USERS - existing_user
         self.log.info("New users to create: %s", new_iam_users)
-        thread_request = test_cfg["thread_request"] # ( login + create )
-        operation_count = new_iam_users * thread_request
-
-        request_usage_rounded = int( thread_request * round( self.request_usage / thread_request ))
-        loop = operation_count // request_usage_rounded
-        req_in_loops = request_usage_rounded * loop
-        operation_last = operation_count - req_in_loops
-        threads_1 = request_usage_rounded // thread_request
-        threads_2 = operation_last // thread_request
-
-        self.log.info("request_usage = %s", self.request_usage)
-        self.log.info("request_usage_rounded = %s", request_usage_rounded)
-        self.log.info("Total Operations = %s", operation_count)
-        self.log.info("Total Requests = %s", operation_count // thread_request)
-        self.log.info("Loop = %s", loop)
-        self.log.info("Operations in loops = %s", req_in_loops)
-        self.log.info("Request in loops = %s", req_in_loops // thread_request)
-        self.log.info("Operations in last = %s", operation_last)
-        self.log.info("Request in last = %s", operation_last // thread_request)
-        self.log.info("threads_1 = %s", threads_1)
-        self.log.info("threads_2 = %s", threads_2)
 
         self.log.info("Step 2: Create users in parallel")
-        if loop != 0:
-            self.log.info("Run intital batch of create csm users")
-            result = self.jmx_obj.run_verify_jmx(
-                jmx_file,
-                threads=threads_1,
-                rampup=1,
-                loop=loop)
-            assert result, "Errors reported in the Jmeter execution"
-        if operation_last != 0:
-            self.log.info("Run last batch of create csm users")
-            result = self.jmx_obj.run_verify_jmx(
-                jmx_file,
-                threads=threads_2,
-                rampup=1,
-                loop=1)
-            assert result, "Errors reported in the Jmeter execution"
+        result = self.csm_obj.create_multi_iam_user_loaded(new_iam_users, existing_user)
+        assert result, "Unable to create users"
 
+        # Try to Delete all created users in parallel
+        result = self.csm_obj.delete_multi_iam_user_loaded()
+        assert result, "Unable to delete users"
+
+        # in case deletion failed in parallel
         self.log.info("Find all newly created users")
         resp = self.csm_obj.list_iam_users_rgw()
         assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
@@ -673,7 +642,6 @@ class TestCsmLoad():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip(reason="not_in_main_build_yet")
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -816,6 +784,7 @@ class TestCsmLoad():
         self.log.info("\nStep 3: Successfully verified CPU usage fault alert on CSM REST API. \n")
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.lc
     @pytest.mark.jmeter
