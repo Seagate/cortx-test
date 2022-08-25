@@ -27,6 +27,7 @@ import os
 import secrets
 import threading
 import time
+import random
 from http import HTTPStatus
 from multiprocessing import Queue
 from time import perf_counter_ns
@@ -82,7 +83,7 @@ class TestControlPodRestart:
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
-        cls.restore_node = cls.deploy = cls.restore_pod = None
+        cls.restore_node = cls.deploy = cls.restore_pod = cls.repl_num = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.rest_iam_user = RestIamUser()
@@ -152,7 +153,7 @@ class TestControlPodRestart:
         assert_utils.assert_true(resp[0], resp)
         self.modified_yaml = resp[1]
         self.backup_yaml = resp[2]
-
+        self.repl_num = int(len(self.node_worker_list) / 2 + 1)
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -752,155 +753,79 @@ class TestControlPodRestart:
         Verify control pod failover in loop
         """
         LOGGER.info("STARTED: Verify control pod failover in loop")
-
-        total_buckets = HA_CFG["s3_bucket_data"]["no_bck_background_deletes"]
-        event = threading.Event()
-        output = Queue()
-
-        LOGGER.info("Step 1: Create IAM user and perform WRITEs-READs-Verify with variable object"
-                    " sizes.")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-40387'
+        LOGGER.info("Scale replicas for control pod to %s", self.repl_num)
+        pod_name = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
+        resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
+                                                            pod_name=pod_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Total number of control pods in the cluster are: %s", self.repl_num)
+        LOGGER.info("Step 1: Create 10 IAM user and perform WRITEs-READs-Verify with "
+                    "variable object sizes.")
+        users = self.mgnt_ops.create_account_users(nusers=10)
+        self.test_prefix = 'test-40369'
         self.s3_clean = users
         uids = list(users.keys())
-        access_key = list(users.values())[0]["accesskey"]
-        secret_key = list(users.values())[0]["secretkey"]
-        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
-                                endpoint_url=S3_CFG["s3_url"])
-
-        LOGGER.info("Create %s buckets and put variable size objects and perform read-DI check.",
-                    total_buckets)
-        args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                'skipdel': True, 'bkts_to_wr': total_buckets, 'di_check': True, 'output': output}
-
-        self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-        wr_resp = tuple()
-        while len(wr_resp) != 3:
-            wr_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        s3_data = wr_resp[0]  # Contains s3 data for passed buckets
-        buckets = s3_test_obj.bucket_list()[1]
-        assert_utils.assert_equal(len(buckets), total_buckets, f"Failed to create {total_buckets} "
-                                                               "number of buckets. Created "
-                                                               f"{len(buckets)} number of buckets")
-        LOGGER.info("Successfully created %s buckets & perform WRITEs with variable size "
-                    "objects.", total_buckets)
-
-        rd_resp = tuple()
-        while len(rd_resp) != 4:
-            rd_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        event_bkt_get = rd_resp[0]
-        fail_bkt_get = rd_resp[1]
-        event_di_bkt = rd_resp[2]
-        fail_di_bkt = rd_resp[3]
-
-        # Above four lists are expected to be empty as all pass expected
-        assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt) or len(event_bkt_get) or
-                                  len(event_di_bkt), "Expected pass in read and di check "
-                                                     "operations. Found failures in READ: "
-                                                     f"{fail_bkt_get} {event_bkt_get}"
-                                                     f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
-        LOGGER.info("Successfully performed READs on the all buckets.")
-        LOGGER.info("Step 1: Successfully create IAM user and performed WRITEs-READs-Verify with "
-                    "variable sizes objects.")
-
-        LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name, self.control_node)
-
-        failover_node = self.system_random.choice([ele for ele in self.host_worker_list if ele !=
-                                                   self.control_node])
-        LOGGER.debug("Fail over node is: %s", failover_node)
-
-        LOGGER.info("Step 2: Failover control pod %s to node %s and check cluster status",
-                    self.control_pod_name, failover_node)
-        pod_yaml = {self.control_pod_name: self.modified_yaml}
-        resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
-                                        failover_node=failover_node)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 2: Successfully failed over control pod to %s. Cluster is in good state",
-                    failover_node)
-
-        for cnt in range(HA_CFG["common_params"]["loop_count"]):
-            LOGGER.info("Loop: %s", cnt)
-            control_pods = self.node_master_list[0].get_pods_node_fqdn(
-                const.CONTROL_POD_NAME_PREFIX)
-            control_pod_name = list(control_pods.keys())[0]
-            control_node = control_pods.get(control_pod_name)
-            LOGGER.info("Control pod %s is hosted on %s node", control_pod_name, control_node)
-
-            failover_node = self.system_random.choice([ele for ele in self.host_worker_list if
-                                                       ele != control_node])
-            LOGGER.debug("Fail over node is: %s", failover_node)
-
-            LOGGER.info("Step 3: Failover control pod %s to node %s by changing its NodeSelector "
-                        "and check cluster status. \nFailover count: %s", control_pod_name,
-                        failover_node, cnt)
-            resp = self.ha_obj.change_pod_node(self.node_master_list[0],
-                                               pod_node={control_pod_name: failover_node})
-            assert_utils.assert_true(resp[0], resp)
-            LOGGER.info("Check cluster status")
+        for count in range(10):
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[count],
+                                                        log_prefix=self.test_prefix,
+                                                        skipcleanup=True)
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects for 10 IAM "
+                    "users created.")
+        LOGGER.info("Step 2: Shutdown %s control pods in loop", self.repl_num - 1)
+        LOGGER.info("Get the list of control pods")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        pod_left = None
+        for count in range(len(pod_list)):
+            delete_pods = list()
+            while pod_left not in delete_pods:
+                delete_pods.extend(random.sample(pod_list, self.repl_num - 1))
+            for pod in delete_pods:
+                resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod)
+                assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 3: Check cluster status")
             resp = self.ha_obj.poll_cluster_status(self.node_master_list[0])
-            assert_utils.assert_true(resp[0], resp)
-            LOGGER.info("Step 3: Successfully failed over control pod to %s. Cluster is in good "
-                        "state", failover_node)
-
-            self.restore_pod = self.deploy = True
-            LOGGER.info("Step 4: Verify if IAM users %s are persistent across control pod failover",
-                        uids)
-            for user in uids:
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 3: Cluster status is online")
+            LOGGER.info("Step 4: Create 10 IAM users and delete randomly selected IAM users")
+            users_new = self.mgnt_ops.create_account_users(nusers=10)
+            self.s3_clean = users_new
+            created_list = list(users_new.keys())
+            num = random.randint(1, 10)
+            delete_list = random.sample(created_list, num)
+            for count in range(num):
+                resp = self.ha_obj.delete_s3_acc_buckets_objects(delete_list[count])
+                assert_utils.assert_true(resp[0], resp[1])
+                created_list.remove(delete_list[count])
+            for user in created_list:
                 resp = self.rest_iam_user.get_iam_user(user)
                 assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
-                                          f"Couldn't find user {user} after control pod failover")
-                LOGGER.info("User %s is persistent: %s", user, resp)
-            LOGGER.info("Step 4: Verified all IAM users %s are persistent across control pod "
-                        "failover", uids)
-
-            LOGGER.info("Step 5: Read-Verify already written data and delete some buckets")
-            buckets = s3_test_obj.bucket_list()[1]
-            del_bucket = 20
-            args = {'test_prefix': self.test_prefix, 'test_dir_path': self.test_dir_path,
-                    'skipput': True, 's3_data': s3_data, 'di_check': True,
-                    'bkts_to_del': del_bucket, 'output': output}
-
-            self.ha_obj.put_get_delete(event, s3_test_obj, **args)
-            rd_resp = tuple()
-            while len(rd_resp) != 4:
-                rd_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-            event_bkt_get = rd_resp[0]
-            fail_bkt_get = rd_resp[1]
-            event_di_bkt = rd_resp[2]
-            fail_di_bkt = rd_resp[3]
-
-            # Above four lists are expected to be empty as all pass expected
-            assert_utils.assert_false(len(fail_bkt_get) or len(fail_di_bkt) or len(event_bkt_get) or
-                                      len(event_di_bkt), "Expected pass in read and di check "
-                                                         "operations. Found failures in READ: "
-                                                         f"{fail_bkt_get} {event_bkt_get}"
-                                                         f"or DI_CHECK: {fail_di_bkt} "
-                                                         f"{event_di_bkt}")
-            LOGGER.info("Successfully performed READs on the remaining %s buckets.", buckets)
-
-            del_resp = tuple()
-            while len(del_resp) != 2:
-                del_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-            remain_bkt = s3_test_obj.bucket_list()[1]
-            assert_utils.assert_equal(len(remain_bkt), len(buckets) - del_bucket,
-                                      f"Failed to delete {del_bucket} number of buckets from "
-                                      f"{buckets}. Remaining {len(remain_bkt)} number of buckets")
-
-            LOGGER.info("Successfully performed DELETEs on random %s buckets", del_bucket)
-
-            LOGGER.info("Step 5: Successfully performed Read-Verify on already written data and "
-                        "deleted some buckets")
-
-        LOGGER.info("Step 6: Again create IAM user and perform WRITEs-READs-Verify-DELETE with "
+                                          f"Couldn't find user {user}")
+            LOGGER.info("Ste 4: Created 10 and randomply deleted %s IAM users and verified", num)
+            pod_left = self.node_master_list[0].get_all_pods(
+                pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        LOGGER.info("Step 2: Control pods are shutdown in loop successfully.")
+        LOGGER.info("Step 5: Perform WRITEs-READs-Verify-Deletes with variable object sizes on "
+                    "data written in step 1.")
+        for count in range(10):
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[count],
+                                                        log_prefix=self.test_prefix,
+                                                        setup_s3bench=False)
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 5: Performed WRITEs-READs-Verify-Deletes with variable sizes objects for "
+                    "data written in step 1")
+        LOGGER.info("Step 6: Create IAM user and perform WRITEs-READs-Verify-Deletes with "
                     "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
-        self.test_prefix = 'test-40387-1'
-        self.s3_clean.update(users)
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETE with variable sizes objects.")
-
+        self.test_prefix = 'test-40369-new'
+        self.s3_clean = users
+        for count in range(10):
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[count],
+                                                        log_prefix=self.test_prefix,
+                                                        setup_s3bench=False)
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 6: Performed WRITEs-READs-Verify-Deletes with variable sizes objects")
         LOGGER.info("ENDED: Verify control pod failover in loop")
 
     # pylint: disable=too-many-branches
