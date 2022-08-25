@@ -9,3 +9,10 @@ test_33370:
 test_33371:
   parallel_io_cnt: 2
   validate_data_usage: False
+
+test_44794:
+  users_count : 5
+  buckets_count : 4
+  files_count : 65
+  rampup: 2
+  loop: 10
