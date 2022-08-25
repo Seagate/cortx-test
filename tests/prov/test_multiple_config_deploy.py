@@ -310,18 +310,6 @@ class TestMultipleConfDeploy:
         self.multiple_node_deployment(5, 9, log_device_flag=True)
 
     @pytest.mark.lc
-    @pytest.mark.five_node_deployment
-    @pytest.mark.cluster_deployment
-    @pytest.mark.tags("TEST-45455")
-    def test_45455(self):
-        """
-        Deployment- 5node config_7
-        """
-        self.multiple_node_deployment(5, 7, log_device_flag=True, log_disk_size=True)
-        LOGGER.info("Deployment status %s ", DEPLOY_CFG)
-        assert_utils.assert_false(resp1[0], reason="disk size is greate that 4 GB")
-
-    @pytest.mark.lc
     @pytest.mark.six_node_deployment
     @pytest.mark.cluster_deployment
     @pytest.mark.tags("TEST-31399")
