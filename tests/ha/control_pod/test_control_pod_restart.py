@@ -748,11 +748,11 @@ class TestControlPodRestart:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40387")
     @CTFailOn(error_handler)
-    def test_ctrl_pod_failover_loop(self):
+    def test_ctrl_pod_shutdown_loop(self):
         """
-        Verify control pod failover in loop
+        Verify N-1 control pods shutdown in loop
         """
-        LOGGER.info("STARTED: Verify control pod failover in loop")
+        LOGGER.info("STARTED: Verify N-1 control pods shutdown in loop")
         num_users = HA_CFG["s3_operation_data"]["no_csm_users"]
         LOGGER.info("Scale replicas for control pod to %s", self.repl_num)
         pod_name = self.node_master_list[0].get_all_pods(
@@ -778,7 +778,8 @@ class TestControlPodRestart:
         LOGGER.info("Get the list of control pods")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
         pod_left = None
-        for count in range(len(pod_list)):
+        for loop in range(len(pod_list)):
+            LOGGER.info("Shutting down %s control pods for loop: %s", self.repl_num - 1, loop)
             delete_pods = list()
             while pod_left not in delete_pods:
                 delete_pods.extend(random.sample(pod_list, self.repl_num - 1))
@@ -795,10 +796,10 @@ class TestControlPodRestart:
             created_list = list(users_loop.keys())
             num = random.randint(1, num_users)
             delete_list = random.sample(created_list, num)
-            for count in range(num):
-                resp = self.ha_obj.delete_s3_acc_buckets_objects(delete_list[count])
+            for buck in range(num):
+                resp = self.ha_obj.delete_s3_acc_buckets_objects(delete_list[buck])
                 assert_utils.assert_true(resp[0], resp[1])
-                created_list.remove(delete_list[count])
+                created_list.remove(delete_list[buck])
             for user in created_list:
                 resp = self.rest_iam_user.get_iam_user(user)
                 assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
@@ -806,7 +807,11 @@ class TestControlPodRestart:
             LOGGER.info("Ste 4: Created %s and randomply deleted %s IAM users and verified",
                         num_users, num)
             pod_left = self.node_master_list[0].get_all_pods(
-                pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+                pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
+            LOGGER.info("Starting all shutdown pods again")
+            resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
+                                                                pod_name=pod_left)
+            assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Control pods are shutdown in loop successfully.")
         LOGGER.info("Step 5: Check if users created in step 1 are persistent and Perform "
                     "READs-Verify-Deletes with variable object sizes on data written in step 1.")
