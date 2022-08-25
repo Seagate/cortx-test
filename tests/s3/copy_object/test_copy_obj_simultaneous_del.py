@@ -162,7 +162,8 @@ class TestCopyObjectSimultaneousDelete:
             with multiprocessing.Pool(processes=2) as pool:
                 process1 = pool.apply_async(self.copy_object_wrapper, args=(copy_args[0],
                                             copy_args[1], copy_args[2], copy_args[3],
-                                           (copy_args[4],), expect_copy_failure))
+                                            (copy_args[4],),
+                                            expect_copy_failure))
                 process2 = pool.apply_async(self.delete_object_wrapper, args=delete_args)
                 assert_utils.assert_true(process1.get()[0], process1.get()[1])
                 assert_utils.assert_true(process2.get()[0], process2.get()[1])
@@ -197,7 +198,7 @@ class TestCopyObjectSimultaneousDelete:
             with multiprocessing.Pool(processes=2) as pool:
                 process1 = pool.apply_async(self.copy_object_wrapper, args=(copy_args[0],
                                             copy_args[1], destbuck, copy_args[3],
-                                           (copy_args[4], copy_args[5]),
+                                            (copy_args[4], copy_args[5]),
                                             expect_copy_failure))
                 process2 = pool.apply_async(self.delete_bucket_wrapper, args=(destbuck,
                                             delete_args[0]))
@@ -271,7 +272,7 @@ class TestCopyObjectSimultaneousDelete:
                                                          "obj1", errmsg.INVALID_REQ_ERR,
                                                          errmsg.NOT_FOUND_ERRCODE),
                                                         (self.srcbuck, "obj1"),
-                                                         expect_copy_failure=True)
+                                                        expect_copy_failure=True)
         LOGGER.info("ENDED: Test Delete destination simple copied object with the same name "
                     "as source object in the same bucket")
 
@@ -287,7 +288,7 @@ class TestCopyObjectSimultaneousDelete:
                                                          "dest-obj", errmsg.NO_SUCH_KEY_ERR,
                                                          errmsg.NO_BUCKET_OBJ_ERR_KEY),
                                                         ("False",),
-                                                         expect_copy_failure=True)
+                                                        expect_copy_failure=True)
         LOGGER.info("ENDED: Test Delete destination bucket when copy simple object in "
                     "progress")
 
@@ -303,7 +304,7 @@ class TestCopyObjectSimultaneousDelete:
                                                          "dest-obj", errmsg.NO_SUCH_KEY_ERR, 4,
                                                          self.file_path),
                                                         (self.srcbuck, "src-obj"),
-                                                         is_mpu=True)
+                                                        is_mpu=True)
         LOGGER.info("ENDED: Test Delete source object when copy multipart object is in progress")
 
     @pytest.mark.s3_ops
@@ -317,7 +318,7 @@ class TestCopyObjectSimultaneousDelete:
         self.create_put_parallel_copy_and_delete_object((self.srcbuck, "src-obj", self.destbuck,
                                                          "dest-obj", None, 5, self.file_path),
                                                         (self.destbuck, "dest-obj"),
-                                                         is_mpu=True)
+                                                        is_mpu=True)
         LOGGER.info("ENDED: Test Delete destination object when copy multipart object is in "
                     "progress")
 
@@ -333,7 +334,7 @@ class TestCopyObjectSimultaneousDelete:
                                                          "dest-obj", errmsg.NO_SUCH_KEY_ERR, 5,
                                                          self.file_path),
                                                         (self.srcbuck, "src-obj"),
-                                                         is_mpu=True)
+                                                        is_mpu=True)
         LOGGER.info("ENDED: Test Delete source object when copy multipart object is in "
                     "progress in same bucket")
 
@@ -350,7 +351,7 @@ class TestCopyObjectSimultaneousDelete:
                                                          "dest-obj", errmsg.NO_SUCH_KEY_ERR, 5,
                                                          self.file_path),
                                                         (self.srcbuck, "dest-obj"),
-                                                         is_mpu=True)
+                                                        is_mpu=True)
         LOGGER.info("ENDED: Test Delete destination object when copy multipart object is in "
                     "progress in same bucket")
 
@@ -367,8 +368,8 @@ class TestCopyObjectSimultaneousDelete:
                                                          "obj1", errmsg.INVALID_REQ_ERR, 5,
                                                          self.file_path, errmsg.NOT_FOUND_ERRCODE),
                                                         (self.srcbuck, "obj1"),
-                                                         is_mpu=True,
-                                                         expect_copy_failure=True)
+                                                        is_mpu=True,
+                                                        expect_copy_failure=True)
         LOGGER.info("ENDED: Test Delete destination multipart copied object with the same name "
                     "as source object in the same bucket")
 
@@ -385,7 +386,7 @@ class TestCopyObjectSimultaneousDelete:
                                                          errmsg.NO_BUCKET_OBJ_ERR_KEY,5,
                                                          self.file_path),
                                                         ("False",),
-                                                         is_mpu=True,
-                                                         expect_copy_failure=True)
+                                                        is_mpu=True,
+                                                        expect_copy_failure=True)
         LOGGER.info("ENDED: Test Delete destination bucket when copy multipart object is in "
                     "progress")
