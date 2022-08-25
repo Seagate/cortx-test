@@ -127,9 +127,6 @@ class TestCorruptDataDetection:
             else:
                 cls.worker_node_list.append(node_obj)
 
-            # cls.health_obj = Health(
-            #     hostname=node["hostname"], username=node["username"], password=node["password"]
-            # )
         cls.health_obj = Health(
             cls.master_node_list[0].hostname,
             cls.master_node_list[0].username,
