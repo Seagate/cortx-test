@@ -19,7 +19,7 @@
 from http import HTTPStatus
 import yaml
 
-from config import CSM_REST_CFG, PROV_TEST_CFG
+from config import PROV_TEST_CFG
 from commons import configmanager
 from commons.constants import LOCAL_SOLUTION_PATH, K8S_SCRIPTS_PATH
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
@@ -207,29 +207,3 @@ class QueryDeployment(RestTestLib):
             result = False
         return resp, result, err_msg
 
-    def verify_error_message(self, resp, resp_error_code, resp_msg_id, resp_msg_index):
-        """
-        Verify error details
-        """
-        result = True
-        if CSM_REST_CFG["msg_check"] == "enable":
-            resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-            msg = resp_data[resp_msg_index]
-            if resp.json()["error_code"] != resp_error_code:
-                self.log.error("Error code check failed")
-                result = False
-            else:
-                self.log.info("Error code check passed")
-            if resp.json()["message_id"] != resp_msg_id:
-                self.log.error("Message id check failed")
-                result = False
-            else:
-                self.log.info("Message id check passed")
-            if resp.json()["message"] != msg:
-                self.log.error("Message check failed")
-                result = False
-            else:
-                self.log.info("Message check passed")
-        else:
-            result = True
-        return result

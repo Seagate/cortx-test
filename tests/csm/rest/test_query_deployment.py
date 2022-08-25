@@ -47,27 +47,22 @@ class TestQueryDeployment():
         cls.csm_obj = csm_api_factory("rest")
         cls.csm_conf = configmanager.get_config_wrapper(
             fpath="config/csm/test_rest_query_deployment.yaml")
+        cls.deploy_start_time = None
+        cls.deploy_end_time = None
         cls.update_seconds = cls.csm_conf["update_seconds"]
-        cls.failed_pod = None
-        cls.kvalue = None
-        cls.deploy_list = cls.csm_obj.master.get_deployment_name(POD_NAME_PREFIX)
-        cls.random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-        cls.random_number = cls.csm_obj.random_gen.randrange(1, 99999)
-        cls.random_symbols = ''.join(random.choices(string.punctuation, k=10))
 
     def setup_method(self):
         """
         Setup method
         """
         self.log.info("Prerequisite: Deploy cortx cluster")
-        deploy_start_time = time.time()
-        self.log.info("Printing start time for deployment %s: ", deploy_start_time)
         self.log.info("Cleanup: Destroying the cluster ")
         resp = self.deploy_lc_obj.destroy_setup(self.csm_obj.master, self.csm_obj.worker_list,
                                                 K8S_SCRIPTS_PATH)
         assert resp[0], resp[1]
         self.log.info("Cleanup: Cluster destroyed successfully")
-
+        self.deploy_start_time = time.time()
+        self.log.info("Printing start time for deployment %s: ", self.deploy_start_time)
         self.log.info("Cleanup: Setting prerequisite")
         self.deploy_lc_obj.execute_prereq_cortx(self.csm_obj.master,
                                                 K8S_SCRIPTS_PATH,
@@ -92,13 +87,12 @@ class TestQueryDeployment():
         resp = self.ha_obj.poll_cluster_status(self.csm_obj.master)
         assert resp[0], resp[1]
         self.log.info("Cleanup: Cluster status checked successfully")
-        deploy_end_time = time.time()
-        self.log.info("Printing end time for deployment %s: ", deploy_end_time)
+        self.deploy_end_time = time.time()
+        self.log.info("Printing end time for deployment %s: ", self.deploy_end_time)
 
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
-    @pytest.mark.parallel
     @pytest.mark.tags('TEST-45675')
     def test_45675(self):
         """
@@ -110,10 +104,9 @@ class TestQueryDeployment():
                       "without storage set id")
         resp, result, err_msg = self.csm_obj.verify_storage_set()
         assert result, err_msg
-        self.log.info("Response : %s", resp)
+        self.log.info("Response : %s", err_msg)
         self.log.info("Step 2: Send GET request for fetching system topology"
                     "with storage set id")
-        #need to revisit
         storage_sets = resp.json()["topology"]["storage_sets"]
         for storage_set_id in storage_sets:
             self.log.info("Sending request for %s ", storage_set_id)
@@ -126,7 +119,6 @@ class TestQueryDeployment():
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
-    @pytest.mark.parallel
     @pytest.mark.tags('TEST-45671')
     def test_45671(self):
         """
@@ -139,21 +131,24 @@ class TestQueryDeployment():
         resp_msg_id = test_cfg["message_id"]
         resp_msg_index = test_cfg["message_index"]
         self.log.info("Step 1: Send GET request with invalid resource ID")
+        random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        random_number = self.csm_obj.random_gen.randrange(1, 99999)
+        random_symbols = ''.join(random.choices(string.punctuation, k=10))
         invalid_ids = []
-        invalid_ids = ['Clusters', self.random_string, self.random_number, self.random_symbols]
+        invalid_ids = ['Clusters', random_string, random_number, random_symbols]
+        self.log.info("Printing list of invalid resource names: %s", invalid_ids)
         for ids in invalid_ids:
             resp = self.csm_obj.get_system_topology(uri_param = str(ids))
             assert resp.status_code == HTTPStatus.NOT_FOUND, \
                                "Status code check failed for get system topology"
-            resp = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
+            resp, err_msg = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
                                                      resp_msg_index)
-            assert resp, "Error msg verify failed"
+            assert resp, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
-    @pytest.mark.parallel
     @pytest.mark.tags('TEST-45676')
     def test_45676(self):
         """
@@ -165,22 +160,25 @@ class TestQueryDeployment():
         resp_error_code = test_cfg["error_code"]
         resp_msg_id = test_cfg["message_id"]
         resp_msg_index = test_cfg["message_index"]
+        random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        random_number = self.csm_obj.random_gen.randrange(1, 99999)
+        random_symbols = ''.join(random.choices(string.punctuation, k=10))
         invalid_ids = []
-        invalid_ids = [self.random_string, self.random_number, self.random_symbols]
+        invalid_ids = [random_string, random_number, random_symbols]
+        self.log.info("Printing list of invalid storage set ids: %s", invalid_ids)
         self.log.info("Step 1: Send GET request with invalid storage ID")
         for ids in invalid_ids:
             resp = self.csm_obj.get_storage_topology(storage_set_id = str(ids))
             assert resp.status_code == HTTPStatus.NOT_FOUND, \
                             "Status code check failed for get storage topology"
-            result = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
+            result, err_msg = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
                                                     resp_msg_index)
-            assert result, "Error msg verify failed"
+            assert result, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
-    @pytest.mark.parallel
     @pytest.mark.tags('TEST-45678')
     def test_45678(self):
         """
@@ -192,23 +190,26 @@ class TestQueryDeployment():
         resp_error_code = test_cfg["error_code"]
         resp_msg_id = test_cfg["message_id"]
         resp_msg_index = test_cfg["message_index"]
+        random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        random_number = self.csm_obj.random_gen.randrange(1, 99999)
+        random_symbols = ''.join(random.choices(string.punctuation, k=10))
         invalid_ids = []
-        invalid_ids = [self.random_string, self.random_number, self.random_symbols]
+        invalid_ids = [random_string, random_number, random_symbols]
+        self.log.info("Printing list of invalid node ids: %s", invalid_ids)
         self.log.info("Step 1: Send GET request with invalid storage ID")
         for ids in invalid_ids:
             resp = self.csm_obj.get_node_topology(node_id = str(ids))
             assert resp.status_code == HTTPStatus.NOT_FOUND, \
                             "Status code check failed for get node topology"
-            resp = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
+            resp, err_msg = self.csm_obj.verify_error_message(resp, resp_error_code, resp_msg_id,
                                                     resp_msg_index)
-            assert resp, "Error msg verify failed"
+            assert resp, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     #Test not ready
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
-    @pytest.mark.parallel
     @pytest.mark.tags('TEST-45677')
     def test_45677(self):
         """

@@ -1537,7 +1537,7 @@ class TestSystemCapacityFixedPlacement():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("[START] Failure loop")
-        for failure_cnt in range(1, self.kvalue + 2):
+        for failure_cnt in range(1, self.kvalue + 1):
             self.log.info("Starting failure loop for iteration %s ", failure_cnt)
             self.log.info("Step 1: Send Get cluster topology")
             resp = self.csm_obj.get_system_topology()
