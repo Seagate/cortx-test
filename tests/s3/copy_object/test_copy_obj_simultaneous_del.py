@@ -26,7 +26,6 @@ import os
 
 import pytest
 from commons import error_messages as errmsg
-from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
@@ -208,7 +207,6 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-45516")
-    @CTFailOn(error_handler)
     def test_45516(self):
         """Test Parallel copy and put operation from same source bucket"""
         LOGGER.info("STARTED: Test Delete source object when copy simple object is in progress")
@@ -220,7 +218,6 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-45518")
-    @CTFailOn(error_handler)
     def test_45518(self):
         """Test Delete destination object when copy simple object is in progress"""
         LOGGER.info("STARTED: Test Delete destination object when copy simple object is in "
@@ -233,7 +230,6 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-45519")
-    @CTFailOn(error_handler)
     def test_45519(self):
         """Test Delete source object when copy simple object is in progress"""
         LOGGER.info("STARTED: Test Delete source object when copy simple object is in progress in "
@@ -247,7 +243,6 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-45520")
-    @CTFailOn(error_handler)
     def test_45520(self):
         """Test Delete destination object when copy simple object is in progress in the same
         bucket"""
@@ -262,7 +257,6 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-45521")
-    @CTFailOn(error_handler)
     def test_45521(self):
         """Test Delete destination simple copied object with the same name as source object
         in the same bucket"""
@@ -279,7 +273,6 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-45522")
-    @CTFailOn(error_handler)
     def test_45522(self):
         """Test Delete destination bucket when copy simple object in progress"""
         LOGGER.info("STARTED: Test Delete destination bucket when copy simple object in "
@@ -295,7 +288,6 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-45523")
-    @CTFailOn(error_handler)
     def test_45523(self):
         """Test Delete source object when copy multipart object is in progress"""
         LOGGER.info("STARTED: Test Delete source object when copy multipart object is in progress")
@@ -310,7 +302,6 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-45524")
-    @CTFailOn(error_handler)
     def test_45524(self):
         """Test Delete destination object when copy multipart object is in progress"""
         LOGGER.info("STARTED: Test Delete destination object when copy multipart object is in "
@@ -325,7 +316,6 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-45525")
-    @CTFailOn(error_handler)
     def test_45525(self):
         """Test Delete source object when copy multipart object is in progress in same bucket"""
         LOGGER.info("STARTED: Test Delete source object when copy multipart object is in "
@@ -341,7 +331,6 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-45526")
-    @CTFailOn(error_handler)
     def test_45526(self):
         """Test Delete destination object when copy multipart object is in progress
         in same bucket"""
@@ -358,7 +347,6 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-45527")
-    @CTFailOn(error_handler)
     def test_45527(self):
         """Test Delete destination multipart copied object with the same name as source object
         in the same bucket"""
@@ -376,7 +364,6 @@ class TestCopyObjectSimultaneousDelete:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-45528")
-    @CTFailOn(error_handler)
     def test_45528(self):
         """Test Delete destination bucket when copy multipart object is in progress"""
         LOGGER.info("STARTED: Test Delete destination bucket when copy multipart object is in "
