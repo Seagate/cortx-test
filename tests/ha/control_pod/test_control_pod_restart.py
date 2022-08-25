@@ -753,6 +753,7 @@ class TestControlPodRestart:
         Verify control pod failover in loop
         """
         LOGGER.info("STARTED: Verify control pod failover in loop")
+        num_users = HA_CFG["s3_operation_data"]["no_csm_users"]
         LOGGER.info("Scale replicas for control pod to %s", self.repl_num)
         pod_name = self.node_master_list[0].get_all_pods(
             pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
@@ -760,9 +761,9 @@ class TestControlPodRestart:
                                                             pod_name=pod_name)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Total number of control pods in the cluster are: %s", self.repl_num)
-        LOGGER.info("Step 1: Create 10 IAM user and perform WRITEs-READs-Verify with "
-                    "variable object sizes.")
-        users = self.mgnt_ops.create_account_users(nusers=10)
+        LOGGER.info("Step 1: Create %s IAM user and perform WRITEs-READs-Verify with "
+                    "variable object sizes.", num_users)
+        users = self.mgnt_ops.create_account_users(nusers=num_users)
         self.test_prefix = 'test-40369'
         self.s3_clean = users
         uids = list(users.keys())
@@ -771,8 +772,8 @@ class TestControlPodRestart:
                                                         log_prefix=self.test_prefix,
                                                         skipcleanup=True)
             assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects for 10 IAM "
-                    "users created.")
+        LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects for %s IAM "
+                    "users created.", num_users)
         LOGGER.info("Step 2: Shutdown %s control pods in loop", self.repl_num - 1)
         LOGGER.info("Get the list of control pods")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
@@ -788,11 +789,11 @@ class TestControlPodRestart:
             resp = self.ha_obj.poll_cluster_status(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 3: Cluster status is online")
-            LOGGER.info("Step 4: Create 10 IAM users and delete randomly selected IAM users")
-            users_new = self.mgnt_ops.create_account_users(nusers=10)
-            self.s3_clean = users_new
-            created_list = list(users_new.keys())
-            num = random.randint(1, 10)
+            LOGGER.info("Step 4: Create multiple IAM users and delete randomly selected IAM users")
+            users_loop = self.mgnt_ops.create_account_users(nusers=num_users)
+            self.s3_clean = users_loop
+            created_list = list(users_loop.keys())
+            num = random.randint(1, num_users)
             delete_list = random.sample(created_list, num)
             for count in range(num):
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(delete_list[count])
@@ -802,29 +803,35 @@ class TestControlPodRestart:
                 resp = self.rest_iam_user.get_iam_user(user)
                 assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
                                           f"Couldn't find user {user}")
-            LOGGER.info("Ste 4: Created 10 and randomply deleted %s IAM users and verified", num)
+            LOGGER.info("Ste 4: Created %s and randomply deleted %s IAM users and verified",
+                        num_users, num)
             pod_left = self.node_master_list[0].get_all_pods(
                 pod_prefix=const.CONTROL_POD_NAME_PREFIX)
         LOGGER.info("Step 2: Control pods are shutdown in loop successfully.")
-        LOGGER.info("Step 5: Perform WRITEs-READs-Verify-Deletes with variable object sizes on "
-                    "data written in step 1.")
-        for count in range(10):
+        LOGGER.info("Step 5: Check if users created in step 1 are persistent and Perform "
+                    "READs-Verify-Deletes with variable object sizes on data written in step 1.")
+        for user in uids:
+            resp = self.rest_iam_user.get_iam_user(user)
+            assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
+                                      f"Couldn't find user {user}")
+        LOGGER.info("IAM users created in step 1 are persistent.")
+        LOGGER.info("Run READ-Verify-Deletes on data")
+        for count in range(num_users):
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[count],
-                                                        log_prefix=self.test_prefix,
+                                                        log_prefix=self.test_prefix, skipwrite=True,
                                                         setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Performed WRITEs-READs-Verify-Deletes with variable sizes objects for "
-                    "data written in step 1")
-        LOGGER.info("Step 6: Create IAM user and perform WRITEs-READs-Verify-Deletes with "
+        LOGGER.info("Step 5: IAM users created in step 1 are persistent and Performed "
+                    "READs-Verify-Deletes with variable sizes objects for data written in step 1")
+        LOGGER.info("Step 6: Create New IAM user and perform WRITEs-READs-Verify-Deletes with "
                     "variable object sizes.")
-        users = self.mgnt_ops.create_account_users(nusers=1)
+        users_new = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-40369-new'
-        self.s3_clean = users
-        for count in range(10):
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[count],
-                                                        log_prefix=self.test_prefix,
-                                                        setup_s3bench=False)
-            assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean = users_new
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_new.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    setup_s3bench=False)
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed WRITEs-READs-Verify-Deletes with variable sizes objects")
         LOGGER.info("ENDED: Verify control pod failover in loop")
 
