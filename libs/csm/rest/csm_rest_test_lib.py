@@ -312,3 +312,32 @@ class RestTestLib:
         """
         self.log.info("Search dict %s:%s in %s", search_key, search_val, search_in)
         return list(filter(lambda key: key[search_key] == search_val, search_in))
+
+    def verify_error_message(self, resp, resp_error_code, resp_msg_id, resp_msg_index):
+        """
+        Verify error details
+        """
+        result = True
+        err_msg = ""
+        if self.config["msg_check"] == "enable":
+            resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
+            msg = resp_data[resp_msg_index]
+            if resp.json()["error_code"] != resp_error_code:
+                err_msg = "Error code check failed."
+                self.log.error(err_msg)
+                result = False
+            else:
+                self.log.info("Error code check passed")
+            if resp.json()["message_id"] != resp_msg_id:
+                err_msg = err_msg + " Message id check failed."
+                self.log.error(err_msg)
+                result = False
+            else:
+                self.log.info("Message id check passed")
+            if resp.json()["message"] != msg:
+                err_msg = err_msg + " Message check failed"
+                self.log.error(err_msg)
+                result = False
+            else:
+                self.log.info("Message check passed")
+        return result, err_msg
