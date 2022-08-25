@@ -179,7 +179,15 @@
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
                 <stringProp name="Argument.value">{&#xd;
 	&quot;uid&quot;: &quot;${uid}&quot;,&#xd;
-	&quot;display_name&quot;: &quot;${uid}&quot;&#xd;
+	&quot;display_name&quot;: &quot;${uid}&quot;,&#xd;
+	&quot;email&quot;: &quot;${uid}@seagate.com&quot;,&#xd;
+	&quot;key_type&quot;: &quot;s3&quot;,&#xd;
+	&quot;access_key&quot;: &quot;${uid}&quot;,&#xd;
+	&quot;secret_key&quot;: &quot;${uid}&quot;,&#xd;
+	&quot;user_caps&quot;: &quot;users=*&quot;,&#xd;
+	&quot;generate_key&quot;: &quot;False&quot;,&#xd;
+	&quot;max_buckets&quot;: &quot;100&quot;,&#xd;
+	&quot;suspended&quot;: &quot;False&quot;&#xd;
 }</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
