@@ -788,7 +788,7 @@ class HAK8s:
 
     def event_s3_operation(self, event, setup_s3bench=True, log_prefix=None, s3userinfo=None,
                            skipread=False, skipwrite=False, skipcleanup=False, nsamples=10,
-                           nclients=10, output=None, event_set_clr=None,
+                           nclients=10, output=None, event_set_clr=None, max_retries=None,
                            httpclientimeout=HA_CFG["s3_operation_data"]["httpclientimeout"]):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
@@ -805,6 +805,7 @@ class HAK8s:
         :param httpclientimeout: Time limit in ms for requests made by this Client.
         :param event_set_clr: Thread event set-clear flag reference when s3bench workload
         execution miss the event set-clear time window
+        :param max_retries: Number of retries for IO operations
         :return: None
         """
         pass_res = []
@@ -827,7 +828,7 @@ class HAK8s:
                 skip_write=skipwrite, skip_read=skipread, obj_size=workload,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
                 end_point=S3_CFG["s3_url"], validate_certs=S3_CFG["validate_certs"],
-                httpclientimeout=httpclientimeout)
+                httpclientimeout=httpclientimeout, max_retries=max_retries)
             if event.is_set() or (isinstance(event_set_clr, list) and event_set_clr[0]):
                 LOGGER.debug("The state of event set clear Flag is %s", event_set_clr)
                 fail_res.append(resp)
