@@ -358,8 +358,8 @@ class TestControlPodRestart:
         Verify IAM users/IOs before and after control pod fails over when tainting control node
         with no schedule option (using kubectl command)
         """
-        LOGGER.info("STARTED: Verify IOs before and after control pod fails over, verify control "
-                    "pod failover. (using kubectl command)")
+        LOGGER.info("STARTED: Verify IAM users/IOs before and after control pod fails over when "
+                    "tainting control node with no schedule option (using kubectl command)")
         LOGGER.info("Step 1: Create IAM user and perform WRITEs-READs-Verify with "
                     "variable object sizes.")
         users = self.mgnt_ops.create_account_users(nusers=1)
@@ -424,8 +424,8 @@ class TestControlPodRestart:
         LOGGER.info("Untaint the node back which was tainted in step 2: %s", self.control_node)
         self.node_master_list[0].execute_cmd(cmd=cmd.K8S_UNTAINT_CTRL.format(self.control_node))
         self.res_taint = False
-        LOGGER.info("ENDED: Verify IOs before and after control pod fails over, verify control "
-                    "pod failover. (using kubectl command)")
+        LOGGER.info("ENDED: Verify IAM users/IOs before and after control pod fails over when "
+                    "tainting control node with no schedule option (using kubectl command)")
 
     @pytest.mark.ha
     @pytest.mark.lc
