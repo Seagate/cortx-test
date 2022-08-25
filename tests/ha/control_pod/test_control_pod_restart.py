@@ -83,7 +83,8 @@ class TestControlPodRestart:
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
-        cls.restore_node = cls.deploy = cls.restore_pod = cls.repl_num = None
+        cls.restore_node = cls.deploy = cls.restore_pod = None
+        cls.repl_num = cls.res_taint = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.rest_iam_user = RestIamUser()
@@ -126,6 +127,7 @@ class TestControlPodRestart:
         self.random_time = int(time.time())
         self.restore_node = False
         self.deploy = False
+        self.res_taint = False
         self.s3_clean = dict()
         self.restore_pod = None
         LOGGER.info("Check the overall status of the cluster.")
@@ -154,6 +156,7 @@ class TestControlPodRestart:
         self.modified_yaml = resp[1]
         self.backup_yaml = resp[2]
         self.repl_num = len(self.node_worker_list) / 2 + 1
+        LOGGER.info("Number of replicas can be scaled for this cluster are: %s", self.repl_num)
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -165,6 +168,9 @@ class TestControlPodRestart:
             LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
             assert_utils.assert_true(resp[0], resp[1])
+        if self.res_taint:
+            LOGGER.info("Untaint the node back which was tainted: %s", self.control_node)
+            self.node_master_list[0].execute_cmd(cmd=cmd.K8S_UNTAINT_CTRL.format(self.control_node))
         # TODO: Uncomment following code after getting confirmation from Rick on control pod
         #  restoration
         # if self.restore_pod:
@@ -347,10 +353,10 @@ class TestControlPodRestart:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40369")
     @CTFailOn(error_handler)
-    def test_failover_control_pod_kubectl(self):
+    def test_taint_ctrl_pod_failover(self):
         """
-        Verify IOs before and after control pod fails over, verify control pod failover. (using
-        kubectl command)
+        Verify IAM users/IOs before and after control pod fails over when tainting control node
+        with no schedule option (using kubectl command)
         """
         LOGGER.info("STARTED: Verify IOs before and after control pod fails over, verify control "
                     "pod failover. (using kubectl command)")
@@ -368,6 +374,7 @@ class TestControlPodRestart:
         LOGGER.info("Step 2: Taint the control node %s and delete control pod %s",
                     self.control_node, self.control_pod_name)
         self.node_master_list[0].execute_cmd(cmd=cmd.K8S_TAINT_CTRL.format(self.control_node))
+        self.res_taint = True
         LOGGER.info("Restart the control pod by kubectl delete.")
         resp = self.node_master_list[0].delete_pod(pod_name=self.control_pod_name, force=True)
         LOGGER.debug("Response: %s", resp)
@@ -376,7 +383,8 @@ class TestControlPodRestart:
         LOGGER.info("Step 2: Tainted the control node %s and deleted control pod %s",
                     self.control_node, self.control_pod_name)
         LOGGER.info("Sep 3: Check cluster status and new control node hosting control pod")
-        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=60)
+        delay = HA_CFG["common_params"]["60sec_delay"]
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=delay)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Cluster is in healthy state.")
         LOGGER.info("Check new control node hosting failed over control pod")
@@ -384,6 +392,8 @@ class TestControlPodRestart:
             const.CONTROL_POD_NAME_PREFIX)
         control_pod_name = list(control_pods.keys())[0]
         control_node = control_pods.get(control_pod_name)
+        assert_utils.assert_not_equal(self.control_node, control_node, "Control pod did not fail "
+                                                                       "over to new node")
         LOGGER.info("Step 3: Control pod %s failed over to new node %s from old node %s",
                     control_pod_name, control_node, self.control_node)
         LOGGER.info("Step 4: Verify if IAM users %s are persistent across control pod failover",
@@ -413,6 +423,7 @@ class TestControlPodRestart:
         LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
         LOGGER.info("Untaint the node back which was tainted in step 2: %s", self.control_node)
         self.node_master_list[0].execute_cmd(cmd=cmd.K8S_UNTAINT_CTRL.format(self.control_node))
+        self.res_taint = False
         LOGGER.info("ENDED: Verify IOs before and after control pod fails over, verify control "
                     "pod failover. (using kubectl command)")
 
