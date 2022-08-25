@@ -103,7 +103,7 @@ class MotrCoreK8s():
             nodes_data = cluster_info["nodes"]
             for node in nodes_data:
                 if 'client' in node['name']:
-                    nodename = node["name"].split('.')[0]
+                    nodename = node["name"]
                     self.cortx_node_list.append(nodename)
                     node_dict[nodename] = {}
                     node_dict[nodename][common_const.MOTR_CLIENT] = []
@@ -146,13 +146,23 @@ class MotrCoreK8s():
         """
         motr_client_pod = self.node_obj.get_pod_name(
             pod_prefix=common_const.CLIENT_POD_NAME_PREFIX)[1]
-        cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
+        cmd1 = " | awk -F ' '  '/(RC)/ { print $1 }'"
         primary_cortx_node = self.node_obj.send_k8s_cmd(
             operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                           f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}",
+                           f"-- {common_cmd.MOTR_STATUS_CMD} {cmd1}",
             decode=True)
-        return primary_cortx_node.replace("data", "client")
+        data_pod_name = primary_cortx_node.split('.')[0]
+        cmd2 = "| grep \"{}\" | awk '{{print $7}}'".format(data_pod_name)
+        primary_k8s_node = self.node_obj.send_k8s_cmd(
+            operation="get", pod="pods -o wide", namespace=common_const.NAMESPACE,
+            command_suffix=f"{cmd2}", decode=True)
+        cmd3 = "| grep \"{}\" | awk '{{print $1}}' | grep \"{}\"".format(
+            primary_k8s_node, common_const.CLIENT_POD_NAME_PREFIX)
+        primary_client_pod = self.node_obj.send_k8s_cmd(
+            operation="get", pod="pods -o wide", namespace=common_const.NAMESPACE,
+            command_suffix=f"{cmd3}", decode=True)
+        return primary_client_pod + '.' + common_const.CORTX_CLIENT_SVC_POSTFIX
 
     def get_cortx_node_endpoints(self, cortx_node=None):
         """
@@ -190,13 +200,13 @@ class MotrCoreK8s():
         :returns: Corresponding Node name
         :rtype: str
         """
-        cmd = "hostname"
+        cmd = "hctl status  | grep {} | awk 'FNR <= 1'".format(motr_client_pod)
         node_name = self.node_obj.send_k8s_cmd(
             operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                            f"-- {cmd}",
             decode=True)
-        return node_name
+        return node_name.strip()
 
     def m0crate_run(self, local_file_path, remote_file_path, cortx_node):
         """
