@@ -793,7 +793,7 @@ class MotrCoreK8s():
         # Iterate over data pods to copy the error_injection.py script on motr container
         for pod in pod_list:
             result = self.master_node_list[0].copy_file_to_container(
-                "error_injection.py", pod, common_const.CONTAINER_PATH,
+                di_cfg["error_injection.py"], pod, common_const.CONTAINER_PATH,
                 common_const.MOTR_CONTAINER_PREFIX+"-001")
             if not result:
                 raise FileNotFoundError
@@ -851,4 +851,4 @@ class MotrCoreK8s():
             log.error("Exception Occurred during killing process : %s", ex)
             self.dtm_obj.set_proc_restart_duration(self.master_node_list[0],
                                                    pod_selected, container, 0)
-            return False
+            return False, pod_selected, container

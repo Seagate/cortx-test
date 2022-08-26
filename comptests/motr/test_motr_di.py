@@ -178,7 +178,7 @@ class TestCorruptDataDetection:
                 for b_size, cnt_c, layout, in zip(bsize_list, count_list, layout_ids):
                     self.motr_obj.cat_cmd(b_size, cnt_c, obj_id,
                                           layout, outfile, node,
-                                          client_num, di_g =True)
+                                          client_num)
                     # Verify the md5sum
                     self.motr_obj.md5sum_cmd(infile, outfile, node, flag=True)
                     # Delete the object
