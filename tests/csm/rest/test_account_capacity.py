@@ -32,8 +32,8 @@ import pytest
 
 from commons import configmanager
 from commons import cortxlogging
-from commons import constants as const
 from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB, POD_NAME_PREFIX, RESTORE_SCALE_REPLICAS
+from commons.constants import STATEFULSET, REPLICASET
 from commons.constants import Rest as const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
@@ -41,6 +41,7 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils, system_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG, S3_BLKBOX_CFG
+from libs.csm.csm_interface import csm_api_factory
 from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.di.di_mgmt_ops import ManagementOPs
@@ -64,6 +65,7 @@ class TestAccountCapacity():
         """ This is method is for test suite set-up """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
+        cls.csm_obj = csm_api_factory("rest")
         cls.acc_capacity = AccountCapacity()
         cls.log.info("Initiating Rest Client ...")
         cls.s3user = RestS3user()
@@ -1008,11 +1010,11 @@ class TestAccountCapacity():
         self.restore_method = resp[1][pod_name]['method']
         assert resp[0], "Cluster/Services status is not as expected"
 
-        self.log.info("Step 3: Start I/O")
-        run_data_chk_obj = RunDataCheckManager(users=data)
-        pref_dir = {"prefix_dir": 'test_44794'}
-        run_data_chk_obj.start_io_async(
-            users=data, buckets=None, files_count=test_cfg["files_count"], prefs=pref_dir)
+        # self.log.info("Step 3: Start I/O")
+        # run_data_chk_obj = RunDataCheckManager(users=data)
+        # pref_dir = {"prefix_dir": 'test_44794'}
+        # run_data_chk_obj.start_io_async(
+        #     users=data, buckets=None, files_count=test_cfg["files_count"], prefs=pref_dir)
 
         self.log.info("Step 4: Poll Degraded Capacity")
         jmx_file = "CSM_Poll_Degraded_Capacity.jmx"
@@ -1024,8 +1026,8 @@ class TestAccountCapacity():
             loop=test_cfg["loop"])
         assert result, "Errors reported in the Jmeter execution"
 
-        stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True, eventual_stop=True)
-        self.log.info("stop_res -  %s", stop_res)
+        # stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True, eventual_stop=True)
+        # self.log.info("stop_res -  %s", stop_res)
 
         self.log.info("Step 5: Call degraded capacity api")
         response = self.csm_obj.get_degraded_capacity(endpoint_param=None)

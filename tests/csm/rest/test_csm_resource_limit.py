@@ -31,7 +31,7 @@ from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.csm_interface import csm_api_factory
 from libs.jmeter.jmeter_integration import JmeterInt
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.csm.extensions.csm_prov_ext import ProvExt
+from libs.csm.extensions.csm_prov_ext import CSMExt
 
 
 class TestResourceLimit():
@@ -45,7 +45,7 @@ class TestResourceLimit():
         cls.jmx_obj = JmeterInt()
 
         cls.csm_obj = csm_api_factory("rest")
-        cls.prov_obj = ProvExt(cls.csm_obj.master, cls.csm_obj.workers)
+        cls.prov_obj = CSMExt(cls.csm_obj.master, cls.csm_obj.workers)
         cls.test_cfgs = config_utils.read_yaml('config/csm/test_rest_resource_limit.yaml')[1]
         cls.rest_resp_conf = configmanager.get_config_wrapper(
             fpath="config/csm/rest_response_data.yaml")

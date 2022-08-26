@@ -23,8 +23,8 @@ from commons.constants import LOCAL_SOLUTION_PATH
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
 
-class ProvExt():
-    """ProvExt is creating object and extending functionality of the ProvDeployK8sCortxLib"""
+class CSMExt():
+    """CSMExt is creating object and extending functionality of the ProvDeployK8sCortxLib"""
     def __init__(self, master, workers):
         self.master = master
         self.workers = workers
