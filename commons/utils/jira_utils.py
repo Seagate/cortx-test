@@ -82,12 +82,16 @@ class JiraTask:
                         te_tag = te_tag.lower()
                     req_success = True
             except (JIRAError, requests.exceptions.RequestException) as fault:
+                if fault.status_code == HTTPStatus.UNAUTHORIZED:
+                    raise EnvironmentError("Unauthorized JIRA credentials") from fault
                 print('Error occurred in getting te tag')
-                LOGGER.error(f'Error occurred {fault} in getting te_tag from {test_exe_id}')
+                LOGGER.error('Error occurred %s in getting te_tag from %s', fault, test_exe_id)
                 retries_cnt = retries_cnt - 1
                 retry_attempt = retry_attempt + 1
+                if retries_cnt == 0:
+                    raise EnvironmentError(
+                        "Unable to access JIRA. Please check above errors.") from fault
                 time.sleep(incremental_timeout_sec * retry_attempt)
-
         if te_tag != "":
             page_not_zero = 1
             page_cnt = 1
@@ -208,7 +212,7 @@ class JiraTask:
                 break
             else:
                 LOGGER.info("get_test_list GET on %s failed", jira_url)
-                LOGGER.info("RESPONSE=%s\n",response.text)
+                LOGGER.info("RESPONSE=%s\n", response.text)
                 LOGGER.info("HEADERS=%s\n", response.request.headers)
                 LOGGER.info("BODY=%s", response.request.body)
                 sys.exit(1)

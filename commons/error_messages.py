@@ -80,6 +80,7 @@ NO_SUCH_ENTITY_ERR = "NoSuchEntity"
 NOT_FOUND_ERR = "Not Found"
 MALFORMED_XML_ERR = "MalformedXML"
 INVALID_ARG_ERR = "InvalidArgument"
+INVALID_REQ_ERR = "InvalidRequest"
 
 # S3 Bucket Tagging
 S3_BKT_SET_TAG_ERR = "NoSuchTagSetError"
