@@ -205,7 +205,7 @@ class TestCorruptDataDetection:
         motr_container_name = f"{const.MOTR_CONTAINER_PREFIX}-001"
         fid_resp = {}
 
-        # ON THE DATA POD: ==========>>>>>>
+        # ON THE DATA POD:
         # Copy the emap script to controller node's root dir for enabling further copy to container
         err_inj_script_path = str(MOTR_DI_ERR_INJ_LOCAL_PATH)
         copy_status, resp = self.motr_obj.master_node_list[0].copy_file_to_remote(
@@ -223,7 +223,6 @@ class TestCorruptDataDetection:
             )
             if not result:
                 raise FileNotFoundError
-        # ================
         # For all pods in the system
         for node_pod in node_pod_dict:
             # Format the Object ID is xxx:yyy format
@@ -233,7 +232,7 @@ class TestCorruptDataDetection:
                     + str(self.system_random.randint(1, 1024 * 1024))
             )
 
-            # On the Client POD - cortx - hax container ==========>>>>>>
+            # On the Client POD - cortx - hax container
             for b_size, (cnt_c, cnt_u), layout, offset in zip(
                     bsize_list, count_list, layout_ids, offsets
             ):
@@ -269,7 +268,6 @@ class TestCorruptDataDetection:
         logger.debug("corrupt emap response ~~~~~~~~~~~~~~~~ %s", corrupt_resp)
         assert_utils.assert_true(corrupt_resp[0], corrupt_resp[1])
 
-        # Todo: Enable - Restart m0d process once the code and product is stable and supports
         # self.dtm_obj.process_restart_with_delay(
         #     master_node=self.master_node_list[0],
         #     health_obj=self.health_obj,
@@ -285,7 +283,7 @@ class TestCorruptDataDetection:
         self.m0cat_md5sum_m0unlink(
             bsize_list, count_list[0], layout_ids, object_id_list, client_num=0, outfile=outfile
         )
-        return True  # Todo: return status to be worked as per responses
+        return True
 
     def m0cat_md5sum_m0unlink(self, bsize_list, count_list, layout_ids, object_list, **kwargs):
         """
@@ -309,7 +307,6 @@ class TestCorruptDataDetection:
                     # Verify the md5sum
                     self.motr_obj.md5sum_cmd(infile, outfile, node, flag=True)
 
-                    # Todo: Enable Delete objects once supported (after proc restart)
                     # Delete the object
                     # self.motr_obj.unlink_cmd(obj_id, layout, node, client_num)
                 logger.info("Stop: Verify m0cat_md5sum_m0unlink operation")
@@ -394,7 +391,6 @@ class TestCorruptDataDetection:
         layout_ids = ["3"]
         offsets = [4096]
 
-        # Todo logging steps
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
 
     # @pytest.mark.skip(reason="Feature Unavailable")
@@ -421,7 +417,6 @@ class TestCorruptDataDetection:
         logger.info("STARTED: Test Parity corruption in degraded mode - aligned")
         test_prefix = "test-41768"
 
-        # Todo: Enable - Restart m0d process to degrade once the code and product is stable
         # resp = self.dtm_obj.process_restart_with_delay(
         #     master_node=self.master_node_list[0],
         #     health_obj=self.health_obj,
@@ -463,13 +458,10 @@ class TestCorruptDataDetection:
         test_prefix = "test-45162"
         logger.info("STARTED: Test data unit corruption in loop - aligned")
 
-        # Todo: Run the following 4 times for 4 data units after identifying nodes on which
-        #  those are stored
-        # for _ in range(4):
         logger.info("Step 1: Perform m0cp and corrupt the data block")
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
         logger.info("Successfully performed m0cp and corrupt the data block")
-        logger.info(f"ENDED:{test_prefix} Test Parity corruption in degraded mode - aligned")
+        logger.info("ENDED:%s Test Parity corruption in degraded mode - aligned", test_prefix)
 
     @pytest.mark.tags("TEST-45716")
     @pytest.mark.motr_di
