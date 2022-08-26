@@ -189,8 +189,7 @@ class TestCorruptDataDetection:
 
     # pylint: disable=R0914
     # pylint: disable=too-many-arguments
-    def motr_inject_checksum_corruption(self, layout_ids, bsize_list, count_list, offsets,
-                                        ft_type=1):
+    def motr_inject_checksum_corruption(self, layout_ids, bsize_list, count_list, ft_type=1):
         """
         Create an object with M0CP, identify the emap blocks corresponding to data blocks
         and corrupt single parity block with emap script and
