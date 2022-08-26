@@ -406,5 +406,62 @@ def get_total_used(access_key: str, secret_key: str, **kwargs):
 
     size =0
     for bucket in s3_resource.buckets.all():
-        size += get_objects_size_bucket(bucket.name,access_key, secret_key, **kwargs)[1]
+        size += get_objects_size_bucket(bucket.name, access_key, secret_key, **kwargs)[1]
     return size
+
+
+def copy_object(access_key: str, secret_key: str, src_bkt: str = None, src_obj: str = None,
+                dest_bkt: str = None, dest_obj: str = None, **kwargs):
+    """
+    Copy of an object that is already stored in Seagate S3 with different permissions.
+    """
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    LOGGER.debug("S3 Endpoint : %s", endpoint)
+
+    region = S3_CFG["region"]
+    LOGGER.debug("Region : %s", region)
+
+    s3_resource = boto3.resource('s3', verify=False,
+                                 endpoint_url=endpoint,
+                                 aws_access_key_id=access_key,
+                                 aws_secret_access_key=secret_key,
+                                 region_name=region,
+                                 **kwargs)
+    LOGGER.debug("S3 boto resource created")
+    copy_source = {'Bucket': src_bkt, 'Key': src_obj}
+    s3_resource.Bucket(dest_bkt).copy(copy_source, dest_obj)
+    result = False
+    for obj in s3_resource.Bucket(dest_bkt).objects.all():
+        if obj.key == dest_obj:
+            result = True
+            break
+    del s3_resource
+    LOGGER.debug("Verified copied Object: %s is present in destination bucket: %s",
+                 dest_obj, dest_bkt)
+    return result
+
+def list_bucket(access_key: str, secret_key: str, **kwargs):
+    """
+    Delete specific object from give bucket, access key and secret key.
+    """
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    LOGGER.debug("S3 Endpoint : %s", endpoint)
+
+    region = S3_CFG["region"]
+    LOGGER.debug("Region : %s", region)
+
+    s3_resource = boto3.resource('s3', verify=False,
+                                 endpoint_url=endpoint,
+                                 aws_access_key_id=access_key,
+                                 aws_secret_access_key=secret_key,
+                                 region_name=region,
+                                 **kwargs)
+    LOGGER.debug("S3 boto resource created")
+    LOGGER.debug("List bukcets")
+    bkt_lst = s3_resource.buckets.all()
+    del s3_resource
+    return bkt_lst
