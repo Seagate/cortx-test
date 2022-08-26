@@ -58,6 +58,8 @@ DTM_CFG_PATH = os.path.join(CONFIG_DIR, "dtm","dtm_config.yaml")
 DURABILITY_CFG_PATH = os.path.join(CONFIG_DIR, "durability_test.yaml")
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
+MOTR_DI_ERR_INJ_LOCAL_PATH = os.path.join(SCRIPT_HOME, "scripts/server_scripts/error_injection.py")
+
 JIRA_TEST_LIST = 'test_lists.csv'
 CSM_CONFIG_PATH = os.path.join(CONFIG_DIR, 'csm', 'csm_config.yaml')
 JIRA_TEST_META_JSON = 'test_meta_data.json'
