@@ -411,7 +411,6 @@ class TestCorruptDataDetection:
         count_list = [["4", "1"]]
         bsize_list = ["1M"]
         layout_ids = ["9"]
-        offsets = [0]
         # Check for deployment status using kubectl commands - Taken care in setup stage
         logger.info("STARTED: Test Parity corruption in degraded mode - aligned")
         test_prefix = "test-41768"
@@ -430,8 +429,7 @@ class TestCorruptDataDetection:
         logger.info("Step 1: m0d restarted and recovered successfully")
 
         logger.info("Step 2: Perform m0cp and corrupt the parity block")
-        resp = self.motr_inject_checksum_corruption(layout_ids, bsize_list, count_list, offsets,
-                                                    ft_type=2)
+        resp = self.motr_inject_checksum_corruption(layout_ids, bsize_list, count_list, ft_type=2)
         assert_utils.assert_true(resp)
         logger.info("Step 2: Successfully performed m0cp and corrupt the parity block")
         logger.info("ENDED: %s Test Parity corruption in degraded mode - aligned", test_prefix)
