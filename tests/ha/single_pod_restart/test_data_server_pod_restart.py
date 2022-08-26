@@ -681,9 +681,9 @@ class TestDataServerPodRestart:
             event_del_bkt = del_resp[0]
             fail_del_bkt = del_resp[1]
             assert_utils.assert_false(len(fail_del_bkt) or len(event_del_bkt),
-                                      "Expected all pass, Buckets which failed in DELETEs before and "
-                                      f"after pod deletion: {fail_del_bkt}. Buckets which failed in "
-                                      f"DELETEs during pod deletion: {event_del_bkt}.")
+                                      "Expected all pass, Buckets which failed in DELETEs before "
+                                      f"and after pod deletion: {fail_del_bkt}. Buckets which "
+                                      f"failed in DELETEs during pod deletion: {event_del_bkt}.")
             LOGGER.info("Step 6.1: Verified status for In-flight DELETEs")
         LOGGER.info("Step 6.2: Verify status for In-flight WRITEs")
         responses_wr = dict()

@@ -303,7 +303,8 @@ class TestDataServerPodRestartAPI:
                                                        obj_download_path=download_path)
             LOGGER.info("Download object response: %s", resp)
             assert_utils.assert_true(resp[0], resp[1])
-            dnld_chksm = self.ha_obj.cal_compare_checksum(file_list=[download_path], compare=False)[0]
+            dnld_chksm = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                          compare=False)[0]
             assert_utils.assert_equal(bkt_obj_dict[bkt_obj][-1], dnld_chksm,
                                       f"Expected checksum: {upld_chksm_hlt},"
                                       f"Actual checksum: {dnld_chksm}")
