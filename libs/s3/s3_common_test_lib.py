@@ -390,7 +390,7 @@ def validate_copy_content(src_bucket, src_object, dest_bucket, dest_object, **kw
     LOG.info("Validated content of copy object")
 
 
-def objects_in_buckets(bucket, objects, s3_test_obj):
+def list_objects_in_bucket(bucket, objects, s3_test_obj):
     """Assert if any of the given object not listed in given bucket"""
     listed_objects = s3_test_obj.object_list(bucket)[1]
     for obj in objects:

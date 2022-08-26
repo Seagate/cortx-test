@@ -23,6 +23,7 @@ import logging
 import multiprocessing
 import os
 import time
+from time import perf_counter_ns
 
 import pytest
 
@@ -38,7 +39,7 @@ from commons.utils.system_utils import path_exists
 from commons.utils.system_utils import remove_dirs
 from libs.s3 import s3_test_lib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.s3.s3_common_test_lib import objects_in_buckets
+from libs.s3.s3_common_test_lib import list_objects_in_bucket
 from libs.s3.s3_common_test_lib import copy_obj_di_check
 from libs.s3.s3_common_test_lib import validate_copy_content
 
@@ -68,17 +69,17 @@ class TestCopyObjects:
         LOGGER.info("STARTED: Test setup.")
         if not os.path.exists(self.test_dir_path):
             os.makedirs(self.test_dir_path, exist_ok=True)
-        self.src_bkt = "src-bucket"
-        self.des_bkt = "dest-bucket"
-        self.src_bkt1 = "src-bucket1"
-        self.des_bkt1 = "dest-bucket1"
-        self.src_bkt2 = "src-bucket2"
-        self.des_bkt2 = "dest-bucket2"
-        self.key_mpobj1 = "mp-obj1"
-        self.key_obj4 = "obj4"
-        self.key_obj2 = "obj2"
-        self.key_obj1 = "obj1"
-        self.key_obj3 = "obj3"
+        self.src_bkt = "src-bucket-{}".format(perf_counter_ns())
+        self.des_bkt = "dest-bucket-{}".format(perf_counter_ns())
+        self.src_bkt1 = "src-bucket1-{}".format(perf_counter_ns())
+        self.des_bkt1 = "dest-bucket1-{}".format(perf_counter_ns())
+        self.src_bkt2 = "src-bucket2-{}".format(perf_counter_ns())
+        self.des_bkt2 = "dest-bucket2-{}".format(perf_counter_ns())
+        self.key_mpobj1 = "mp-obj1-{}".format(perf_counter_ns())
+        self.key_obj4 = "obj4-{}".format(perf_counter_ns())
+        self.key_obj2 = "obj2-{}".format(perf_counter_ns())
+        self.key_obj1 = "obj1-{}".format(perf_counter_ns())
+        self.key_obj3 = "obj3-{}".format(perf_counter_ns())
         self.buckets = [self.src_bkt, self.src_bkt1, self.src_bkt2, self.des_bkt, self.des_bkt1,
                         self.des_bkt2]
         for bucket in self.buckets:
@@ -185,9 +186,9 @@ class TestCopyObjects:
                                            self.key_obj4),
                                           (self.src_bkt, "obj5", self.file_path))
         LOGGER.info("All objects should be listed in relevant buckets")
-        objects_in_buckets(bucket=self.src_bkt, objects=[self.key_obj1, self.key_obj3,
+        list_objects_in_bucket(bucket=self.src_bkt, objects=[self.key_obj1, self.key_obj3,
                            self.key_mpobj1, "obj5"], s3_test_obj=self.s3_obj)
-        objects_in_buckets(bucket=self.des_bkt, objects=[self.key_obj2, self.key_obj4],
+        list_objects_in_bucket(bucket=self.des_bkt, objects=[self.key_obj2, self.key_obj4],
                            s3_test_obj=self.s3_obj)
         LOGGER.info("ENDED: Test Parallel copy and put operation from same source bucket "
                     "(for simple and multipart source objects)")
@@ -214,9 +215,9 @@ class TestCopyObjects:
                                            self.key_obj4),
                                           (self.src_bkt, self.key_mpobj1, self.file_path))
         LOGGER.info("All objects should be listed in relevant buckets")
-        objects_in_buckets(bucket=self.src_bkt, objects=[self.key_obj1, self.key_mpobj1],
+        list_objects_in_bucket(bucket=self.src_bkt, objects=[self.key_obj1, self.key_mpobj1],
                            s3_test_obj=self.s3_obj)
-        objects_in_buckets(bucket=self.des_bkt, objects=[self.key_obj2, self.key_obj4],
+        list_objects_in_bucket(bucket=self.des_bkt, objects=[self.key_obj2, self.key_obj4],
                            s3_test_obj=self.s3_obj)
         LOGGER.info("ENDED: Test Parallel copy and overwrite of same object "
                     "(for simple and multipart source objects)")
@@ -241,7 +242,7 @@ class TestCopyObjects:
             (self.src_bkt, self.key_mpobj1, self.src_bkt, self.key_mpobj1, "InvalidRequest"),
             (self.src_bkt, self.key_mpobj1, self.file_path))
         LOGGER.info("All objects should be listed in relevant buckets")
-        objects_in_buckets(bucket=self.src_bkt, objects=[self.key_obj1, self.key_mpobj1],
+        list_objects_in_bucket(bucket=self.src_bkt, objects=[self.key_obj1, self.key_mpobj1],
                            s3_test_obj=self.s3_obj)
         LOGGER.info("ENDED: Test Parallel self-copy and overwrite on same source bucket "
                     "(simple and multipart source objects)")
@@ -266,7 +267,7 @@ class TestCopyObjects:
                                            self.key_obj4),
                                           (self.src_bkt, self.key_obj4, self.file_path))
         LOGGER.info("All objects should be listed in relevant buckets")
-        objects_in_buckets(bucket=self.src_bkt, objects=[self.key_obj1, self.key_obj2,
+        list_objects_in_bucket(bucket=self.src_bkt, objects=[self.key_obj1, self.key_obj2,
                            self.key_mpobj1, self.key_obj4], s3_test_obj=self.s3_obj)
         LOGGER.info("List contents in src-bucket")
         validate_copy_content(self.src_bkt, self.key_obj1, self.src_bkt, self.key_obj2,
@@ -301,7 +302,7 @@ class TestCopyObjects:
         copy_obj_di_check(self.src_bkt, self.key_obj3, self.src_bkt, self.key_obj4,
                           s3_testobj=self.s3_obj)
         LOGGER.info("All objects should be listed in relevant buckets")
-        objects_in_buckets(bucket=self.src_bkt, objects=[self.key_obj1, self.key_obj2,
+        list_objects_in_bucket(bucket=self.src_bkt, objects=[self.key_obj1, self.key_obj2,
                            self.key_obj3, self.key_obj4], s3_test_obj=self.s3_obj)
         LOGGER.info("ENDED: Test Parallel copy and overwrite of same source object "
                     "(simple and multipart source objects)")
@@ -326,7 +327,7 @@ class TestCopyObjects:
             (self.src_bkt, self.key_mpobj1, self.src_bkt, self.key_mpobj1, "InvalidRequest"),
             (self.src_bkt, self.key_obj4, self.file_path))
         LOGGER.info("All objects should be listed in relevant buckets")
-        objects_in_buckets(bucket=self.src_bkt, objects=[self.key_obj1, self.key_obj2,
+        list_objects_in_bucket(bucket=self.src_bkt, objects=[self.key_obj1, self.key_obj2,
                            self.key_mpobj1, self.key_obj4], s3_test_obj=self.s3_obj)
         LOGGER.info("ENDED: Test Parallel copy and overwrite of same source object "
                     "(simple and multipart source objects)")
@@ -381,7 +382,7 @@ class TestCopyObjects:
                                   down_path1=self.downld_path1, down_path2=self.downld_path2)
             self.parallel_copy_object((self.src_bkt1, f"{obj_type}-obj1", self.des_bkt1,
                                        f"{obj_type}-dest-obj6"), (self.src_bkt2, f"{obj_type}-obj3",
-                                      self.des_bkt1,f"{obj_type}-dest-obj6"))
+                                      self.des_bkt1, f"{obj_type}-dest-obj6"))
             validate_copy_content(self.src_bkt2, f"{obj_type}-obj3", self.des_bkt1,
                                   f"{obj_type}-dest-obj6", s3_testobj=self.s3_obj,
                                   down_path1=self.downld_path1, down_path2=self.downld_path2)
@@ -404,18 +405,18 @@ class TestCopyObjects:
                                   f"{obj_type}-dest-obj4", s3_testobj=self.s3_obj,
                                   down_path1=self.downld_path1, down_path2=self.downld_path2)
             LOGGER.info("List objects of src-bucket1")
-            objects_in_buckets(bucket=self.src_bkt1, objects=[f"{obj_type}-obj1",
+            list_objects_in_bucket(bucket=self.src_bkt1, objects=[f"{obj_type}-obj1",
                                f"{obj_type}-obj3"], s3_test_obj=self.s3_obj)
             LOGGER.info("List objects of src-bucket2")
-            objects_in_buckets(bucket=self.src_bkt2, objects=[f"{obj_type}-obj3"],
-                               s3_test_obj = self.s3_obj)
+            list_objects_in_bucket(bucket=self.src_bkt2, objects=[f"{obj_type}-obj3"],
+                               s3_test_obj=self.s3_obj)
             LOGGER.info("List objects to dest-bucket1")
-            objects_in_buckets(bucket=self.des_bkt1, objects=[f"{obj_type}-dest-obj2",
+            list_objects_in_bucket(bucket=self.des_bkt1, objects=[f"{obj_type}-dest-obj2",
                                f"{obj_type}-dest-obj3", f"{obj_type}-dest-obj4",
                                f"{obj_type}-dest-obj6", f"{obj_type}-dest-obj8",
                                f"{obj_type}-dest-obj9"], s3_test_obj=self.s3_obj)
             LOGGER.info("List objects to dest-bucket2")
-            objects_in_buckets(bucket=self.des_bkt2, objects=[f"{obj_type}-dest-obj4"],
+            list_objects_in_bucket(bucket=self.des_bkt2, objects=[f"{obj_type}-dest-obj4"],
                                s3_test_obj=self.s3_obj)
         LOGGER.info("ENDED: Test Parallel copy from multiple source buckets to one or multiple "
                     "destination buckets (simple and multipart source objects)")
@@ -505,13 +506,13 @@ class TestCopyObjects:
                                   f"{obj_type}-obj2", s3_testobj=self.s3_obj,
                                   down_path1=self.downld_path1, down_path2=self.downld_path2)
             LOGGER.info("List objects to src-bucket1")
-            objects_in_buckets(bucket=self.src_bkt1, objects=[f"{obj_type}-obj1"],
+            list_objects_in_bucket(bucket=self.src_bkt1, objects=[f"{obj_type}-obj1"],
                                s3_test_obj=self.s3_obj)
             LOGGER.info("List objects to dest-bucket1")
-            objects_in_buckets(bucket=self.des_bkt1, objects=[f"{obj_type}-obj2",
+            list_objects_in_bucket(bucket=self.des_bkt1, objects=[f"{obj_type}-obj2",
                               f"{obj_type}-obj3"], s3_test_obj=self.s3_obj)
             LOGGER.info("List objects to dest-bucket2")
-            objects_in_buckets(bucket=self.des_bkt2, objects=[f"{obj_type}-obj2",
+            list_objects_in_bucket(bucket=self.des_bkt2, objects=[f"{obj_type}-obj2",
                                f"{obj_type}-obj3"], s3_test_obj=self.s3_obj)
         LOGGER.info("ENDED: Test Parallel copy from single source buckets to one or multiple "
                     "destination buckets (simple and multipart source objects)")
@@ -543,10 +544,10 @@ class TestCopyObjects:
                 LOGGER.info(error.message)
                 assert_utils.assert_in(errmsg.NO_SUCH_KEY_ERR, error.message, error)
             LOGGER.info("List %s-obj1 to src-bucket1", obj_type)
-            objects_in_buckets(bucket=self.src_bkt1, objects=[f"{obj_type}-obj1"],
+            list_objects_in_bucket(bucket=self.src_bkt1, objects=[f"{obj_type}-obj1"],
                                s3_test_obj=self.s3_obj)
             LOGGER.info("List %s-obj2 to dest-bucket1", obj_type)
-            objects_in_buckets(bucket=self.des_bkt1, objects=[f"{obj_type}-obj2"],
+            list_objects_in_bucket(bucket=self.des_bkt1, objects=[f"{obj_type}-obj2"],
                                s3_test_obj=self.s3_obj)
             self.parallel_copy_object((self.src_bkt1, f"{obj_type}-obj1", self.des_bkt1,
                                       f"{obj_type}-obj2"), (self.des_bkt1, f"{obj_type}-obj2",
@@ -577,13 +578,13 @@ class TestCopyObjects:
                                   f"{obj_type}-obj4", s3_testobj=self.s3_obj,
                                   down_path1=self.downld_path1, down_path2=self.downld_path2)
             LOGGER.info("List objects of src-bucket1")
-            objects_in_buckets(bucket=self.src_bkt1, objects=[f"{obj_type}-obj1",
+            list_objects_in_bucket(bucket=self.src_bkt1, objects=[f"{obj_type}-obj1",
                                f"{obj_type}-obj3", f"{obj_type}-obj4"], s3_test_obj=self.s3_obj)
             LOGGER.info("List objects to dest-bucket1")
-            objects_in_buckets(bucket=self.des_bkt1, objects=[f"{obj_type}-obj2",
+            list_objects_in_bucket(bucket=self.des_bkt1, objects=[f"{obj_type}-obj2",
                                f"{obj_type}-obj3"], s3_test_obj=self.s3_obj)
             LOGGER.info("List objects to dest-bucket2")
-            objects_in_buckets(bucket=self.des_bkt2, objects=[f"{obj_type}-obj4"],
+            list_objects_in_bucket(bucket=self.des_bkt2, objects=[f"{obj_type}-obj4"],
                                s3_test_obj=self.s3_obj)
         LOGGER.info("ENDED: Test Reverse copy operations (simple and multipart source objects)")
 
@@ -618,10 +619,10 @@ class TestCopyObjects:
                                   f"{obj_type}-obj3", s3_testobj=self.s3_obj,
                                   down_path1=self.downld_path1, down_path2=self.downld_path2)
             LOGGER.info("List objects to src-bucket1")
-            objects_in_buckets(bucket=self.src_bkt1, objects=[f"{obj_type}-obj1",
+            list_objects_in_bucket(bucket=self.src_bkt1, objects=[f"{obj_type}-obj1",
                               f"{obj_type}-obj4"], s3_test_obj=self.s3_obj)
             LOGGER.info("List objects to dest-bucket1")
-            objects_in_buckets(bucket=self.des_bkt1, objects=[f"{obj_type}-obj2",
+            list_objects_in_bucket(bucket=self.des_bkt1, objects=[f"{obj_type}-obj2",
                                f"{obj_type}-obj3"], s3_test_obj=self.s3_obj)
         LOGGER.info("ENDED: Test Cross source and destination bucket copy"
                     "(simple and multipart source objects)")
