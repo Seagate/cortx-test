@@ -599,7 +599,7 @@ class TestDataServerPodRestart:
                     "buckets for parallel DELETEs.", wr_bucket)
         LOGGER.info("Step 3.2: Perform WRITEs with variable object sizes for parallel READs")
         test_prefix_read = f'test-45517-read-{int(perf_counter_ns())}'
-        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_org.values())[0],
                                                     log_prefix=test_prefix_read, skipread=True,
                                                     skipcleanup=True, nclients=5, nsamples=5,
                                                     setup_s3bench=False)
@@ -622,7 +622,7 @@ class TestDataServerPodRestart:
         LOGGER.info("Step 4.2: Perform WRITEs with variable object sizes in background")
         test_prefix_write = f'test-45517-write-{int(perf_counter_ns())}'
         output_wr = Queue()
-        args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_write,
+        args = {'s3userinfo': list(users_org.values())[0], 'log_prefix': test_prefix_write,
                 'nclients': 1, 'nsamples': 5, 'skipread': True, 'skipcleanup': True,
                 'output': output_wr, 'setup_s3bench': False}
         thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
@@ -633,7 +633,7 @@ class TestDataServerPodRestart:
                     "background")
         LOGGER.info("Step 4.3: Perform READs and verify DI on the written data in background")
         output_rd = Queue()
-        args = {'s3userinfo': list(users.values())[0], 'log_prefix': test_prefix_read,
+        args = {'s3userinfo': list(users_org.values())[0], 'log_prefix': test_prefix_read,
                 'nclients': 1, 'nsamples': 5, 'skipwrite': True, 'skipcleanup': True,
                 'output': output_rd, 'setup_s3bench': False}
         thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
