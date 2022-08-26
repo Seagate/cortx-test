@@ -4656,7 +4656,6 @@ class TestCsmUser():
         self.csm_obj.check_expected_response(response, HTTPStatus.OK)
 
 
-    @pytest.mark.skip(reason="not_in_main_build_yet")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4684,7 +4683,6 @@ class TestCsmUser():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip(reason="not_in_main_build_yet")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4714,7 +4712,6 @@ class TestCsmUser():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip(reason="not_in_main_build_yet")
     @pytest.mark.prolonged
     @pytest.mark.lc
     @pytest.mark.csmrest

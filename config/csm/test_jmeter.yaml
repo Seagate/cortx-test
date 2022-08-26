@@ -46,8 +46,6 @@ test_44788:
   files_count : 100
   rampup: 2
   loop: 10
-test_44799:
-  thread_request: 2
 test_45719:
   users_count : 3
   rampup: 1

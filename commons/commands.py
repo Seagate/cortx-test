@@ -513,6 +513,8 @@ K8S_LDAP_CMD = "kubectl exec -it openldap-0 -- /bin/bash -c \"{}\""
 K8S_SVC_CMD = "kubectl get svc"
 K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule"
 K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule-"
+K8S_TAINT_CTRL = "kubectl taint nodes {} test=true:NoSchedule"
+K8S_UNTAINT_CTRL = "kubectl taint nodes {} test=true:NoSchedule-"
 K8S_CHK_TAINT = "kubectl describe node {} | grep Taints"
 K8S_CP_TO_LOCAL_CMD = "kubectl cp {}:{} {} -c {}"
 K8S_CP_PV_FILE_TO_LOCAL_CMD = "kubectl cp {}:{} {}"
@@ -532,7 +534,7 @@ K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
 K8S_APPLY_YAML_CONFIG = 'kubectl apply -f {}'
 GET_STATS = "consul kv get -recurse stats"
 GET_BYTECOUNT = "consul kv get -recurse bytecount"
-GET_REQUEST_USAGE = "consul kv get -recurse csm/config/usage"
+GET_REQUEST_USAGE = "consul kv get -recurse csm/config/CSM_SERVICE | grep request_quota"
 GET_MAX_USERS = "consul kv get -recurse csm/config/CSM_USERS"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
@@ -639,7 +641,7 @@ FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
 
 # LC Support Bundle
 SUPPORT_BUNDLE_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle generate " \
-                    "-c yaml:///etc/cortx/cluster.conf -t {} -b {} -m \"{}\""
+                    "-c consul://cortx-consul-server:8500/conf -t {} -b {} -m \"{}\""
 SUPPORT_BUNDLE_STATUS_LC = "/opt/seagate/cortx/utils/bin/cortx_support_bundle get_status -b {}"
 
 # SNS repair

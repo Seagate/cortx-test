@@ -20,6 +20,7 @@ from http import HTTPStatus
 import yaml
 
 from config import PROV_TEST_CFG
+from commons import configmanager
 from commons.constants import LOCAL_SOLUTION_PATH, K8S_SCRIPTS_PATH
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
@@ -30,12 +31,14 @@ class QueryDeployment(RestTestLib):
     def __init__(self):
         super(QueryDeployment, self).__init__()
         self.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
+        self.rest_resp_conf = configmanager.get_config_wrapper(
+            fpath="config/csm/rest_response_data.yaml")
 
     def get_solution_yaml(self):
         """
         Read solution yaml into a dictionary
         """
-        local_sol_path = LOCAL_SOLUTION_PATH 
+        local_sol_path = LOCAL_SOLUTION_PATH
         remote_sol_path = K8S_SCRIPTS_PATH + 'solution.yaml'
         self.log.info("Path for solution yaml on remote node: %s", remote_sol_path)
         solution_path = self.master.copy_file_to_local(remote_path=remote_sol_path,
@@ -69,80 +72,67 @@ class QueryDeployment(RestTestLib):
         return response
 
     # Function not ready
-    def verify_system_topology(self, expected_response=HTTPStatus.OK):
+    def verify_system_topology(self, deploy_version, expected_response=HTTPStatus.OK):
         """
         Verify Get system topology
         """
+        unique_list = []
         resp = self.get_system_topology()
         result = True
         if resp.status_code == expected_response:
             result = True
             get_response = resp.json()
             self.log.info("Verify id fields have unique values")
-            self.log.info("Verfying cvg and devices in resp and solution yaml")
-            # Verify deployment version and deployment time
+            for elements in get_response["topology"]:
+                if 'id' in elements.keys():
+                    unique_list.append(elements['id'])
+            if len(set(unique_list)) == len(unique_list):
+                self.log.info("id fields have unique values")
+            else:
+                self.log.error("duplicate values found for id fields")
+            self.log.info("Verify deployment version and time")
+            response_version = get_response["topology"]["version"]
+            if response_version == deploy_version:
+                self.log.info("Version match found")
+            else:
+                self.log.error("Version mismatch found")
         else:
             self.log.error("Status code check failed.")
             result = False
         return result, get_response
 
-    def get_cluster_topology(self, uri_param, cluster_id=None, auth_header=None):
-        """
-        Get cluster topology
-        :param header: header for api authentication
-        :cluster_id: id for the cluster
-        :return: response
-        """
-        self.log.info("Cluster id in cluster topology %s ", cluster_id)
-        self.log.info("query parameter for storage topology: %s", uri_param)
-        self.log.info("Get cluster topology request....")
-        cluster_param = 'clusters'
-        if cluster_id is not None:
-            cluster_param = cluster_param + '/' + cluster_id
-            self.log.info("Cluster param is %s", cluster_param)
-        if uri_param is not None:
-            uri_param = cluster_param + '/' + uri_param
-        self.log.info("cluster topology endpoint: %s", uri_param)
-        self.log.info("Logging query parameter for cluster topology: %s", uri_param)
-        response = self.get_system_topology(uri_param, auth_header)
-        return response
-
-    def get_certificate_topology(self, cluster_id: str, auth_header=None):
+    def get_certificate_topology(self, auth_header=None):
         """
         Get certificate topology
         :param header: header for api authentication
-        :cluster_id: id for the cluster
         :return: response
         """
         self.log.info("Get certificate topology request....")
         uri_param = 'certificates'
         self.log.info("Logging query parameter for certificate topology: %s", uri_param)
-        response = self.get_cluster_topology(uri_param, cluster_id, auth_header)
+        response = self.get_system_topology(uri_param, auth_header)
         return response
 
-    def get_storage_topology(self, cluster_id, storage_set_id=None, auth_header=None):
+    def get_storage_topology(self, storage_set_id=None, auth_header=None):
         """
         Get storage topology
         :param header: header for api authentication
-        :cluster_id: id for the cluster
         :storage_set_id: id for particular storage set
         :return: response
         """
-        self.log.info("Cluster id in storage topology %s ", cluster_id)
         self.log.info("Get storage topology request....")
-        uri_param = 'storage_set'
+        uri_param = 'storage_sets'
         if storage_set_id is not None:
             uri_param = uri_param + '/' + storage_set_id
         self.log.info("storage topology endpoint: %s", uri_param)
         self.log.info("Logging query parameter for storage topology: %s", uri_param)
-        response = self.get_cluster_topology(uri_param, cluster_id, auth_header)
+        response = self.get_system_topology(uri_param, auth_header)
         return response
 
-    def get_node_topology(self, cluster_id, node_id=None, auth_header=None):
+    def get_node_topology(self, node_id=None, auth_header=None):
         """
         Get node topology
         :param header: header for api authentication
-        :cluster_id: id for the cluster
         :node_id: id for particular node in cluster
         :return: response
         """
@@ -152,7 +142,7 @@ class QueryDeployment(RestTestLib):
             uri_param = uri_param + '/' + node_id
         self.log.info("node topology endpoint: %s", uri_param)
         self.log.info("Logging query parameter for node topology: %s", uri_param)
-        response = self.get_cluster_topology(uri_param, cluster_id, auth_header)
+        response = self.get_system_topology(uri_param, auth_header)
         return response
 
     #Function Not Ready
@@ -165,9 +155,13 @@ class QueryDeployment(RestTestLib):
         result = resp.status_code == expected_response
         if result:
             get_response = resp.json()
-            self.log.info("Verify node names")  
+            self.log.info("Verify node names")
+            resp_hostnames = []
+            for names in get_response["topology"]["nodes"]:
+                resp_hostnames.append(names["hostname"])
+            #compare for hostnames list received from each pod
             self.log.info("Verify number of nodes in resp and solution yaml")
-            nodes = len(get_response["topology"]["cluster"][0]["nodes"])
+            nodes = len(get_response["topology"]["nodes"])
             num_nodes = len(solution_yaml["solution"]["storage_set"]["nodes"])
             if num_nodes != nodes:
                 self.log.error("Actual and expected response for number of nodes didnt match")
@@ -176,34 +170,30 @@ class QueryDeployment(RestTestLib):
             self.log.error("Status code check failed.")
         return result
 
-    def verify_storage_set(self, cluster_id: str, storage_set_id: str = None,
-                                          expected_response=HTTPStatus.OK):
+    def verify_storage_set(self, storage_set_id: str = None,
+                                 expected_response=HTTPStatus.OK):
         """
         Verify storage set details
         """
         resp_dix = ""
         err_msg = ""
-        resp = self.get_storage_topology(cluster_id, storage_set_id = storage_set_id)
+        resp = self.get_storage_topology(storage_set_id = storage_set_id)
         result = resp.status_code == expected_response
         solution_yaml = self.get_solution_yaml()
         if result:
             get_response = resp.json()
             self.log.info("Verifying sns and dix values in resp and solution yaml")
-            storage_set_dix = get_response[
-                "topology"]["cluster"][0]["storage_set"]["durability"]["dix"]
-            resp_dix = resp_dix.join([str(storage_set_dix["data"]), str(storage_set_dix["parity"]),
-                                      str(storage_set_dix["spare"])])
+            resp_dix = get_response[
+                "topology"]["storage_sets"][0]["durability"]["data"]
             input_dix = solution_yaml["solution"]["storage_sets"][0]["durability"]["dix"]
             self.log.info("Printing dix value from response and solution yaml %s and %s",
                                resp_dix, input_dix)
-            storage_set_sns = get_response[
-                "topology"]["cluster"][0]["storage_set"]["durability"]["sns"]
-            resp_sns = resp_sns.join([str(storage_set_sns["data"]), str(storage_set_sns["parity"]),
-                                      str(storage_set_sns["spare"])])
+            resp_sns = get_response[
+                "topology"]["storage_sets"][0]["durability"]["metadata"]
             input_sns = solution_yaml["solution"]["storage_sets"][0]["durability"]["sns"]
             self.log.info("Printing sns value from response and solution yaml %s and %s",
                                resp_sns, input_sns)
-            if input_dix != resp_dix: 
+            if input_dix != resp_dix:
                 err_msg = "Actual and expected response for dix didnt match"
                 self.log.error(err_msg)
                 result = False
@@ -216,3 +206,4 @@ class QueryDeployment(RestTestLib):
             self.log.error(err_msg)
             result = False
         return resp, result, err_msg
+

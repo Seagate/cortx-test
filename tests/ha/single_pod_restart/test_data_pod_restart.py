@@ -24,7 +24,6 @@ HA test suite for single data Pod restart
 
 import logging
 import os
-import random
 import secrets
 import threading
 import time
@@ -66,15 +65,17 @@ class TestDataPodRestart:
         """
         LOGGER.info("STARTED: Setup Module operations.")
         cls.num_nodes = len(CMN_CFG["nodes"])
-        cls.username = []
-        cls.password = []
-        cls.node_master_list = []
-        cls.hlth_master_list = []
-        cls.node_worker_list = []
+        cls.setup_type = CMN_CFG["setup_type"]
+        cls.username = list()
+        cls.password = list()
+        cls.node_master_list = list()
+        cls.hlth_master_list = list()
+        cls.node_worker_list = list()
         cls.ha_obj = HAK8s()
         cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = cls.set_name = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = cls.node_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
+        cls.num_replica = cls.delete_pod = cls.set_type = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -109,7 +110,6 @@ class TestDataPodRestart:
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
         self.bucket_name = f"ha-mp-bkt-{int(perf_counter_ns())}"
         self.object_name = f"ha-mp-obj-{int(perf_counter_ns())}"
-        self.extra_files = list()
         if not os.path.exists(self.test_dir_path):
             resp = system_utils.make_dirs(self.test_dir_path)
             LOGGER.info("Created path: %s", resp)
@@ -135,13 +135,11 @@ class TestDataPodRestart:
         """
         This function will be invoked after each test function in the module.
         """
+        LOGGER.info("STARTED: Teardown Operations.")
         if self.s3_clean:
             LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
             assert_utils.assert_true(resp[0], resp[1])
-        if os.path.exists(self.test_dir_path):
-            system_utils.remove_dirs(self.test_dir_path)
-        LOGGER.info("STARTED: Teardown Operations.")
         if self.restore_pod:
             resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                            restore_method=self.restore_method,
@@ -156,9 +154,9 @@ class TestDataPodRestart:
         LOGGER.info("Cleanup: Check cluster status and start it if not up.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Removing extra files")
-        for file in self.extra_files:
-            system_utils.remove_file(file)
+        LOGGER.info("Removing all files from %s", self.test_dir_path)
+        if os.path.exists(self.test_dir_path):
+            system_utils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-locals
@@ -1439,7 +1437,7 @@ class TestDataPodRestart:
         LOGGER.info("Step 2: Shutdown the data pod by kubectl delete.")
         LOGGER.info("Get pod name to be deleted")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.POD_NAME_PREFIX)
-        pod_name = random.sample(pod_list, 1)[0]
+        pod_name = self.system_random.sample(pod_list, 1)[0]
 
         LOGGER.info("Deleting pod %s", pod_name)
         resp = self.node_master_list[0].delete_pod(pod_name=pod_name, force=True)
