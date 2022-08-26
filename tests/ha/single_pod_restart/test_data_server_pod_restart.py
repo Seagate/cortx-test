@@ -535,6 +535,7 @@ class TestDataServerPodRestart:
         LOGGER.info("COMPLETED: Verify IO when any 1 data pod and any 1 server pod restart by "
                     "replica method")
 
+    # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-45517")
@@ -566,8 +567,7 @@ class TestDataServerPodRestart:
             self.pod_dict[pod_prefix].append(resp[1][pod_name]['method'])
             assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
             LOGGER.info("successfully shutdown pod %s", self.pod_dict.get(pod_prefix)[0])
-        self.restore_pod = True
-        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+            self.restore_pod = True
         LOGGER.info("Step 2: Successfully shutdown one data and one server pod. Verified cluster "
                     "and services states are as expected & remaining pods status is online")
         event = threading.Event()  # Event to be used to send when pod restart start
@@ -616,7 +616,6 @@ class TestDataServerPodRestart:
         thread_del = threading.Thread(target=self.ha_obj.put_get_delete,
                                       args=(event, s3_test_obj,), kwargs=args)
         thread_del.daemon = True  # Daemonize thread
-        thread_del.start()
         LOGGER.info("Step 4.1: Successfully started DELETEs in background for %s buckets",
                     del_bucket)
         LOGGER.info("Step 4.2: Perform WRITEs with variable object sizes in background")
@@ -628,7 +627,6 @@ class TestDataServerPodRestart:
         thread_wri = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                       kwargs=args)
         thread_wri.daemon = True  # Daemonize thread
-        thread_wri.start()
         LOGGER.info("Step 4.2: Successfully started WRITEs with variable sizes objects in "
                     "background")
         LOGGER.info("Step 4.3: Perform READs and verify DI on the written data in background")
@@ -640,6 +638,8 @@ class TestDataServerPodRestart:
                                      kwargs=args)
         thread_rd.daemon = True  # Daemonize thread
         thread_rd.start()
+        thread_wri.start()
+        thread_del.start()
         LOGGER.info("Step 4.3: Successfully started READs and verify on the written data in "
                     "background")
         LOGGER.info("Step 4: Successfully starting three independent background threads for READs,"

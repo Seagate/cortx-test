@@ -174,6 +174,8 @@ class TestDataServerPodRestartAPI:
         system_utils.cleanup_dir(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-45534")
@@ -188,6 +190,10 @@ class TestDataServerPodRestartAPI:
         chunk_obj_path = os.path.join(self.test_dir_path, self.object_name)
         upload_op = Queue()
         workload_info = dict()
+        t_t = int(perf_counter_ns())
+        bucket_name = f"chunk-upload-bkt-{t_t}"
+        object_name = f"chunk-upload-obj-{t_t}"
+        chunk_obj_path = os.path.join(self.test_dir_path, object_name)
         LOGGER.info("Step 1: Perform setup steps for jclient")
         jc_obj = JCloudClient()
         resp = self.ha_obj.setup_jclient(jc_obj)
@@ -230,8 +236,7 @@ class TestDataServerPodRestartAPI:
             self.pod_dict[pod_prefix].append(resp[1][pod_name]['method'])
             assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
             LOGGER.info("successfully shutdown pod %s", self.pod_dict.get(pod_prefix)[0])
-        self.restore_pod = True
-        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+            self.restore_pod = True
         LOGGER.info("Step 3: Successfully shutdown one data and one server pod. Verified cluster "
                     "and services states are as expected & remaining pods status is online")
         LOGGER.info("Step 4: Download object which was uploaded in healthy cluster and verify "
@@ -249,10 +254,6 @@ class TestDataServerPodRestartAPI:
                                   f"Actual checksum: {dnld_chksm}")
         LOGGER.info("Step 4: Successfully downloaded object which was uploaded in healthy cluster "
                     "and verified checksum")
-        t_t = int(perf_counter_ns())
-        bucket_name = f"chunk-upload-bkt-{t_t}"
-        object_name = f"chunk-upload-obj-{t_t}"
-        chunk_obj_path = os.path.join(self.test_dir_path, object_name)
         LOGGER.info("Step 5: Start chunk upload in background")
         args = {'s3_data': self.s3_clean, 'bucket_name': bucket_name,
                 'file_size': file_size, 'chunk_obj_path': chunk_obj_path, 'output': upload_op}
