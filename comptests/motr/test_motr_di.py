@@ -233,8 +233,8 @@ class TestCorruptDataDetection:
             )
 
             # On the Client POD - cortx - hax container
-            for b_size, (cnt_c, cnt_u), layout, offset in zip(
-                    bsize_list, count_list, layout_ids, offsets
+            for b_size, (cnt_c, cnt_u), layout in zip(
+                    bsize_list, count_list, layout_ids
             ):
                 # Create file (object) with dd on all client pods
                 self.motr_obj.dd_cmd(b_size, cnt_c, infile, node_pod)
