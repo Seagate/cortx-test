@@ -538,7 +538,6 @@ class TestDataServerPodRestart:
     # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="Bucket CRUDs not supported with DTM0Int0")
     @pytest.mark.tags("TEST-45517")
     def test_cont_io_data_server_pod_restart(self):
         """
