@@ -578,10 +578,8 @@ class TestDataServerPodRestart:
         del_output = Queue()
         remaining_bkt = HA_CFG["s3_bucket_data"]["no_bck_writes"]
         del_bucket = wr_bucket - remaining_bkt
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.s3_clean.update(users)
-        access_key = list(users.values())[0]['accesskey']
-        secret_key = list(users.values())[0]['secretkey']
+        access_key = list(users_org.values())[0]['accesskey']
+        secret_key = list(users_org.values())[0]['secretkey']
         test_prefix_del = f'test-45517-delete-{int(perf_counter_ns())}'
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
