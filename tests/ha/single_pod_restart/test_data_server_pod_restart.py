@@ -538,6 +538,7 @@ class TestDataServerPodRestart:
     # pylint: disable=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
+    @pytest.mark.skip(reason="Bucket CRUDs not supported with DTM0Int0")
     @pytest.mark.tags("TEST-45517")
     def test_cont_io_data_server_pod_restart(self):
         """
@@ -553,26 +554,9 @@ class TestDataServerPodRestart:
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects.")
-        LOGGER.info("Step 2: Shutdown one data and one server pod with replica method and verify "
-                    "cluster & remaining pods status")
-        for pod_prefix in self.pod_dict:
-            num_replica = self.pod_dict[pod_prefix][-1] - 1
-            resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-                master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-                pod_prefix=[pod_prefix], delete_pod=[self.pod_dict.get(pod_prefix)[0]],
-                num_replica=num_replica)
-            assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-            pod_name = list(resp[1].keys())[0]
-            self.pod_dict[pod_prefix].append(resp[1][pod_name]['deployment_name'])
-            self.pod_dict[pod_prefix].append(resp[1][pod_name]['method'])
-            assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-            LOGGER.info("successfully shutdown pod %s", self.pod_dict.get(pod_prefix)[0])
-            self.restore_pod = True
-        LOGGER.info("Step 2: Successfully shutdown one data and one server pod. Verified cluster "
-                    "and services states are as expected & remaining pods status is online")
         event = threading.Event()  # Event to be used to send when pod restart start
         wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
-        LOGGER.info("Step 3.1: Perform WRITEs with variable object sizes on %s buckets "
+        LOGGER.info("Step 2.1: Perform WRITEs with variable object sizes on %s buckets "
                     "for parallel DELETEs.", wr_bucket)
         wr_output = Queue()
         del_output = Queue()
@@ -595,16 +579,33 @@ class TestDataServerPodRestart:
                                                            f"of buckets. Created {len(buckets)} "
                                                            "number of buckets")
         s3_data = wr_resp[0]
-        LOGGER.info("Step 3.1: Successfully performed WRITEs with variable object sizes on %s "
+        LOGGER.info("Step 2.1: Successfully performed WRITEs with variable object sizes on %s "
                     "buckets for parallel DELETEs.", wr_bucket)
-        LOGGER.info("Step 3.2: Perform WRITEs with variable object sizes for parallel READs")
+        LOGGER.info("Step 2.2: Perform WRITEs with variable object sizes for parallel READs")
         test_prefix_read = f'test-45517-read-{int(perf_counter_ns())}'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users_org.values())[0],
                                                     log_prefix=test_prefix_read, skipread=True,
                                                     skipcleanup=True, nclients=5, nsamples=5,
                                                     setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 3.2: Performed WRITEs with variable sizes objects for parallel READs.")
+        LOGGER.info("Step 2.2: Performed WRITEs with variable sizes objects for parallel READs.")
+        LOGGER.info("Step 3: Shutdown one data and one server pod with replica method and verify "
+                    "cluster & remaining pods status")
+        for pod_prefix in self.pod_dict:
+            num_replica = self.pod_dict[pod_prefix][-1] - 1
+            resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+                master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+                pod_prefix=[pod_prefix], delete_pod=[self.pod_dict.get(pod_prefix)[0]],
+                num_replica=num_replica)
+            assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+            pod_name = list(resp[1].keys())[0]
+            self.pod_dict[pod_prefix].append(resp[1][pod_name]['deployment_name'])
+            self.pod_dict[pod_prefix].append(resp[1][pod_name]['method'])
+            assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+            LOGGER.info("successfully shutdown pod %s", self.pod_dict.get(pod_prefix)[0])
+            self.restore_pod = True
+        LOGGER.info("Step 3: Successfully shutdown one data and one server pod. Verified cluster "
+                    "and services states are as expected & remaining pods status is online")
         LOGGER.info("Step 4: Starting three independent background threads for READs, WRITEs & "
                     "DELETEs.")
         LOGGER.info("Step 4.1: Start continuous DELETEs in background on random %s buckets",
@@ -670,33 +671,34 @@ class TestDataServerPodRestart:
         LOGGER.info("Waiting for background IOs thread to join")
         thread_wri.join()
         thread_rd.join()
-        thread_del.join()
-        LOGGER.info("Step 6.1: Verify status for In-flight DELETEs")
-        del_resp = tuple()
-        while len(del_resp) != 2:
-            del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        if not del_resp:
-            assert_utils.assert_true(False, "Background process failed to do deletes")
-        event_del_bkt = del_resp[0]
-        fail_del_bkt = del_resp[1]
-        assert_utils.assert_false(len(fail_del_bkt) or len(event_del_bkt),
-                                  "Expected all pass, Buckets which failed in DELETEs before and "
-                                  f"after pod deletion: {fail_del_bkt}. Buckets which failed in "
-                                  f"DELETEs during pod deletion: {event_del_bkt}.")
-        LOGGER.info("Step 6.1: Verified status for In-flight DELETEs")
+        if CMN_CFG["dtm0_disabled"]:
+            thread_del.join()
+            LOGGER.info("Step 6.1: Verify status for In-flight DELETEs")
+            del_resp = tuple()
+            while len(del_resp) != 2:
+                del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+            if not del_resp:
+                assert_utils.assert_true(False, "Background process failed to do deletes")
+            event_del_bkt = del_resp[0]
+            fail_del_bkt = del_resp[1]
+            assert_utils.assert_false(len(fail_del_bkt) or len(event_del_bkt),
+                                      "Expected all pass, Buckets which failed in DELETEs before and "
+                                      f"after pod deletion: {fail_del_bkt}. Buckets which failed in "
+                                      f"DELETEs during pod deletion: {event_del_bkt}.")
+            LOGGER.info("Step 6.1: Verified status for In-flight DELETEs")
         LOGGER.info("Step 6.2: Verify status for In-flight WRITEs")
         responses_wr = dict()
         while len(responses_wr) != 2:
             responses_wr = output_wr.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses_wr["pass_res"])
         fail_logs = list(x[1] for x in responses_wr["fail_res"])
-        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        all_logs = pass_logs + fail_logs
+        resp = self.ha_obj.check_s3bench_log(file_paths=all_logs)
         assert_utils.assert_false(len(resp[1]), "WRITEs before and after pod deletion are "
                                                 "expected to pass.Logs which contain failures:"
-                                                f"{resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
-        assert_utils.assert_false(len(resp[1]), "In-flight WRITEs Logs which contain failures: "
-                                                f"{resp[1]}")
+                                                f" {resp[1]}. Logs for IOs when event was clear: "
+                                                f"{pass_logs}. Logs for IOs when event was set:"
+                                                f" {fail_logs}")
         LOGGER.info("Step 6.2: Verified status for In-flight WRITEs")
         LOGGER.info("Step 6.3: Verify status for In-flight READs/Verify DI")
         responses_rd = dict()
@@ -704,12 +706,12 @@ class TestDataServerPodRestart:
             responses_rd = output_rd.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses_rd["pass_res"])
         fail_logs = list(x[1] for x in responses_rd["fail_res"])
-        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), "READs/VerifyDI logs which contain failures:"
-                                                f"{resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
-        assert_utils.assert_false(len(resp[1]), "READs/VerifyDI Logs which contain failures: "
-                                                f"{resp[1]}")
+        all_logs = pass_logs + fail_logs
+        resp = self.ha_obj.check_s3bench_log(file_paths=all_logs)
+        assert_utils.assert_false(len(resp[1]), "READs/VerifyDI before and after pod deletion are "
+                                  "expected to pass. Logs which contain failures:"
+                                  f" {resp[1]}. Logs for IOs when event was clear: {pass_logs}. "
+                                  f"Logs for IOs when event was set: {fail_logs}")
         LOGGER.info("Step 6.3: Verified status for In-flight READs/Verify DI")
         LOGGER.info("Step 6: Verified status for In-flight READs/WRITEs/DELETEs while data and "
                     "server pod was restarted")
