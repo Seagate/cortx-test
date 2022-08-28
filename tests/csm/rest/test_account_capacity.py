@@ -42,6 +42,7 @@ from commons.utils import assert_utils, system_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG, S3_BLKBOX_CFG
 from libs.csm.csm_interface import csm_api_factory
+from libs.csm.extensions.csm_prov_ext import CSMExt
 from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.di.di_mgmt_ops import ManagementOPs
@@ -56,7 +57,6 @@ from libs.s3.s3_common_test_lib import create_attach_list_iam_policy
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
 
-
 class TestAccountCapacity():
     """Account Capacity Testsuite"""
 
@@ -66,6 +66,7 @@ class TestAccountCapacity():
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
         cls.csm_obj = csm_api_factory("rest")
+        cls.ext_obj = CSMExt(cls.csm_obj)
         cls.acc_capacity = AccountCapacity()
         cls.log.info("Initiating Rest Client ...")
         cls.s3user = RestS3user()
@@ -124,16 +125,12 @@ class TestAccountCapacity():
         self.log.info("[STARTED] ######### Teardown #########")
         if self.restore_pod:
             self.log.info("Restore deleted pods.")
-            resp = self.ha_obj.restore_pod(pod_obj=self.master_node_list[0],
-                                           restore_method=self.restore_method,
-                                           restore_params={"deployment_name": self.deployment_name,
-                                                           "deployment_backup":
-                                                               self.deployment_backup,
-                                                           "num_replica": self.num_replica,
-                                                           "set_name": self.set_name})
+            resp = self.ext_obj.restore_cluster(self.restore_method,
+                                                self.set_name,
+                                                self.num_replica)
             self.log.debug("Response: %s", resp)
-            assert resp[0], f"Failed to restore pod by {self.restore_method} way"
-            self.log.info("Successfully restored pod by %s way", self.restore_method)
+            assert resp, "Failed to restore pod"
+            self.log.info("Successfully restored pod")
 
         self.log.info("Deleting buckets %s & associated objects", self.buckets_created)
         buckets_deleted = []
@@ -978,43 +975,18 @@ class TestAccountCapacity():
         users = mgm_ops.create_account_users(nusers=test_cfg["users_count"], use_cortx_cli=False)
         data = mgm_ops.create_buckets(nbuckets=test_cfg["buckets_count"], users=users)
 
-        self.log.info("Step 2: [Start] Shutdown the data pod safely")
-        num_replica = 0
-        self.log.info("Get pod to be deleted")
-        sts_dict = self.csm_obj.master.get_sts_pods(pod_prefix=POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        self.log.debug("%s Statefulset: %s", POD_NAME_PREFIX, sts_list)
-        sts = self.csm_obj.random_gen.sample(sts_list, 1)[0]
-        delete_pod = sts_dict[sts][-1]
-        self.log.info("Pod to be deleted is %s", delete_pod)
-        set_type, set_name = self.csm_obj.master.get_set_type_name(pod_name=delete_pod)
-        if set_type == STATEFULSET:
-            resp = self.csm_obj.master.get_num_replicas(set_type, set_name)
-            assert resp[0], resp
-            self.num_replica = int(resp[1])
-            num_replica = self.num_replica - 1
-
-        self.log.info("Shutdown random data pod by replica method and "
-                    "verify cluster & remaining pods status")
-        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.csm_obj.master, health_obj=self.csm_obj.hlth_master,
-            delete_pod=[delete_pod], num_replica=num_replica)
-        # Assert if empty dictionary
-        assert resp[1], "Failed to shutdown/delete pod"
-        pod_name = list(resp[1].keys())[0]
-        if set_type == STATEFULSET:
-            self.set_name = resp[1][pod_name]['deployment_name']
-        elif set_type == REPLICASET:
-            self.deployment_name = resp[1][pod_name]['deployment_name']
+        self.log.info("degrade cluster")
+        resp,self.set_name,self.restore_method,self.num_replica = self.ext_obj.degrade_cluster()
+        self.log.debug("Response: %s", resp)
+        assert resp[0], "Failed to degrade cluster"
         self.restore_pod = True
-        self.restore_method = resp[1][pod_name]['method']
-        assert resp[0], "Cluster/Services status is not as expected"
+        self.log.info("Successfully degrade cluster")
 
-        # self.log.info("Step 3: Start I/O")
-        # run_data_chk_obj = RunDataCheckManager(users=data)
-        # pref_dir = {"prefix_dir": 'test_44794'}
-        # run_data_chk_obj.start_io_async(
-        #     users=data, buckets=None, files_count=test_cfg["files_count"], prefs=pref_dir)
+        self.log.info("Step 3: Start I/O")
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'test_44794'}
+        run_data_chk_obj.start_io_async(
+            users=data, buckets=None, files_count=test_cfg["files_count"], prefs=pref_dir)
 
         self.log.info("Step 4: Poll Degraded Capacity")
         jmx_file = "CSM_Poll_Degraded_Capacity.jmx"
@@ -1026,8 +998,8 @@ class TestAccountCapacity():
             loop=test_cfg["loop"])
         assert result, "Errors reported in the Jmeter execution"
 
-        # stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True, eventual_stop=True)
-        # self.log.info("stop_res -  %s", stop_res)
+        stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True, eventual_stop=True)
+        self.log.info("stop_res -  %s", stop_res)
 
         self.log.info("Step 5: Call degraded capacity api")
         response = self.csm_obj.get_degraded_capacity(endpoint_param=None)
@@ -1036,16 +1008,14 @@ class TestAccountCapacity():
         resp = self.csm_obj.validate_metrics(response.json(), endpoint_param=None)
         assert resp, "Rest data metrics check failed in full mode"
 
-        resp = self.ha_obj.restore_pod(pod_obj=self.csm_obj.master,
-                                        restore_method=self.restore_method,
-                                        restore_params={"deployment_name": self.deployment_name,
-                                                        "deployment_backup":
-                                                            self.deployment_backup,
-                                                        "num_replica": self.num_replica,
-                                                        "set_name": self.set_name})
+
+        self.log.info("Restore deleted pod")
+        resp = self.ext_obj.restore_cluster(self.restore_method,
+                                            self.set_name,
+                                            self.num_replica)
         self.log.debug("Response: %s", resp)
-        assert resp[0], f"Failed to restore pod by {self.restore_method} way"
+        assert resp, "Failed to restore pod"
+        self.log.info("Successfully restored pod")
         self.restore_pod = False
-        self.log.info("Successfully restored pod by %s way", self.restore_method)
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
