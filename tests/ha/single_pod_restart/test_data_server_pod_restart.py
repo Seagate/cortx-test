@@ -957,9 +957,11 @@ class TestDataServerPodRestart:
     @pytest.mark.tags("TEST-45536")
     def test_io_datapod_serverpod_rst(self):
         """
-        Verify IO when 1 data pod and 1 server pod down and then restart by replica
-        method (one-by-one)
+        Verify IO when 1 data pod and 1 server pod down and then restart data pod by replica
+        method and Read/verify during server pod restart
         """
+        LOGGER.info("STARTED: Verify IO when 1 data pod and 1 server pod down and then restart"
+                    " data pod by replica method and Read/verify during server pod restart")
         LOGGER.info("STEP 1: Perform WRITEs/READs/Verify with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = f'test-45536-{int(perf_counter_ns())}'
@@ -1140,5 +1142,5 @@ class TestDataServerPodRestart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 12: Performed WRITEs-READs-Verify with variable sizes objects after pod "
                     "restart")
-        LOGGER.info("COMPLETED: Verify IO when 1 data pod and 1 server pod down and then restart "
-                    "by replica method (one-by-one)")
+        LOGGER.info("COMPLETED: Verify IO when 1 data pod and 1 server pod down and then restart"
+                    " data pod by replica method and Read/verify during server pod restart")
