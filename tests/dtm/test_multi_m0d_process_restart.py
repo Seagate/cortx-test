@@ -30,7 +30,6 @@ from time import perf_counter_ns
 
 import pytest
 
-from commons import configmanager
 from commons import constants as const
 from commons.constants import POD_NAME_PREFIX, M0D_SVC
 from commons.helpers.health_helper import Health
@@ -41,8 +40,8 @@ from commons.utils import assert_utils
 from commons.utils import support_bundle_utils
 from commons.utils import system_utils
 from config import CMN_CFG
-from config.s3 import S3_CFG
 from config import DTM_TEST_CFG
+from config.s3 import S3_CFG
 from conftest import LOG_DIR
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from libs.ha.ha_common_libs_k8s import HAK8s

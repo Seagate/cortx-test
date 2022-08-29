@@ -25,7 +25,7 @@ import re
 import munch
 from typing import List
 from commons import configmanager
-from commons.params import S3_CONFIG, DTM_TEST_CFG_PATH
+from commons.params import S3_CONFIG
 from commons.params import DURABILITY_CFG_PATH
 from commons.params import COMMON_CONFIG
 from commons.params import CSM_CONFIG
@@ -41,6 +41,7 @@ from commons.params import PROV_CONFIG_PATH
 from commons.constants import PROD_FAMILY_LC
 from commons.constants import S3_ENGINE_RGW
 from commons.params import DTM_CFG_PATH
+from commons.params import DTM_TEST_CFG_PATH
 
 
 def split_args(sys_cmd: List):
