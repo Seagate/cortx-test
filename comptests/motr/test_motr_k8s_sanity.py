@@ -82,8 +82,8 @@ class TestExecuteK8Sanity:
         This is to run the m0crate utility tests.
         param: param_loop: Fixture which provides one set of values required to run the utility
         """
-        source_file = TEMP_PATH + '/source_file'
-        remote_file = TEMP_PATH + '/' + M0CRATE_WORKLOAD_YML.split("/")[-1]
+        source_file = os.path.join(TEMP_PATH, 'source_file')
+        remote_file = os.path.join(TEMP_PATH, M0CRATE_WORKLOAD_YML.split("/")[-1])
         m0cfg = config_utils.read_yaml(M0CRATE_WORKLOAD_YML)[1]
         node = self.system_random.choice(self.motr_obj.cortx_node_list)
         node_enpts = self.motr_obj.get_cortx_node_endpoints(node)
@@ -119,8 +119,8 @@ class TestExecuteK8Sanity:
         Verify different size object m0cp m0cat operation
         """
         logger.info("STARTED: Verify multiple m0cp/m0cat operation")
-        infile = TEMP_PATH + '/input'
-        outfile = TEMP_PATH + '/output'
+        infile = os.path.join(TEMP_PATH, 'input')
+        outfile = os.path.join(TEMP_PATH, 'output')
         node_pod_dict = self.motr_obj.node_pod_dict
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
         for client_num in range(motr_client_num):
@@ -186,8 +186,8 @@ class TestExecuteK8Sanity:
         """
         This will test if the data written remains intact after cluster shutdown
         """
-        infile = TEMP_PATH + 'input'
-        outfile = TEMP_PATH + 'output'
+        infile = os.path.join(TEMP_PATH, 'input')
+        outfile = os.path.join(TEMP_PATH, 'output')
         object_md5sum_dict = {}
         object_bsize_dict = {}
         try:
@@ -226,7 +226,7 @@ class TestExecuteK8Sanity:
         This will test cluster health with m0crate IOs after cluster shutdown
         """
         config_file = os.path.join(os.getcwd(), "config/motr/test_29707_m0crate_workload.yaml")
-        remote_file = TEMP_PATH + '/' + config_file.split("/")[-1]
+        remote_file = os.path.join(TEMP_PATH, config_file.split("/")[-1])
         for node in self.motr_obj.node_pod_dict:
             self.motr_obj.update_m0crate_config(config_file, node)
             self.motr_obj.m0crate_run(config_file, remote_file, node)
@@ -269,7 +269,7 @@ class TestExecuteK8Sanity:
             return_dict = multiprocessing.Manager().dict()
             config_file = os.path.join(os.getcwd(), "config/motr/test_29706_m0crate_workload.yaml")
             path, yaml_file = config_file.rsplit("/", 1)
-            remote_file = TEMP_PATH + '/' + yaml_file
+            remote_file = os.path.join(TEMP_PATH, yaml_file)
             for node in self.motr_obj.cortx_node_list:
                 bkup_file = path + "/" + uuid.uuid4().hex[0:4] + "_" + yaml_file
                 temp_files.append(bkup_file)
