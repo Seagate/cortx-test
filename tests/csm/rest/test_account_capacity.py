@@ -65,7 +65,7 @@ class TestAccountCapacity():
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
         cls.csm_obj = csm_api_factory("rest")
-        cls.ext_obj = CSMExt(cls.csm_obj)
+        cls.ext_obj = CSMExt(cls.csm_obj.master, cls.csm_obj.workers, cls.csm_obj.hlth_master)
         cls.acc_capacity = AccountCapacity()
         cls.log.info("Initiating Rest Client ...")
         cls.s3user = RestS3user()
@@ -111,7 +111,8 @@ class TestAccountCapacity():
                 cls.worker_node_list.append(LogicalNode(hostname=node["hostname"],
                                                         username=node["username"],
                                                         password=node["password"]))
-        cls.restore_pod = cls.restore_method = cls.deployment_name = cls.set_name = None
+        cls.restore_pod = cls.restore_method = cls.deployment_name = None
+        cls.restore_pod_data = cls.set_name = None
         cls.deployment_backup = None
         if not os.path.exists(TEST_DATA_FOLDER):
             os.mkdir(TEST_DATA_FOLDER)
@@ -124,12 +125,21 @@ class TestAccountCapacity():
         self.log.info("[STARTED] ######### Teardown #########")
         if self.restore_pod:
             self.log.info("Restore deleted pods.")
-            resp = self.ext_obj.restore_cluster(self.restore_method,
+            resp = self.ha_obj.restore_pod(pod_obj=self.master_node_list[0],
+                                           restore_method=self.restore_method,
+                                           restore_params={"deployment_name": self.deployment_name,
+                                                           "deployment_backup":
+                                                               self.deployment_backup})
+            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            self.log.info("Successfully restored pod by %s way", self.restore_method)
+        if self.restore_pod_data:
+            self.log.info("Restore deleted data pods.")
+            resp = self.ext_obj.restore_data_pod(self.restore_method,
                                                 self.set_name,
-                                                self.num_replica+1)
+                                                self.num_replica)
             self.log.debug("Response: %s", resp)
             assert resp, "Failed to restore pod"
-            self.log.info("Successfully restored pod")
+            self.log.info("Successfully restored data pod")
 
         self.log.info("Deleting buckets %s & associated objects", self.buckets_created)
         buckets_deleted = []
@@ -975,10 +985,10 @@ class TestAccountCapacity():
         data = mgm_ops.create_buckets(nbuckets=test_cfg["buckets_count"], users=users)
 
         self.log.info("degrade cluster")
-        resp,self.set_name,self.restore_method,self.num_replica = self.ext_obj.degrade_cluster()
+        resp,self.set_name,self.num_replica = self.ext_obj.delete_data_pod()
         self.log.debug("Response: %s", resp)
         assert resp, "Failed to degrade cluster"
-        self.restore_pod = True
+        self.restore_pod_data = True
         self.log.info("Successfully degrade cluster")
 
         self.log.info("Step 3: Start I/O")
@@ -1008,11 +1018,11 @@ class TestAccountCapacity():
         assert resp, "Rest data metrics check failed in full mode"
 
         self.log.info("Restore deleted pod")
-        resp = self.ext_obj.restore_cluster(self.restore_method, self.set_name, self.num_replica+1)
+        resp = self.ext_obj.restore_data_pod(self.set_name, self.num_replica)
         self.log.debug("Response: %s", resp)
         assert resp, "Failed to restore pod"
         self.log.info("Successfully restored pod")
-        self.restore_pod = False
+        self.restore_pod_data = False
 
         self.log.info("delete objects.")
         resp = self.ha_obj.delete_s3_acc_buckets_objects(s3_data=users, obj_crud=True)

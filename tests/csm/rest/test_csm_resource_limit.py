@@ -45,7 +45,7 @@ class TestResourceLimit():
         cls.jmx_obj = JmeterInt()
 
         cls.csm_obj = csm_api_factory("rest")
-        cls.prov_obj = CSMExt(cls.csm_obj)
+        cls.prov_obj = CSMExt(cls.csm_obj.master, cls.csm_obj.workers, cls.csm_obj.hlth_master)
         cls.test_cfgs = config_utils.read_yaml('config/csm/test_rest_resource_limit.yaml')[1]
         cls.rest_resp_conf = configmanager.get_config_wrapper(
             fpath="config/csm/rest_response_data.yaml")
