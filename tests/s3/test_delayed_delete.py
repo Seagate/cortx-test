@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 
-"""S3Background or Delayed Delete test module."""
+"""CORTX LC S3Background or Delayed Delete test module."""
 
 import logging
 import os
