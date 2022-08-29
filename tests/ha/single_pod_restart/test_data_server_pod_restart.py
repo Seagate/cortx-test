@@ -670,21 +670,20 @@ class TestDataServerPodRestart:
         LOGGER.info("Waiting for background IOs thread to join")
         thread_wri.join()
         thread_rd.join()
-        if CMN_CFG["dtm0_disabled"]:
-            thread_del.join()
-            LOGGER.info("Step 6.1: Verify status for In-flight DELETEs")
-            del_resp = tuple()
-            while len(del_resp) != 2:
-                del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-            if not del_resp:
-                assert_utils.assert_true(False, "Background process failed to do deletes")
-            event_del_bkt = del_resp[0]
-            fail_del_bkt = del_resp[1]
-            assert_utils.assert_false(len(fail_del_bkt) or len(event_del_bkt),
-                                      "Expected all pass, Buckets which failed in DELETEs before "
-                                      f"and after pod deletion: {fail_del_bkt}. Buckets which "
-                                      f"failed in DELETEs during pod deletion: {event_del_bkt}.")
-            LOGGER.info("Step 6.1: Verified status for In-flight DELETEs")
+        thread_del.join()
+        LOGGER.info("Step 6.1: Verify status for In-flight DELETEs")
+        del_resp = tuple()
+        while len(del_resp) != 2:
+            del_resp = del_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not del_resp:
+            assert_utils.assert_true(False, "Background process failed to do deletes")
+        event_del_bkt = del_resp[0]
+        fail_del_bkt = del_resp[1]
+        assert_utils.assert_false(len(fail_del_bkt) or len(event_del_bkt),
+                                  "Expected all pass, Buckets which failed in DELETEs before "
+                                  f"and after pod deletion: {fail_del_bkt}. Buckets which "
+                                  f"failed in DELETEs during pod deletion: {event_del_bkt}.")
+        LOGGER.info("Step 6.1: Verified status for In-flight DELETEs")
         LOGGER.info("Step 6.2: Verify status for In-flight WRITEs")
         responses_wr = dict()
         while len(responses_wr) != 2:
