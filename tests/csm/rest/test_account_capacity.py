@@ -134,9 +134,7 @@ class TestAccountCapacity():
             self.log.info("Successfully restored pod by %s way", self.restore_method)
         if self.restore_pod_data:
             self.log.info("Restore deleted data pods.")
-            resp = self.ext_obj.restore_data_pod(self.restore_method,
-                                                self.set_name,
-                                                self.num_replica)
+            resp = self.ext_obj.restore_data_pod(self.set_name, self.num_replica)
             self.log.debug("Response: %s", resp)
             assert resp, "Failed to restore pod"
             self.log.info("Successfully restored data pod")
@@ -1017,11 +1015,11 @@ class TestAccountCapacity():
         resp = self.csm_obj.validate_metrics(response.json(), endpoint_param=None)
         assert resp, "Rest data metrics check failed in full mode"
 
-        self.log.info("Restore deleted pod")
+        self.log.info("Restore deleted data pod")
         resp = self.ext_obj.restore_data_pod(self.set_name, self.num_replica)
         self.log.debug("Response: %s", resp)
         assert resp, "Failed to restore pod"
-        self.log.info("Successfully restored pod")
+        self.log.info("Successfully restored data pod")
         self.restore_pod_data = False
 
         self.log.info("delete objects.")

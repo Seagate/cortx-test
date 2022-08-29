@@ -168,7 +168,7 @@ class CSMExt():
                                                         "num_replica": num_replica+1,
                                                         "set_name": set_name})
         self.log.debug("Response: %s", resp)
-        if resp[0]:
+        if resp[0] is not True:
             self.log.error("Not able to restored pod: %s", resp)
         else:
             self.log.info("Successfully restored pod by %s way", self.restore_method)
