@@ -176,7 +176,7 @@ class TestDataServerPodRestart:
             resp = sysutils.check_ping(host=self.node_ip)
             assert_utils.assert_true(resp, "Interface is still not up.")
         LOGGER.info("Cleanup: Check cluster status and start it if not up.")
-        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0])
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
         assert_utils.assert_true(resp[0], resp)
         for file in self.extra_files:
             if os.path.exists(file):
