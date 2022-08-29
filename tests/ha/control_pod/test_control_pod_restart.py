@@ -35,8 +35,6 @@ import pytest
 
 from commons import constants as const
 from commons import commands as cmd
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
@@ -234,7 +232,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32459")
-    @CTFailOn(error_handler)
     @pytest.mark.skip(reason="VM issue in after Restart(CORTX-32933). Need to be tested on HW")
     def test_restart_control_node(self):
         """
@@ -279,7 +276,6 @@ class TestControlPodRestart:
         resp = self.ha_obj.host_safe_unsafe_power_off(host=self.control_node)
         assert_utils.assert_true(resp, "Host is not powered off")
         LOGGER.info("Step 2: %s Node is shutdown where control pod was running.", self.control_node)
-        self.restore_node = self.deploy = True
 
         LOGGER.info("Sleep for pod-eviction-timeout of %s sec", HA_CFG["common_params"][
             "pod_eviction_time"])
@@ -353,7 +349,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40369")
-    @CTFailOn(error_handler)
     def test_taint_ctrl_pod_failover(self):
         """
         Verify IAM users/IOs before and after control pod fails over when tainting control node
@@ -431,7 +426,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34827")
-    @CTFailOn(error_handler)
     def test_rd_wr_del_during_ctrl_pod_failover(self):
         """
         Verify READs, WRITEs and DELETEs during control pod failover.
@@ -605,7 +599,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40375")
-    @CTFailOn(error_handler)
     def test_mpu_after_ctrl_pod_failover(self):
         """
         Verify multipart upload before and after control pod failover.
@@ -764,7 +757,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40387")
-    @CTFailOn(error_handler)
     def test_ctrl_pod_failover_loop(self):
         """
         Verify control pod failover in loop
@@ -925,7 +917,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40389")
-    @CTFailOn(error_handler)
     def test_iam_bkt_cruds_during_ctrl_pod_rst(self):
         """
         Verify IAM user and bucket operations while N-1 control pods are restarted
@@ -1094,7 +1085,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40377")
-    @CTFailOn(error_handler)
     def test_part_mpu_after_ctrl_pod_failover(self):
         """
         Verify partial multipart upload before and after control pod restart.
@@ -1236,7 +1226,6 @@ class TestControlPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-40376")
-    @CTFailOn(error_handler)
     def test_copy_obj_after_ctrl_pod_failover(self):
         """
         Verify copy object before and after control pod restart.
@@ -1342,7 +1331,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40381")
-    @CTFailOn(error_handler)
     def test_mpu_during_ctrl_pod_failover(self):
         """
         This test tests multipart upload during control pod restart
@@ -1484,7 +1472,6 @@ class TestControlPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-40382")
-    @CTFailOn(error_handler)
     def test_copy_obj_during_ctrl_pod_failover(self):
         """
         Verify copy object during control pod restart
@@ -1643,7 +1630,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40386")
-    @CTFailOn(error_handler)
     def test_chunk_upload_during_ctrl_pod_failover(self):
         """
         Test chunk upload during control pod restart (using jclient)
