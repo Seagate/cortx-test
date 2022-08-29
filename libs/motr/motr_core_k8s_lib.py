@@ -328,7 +328,7 @@ class MotrCoreK8s():
                                    f'"{cmd}" Failed, Please check the log')
 
     # pylint: disable=too-many-arguments
-    def cat_cmd(self, b_size, count, obj, layout, file, node, client_num=None):
+    def cat_cmd(self, b_size, count, obj, layout, file, node, client_num=None, di_g=False):
         """
         M0CAT command creation
 
@@ -343,11 +343,30 @@ class MotrCoreK8s():
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0CAT.format(node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
-                                      node_dict["hax_ep"],
-                                      node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-                                      self.profile_fid, b_size.lower(),
-                                      count, obj, layout, file)
+        if di_g:
+            cmd = common_cmd.M0CAT_G.format(
+                node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                node_dict["hax_ep"],
+                node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                self.profile_fid,
+                b_size.lower(),
+                count,
+                obj,
+                layout,
+                file,
+            )
+        else:
+            cmd = common_cmd.M0CAT.format(
+                node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                node_dict["hax_ep"],
+                node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                self.profile_fid,
+                b_size.lower(),
+                count,
+                obj,
+                layout,
+                file,
+            )
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
