@@ -25,7 +25,7 @@ import re
 import munch
 from typing import List
 from commons import configmanager
-from commons.params import S3_CONFIG
+from commons.params import S3_CONFIG, DTM_TEST_CFG_PATH
 from commons.params import DURABILITY_CFG_PATH
 from commons.params import COMMON_CONFIG
 from commons.params import CSM_CONFIG
@@ -159,6 +159,7 @@ PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
 HA_CFG = configmanager.get_config_wrapper(fpath=HA_TEST_CONFIG_PATH)
 PROV_TEST_CFG = configmanager.get_config_wrapper(fpath=PROV_CONFIG_PATH)
 DTM_CFG = configmanager.get_config_wrapper(fpath=DTM_CFG_PATH)
+DTM_TEST_CFG = configmanager.get_config_wrapper(fpath=DTM_TEST_CFG_PATH)
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath=DEPLOY_TEST_CONFIG_PATH)
 
 DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH)

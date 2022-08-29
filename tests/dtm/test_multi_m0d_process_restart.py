@@ -19,7 +19,7 @@
 #
 
 """
-Test suite for testing Single Process Restart with DTM enabled.
+Test suite for testing Multiple Process Restart with DTM enabled.
 """
 import logging
 import multiprocessing
@@ -42,6 +42,7 @@ from commons.utils import support_bundle_utils
 from commons.utils import system_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG
+from config import DTM_TEST_CFG
 from conftest import LOG_DIR
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from libs.ha.ha_common_libs_k8s import HAK8s
@@ -76,7 +77,7 @@ class TestMultiProcessRestart:
         cls.health_obj = Health(cls.master_node_list[0].hostname,
                                 cls.master_node_list[0].username,
                                 cls.master_node_list[0].password)
-        cls.test_cfg = configmanager.get_config_wrapper(fpath="config/dtm/test_dtm_config.yaml")
+        cls.test_cfg = DTM_TEST_CFG
         cls.m0d_process = 'm0d'
         cls.rgw_process = 'radosgw'
         cls.log.info("Setup S3bench")
@@ -87,7 +88,7 @@ class TestMultiProcessRestart:
         cls.setup_type = CMN_CFG["setup_type"]
         cls.system_random = secrets.SystemRandom()
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "DTMTestData")
-        cls.delay = cls.test_cfg['delay']
+        cls.delay = DTM_TEST_CFG['delay']
 
     def setup_method(self):
         """Setup Method"""
@@ -127,8 +128,8 @@ class TestMultiProcessRestart:
             resp = self.dtm_obj.edit_deployments_for_delay(self.master_node_list[0], each, M0D_SVC)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Edit deployment done for all data pods")
-        self.log.info("Sleep of %s secs", self.test_cfg['edit_deployment_delay'])
-        time.sleep(self.test_cfg['edit_deployment_delay'])
+        self.log.info("Sleep of %s secs", DTM_TEST_CFG['edit_deployment_delay'])
+        time.sleep(DTM_TEST_CFG['edit_deployment_delay'])
         self.log.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
@@ -160,10 +161,11 @@ class TestMultiProcessRestart:
 
     @pytest.mark.lc
     @pytest.mark.dtm
+    @pytest.mark.tags("TEST-46663")
     def test_write_during_multi_m0d_restart(self):
         """Verify write during multiple m0d restart using pkill."""
         self.log.info("STARTED: Verify write during multiple m0d restart using pkill")
-        log_file_prefix = 'test-XXXXX'
+        log_file_prefix = 'test-46663'
         que = multiprocessing.Queue()
 
         self.log.info("Step 1: Create bucket for IO operations")
@@ -172,9 +174,9 @@ class TestMultiProcessRestart:
         self.log.info("Step 2: Start write Operations in background:")
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
                                                 args=(self.bucket_name, self.object_name,
-                                                      self.test_cfg['clients'],
-                                                      self.test_cfg['samples'], log_file_prefix,
-                                                      que, self.test_cfg['size'], 1,
+                                                      DTM_TEST_CFG['clients'],
+                                                      DTM_TEST_CFG['samples'], log_file_prefix,
+                                                      que, DTM_TEST_CFG['size'], 1,
                                                       [self.bucket_name]))
         proc_write_op.start()
 
