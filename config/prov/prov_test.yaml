@@ -203,89 +203,89 @@ k8s_cortx_deploy:
   thirdparty_resource:
     server:   #consul_server
       requests:
-        mem: '200Mi'
-        cpu: '200m'
+        mem: '1Gi'
+        cpu: '300m'
       limits:
-        mem: '500Mi'
+        mem: '2Gi'
         cpu: '500m'
     client:  #consul_client
       requests:
-        mem: '200Mi'
+        mem: '256Mi'
         cpu: '200m'
       limits:
-        mem: '500Mi'
-        cpu: '500m'
+        mem: '512Mi'
+        cpu: '300m'
     kafka:
       requests:
         mem: '1Gi'
         cpu: '250m'
       limits:
         mem: '2Gi'
-        cpu: '1000m'
+        cpu: '500m'
     zookeeper:
       requests:
         mem: '256Mi'
         cpu: '250m'
       limits:
         mem: '512Mi'
-        cpu: '500m'
+        cpu: '300m'
   cortx_resource:
     hax:
       requests:
-        mem: '128Mi'
-        cpu: '250m'
+        mem: '256Mi'
+        cpu: '400m'
       limits:
-        mem: '2Gi'
-        cpu: '1000m'
+        mem: 1536
+        cpu: '800m'
     motr:
       requests:
         mem: '1Gi'
-        cpu: '250m'
+        cpu: '500m'
       limits:
-        mem: '2Gi'
-        cpu: '1000m'
+        mem: 4096
+        cpu: 2000
     confd:
       requests:
-        mem: '128Mi'
+        mem: '256Mi'
         cpu: '250m'
       limits:
         mem: '512Mi'
         cpu: '500m'
     rgw:
         requests:
-          mem: '128Mi'
-          cpu: '250m'
+          mem: '1Gi'
+          cpu: '500m'
         limits:
-          mem: '2Gi'
-          cpu: '2000m'
+          mem: 2000
+          cpu: 1500
     agent:
       requests:
         mem: '128Mi'
-        cpu: '250m'
+        cpu: '200m'
       limits:
         mem: '256Mi'
-        cpu: '500m'
+        cpu: '250m'
     fault_tolerance:
       requests:
         mem: '128Mi'
-        cpu: '250m'
+        cpu: '200m'
       limits:
-        mem: '1Gi'
-        cpu: '500m'
+        mem: '512Mi'
+        cpu: '250m'
     health_monitor:
       requests:
         mem: '128Mi'
-        cpu: '250m'
+        cpu: '200m'
       limits:
-        mem: '1Gi'
-        cpu: '500m'
+        mem: '512Mi'
+        cpu: '250m'
     k8s_monitor:
       requests:
         mem: '128Mi'
-        cpu: '250m'
+        cpu: '200m'
       limits:
-        mem: '1Gi'
-        cpu: '500m'
+        mem: '512Mi'
+        cpu: '250m'
 test_basic_io:
   io_upper_limits:
     Kb: 130

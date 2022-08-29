@@ -341,7 +341,7 @@ deactivate
 }
 		     }
 			catchError(stageResult: 'FAILURE') {
-			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
+			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tgz, crash_files/*.gz', followSymlinks: false
 				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_5_v2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com,akshay.s.mankar@seagate.com'
 			}
 		}
