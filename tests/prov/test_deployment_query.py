@@ -103,12 +103,10 @@ class TestQueryDeployment():
         """
         Test to verify query should be able to fetch standard 3 node configuration.
         """
-        config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
-        config = secrets.choice(config_list)
+        config = DEPLOY_CFG[f'nodes_{node}'][f'config_{config}']
         self.log.info("config is picked :%s", config)
-        self.log.info("Running %s N with config %s+%s+%s", (len(self.worker_node_list)),
-                      config['sns_data'], config['sns_parity'],
-                      config['sns_spare'])
+        self.log.info("Running %s N with config %s+%s+%s",
+                      node, config['sns_data'], config['sns_parity'], config['sns_spare'])
         self.deploy_obj.test_deployment(
             sns_data=config['sns_data'], sns_parity=config['sns_parity'],
             sns_spare=config['sns_spare'], dix_data=config['dix_data'],
@@ -131,12 +129,10 @@ class TestQueryDeployment():
             """
             Test to verify query should be able to fetch standard 5 node configuration.
             """
-            config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
-            config = secrets.choice(config_list)
+            config = DEPLOY_CFG[f'nodes_{node}'][f'config_{config}']
             self.log.info("config is picked :%s", config)
-            self.log.info("Running %s N with config %s+%s+%s", (len(self.worker_node_list)),
-                          config['sns_data'], config['sns_parity'],
-                          config['sns_spare'])
+            self.log.info("Running %s N with config %s+%s+%s",
+                          node, config['sns_data'], config['sns_parity'], config['sns_spare'])
             self.deploy_obj.test_deployment(
                 sns_data=config['sns_data'], sns_parity=config['sns_parity'],
                 sns_spare=config['sns_spare'], dix_data=config['dix_data'],
@@ -160,12 +156,10 @@ class TestQueryDeployment():
             Test to verify query should be able to fetch standard 3 node configuration
             if cluster is in degraded state.
             """
-            config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
-            config = secrets.choice(config_list)
+            config = DEPLOY_CFG[f'nodes_{node}'][f'config_{config}']
             self.log.info("config is picked :%s", config)
-            self.log.info("Running %s N with config %s+%s+%s", (len(self.worker_node_list)),
-                          config['sns_data'], config['sns_parity'],
-                          config['sns_spare'])
+            self.log.info("Running %s N with config %s+%s+%s",
+                          node, config['sns_data'], config['sns_parity'], config['sns_spare'])
             self.deploy_obj.test_deployment(
                 sns_data=config['sns_data'], sns_parity=config['sns_parity'],
                 sns_spare=config['sns_spare'], dix_data=config['dix_data'],
@@ -189,12 +183,10 @@ class TestQueryDeployment():
             Test to verify query should be able to fetch standard 3 node configuration
             if cluster is in degraded state.
             """
-            config_list = self.deploy_obj.get_durability_config(num_nodes=len(self.worker_node_list))
-            config = secrets.choice(config_list)
+            config = DEPLOY_CFG[f'nodes_{node}'][f'config_{config}']
             self.log.info("config is picked :%s", config)
-            self.log.info("Running %s N with config %s+%s+%s", (len(self.worker_node_list)),
-                          config['sns_data'], config['sns_parity'],
-                          config['sns_spare'])
+            self.log.info("Running %s N with config %s+%s+%s",
+                          node, config['sns_data'], config['sns_parity'], config['sns_spare'])
             self.deploy_obj.test_deployment(
                 sns_data=config['sns_data'], sns_parity=config['sns_parity'],
                 sns_spare=config['sns_spare'], dix_data=config['dix_data'],
