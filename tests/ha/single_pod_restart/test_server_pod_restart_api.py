@@ -1778,7 +1778,8 @@ class TestServerPodRestartAPI:
             if all(item in bkt_list for item in list(new_s3_data.keys())):
                 break
             if timeout < time.time():
-                LOGGER.error("Bucket creation is taking longer than 10 mins")
+                LOGGER.error("Bucket creation is taking longer than %s sec",
+                             HA_CFG["common_params"]["10min_delay"])
                 assert_utils.assert_true(False, "Please check background process logs")
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
