@@ -421,10 +421,10 @@ class TestCorruptDataDetection:
         -o 1234:1234 -s 4k -c 4 -L 1 /root/dest_myfile
         """
         test_prefix = "TEST-45162"
-        count_list = [["5", "5"]]
-        bsize_list = ["4K"]
-        layout_ids = ["3"]
-        offsets = [4096]
+        count_list = [["5", "1"], ["5", "2"], ["5", "3"], ["5", "4"], ["5", "5"]]
+        bsize_list = ["4096", "4096", "4096", "4096", "4096"]
+        layout_ids = ["3", "3", "3", "3", "3"]
+        offsets = [0, 4096, 8192, 12288, 16384]
         logger.info("STARTED: Test %s data unit corruption in loop - unaligned", test_prefix)
         logger.info("Step 1: Perform m0cp and corrupt the data block")
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
