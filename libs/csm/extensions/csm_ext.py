@@ -121,9 +121,9 @@ class CSMExt():
 
     def delete_data_pod(self):
         """
-        Degrade cluster safely by deleting a data pod
+        Degrade cluster safely by deleting the last data pod from a set
         """
-        self.log.info("[Start] Degrade the cluster...")
+        self.log.info("[Start] deleting a data pod...")
         result = False
         self.log.info("Get pod to be deleted")
         sts_dict = self.master.get_sts_pods(pod_prefix=POD_NAME_PREFIX)
@@ -147,20 +147,20 @@ class CSMExt():
         self.restore_method = resp[1][pod_name]['method']
         if resp[1] is None:
             self.log.error("Failed to shutdown/delete pod: %s", resp)
-        if resp[0] is not True:
+        if not resp[0]:
             self.log.error("Cluster/Services status is not as expected: %s", resp)
         else:
             result = True
         self.log.info("Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
-        self.log.info("[End] Degrade the cluster...")
-        return result,set_name,num_replica
+        self.log.info("[End] deleted a data pod...")
+        return result, set_name, num_replica
 
     def restore_data_pod(self, set_name:str, num_replica:int):
         """
-        Restore cluster safely by deleting a data pod
+        Restore cluster safely by restoring a data pod
         """
-        self.log.info("[Start] Restore the cluster...")
+        self.log.info("[Start] Restore a data pod...")
         result = False
         resp = self.ha_obj.restore_pod(self.master, self.restore_method,
                                         restore_params={"deployment_name": None,
@@ -168,10 +168,10 @@ class CSMExt():
                                                         "num_replica": num_replica+1,
                                                         "set_name": set_name})
         self.log.debug("Response: %s", resp)
-        if resp[0] is not True:
+        if not resp[0]:
             self.log.error("Not able to restored pod: %s", resp)
         else:
             self.log.info("Successfully restored pod by %s way", self.restore_method)
             result = True
-        self.log.info("[End] Restore the cluster...")
+        self.log.info("[End] Restored a data pod...")
         return result

@@ -155,7 +155,6 @@ class TestCsmLoad():
 
 
     # pylint: disable-msg=too-many-locals
-    @pytest.mark.skip("Skipped until CORTX-33861 is fixed")
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -483,7 +482,6 @@ class TestCsmLoad():
 
 
     # pylint: disable=too-many-statements
-    @pytest.mark.skip("Skipped until CORTX-33861 is fixed")
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
