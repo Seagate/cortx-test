@@ -410,10 +410,19 @@ def get_total_used(access_key: str, secret_key: str, **kwargs):
     return size
 
 
+# pylint: disable=too-many-arguments
 def copy_object(access_key: str, secret_key: str, src_bkt: str = None, src_obj: str = None,
                 dest_bkt: str = None, dest_obj: str = None, **kwargs):
     """
     Copy of an object that is already stored in Seagate S3 with different permissions.
+    :param access_key: Access Key.
+    :param secrete_key: Secrete Key.
+    :param src_bkt: Source Bucket.
+    :param src_obj: Source Object.
+    :param dest_bkt: Destination Bucket.
+    :param dest_obj: Destination Object.
+    :keyword endpoint_url: Endpoint URL, default value S3_CFG["s3_url"]
+    :return: True or False.
     """
     LOGGER.debug("Access Key : %s", access_key)
     LOGGER.debug("Secret Key : %s", secret_key)
@@ -445,6 +454,9 @@ def copy_object(access_key: str, secret_key: str, src_bkt: str = None, src_obj: 
 def list_bucket(access_key: str, secret_key: str, **kwargs):
     """
     Delete specific object from give bucket, access key and secret key.
+    :param access_key: Access Key.
+    :param secrete_key: Secrete Key.
+    :return: List of buckets.
     """
     LOGGER.debug("Access Key : %s", access_key)
     LOGGER.debug("Secret Key : %s", secret_key)
@@ -461,7 +473,7 @@ def list_bucket(access_key: str, secret_key: str, **kwargs):
                                  region_name=region,
                                  **kwargs)
     LOGGER.debug("S3 boto resource created")
-    LOGGER.debug("List bukcets")
+    LOGGER.debug("List buckets")
     bkt_lst = s3_resource.buckets.all()
     del s3_resource
     return bkt_lst
