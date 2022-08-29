@@ -170,6 +170,13 @@ class TestControlPodRestart:
         if self.res_taint:
             LOGGER.info("Untaint the node back which was tainted: %s", self.control_node)
             self.node_master_list[0].execute_cmd(cmd=cmd.K8S_UNTAINT_CTRL.format(self.control_node))
+        LOGGER.info("Revert back to default single control pod per cluster if more replicas are "
+                    "created.")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        if len(pod_list) > 1:
+            resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
+                                                                pod_name=pod_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
         # TODO: Uncomment following code after getting confirmation from Rick on control pod
         #  restoration
         # if self.restore_pod:
@@ -923,6 +930,9 @@ class TestControlPodRestart:
         LOGGER.info("%s pod are restarted successfully in loop of %s", self.repl_num - 1,
                     HA_CFG["common_params"]["short_loop"])
         event.clear()
+        LOGGER.info("Waiting for threads to join")
+        thread1.join()
+        thread2.join()
         LOGGER.info("Step 4: Verify if IAM users %s are persistent across control pods restart",
                     uids)
         for user in uids:
@@ -932,9 +942,6 @@ class TestControlPodRestart:
             LOGGER.info("User %s is persistent: %s", user, resp)
         LOGGER.info("Step 4: Verified all IAM users %s are persistent across control pods "
                     "restart", uids)
-        LOGGER.info("Waiting for threads to join")
-        thread1.join()
-        thread2.join()
         LOGGER.info("Step 5: Verifying responses from background processes")
         LOGGER.info("Checking background process for IAM user CRUDs")
         iam_resp = tuple()
