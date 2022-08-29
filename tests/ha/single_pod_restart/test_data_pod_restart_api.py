@@ -1599,7 +1599,7 @@ class TestDataPodRestartAPI:
             bucket_name = f"bucket-{t_t}"
             object_name = f"object-{t_t}"
             s3_data.update({bucket_name: [object_name, file_size]})
-        resp = self.ha_obj.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
+        resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
                                                  random_size=False)
         assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
         for checksum in resp[1].values():
@@ -1626,7 +1626,7 @@ class TestDataPodRestartAPI:
         LOGGER.info("Step 1: Create bucket %s and perform upload of object size %s MB and "
                     "Overwrite the object", self.bucket_name, file_size)
         s3_data = {self.bucket_name: [self.object_name, file_size]}
-        resp = self.ha_obj.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
+        resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
                                                  random_size=False)
         assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
         upld_chcksm = list(resp[1].values())[0][0]
@@ -1645,7 +1645,7 @@ class TestDataPodRestartAPI:
             t_t = int(perf_counter_ns())
             for cnt in range(bkt_cnt):
                 before_bkt.update({f"ha-bkt{cnt}-{t_t}": [f"ha-obj{cnt}-{t_t}", file_size]})
-            resp = self.ha_obj.object_overwrite_dnld(self.s3_test_obj, before_bkt, iteration=0,
+            resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, before_bkt, iteration=0,
                                                      random_size=False)
             assert_utils.assert_true(resp[0], "Failure observed in create new bucket, "
                                               "upload object.")
@@ -1687,7 +1687,7 @@ class TestDataPodRestartAPI:
             new_s3_data = before_bkt.copy()
         args = {"s3_test_obj": self.s3_test_obj, "s3_data": new_s3_data, "iteration": 1,
                 "random_size": True, "queue": output, "background": True, "event": event}
-        thread = threading.Thread(target=self.ha_obj.object_overwrite_dnld, kwargs=args)
+        thread = threading.Thread(target=self.ha_api.object_overwrite_dnld, kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 4: Started overwrite object in background")
@@ -1755,7 +1755,7 @@ class TestDataPodRestartAPI:
                     "cluster")
 
         LOGGER.info("Step 8: Overwrite existing object of bucket %s", self.bucket_name)
-        resp = self.ha_obj.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
+        resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
                                                  random_size=False)
         assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
         for checksum in resp[1].values():
