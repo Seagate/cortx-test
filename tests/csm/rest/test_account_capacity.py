@@ -33,7 +33,6 @@ import pytest
 from commons import configmanager
 from commons import cortxlogging
 from commons.constants import NORMAL_UPLOAD_SIZES_IN_MB, POD_NAME_PREFIX, RESTORE_SCALE_REPLICAS
-from commons.constants import STATEFULSET, REPLICASET
 from commons.constants import Rest as const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
