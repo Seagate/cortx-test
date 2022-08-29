@@ -78,7 +78,7 @@ class TestServerPodRestartAPI:
         cls.ha_api = HAK8sApiLibs()
         cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = cls.version_etag = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
-        cls.multipart_obj_path = cls.s3_ver = cls.f_size = cls.is_ver = None
+        cls.multipart_obj_path = cls.s3_ver = cls.f_size = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
@@ -111,7 +111,6 @@ class TestServerPodRestartAPI:
         LOGGER.info("STARTED: Setup Operations")
         self.s3_clean = dict()
         self.version_etag = dict()
-        self.is_ver = False
         self.s3acc_name = f"ha_s3acc_{int(perf_counter_ns())}"
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
         self.bucket_name = f"ha-mp-bkt-{int(perf_counter_ns())}"
@@ -1107,9 +1106,9 @@ class TestServerPodRestartAPI:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-44851")
-    def test_obj_ver_during_server_pod_restart(self):
+    def test_bkt_ver_during_server_pod_restart(self):
         """
-        This test tests object versioning during server pod restart
+        This test tests bucket versioning during server pod restart
         """
         LOGGER.info("STARTED: Test to verify object versioning during server pod restart.")
         event = threading.Event()
@@ -1127,9 +1126,6 @@ class TestServerPodRestartAPI:
                     "versioning on %s.", self.object_name, self.f_size, self.bucket_name)
         self.version_etag.update({self.bucket_name: []})
         self.version_etag[self.bucket_name].extend(resp[1])
-        self.version_etag.update({"obj_name": self.object_name})
-        self.version_etag.update({"s3_ver": self.s3_ver})
-        self.is_ver = True
 
         LOGGER.info("Step 2: Upload same object %s after enabling versioning. List & verify "
                     "the VersionID for the same for %s.", self.object_name, self.bucket_name)
@@ -1273,16 +1269,16 @@ class TestServerPodRestartAPI:
         assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
         LOGGER.info("Step 11: Got object versions of %s & verified etags for %s.",
                     self.object_name, new_bucket)
-        LOGGER.info("COMPLETED: Test to verify object versioning during server pod restart.")
+        LOGGER.info("COMPLETED: Test to verify bucket versioning during server pod restart.")
 
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-44850")
-    def test_obj_ver_after_server_pod_restart(self):
+    def test_bkt_ver_after_server_pod_restart(self):
         """
-        This test tests object versioning after server pod restart
+        This test tests bucket versioning after server pod restart
         """
-        LOGGER.info("STARTED: Test to verify object versioning after server pod restart.")
+        LOGGER.info("STARTED: Test to verify bucket versioning after server pod restart.")
         event = threading.Event()
         LOGGER.info("Step 1: Create bucket and upload object %s of %s size. Enable versioning "
                     "on %s.", self.object_name, self.f_size, self.bucket_name)
@@ -1296,9 +1292,6 @@ class TestServerPodRestartAPI:
                     "versioning on %s.", self.object_name, self.f_size, self.bucket_name)
         self.version_etag.update({self.bucket_name: []})
         self.version_etag[self.bucket_name].extend(resp[1])
-        self.version_etag.update({"obj_name": self.object_name})
-        self.version_etag.update({"s3_ver": self.s3_ver})
-        self.is_ver = True
         bucket_list = list()
         bucket_list.append(self.bucket_name)
 
@@ -1412,12 +1405,12 @@ class TestServerPodRestartAPI:
                                               f" {bucket}")
         LOGGER.info("Step 10: Got object versions of %s buckets with version IDs & verified etags.",
                     bucket_list)
-        LOGGER.info("COMPLETED: Test to verify object versioning after server pod restart.")
+        LOGGER.info("COMPLETED: Test to verify bucket versioning after server pod restart.")
 
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-44853")
-    def test_obj_ver_suspension_server_pod_restart(self):
+    def test_bkt_ver_suspension_server_pod_restart(self):
         """
         Verify bucket versioning suspension before and after server pod restart
         """
@@ -1436,9 +1429,6 @@ class TestServerPodRestartAPI:
                     "versioning on %s.", self.object_name, self.f_size, self.bucket_name)
         self.version_etag.update({self.bucket_name: []})
         self.version_etag[self.bucket_name].extend(resp[1])
-        self.version_etag.update({"obj_name": self.object_name})
-        self.version_etag.update({"s3_ver": self.s3_ver})
-        self.is_ver = True
         bucket_list = list()
         bucket_list.append(self.bucket_name)
         LOGGER.info("Step 2: Upload same object %s after enabling versioning. List & verify "
