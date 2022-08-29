@@ -1532,7 +1532,7 @@ class TestDataPodRestartAPI:
         LOGGER.info("Step 1: Create bucket %s and perform upload of object size %s MB and "
                     "Overwrite the object", self.bucket_name, file_size)
         s3_data = {self.bucket_name: [self.object_name, file_size]}
-        resp = self.ha_obj.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
+        resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
                                                  random_size=False)
         assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
         for _, checksum in resp[1].items():
@@ -1565,7 +1565,7 @@ class TestDataPodRestartAPI:
             bucket_name = f"bucket-{t_t}"
             object_name = f"object-{t_t}"
             s3_data.update({bucket_name: [object_name, file_size]})
-        resp = self.ha_obj.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
+        resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
                                                  random_size=False)
         assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
         for checksum in resp[1].values():
