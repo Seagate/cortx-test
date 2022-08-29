@@ -92,9 +92,8 @@ def collect_test_info(jira_obj, test):
 def setup_configurations(args):
     """Setup host:port and security protocol"""
     setup_details = ClientConfig(get_db_credential()).get_setup_details(args.target)
-    if not os.path.exists(CONFIG_FILE):
-        LOGGER.info("Coping default config file")
-        shutil.copyfile("scripts/ceph_s3_tests/cortx_rgw_template.conf", CONFIG_FILE)
+    LOGGER.info("Copying default config file")
+    shutil.copyfile("scripts/ceph_s3_tests/cortx_rgw_template.conf", CONFIG_FILE)
     config = ConfigParser()
     config.read(CONFIG_FILE)
     LOGGER.info({section: dict(config[section]) for section in config.sections()})
