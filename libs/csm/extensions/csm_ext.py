@@ -141,12 +141,14 @@ class CSMExt():
         pod_name = list(resp[1].keys())[0]
         set_name = resp[1][pod_name]['deployment_name']
         restore_method = resp[1][pod_name]['method']
-        if resp[1]:
+        if resp[1] == None:
             self.log.error("Failed to shutdown/delete pod: %s", resp)
-        if resp[0]:
+        if resp[0] != True:
             self.log.error("Cluster/Services status is not as expected: %s", resp)
         else:
             result = True
+        self.log.info("Successfully shutdown data pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
         self.log.info("[End] Degrade the cluster...")
         return result,set_name,restore_method,num_replica
 

@@ -126,7 +126,7 @@ class TestAccountCapacity():
             self.log.info("Restore deleted pods.")
             resp = self.ext_obj.restore_cluster(self.restore_method,
                                                 self.set_name,
-                                                self.num_replica)
+                                                self.num_replica+1)
             self.log.debug("Response: %s", resp)
             assert resp, "Failed to restore pod"
             self.log.info("Successfully restored pod")
@@ -977,7 +977,7 @@ class TestAccountCapacity():
         self.log.info("degrade cluster")
         resp,self.set_name,self.restore_method,self.num_replica = self.ext_obj.degrade_cluster()
         self.log.debug("Response: %s", resp)
-        assert resp[0], "Failed to degrade cluster"
+        assert resp, "Failed to degrade cluster"
         self.restore_pod = True
         self.log.info("Successfully degrade cluster")
 
@@ -1007,14 +1007,15 @@ class TestAccountCapacity():
         resp = self.csm_obj.validate_metrics(response.json(), endpoint_param=None)
         assert resp, "Rest data metrics check failed in full mode"
 
-
         self.log.info("Restore deleted pod")
-        resp = self.ext_obj.restore_cluster(self.restore_method,
-                                            self.set_name,
-                                            self.num_replica)
+        resp = self.ext_obj.restore_cluster(self.restore_method, self.set_name, self.num_replica+1)
         self.log.debug("Response: %s", resp)
         assert resp, "Failed to restore pod"
         self.log.info("Successfully restored pod")
         self.restore_pod = False
+
+        self.log.info("delete objects.")
+        resp = self.ha_obj.delete_s3_acc_buckets_objects(s3_data=users, obj_crud=True)
+        assert_utils.assert_true(resp[0], resp[1])
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
