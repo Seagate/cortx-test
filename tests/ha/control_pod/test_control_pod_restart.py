@@ -788,10 +788,6 @@ class TestControlPodRestart:
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[count],
                                                         log_prefix=self.test_prefix,
                                                         skipcleanup=True)
-            if count > 0:
-                resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[count],
-                                                            log_prefix=self.test_prefix,
-                                                            skipcleanup=True, setup_s3bench=False)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs-READs-Verify with variable sizes objects for %s IAM "
                     "users created.", num_users)
