@@ -865,25 +865,17 @@ class TestDataServerPodRestart:
         LOGGER.info("STEP 10.1: Performed READs/Verify on data written in healthy mode in step-1")
 
         if CMN_CFG["dtm0_disabled"]:
+            degraded_mode_prefix_list = [self.test_prefix_deg, self.test_prefix_datapod_restart]
             LOGGER.info("STEP 10.2: Perform READs/Verify on data written in degraded mode when "
-                        "data pod down in step-4")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix_deg,
-                                                        skipwrite=True, skipcleanup=True,
-                                                        setup_s3bench=False, nsamples=5, nclients=5)
-            assert_utils.assert_true(resp[0], resp[1])
+                        "data pod down in step-4 and restart at step-8")
+            for test_prefix in degraded_mode_prefix_list:
+                resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                            log_prefix=test_prefix, skipwrite=True,
+                                                            skipcleanup=True, setup_s3bench=False,
+                                                            nsamples=5, nclients=5)
+                assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("STEP 10.2: Performed READs/Verify on data written in degraded mode when"
-                        " data pod down in step-4")
-
-            LOGGER.info("STEP 10.3: Perform READs/Verify on data written after data pod restart "
-                        "in step-8")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix_datapod_restart,
-                                                        skipwrite=True, skipcleanup=True,
-                                                        setup_s3bench=False, nsamples=5, nclients=5)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("STEP 10.3: Performed READs/Verify on data written after data pod restart "
-                        "in step-8")
+                        " data pod down in step-4 and restart at step-8")
 
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Step 11: Create new bucket and perform WRITEs/READs/Verify with variable "
@@ -929,35 +921,18 @@ class TestDataServerPodRestart:
         LOGGER.info("Step 13.1: Performed READs/Verify on data written in healthy mode in step-1")
 
         if CMN_CFG["dtm0_disabled"]:
+            degraded_mode_prefix_list = [self.test_prefix_deg, self.test_prefix_datapod_restart,
+                                         self.test_prefix_server_deg]
             LOGGER.info("STEP 13.2: Perform READs/Verify on data written after data pod down "
-                        "in step-4")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix_deg,
-                                                        skipwrite=True, skipcleanup=True,
-                                                        setup_s3bench=False, nsamples=5, nclients=5)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 13.1: Performed READs/Verify on data written after data pod down "
-                        "in step-4")
-
-            LOGGER.info("STEP 13.3: Perform READs/Verify on data written after data pod restart "
-                        "in step-8")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix_datapod_restart,
-                                                        skipwrite=True, skipcleanup=True,
-                                                        setup_s3bench=False, nsamples=5, nclients=5)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 13.3: Performed READs/Verify on data written after data pod restart "
-                        "in step-8")
-
-            LOGGER.info("STEP 13.4: Perform READs/Verify on data written after server pod down "
-                        "in step-11")
-            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                        log_prefix=self.test_prefix_server_deg,
-                                                        skipwrite=True, skipcleanup=True,
-                                                        setup_s3bench=False, nsamples=5, nclients=5)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 13.4: Performed READs/Verify on data written after server pod down "
-                        "in step-11")
+                        "in step-4, data pod restart in step-8 and server pod down step-11")
+            for test_prefix in degraded_mode_prefix_list:
+                resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                            log_prefix=test_prefix, skipwrite=True,
+                                                            skipcleanup=True, setup_s3bench=False,
+                                                            nsamples=5, nclients=5)
+                assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 13.2: Performed READs/Verify on data written after data pod down "
+                        "in step-4, data pod restart in step-8 and server pod down step-11")
 
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Step 14: Create new IAM user and buckets, Perform WRITEs-READs-Verify "
