@@ -174,7 +174,7 @@ class TestControlPodRestart:
                     "created.")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
         if len(pod_list) > 1:
-            resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
+            resp = self.node_master_list[0].create_pod_replicas(num_replica=1,
                                                                 pod_name=pod_list[0])
             assert_utils.assert_true(resp[0], resp[1])
         # TODO: Uncomment following code after getting confirmation from Rick on control pod
