@@ -112,6 +112,7 @@ class CSMExt():
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
             self.log.info("[End] Sleep %s", self.update_seconds)
+
             self.log.info("Cleanup: Check cluster status")
             resp = self.ha_obj.poll_cluster_status(self.master)
             assert resp[0], resp[1]
