@@ -1016,7 +1016,7 @@ class TestDataPodRestartAPI:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-45641")
-    def test_obj_ver_suspension_data_pod_restart(self):
+    def test_bkt_ver_suspension_data_pod_restart(self):
         """
         Verify bucket versioning suspension before and after data pod restart
         """
@@ -1223,12 +1223,12 @@ class TestDataPodRestartAPI:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.tags("TEST-44851")
-    def test_obj_ver_during_data_pod_restart(self):
+    @pytest.mark.tags("TEST-45640")
+    def test_bkt_ver_during_data_pod_restart(self):
         """
-        This test tests object versioning during data pod restart
+        This test verify bucket versioning during data pod restart
         """
-        LOGGER.info("STARTED: Test to verify object versioning during data pod restart.")
+        LOGGER.info("STARTED: Test to verify bucket versioning during data pod restart.")
         event = threading.Event()
         get_output = Queue()
         put_output = Queue()
@@ -1387,16 +1387,16 @@ class TestDataPodRestartAPI:
             assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
             LOGGER.info("Step 11: Got object versions of %s & verified etags for %s.",
                         self.object_name, new_bucket)
-        LOGGER.info("COMPLETED: Test to verify object versioning during data pod restart.")
+        LOGGER.info("COMPLETED: Test to verify bucket versioning during data pod restart.")
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.tags("TEST-44850")
-    def test_obj_ver_after_data_pod_restart(self):
+    @pytest.mark.tags("TEST-45639")
+    def test_bkt_ver_after_data_pod_restart(self):
         """
-        This test tests object versioning after data pod restart
+        This test tests bucket versioning after data pod restart
         """
-        LOGGER.info("STARTED: Test to verify object versioning after data pod restart.")
+        LOGGER.info("STARTED: Test to verify bucket versioning after data pod restart.")
         event = threading.Event()
         LOGGER.info("Step 1: Create bucket and upload object %s of %s size. Enable versioning "
                     "on %s.", self.object_name, self.f_size, self.bucket_name)
@@ -1523,4 +1523,4 @@ class TestDataPodRestartAPI:
                                               f" {bucket}")
         LOGGER.info("Step 10: Got object versions of %s buckets with version IDs & verified etags.",
                     bucket_list)
-        LOGGER.info("COMPLETED: Test to verify object versioning after data pod restart.")
+        LOGGER.info("COMPLETED: Test to verify bucket versioning after data pod restart.")
