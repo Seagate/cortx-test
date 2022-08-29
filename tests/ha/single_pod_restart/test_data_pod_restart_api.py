@@ -1638,17 +1638,16 @@ class TestDataPodRestartAPI:
                     "Overwrite the object", self.bucket_name, file_size)
 
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_multi"]
-        before_bkt = dict()
-        if CMN_CFG["dtm0_disabled"]:
-            LOGGER.info("Create %s buckets and upload objects for background overwrite during "
-                        "pod restart.", bkt_cnt)
-            t_t = int(perf_counter_ns())
-            for cnt in range(bkt_cnt):
-                before_bkt.update({f"ha-bkt{cnt}-{t_t}": [f"ha-obj{cnt}-{t_t}", file_size]})
-            resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, before_bkt, iteration=0,
-                                                     random_size=False)
-            assert_utils.assert_true(resp[0], "Failure observed in create new bucket, "
-                                              "upload object.")
+        new_s3_data = dict()
+        LOGGER.info("Create %s buckets and upload objects for background overwrite during "
+                    "pod restart.", bkt_cnt)
+        t_t = int(perf_counter_ns())
+        for cnt in range(bkt_cnt):
+            new_s3_data.update({f"ha-bkt{cnt}-{t_t}": [f"ha-obj{cnt}-{t_t}", file_size]})
+        resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, new_s3_data, iteration=0,
+                                                 random_size=False)
+        assert_utils.assert_true(resp[0], "Failure observed in create new bucket, "
+                                          "upload object.")
 
         LOGGER.info("Step 2: Shutdown data pod with replica method and verify cluster & "
                     "remaining pods status")
@@ -1676,33 +1675,14 @@ class TestDataPodRestartAPI:
                                   f"{upld_chcksm} Actual: {dnld_checksum}")
         LOGGER.info("Step 3: Successfully Read-Verify already overwritten object in healthy "
                     "cluster")
-        new_s3_data = dict()
-        if CMN_CFG["dtm0_disabled"]:
-            LOGGER.info("Step 4: Start overwrite operation on new buckets")
-            t_t = int(perf_counter_ns())
-            for cnt in range(bkt_cnt):
-                new_s3_data.update({f"ha-bkt{cnt}-{t_t}": [f"ha-obj{cnt}-{t_t}", file_size]})
-        else:
-            LOGGER.info("Step 4: Start overwrite operation on buckets created in healthy cluster")
-            new_s3_data = before_bkt.copy()
+
+        LOGGER.info("Step 4: Start overwrite operation on buckets created in healthy cluster")
         args = {"s3_test_obj": self.s3_test_obj, "s3_data": new_s3_data, "iteration": 1,
                 "random_size": True, "queue": output, "background": True, "event": event}
         thread = threading.Thread(target=self.ha_api.object_overwrite_dnld, kwargs=args)
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 4: Started overwrite object in background")
-        LOGGER.info("Waiting for bucket creation for ~ %s sec",
-                    HA_CFG["common_params"]["10min_delay"])
-        timeout = time.time() + HA_CFG["common_params"]["10min_delay"]
-        while True:
-            time.sleep(HA_CFG["common_params"]["20sec_delay"])
-            bkt_list = self.s3_test_obj.bucket_list()[1]
-            if all(item in bkt_list for item in list(new_s3_data.keys())):
-                break
-            if timeout < time.time():
-                LOGGER.error("Bucket creation is taking longer than %s sec",
-                             HA_CFG["common_params"]["10min_delay"])
-                assert_utils.assert_true(False, "Please check background process logs")
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
         LOGGER.info("Step 5: Restart the pod with replica method and check cluster status")
