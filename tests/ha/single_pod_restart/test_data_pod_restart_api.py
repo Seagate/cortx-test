@@ -1557,12 +1557,14 @@ class TestDataPodRestartAPI:
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
 
-        LOGGER.info("Step 3: Overwrite existing object. Create new bucket and overwrite "
-                    "object in new bucket")
-        t_t = int(perf_counter_ns())
-        bucket_name = f"bucket-{t_t}"
-        object_name = f"object-{t_t}"
-        s3_data.update({bucket_name: [object_name, file_size]})
+        LOGGER.info("Step 3: Overwrite existing object %s of bucket %s.", self.object_name,
+                    self.bucket_name)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 3.1: Create new bucket and overwrite object in new bucket")
+            t_t = int(perf_counter_ns())
+            bucket_name = f"bucket-{t_t}"
+            object_name = f"object-{t_t}"
+            s3_data.update({bucket_name: [object_name, file_size]})
         resp = self.ha_obj.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
                                                  random_size=False)
         assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
@@ -1570,9 +1572,8 @@ class TestDataPodRestartAPI:
             assert_utils.assert_equal(checksum[0], checksum[1],
                                       f"Checksum does not match, Expected: {checksum[0]} "
                                       f"Received: {checksum[1]}")
-        LOGGER.info("Step 3: Successfully overwritten object %s of bucket %s. Created new bucket "
-                    "%s and overwritten object %s in new bucket", self.object_name,
-                    self.bucket_name, bucket_name, object_name)
+        LOGGER.info("Step 3: Successfully performed overwrite object operation after %s "
+                    "shutdown.", pod_name)
 
         LOGGER.info("Step 4: Restart the pod with replica method and check cluster status")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
@@ -1590,12 +1591,14 @@ class TestDataPodRestartAPI:
                     "cluster status")
         self.restore_pod = False
 
-        LOGGER.info("Step 5: Overwrite object %s of bucket %s and object %s of bucket %s",
-                    self.object_name, self.bucket_name, object_name, bucket_name)
-        t_t = int(perf_counter_ns())
-        bucket_name = f"bucket-{t_t}"
-        object_name = f"object-{t_t}"
-        s3_data.update({bucket_name: [object_name, file_size]})
+        LOGGER.info("Step 5: Overwrite existing object %s of bucket %s.", self.object_name,
+                    self.bucket_name)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 5.1: Create new bucket and overwrite object in new bucket")
+            t_t = int(perf_counter_ns())
+            bucket_name = f"bucket-{t_t}"
+            object_name = f"object-{t_t}"
+            s3_data.update({bucket_name: [object_name, file_size]})
         resp = self.ha_obj.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
                                                  random_size=False)
         assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
@@ -1603,8 +1606,8 @@ class TestDataPodRestartAPI:
             assert_utils.assert_equal(checksum[0], checksum[1],
                                       f"Checksum doesn't match, Expected: {checksum[0]} "
                                       f"Received: {checksum[1]}")
-        LOGGER.info("Step 5: Successfully overwritten object %s of bucket %s and object %s of "
-                    "bucket %s", self.object_name, self.bucket_name, object_name, bucket_name)
+        LOGGER.info("Step 5: Successfully performed overwrite object operation after %s "
+                    "restart.", pod_name)
 
         LOGGER.info("ENDED: Test to verify object overwrite before and after data pod restart")
 
@@ -1634,6 +1637,19 @@ class TestDataPodRestartAPI:
         LOGGER.info("Step 1: Create bucket %s and perform upload of object size %s MB and "
                     "Overwrite the object", self.bucket_name, file_size)
 
+        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_multi"]
+        before_bkt = dict()
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create %s buckets and upload objects for background overwrite during "
+                        "pod restart.", bkt_cnt)
+            t_t = int(perf_counter_ns())
+            for cnt in range(bkt_cnt):
+                before_bkt.update({f"ha-bkt{cnt}-{t_t}": [f"ha-obj{cnt}-{t_t}", file_size]})
+            resp = self.ha_obj.object_overwrite_dnld(self.s3_test_obj, before_bkt, iteration=0,
+                                                     random_size=False)
+            assert_utils.assert_true(resp[0], "Failure observed in create new bucket, "
+                                              "upload object.")
+
         LOGGER.info("Step 2: Shutdown data pod with replica method and verify cluster & "
                     "remaining pods status")
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
@@ -1660,13 +1676,15 @@ class TestDataPodRestartAPI:
                                   f"{upld_chcksm} Actual: {dnld_checksum}")
         LOGGER.info("Step 3: Successfully Read-Verify already overwritten object in healthy "
                     "cluster")
-
-        LOGGER.info("Step 4: Start overwrite operation on new buckets")
-        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_multi"]
         new_s3_data = dict()
-        t_t = int(perf_counter_ns())
-        for cnt in range(bkt_cnt):
-            new_s3_data.update({f"ha-bkt{cnt}-{t_t}": [f"ha-obj{cnt}-{t_t}", file_size]})
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 4: Start overwrite operation on new buckets")
+            t_t = int(perf_counter_ns())
+            for cnt in range(bkt_cnt):
+                new_s3_data.update({f"ha-bkt{cnt}-{t_t}": [f"ha-obj{cnt}-{t_t}", file_size]})
+        else:
+            LOGGER.info("Step 4: Start overwrite operation on buckets created in healthy cluster")
+            new_s3_data = before_bkt.copy()
         args = {"s3_test_obj": self.s3_test_obj, "s3_data": new_s3_data, "iteration": 1,
                 "random_size": True, "queue": output, "background": True, "event": event}
         thread = threading.Thread(target=self.ha_obj.object_overwrite_dnld, kwargs=args)
@@ -1736,12 +1754,7 @@ class TestDataPodRestartAPI:
         LOGGER.info("Step 7: Successfully Read-Verify already overwritten object in healthy "
                     "cluster")
 
-        t_t = int(perf_counter_ns())
-        bucket_name = f"bucket-{t_t}"
-        object_name = f"object-{t_t}"
-        LOGGER.info("Step 8: Overwrite object %s of bucket %s", object_name, bucket_name)
-        s3_data.clear()
-        s3_data.update({bucket_name: [object_name, file_size]})
+        LOGGER.info("Step 8: Overwrite existing object of bucket %s", self.bucket_name)
         resp = self.ha_obj.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
                                                  random_size=False)
         assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
@@ -1749,7 +1762,6 @@ class TestDataPodRestartAPI:
             assert_utils.assert_equal(checksum[0], checksum[1],
                                       f"Checksum doesn't match, Expected: {checksum[0]} "
                                       f"Received: {checksum[1]}")
-        LOGGER.info("Step 8: Successfully overwritten object %s of bucket %s", object_name,
-                    bucket_name)
-
+        LOGGER.info("Step 8: Successfully overwritten existing object of bucket %s",
+                    self.bucket_name)
         LOGGER.info("ENDED: Test to verify object overwrite during data pod restart")
