@@ -22,6 +22,7 @@ common_params:
   bucket_creation_delay: 180
   10min_delay: 600
   io_retry_count: 5
+  short_loop: 5
 
 s3_operation_data:
   no_csm_users: 10
