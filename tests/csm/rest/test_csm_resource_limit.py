@@ -31,7 +31,7 @@ from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.csm_interface import csm_api_factory
 from libs.jmeter.jmeter_integration import JmeterInt
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.csm.extensions.csm_prov_ext import CSMExt
+from libs.csm.extensions.csm_ext import CSMExt
 
 
 class TestResourceLimit():

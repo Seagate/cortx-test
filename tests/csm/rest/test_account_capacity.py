@@ -41,7 +41,7 @@ from commons.utils import assert_utils, system_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG, S3_BLKBOX_CFG
 from libs.csm.csm_interface import csm_api_factory
-from libs.csm.extensions.csm_prov_ext import CSMExt
+from libs.csm.extensions.csm_ext import CSMExt
 from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.di.di_mgmt_ops import ManagementOPs
