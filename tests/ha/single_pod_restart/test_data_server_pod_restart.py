@@ -723,3 +723,450 @@ class TestDataServerPodRestart:
                     "buckets")
         LOGGER.info("COMPLETED: Verify Continuous IO when any 1 data pod and any 1 server pod"
                     " restart by replica method")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-45529")
+    def test_io_datapod_rst_serverpod_rst(self):
+        """
+        Verify IO when 1 data pod restart and then verify IO when 1 server pod restart by replica
+        method
+        """
+        LOGGER.info("STARTED: Verify IO when 1 data pod restart and then verify IO when 1 server "
+                    "pod restart by replica method")
+        LOGGER.info("STEP 1: Perform WRITEs/READs/Verify with variable object sizes")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = f'test-45529-{int(perf_counter_ns())}'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("STEP 1: Performed WRITEs/READs/Verify with variable sizes objects")
+
+        LOGGER.info("STEP 2: Shutdown one data pod with replica method and verify cluster & "
+                    "remaining pods status")
+        pod_prefix = const.POD_NAME_PREFIX
+        num_replica = self.pod_dict[pod_prefix][-1] - 1
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            pod_prefix=[pod_prefix], delete_pod=[self.pod_dict.get(pod_prefix)[0]],
+            num_replica=num_replica)
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+        pod_name = list(resp[1].keys())[0]
+        self.pod_dict[pod_prefix].append(resp[1][pod_name]['deployment_name'])
+        self.pod_dict[pod_prefix].append(resp[1][pod_name]['method'])
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("successfully shutdown pod %s", self.pod_dict.get(pod_prefix)[0])
+        self.restore_pod = True
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 2: Successfully shutdown one data pod with replica method and verify "
+                    "cluster & remaining pods status")
+
+        LOGGER.info("STEP 3: Perform READs/Verify on data written in healthy cluster in step-1")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("STEP 3: Performed READs/Verify on data written in healthy cluster in step-1")
+
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 4: Create new bucket and perform WRITEs/READs/Verify with variable "
+                        "object sizes in degraded mode")
+            self.test_prefix_deg = f'test-45529-deg-{int(perf_counter_ns())}'
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_deg,
+                                                        skipcleanup=True, setup_s3bench=False,
+                                                        nsamples=5, nclients=5)
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("STEP 4: Create new objects and perform WRITEs/READs/Verify with variable "
+                    "object sizes in degraded mode")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("STEP 4: Performed WRITEs/READs/Verify with variable sizes objects in "
+                    "degraded mode")
+
+        LOGGER.info("STEP 5: Restore data pod and check cluster status.")
+        pod = const.POD_NAME_PREFIX
+        self.restore_method = self.pod_dict.get(pod)[-1]
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={
+                                           "deployment_name": self.pod_dict.get(pod)[-2],
+                                           "deployment_backup": self.deployment_backup,
+                                           "num_replica": self.pod_dict.get(pod)[2],
+                                           "set_name": self.pod_dict.get(pod)[1]})
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+        LOGGER.info("Successfully restored pod by %s way", self.restore_method)
+        LOGGER.info("STEP 5: Successfully started data pod and cluster is online.")
+        self.restore_pod = False
+
+        LOGGER.info("STEP 6: Perform READ/Verify on data written with buckets created in healthy "
+                    "mode in step-1")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("STEP 6: Successfully run READ/Verify on data written with buckets created in "
+                    "healthy mode in step-1")
+
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 7: Perform READs and verify DI on the data written on buckets "
+                        "created in degraded mode in step-4")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_deg,
+                                                        skipwrite=True, skipcleanup=True,
+                                                        setup_s3bench=False, nsamples=5, nclients=5)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("STEP 7: Successfully run READ/Verify on data written on buckets created "
+                        "in degraded mode in step-4")
+
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 8: Create new IAM user and buckets, Perform WRITEs-READs-Verify with "
+                        "variable object sizes after data pod restart")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix_datapod_restart = f'test-45510-restart-{int(perf_counter_ns())}'
+            self.s3_clean.update(users)
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_datapod_restart,
+                                                        skipcleanup=True, setup_s3bench=False,
+                                                        nsamples=5, nclients=5)
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("STEP 8: Create new objects and perform WRITEs/READs/Verify with variable "
+                    "object sizes after data pod restart")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("STEP 8: Performed WRITEs-READs-Verify with variable sizes objects after "
+                    "data pod restart")
+
+        LOGGER.info("STEP 9: Shutdown one server pod with replica method and verify cluster & "
+                    "remaining pods status")
+        pod_prefix = const.const.SERVER_POD_NAME_PREFIX
+        num_replica = self.pod_dict[pod_prefix][-1] - 1
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            pod_prefix=[pod_prefix], delete_pod=[self.pod_dict.get(pod_prefix)[0]],
+            num_replica=num_replica)
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+        pod_name = list(resp[1].keys())[0]
+        self.pod_dict[pod_prefix].append(resp[1][pod_name]['deployment_name'])
+        self.pod_dict[pod_prefix].append(resp[1][pod_name]['method'])
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("successfully shutdown pod %s", self.pod_dict.get(pod_prefix)[0])
+        self.restore_pod = True
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("STEP 9: Successfully shutdown one server pod with replica method and verify "
+                    "cluster & remaining pods status")
+
+        LOGGER.info("STEP 10.1: Perform READs/Verify on data written in healthy mode in step-1")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("STEP 10.1: Performed READs/Verify on data written in healthy mode in step-1")
+
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 10.2: Perform READs/Verify on data written in degraded mode when "
+                        "data pod down in step-4")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_deg,
+                                                        skipwrite=True, skipcleanup=True,
+                                                        setup_s3bench=False, nsamples=5, nclients=5)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("STEP 10.2: Performed READs/Verify on data written in degraded mode when"
+                        " data pod down in step-4")
+
+            LOGGER.info("STEP 10.3: Perform READs/Verify on data written after data pod restart "
+                        "in step-8")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_deg,
+                                                        skipwrite=True, skipcleanup=True,
+                                                        setup_s3bench=False, nsamples=5, nclients=5)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("STEP 10.3: Performed READs/Verify on data written after data pod restart "
+                        "in step-8")
+
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 11: Create new bucket and perform WRITEs/READs/Verify with variable "
+                        "object sizes when server pod down")
+            self.test_prefix_server_deg = f'test-45529-server_deg-{int(perf_counter_ns())}'
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_server_deg,
+                                                        skipcleanup=True, setup_s3bench=False,
+                                                        nsamples=5, nclients=5)
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 11: Create new objects and perform WRITEs/READs/Verify with variable "
+                    "object sizes when server pod down")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 11: Performed WRITEs/READs/Verify with variable object sizes "
+                    "when server pod down")
+
+        LOGGER.info("Step 12: Restore server pod and check cluster status.")
+        pod_prefix = const.SERVER_POD_NAME_PREFIX
+        self.restore_method = self.pod_dict.get(pod_prefix)[-1]
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={
+                                           "deployment_name": self.pod_dict.get(pod_prefix)[-2],
+                                           "deployment_backup": self.deployment_backup,
+                                           "num_replica": self.pod_dict.get(pod_prefix)[2],
+                                           "set_name": self.pod_dict.get(pod_prefix)[1]})
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+        LOGGER.info("Successfully restored pod by %s way", self.restore_method)
+        LOGGER.info("Step 12: Successfully started server pod and cluster is online.")
+        self.restore_pod = False
+
+        LOGGER.info("STEP 13.1: Perform READs/Verify on data written in healthy mode in step-1")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 13.1: Performed READs/Verify on data written in healthy mode in step-1")
+
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 13.2: Perform READs/Verify on data written after data pod down "
+                        "in step-4")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_deg,
+                                                        skipwrite=True, skipcleanup=True,
+                                                        setup_s3bench=False, nsamples=5, nclients=5)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 13.1: Performed READs/Verify on data written after data pod down "
+                        "in step-4")
+
+            LOGGER.info("STEP 13.3: Perform READs/Verify on data written after data pod restart "
+                        "in step-8")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_datapod_restart,
+                                                        skipwrite=True, skipcleanup=True,
+                                                        setup_s3bench=False, nsamples=5, nclients=5)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 13.3: Performed READs/Verify on data written after data pod restart "
+                        "in step-8")
+
+            LOGGER.info("STEP 13.4: Perform READs/Verify on data written after server pod down "
+                        "in step-11")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_server_deg,
+                                                        skipwrite=True, skipcleanup=True,
+                                                        setup_s3bench=False, nsamples=5, nclients=5)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 13.4: Performed READs/Verify on data written after server pod down "
+                        "in step-11")
+
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 14: Create new IAM user and buckets, Perform WRITEs-READs-Verify "
+                        "with variable object sizes after data pod restart")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = f'test-45510-restart-{int(perf_counter_ns())}'
+            self.s3_clean.update(users)
+        else:
+            LOGGER.info("Step 14: Create new objects, Perform WRITEs-READs-Verify with variable "
+                        "object sizes after data and server pod restart")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 14: Performed WRITEs-READs-Verify with variable sizes objects after "
+                    "data and server pod restart")
+        LOGGER.info("COMPLETED: Verify IO when 1 data pod restart and then verify IO when 1 "
+                    "server pod restart by replica method")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-45536")
+    def test_io_datapod_serverpod_rst(self):
+        """
+        Verify IO when 1 data pod and 1 server pod down and then restart by replica
+        method (one-by-one)
+        """
+        LOGGER.info("STEP 1: Perform WRITEs/READs/Verify with variable object sizes")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = f'test-45536-{int(perf_counter_ns())}'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITEs/READs/Verify with variable sizes objects")
+
+        LOGGER.info("Step 2: Shutdown one data pod with replica method and verify cluster & "
+                    "remaining pods status")
+        pod_prefix = const.POD_NAME_PREFIX
+        num_replica = self.pod_dict[pod_prefix][-1] - 1
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            pod_prefix=[pod_prefix], delete_pod=[self.pod_dict.get(pod_prefix)[0]],
+            num_replica=num_replica)
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+        pod_name = list(resp[1].keys())[0]
+        self.pod_dict[pod_prefix].append(resp[1][pod_name]['deployment_name'])
+        self.pod_dict[pod_prefix].append(resp[1][pod_name]['method'])
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("successfully shutdown pod %s", self.pod_dict.get(pod_prefix)[0])
+        self.restore_pod = True
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 2: Successfully shutdown one data pod with replica method and verify "
+                    "cluster & remaining pods status")
+
+        LOGGER.info("STEP 3: Perform READs/Verify on data written in healthy cluster in step-1")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Performed READs/Verify on data written in healthy cluster in step-1")
+
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 4: Create new bucket and perform WRITEs/READs/Verify with variable "
+                        "object sizes in degraded mode")
+            self.test_prefix_deg = f'test-45536-deg-{int(perf_counter_ns())}'
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_deg,
+                                                        skipcleanup=True, setup_s3bench=False,
+                                                        nsamples=5, nclients=5)
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Create new objects and perform WRITEs/READs/Verify with variable "
+                    "object sizes in degraded mode")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Performed WRITEs/READs/Verify with variable sizes objects in "
+                    "degraded mode")
+
+        LOGGER.info("Step 5: Shutdown one server pod with replica method and verify cluster & "
+                    "remaining pods status")
+        pod_prefix = const.SERVER_POD_NAME_PREFIX
+        num_replica = self.pod_dict[pod_prefix][-1] - 1
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            pod_prefix=[pod_prefix], delete_pod=[self.pod_dict.get(pod_prefix)[0]],
+            num_replica=num_replica)
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+        pod_name = list(resp[1].keys())[0]
+        self.pod_dict[pod_prefix].append(resp[1][pod_name]['deployment_name'])
+        self.pod_dict[pod_prefix].append(resp[1][pod_name]['method'])
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("successfully shutdown pod %s", self.pod_dict.get(pod_prefix)[0])
+        self.restore_pod = True
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 5: Successfully shutdown one server pod with replica method and verify "
+                    "cluster & remaining pods status")
+
+        LOGGER.info("STEP 6.1: Perform READs/Verify on data written in healthy cluster in step-1")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 6.1: Performed READs/Verify on data written in healthy cluster in step-1")
+
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("STEP 6.2: Perform READs/Verify on data written in degraded mode when "
+                        "data pod down in step-4")
+            resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                        log_prefix=self.test_prefix_deg,
+                                                        skipwrite=True, skipcleanup=True,
+                                                        setup_s3bench=False, nsamples=5, nclients=5)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 6.2: Performed READs/Verify on data written in degraded mode when "
+                        "data pod down in step-4")
+
+        LOGGER.info("STEP 7: Perform write when data and server pod is down")
+        if CMN_CFG["dtm0_disabled"]:
+            self.test_prefix = 'test-34076-deg-write'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipread=True,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: Performed write when data and server pod is down")
+
+        LOGGER.info("Step 8: Start READs and verify DI on the written data when pods down in "
+                    "step-7 in background")
+        output_rd = Queue()
+        event = threading.Event()
+        event_set_clr = [False]
+        args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_prefix,
+                'nclients': 5, 'nsamples': 5, 'skipwrite': True, 'skipcleanup': True,
+                'output': output_rd, 'setup_s3bench': False, 'event_set_clr': event_set_clr}
+        thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
+                                     kwargs=args)
+        thread_rd.daemon = True  # Daemonize thread
+        thread_rd.start()
+        LOGGER.info("Step 8: Successfully started READs and verify on the written data when pods "
+                    "down in step-7 in background")
+        LOGGER.info("Waiting for %s seconds", HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+
+        LOGGER.info("Step 9: Restore data and server pod and check cluster status.")
+        event.set()
+        for pod_prefix in self.pod_dict:
+            self.restore_method = self.pod_dict.get(pod_prefix)[-1]
+            resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                           restore_method=self.restore_method,
+                                           restore_params={
+                                               "deployment_name": self.pod_dict.get(pod_prefix)[-2],
+                                               "deployment_backup": self.deployment_backup,
+                                               "num_replica": self.pod_dict.get(pod_prefix)[2],
+                                               "set_name": self.pod_dict.get(pod_prefix)[1]},
+                                           clstr_status=True)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            LOGGER.info("Successfully restored pod by %s way", self.restore_method)
+        LOGGER.info("Step 9: Successfully started data and server pod and cluster is online.")
+        self.restore_pod = False
+        event.clear()
+        thread_rd.join()
+
+        LOGGER.info("Step 10: Verify status for In-flight READs/Verify DI")
+        responses_rd = dict()
+        while len(responses_rd) != 2:
+            responses_rd = output_rd.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in responses_rd["pass_res"])
+        fail_logs = list(x[1] for x in responses_rd["fail_res"])
+        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
+        assert_utils.assert_false(len(resp[1]), "READs/VerifyDI logs which contain failures:"
+                                                f"{resp[1]}")
+        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
+        assert_utils.assert_false(len(resp[1]), "READs/VerifyDI Logs which contain failures: "
+                                                f"{resp[1]}")
+        LOGGER.info("Step 10: Verified status for In-flight READs/Verify DI")
+
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 11: Create new IAM user and buckets, Perform WRITEs-READs-Verify "
+                        "with variable object sizes after pod restart")
+            users = self.mgnt_ops.create_account_users(nusers=1)
+            self.test_prefix = f'test-45536-restart-{int(perf_counter_ns())}'
+            self.s3_clean.update(users)
+        else:
+            LOGGER.info("Step 11: Create new objects, Perform WRITEs-READs-Verify with "
+                        "variable object sizes after pod restart")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=5, nclients=5)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 11: Performed WRITEs-READs-Verify with variable sizes objects after pod "
+                    "restart")
+        LOGGER.info("COMPLETED: Verify IO when 1 data pod and 1 server pod down and then restart "
+                    "by replica method (one-by-one)")
