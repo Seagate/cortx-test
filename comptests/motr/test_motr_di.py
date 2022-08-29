@@ -232,10 +232,10 @@ class TestCorruptDataDetection:
         logger.debug("data gob id resp is %s", data_gob_id_resp)
         if ft_type == 1:
             corrupt_resp = self.emap_adapter_obj.inject_fault_k8s(
-                data_gob_id_resp, metadata_device=metadata_path[0])
+                data_gob_id_resp[0], metadata_device=metadata_path[0])
         else:
             corrupt_resp = self.emap_adapter_obj.inject_fault_k8s(
-                parity_gob_id_resp, metadata_device=metadata_path[0])
+                parity_gob_id_resp[0], metadata_device=metadata_path[0])
         logger.debug("corrupt emap response ~~~~~~~~~~~~~~~~ %s", corrupt_resp)
         assert_utils.assert_true(corrupt_resp[0], corrupt_resp[1])
 
@@ -270,7 +270,7 @@ class TestCorruptDataDetection:
                 for b_size, cnt_c, layout, in zip(bsize_list, count_list, layout_ids):
                     self.motr_obj.cat_cmd(b_size, cnt_c, obj_id,
                                           layout, outfile, node,
-                                          client_num)
+                                          client_num, di_g=True)
                     # Verify the md5sum
                     self.motr_obj.md5sum_cmd(infile, outfile, node, flag=True)
                     # Delete the object
@@ -357,9 +357,9 @@ class TestCorruptDataDetection:
         """
         test_prefix = "TEST-41911"
         count_list = [["10", "10"]]
-        bsize_list = ["4K"]
-        layout_ids = ["3"]
-        offsets = [4096]
+        bsize_list = ["4K", "4K"]
+        layout_ids = ["3", "3"]
+        offsets = [0, 4096]
         logger.info("STARTED: Test %s for data block corruption -unaligned",
                     test_prefix)
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
@@ -425,10 +425,10 @@ class TestCorruptDataDetection:
         bsize_list = ["4096", "4096", "4096", "4096", "4096"]
         layout_ids = ["3", "3", "3", "3", "3"]
         offsets = [0, 4096, 8192, 12288, 16384]
-        logger.info("STARTED: Test %s data unit corruption in loop - aligned", test_prefix)
+        logger.info("STARTED: Test %s data unit corruption in loop - unaligned", test_prefix)
         logger.info("Step 1: Perform m0cp and corrupt the data block")
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
-        logger.info("ENDED: Test %s Parity corruption in degraded mode - aligned", test_prefix)
+        logger.info("ENDED: Test %s data unit corruption in loop  - unaligned", test_prefix)
 
     @pytest.mark.tags("TEST-45716")
     @pytest.mark.motr_di
@@ -477,7 +477,7 @@ class TestCorruptDataDetection:
             gob_id_resp = self.emap_adapter_obj.get_object_gob_id(
                 metadata_path[0], fid=fid_resp)
             logger.debug("gob id resp is %s", gob_id_resp)
-            logger.info("Step 2: Corrupt the data block")
+            logger.info("Step 2: Corrupt the data block %s", gob_id_resp[0])
             # Corrupt the data block 1
             for fid in gob_id_resp[0]:
                 corrupt_data_resp = self.emap_adapter_obj.inject_fault_k8s(
@@ -485,14 +485,30 @@ class TestCorruptDataDetection:
                 if not corrupt_data_resp:
                     logger.debug("Failed to corrupt the block %s", fid)
                 assert_utils.assert_true(corrupt_data_resp)
+            self.dtm_obj.process_restart_with_delay(
+                master_node=self.master_node_list[0],
+                health_obj=self.health_obj,
+                check_proc_state=True,
+                process=const.PID_WATCH_LIST[0],
+                pod_prefix=const.POD_NAME_PREFIX,
+                container_prefix=const.MOTR_CONTAINER_PREFIX,
+                proc_restart_delay=5,
+                restart_cnt=1,
+            )
             # Read the data using m0cp utility
             self.m0cat_md5sum_m0unlink(
                 bsize_list, count_list, layout_ids, object_list, client_num=client_num,
                 outfile=outfile)
+            logger.debug("file is %s", log_file_list)
+            for file in log_file_list:
+                file = "/root/"+file
+                if self.master_node_list[0].path_exists(file):
+                    self.master_node_list[0].remove_file(file)
+                    logger.info("Successfully cleaned the dump files")
             logger.info("ENDED: Test %s m0cp, corrupt and m0cat workflow of each"
                         " Data block one by one -aligned", test_prefix)
 
-    @pytest.mark.skip(reason="Test incomplete without teardown")
+    # @pytest.mark.skip(reason="Test incomplete without teardown")
     @pytest.mark.tags("TEST-42910")
     @pytest.mark.motr_di
     def test_m0cp_block_corruption_m0cat_degraded_mode(self):
@@ -535,18 +551,18 @@ class TestCorruptDataDetection:
                         client_num=client_num, offset=offset)
         logger.info("Step 2: Switching the setup to Degraded Mode")
         # Degrade the setup by killing the m0d process
-        resp = self.motr_obj.switch_to_degraded_mode()
-        if resp[0]:
-            logger.debug("Switched the setup to Degraded mode %s", resp)
-            self.pod_selected = resp[1]
-            self.container = resp[2]
+        # resp = self.motr_obj.switch_to_degraded_mode()
+        # if resp[0]:
+        #     logger.debug("Switched the setup to Degraded mode %s", resp)
+        #     self.pod_selected = resp[1]
+        #     self.container = resp[2]
         # Read the data using m0cat in degraded mode
-        self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids, object_id_list,
+        self.m0cat_md5sum_m0unlink(bsize_list, count_list[0], layout_ids, object_id_list,
                                    infile=infile, outfile=outfile)
         logger.info("ENDED: Test %s for m0cp in healthy mode and"
                     "m0cat in degraded mode -short block unaligned", test_prefix)
 
-    @pytest.mark.skip(reason="Feature not available")
+    # @pytest.mark.skip(reason="Feature not available")
     @pytest.mark.tags("TEST-41912")
     @pytest.mark.motr_di
     def test_m0cp_m0cat_short_block_corruption_degraded_mode(self):
@@ -559,22 +575,23 @@ class TestCorruptDataDetection:
         """
         test_prefix = "TEST-41912"
         count_list = [['1', '1']]
-        bsize_list = ['900K', '900K']
-        layout_ids = ['1']
+        bsize_list = ['12K', '12K']
+        layout_ids = ['2']
         offsets = [4096]
-        infile_size = ['6K']
+        infile_size = '14K'
         infile = TEMP_PATH + 'input'
         outfile = TEMP_PATH + 'output'
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
+        object_id_list = []
         logger.info("STARTED: Test %s for data block corruption and"
                     "m0cat -short block unaligned in degraded mode", test_prefix)
         # Degrade the setup by killing the m0d process
-        resp = self.motr_obj.switch_to_degraded_mode()
-        if resp[0]:
-            logger.debug("Switched the setup to Degraded mode")
-            self.pod_selected = resp[1]
-            self.container = resp[2]
+        # resp = self.motr_obj.switch_to_degraded_mode()
+        # if resp[0]:
+        #     logger.debug("Switched the setup to Degraded mode")
+        #     self.pod_selected = resp[1]
+        #     self.container = resp[2]
         logger.info("STARTED: m0cp, corrupt and m0cat workflow")
         for client_num in range(motr_client_num):
             for node in node_pod_dict:
@@ -587,6 +604,7 @@ class TestCorruptDataDetection:
                     self.motr_obj.cp_cmd(
                         b_size, cnt_c, object_id,
                         layout, infile, node, client_num, di_g=True)
+                    object_id_list.append(object_id)
                     self.motr_obj.cat_cmd(
                         b_size, cnt_c, object_id,
                         layout, outfile, node, client_num)
@@ -598,16 +616,12 @@ class TestCorruptDataDetection:
                         file=infile, node=node,
                         client_num=client_num, offset=offset)
                     logger.info("Step to read the data using m0cat utility\n")
-                    self.motr_obj.cat_cmd(b_size, cnt_c, object_id, layout, outfile, node,
-                                          client_num)
-                    logger.info("Step to Verify the checksum after corruption of data \n")
-                    self.motr_obj.md5sum_cmd(infile, outfile, node, flag=True)
-                    logger.info("Step to unlink the object \n")
-                    self.motr_obj.unlink_cmd(object_id, layout, node, client_num)
+                    self.m0cat_md5sum_m0unlink(bsize_list, count_list[0], layout_ids,
+                                               object_id_list, infile=infile, outfile=outfile)
         logger.info("ENDED: Test %s for data block corruption and"
                     "m0cat -short block unaligned in degraded mode", test_prefix)
 
-    @pytest.mark.skip(reason="Test incomplete without teardown")
+    # @pytest.mark.skip(reason="Test incomplete without teardown")
     @pytest.mark.tags("TEST-41913")
     @pytest.mark.motr_di
     def test_m0cp_m0cat_degraded_mode_short_block_corruption(self):
@@ -619,10 +633,10 @@ class TestCorruptDataDetection:
         """
         test_prefix = "TEST-41913"
         count_list = [['1', '1']]
-        bsize_list = ['900K']
-        layout_ids = ['1']
+        bsize_list = ['12K', '12K']
+        layout_ids = ['2']
         offsets = [4096]
-        infile_size = ['6K']
+        infile_size = '14K'
         logger.info("STARTED: Test %s m0cp in healthy mode and"
                     "m0cat workflow for short block -unaligned in Degraded Mode", test_prefix)
         infile = TEMP_PATH + 'input'
@@ -653,11 +667,11 @@ class TestCorruptDataDetection:
                         client_num=client_num, offset=offset)
                     object_id_list.append(object_id)
         # Degrade the setup by killing the m0d process
-        resp = self.motr_obj.switch_to_degraded_mode()
-        if resp[0]:
-            logger.debug("Switched the setup to Degraded mode")
-            self.pod_selected = resp[1]
-            self.container = resp[2]
+        # resp = self.motr_obj.switch_to_degraded_mode()
+        # if resp[0]:
+        #     logger.debug("Switched the setup to Degraded mode")
+        #     self.pod_selected = resp[1]
+        #     self.container = resp[2]
         # Read the data using m0cat in degraded mode
         self.m0cat_md5sum_m0unlink(bsize_list, count_list[0], layout_ids,
                                    object_id_list, infile=infile, outfile=outfile)

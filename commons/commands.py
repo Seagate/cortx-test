@@ -421,6 +421,7 @@ FETCH_ID_EMAP = "grep -n {} -e \"{}\"|awk 'END{{print $9}}'"
 
 
 M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
+M0CAT_G = "m0cat -G -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"
 M0KV = "m0kv -l {} -h {} -f {} -p {} {}"
 DIFF = "diff {} {}"

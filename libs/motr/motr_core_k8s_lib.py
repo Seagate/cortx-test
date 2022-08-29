@@ -28,7 +28,6 @@ import time
 from random import SystemRandom
 from string import Template
 
-from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from libs.motr import TEMP_PATH
 from libs.motr import FILE_BLOCK_COUNT
 from libs.motr.layouts import BSIZE_LAYOUT_MAP
@@ -36,16 +35,14 @@ from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from config import CMN_CFG
 from config import di_cfg
+from commons import commands as common_cmd
+from commons import constants as common_const
+from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from commons.utils import system_utils
 from commons.utils import config_utils
 from commons.utils import assert_utils
-from commons.constants import POD_NAME_PREFIX
-from commons.constants import MOTR_CONTAINER_PREFIX
-from commons.constants import PID_WATCH_LIST
 from commons.helpers.pods_helper import LogicalNode
 from commons.helpers.health_helper import Health
-from commons import commands as common_cmd
-from commons import constants as common_const
 
 log = logging.getLogger(__name__)
 
@@ -380,8 +377,12 @@ class MotrCoreK8s():
                                                          f"-- {cmd}", decode=True)
 
         log.info("CAT Resp: %s", resp)
-
-        assert_utils.assert_not_in("ERROR" or "Error", resp,
+        if di_g:
+            assert_utils.assert_in("ERROR" or b'Checksum validation failed for Obj',
+                                   resp, f'"{cmd}" The m0cat operation failed'
+                                   f' as expected for corrupt block')
+        else:
+            assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
 
     def unlink_cmd(self, obj, layout, node, client_num=None):
@@ -449,6 +450,8 @@ class MotrCoreK8s():
         log.info("MD5SUM Resp: %s", resp)
         chksum = resp.split()
         if flag:
+            if chksum[0] != chksum[1]:
+                log.info("Checksum is mismatched ")
             assert_utils.assert_not_equal(chksum[0], chksum[1], f'{cmd}, Checksum did not match')
         else:
             assert_utils.assert_equal(chksum[0], chksum[2], f'Failed {cmd}, Checksum did not match')
@@ -851,9 +854,9 @@ class MotrCoreK8s():
         """
         This method kill's m0d process and make setup to degraded mode
         """
-        process = PID_WATCH_LIST[0]
+        process = common_const.PID_WATCH_LIST[0]
         pod_selected, container = self.master_node_list[0].select_random_pod_container(
-            POD_NAME_PREFIX, MOTR_CONTAINER_PREFIX)
+            common_const.POD_NAME_PREFIX, common_const.MOTR_CONTAINER_PREFIX)
         self.dtm_obj.set_proc_restart_duration(
             self.master_node_list[0], pod_selected, container, di_cfg['wait_time_m0d_restart'])
         try:
@@ -864,7 +867,7 @@ class MotrCoreK8s():
             log.debug("Resp : %s", resp)
             log.info("Sleep till %s", di_cfg['wait_time_m0d_restart'])
             # added 20 seconds delay for container to restart.
-            time.sleep(di_cfg['wait_time_m0d_restart'] + 20)
+            time.sleep(20)
             return True, pod_selected, container
         except (ValueError, IOError) as ex:
             log.error("Exception Occurred during killing process : %s", ex)

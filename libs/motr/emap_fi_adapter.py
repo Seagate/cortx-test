@@ -20,12 +20,12 @@
 """Failure Injection adapter which Handles motr emap, checksum, data corruption.
 """
 import logging
-import yaml
 import secrets
 import time
-from abc import ABC, abstractmethod
 from string import Template
 from typing import AnyStr
+from abc import ABC, abstractmethod
+import yaml
 
 
 from commons.constants import POD_NAME_PREFIX
@@ -301,10 +301,10 @@ class MotrCorruptionAdapter(InjectCorruption):
         cmd = self.emap_bldr.build(**kwargs)
         return cmd
 
-    def inject_fault_k8s(self, oid: list, metadata_device: str):
+    def inject_fault_k8s(self, oid: str, metadata_device: str):
         """
         Inject fault of type checksum or parity.
-        :param oid object id list
+        :param oid object id
         :param metadata_device - metadata device path
         :return boolean :true :if successful
                           false: if error
@@ -312,38 +312,40 @@ class MotrCorruptionAdapter(InjectCorruption):
         resp = None
         try:
             data_pods = self.master_node_list[0].get_all_pods(POD_NAME_PREFIX)
-            for index, pod_name in enumerate(data_pods):
-                motr_containers = self.master_node_list[0].get_container_of_pod(
-                    pod_name, MOTR_CONTAINER_PREFIX)
-                logging.debug("Inside.......... pod_name = %s", pod_name)
-                retries = 1
-                success = False
-                while retries > 0:
-                    try:
-                        emap_cmd = self.build_emap_command(
-                            fid=oid[index], selected_meta_dev=metadata_device
+            pod_name = secrets.choice(data_pods)
+            LOGGER.debug("pod name is %s", pod_name)
+            motr_containers = self.master_node_list[0].get_container_of_pod(
+                pod_name, MOTR_CONTAINER_PREFIX)
+            LOGGER.debug("Inside.......... pod_name = %s", pod_name)
+            retries = 1
+            success = False
+            while retries > 0:
+                try:
+                    emap_cmd = self.build_emap_command(
+                        fid=oid, selected_meta_dev=metadata_device
+                    )
+                    logging.debug("emap_cmd = %s", emap_cmd)
+                    if emap_cmd:
+                        resp = self.master_node_list[0].send_k8s_cmd(
+                            operation="exec",
+                            pod=pod_name,
+                            namespace=NAMESPACE,
+                            command_suffix=f"-c {motr_containers[0]} -- " f"{emap_cmd}",
+                            decode=True,
                         )
-                        logging.debug("emap_cmd = %s", emap_cmd)
-                        if emap_cmd:
-                            resp = self.master_node_list[0].send_k8s_cmd(
-                                operation="exec",
-                                pod=pod_name,
-                                namespace=NAMESPACE,
-                                command_suffix=f"-c {motr_containers[0]} -- " f"{emap_cmd}",
-                                decode=True,
-                            )
-                            logging.debug("resp = %s", resp)
-                            if resp:
-                                success = True
-                                break
-                            retries -= 1
-                    except IOError as ex:
-                        LOGGER.exception("remaining retrying: %s ", retries)
-                        LOGGER.exception("Exception : %s ", ex)
+                        logging.debug("resp = %s", resp)
+                        if resp:
+                            success = True
+                            self.dtm
+                            break
                         retries -= 1
-                        time.sleep(2)
-                    if success:
-                        break
+                except IOError as ex:
+                    LOGGER.exception("remaining retrying: %s ", retries)
+                    LOGGER.exception("Exception : %s ", ex)
+                    retries -= 1
+                    time.sleep(2)
+                if success:
+                    break
             return True, resp
         except IOError as ex:
             LOGGER.exception("Exception occurred while injecting emap fault", exc_info=ex)
