@@ -31,14 +31,12 @@ from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils.system_utils import path_exists, make_dirs
-from config.s3 import S3_CFG
 from libs.csm.csm_interface import csm_api_factory
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import s3_misc
 
 LOGGER = logging.getLogger(__name__)
-
 
 # pylint: disable=too-many-public-methods
 class TestCopyObjectsQuota:
@@ -48,6 +46,7 @@ class TestCopyObjectsQuota:
     # pylint: disable=too-many-arguments
     # pylint: disable-msg=too-many-locals
     # pylint: disable=attribute-defined-outside-init
+    # pylint: disable=too-many-instance-attributes
     @classmethod
     def setup_class(cls):
         """
@@ -183,7 +182,8 @@ class TestCopyObjectsQuota:
                       " destination object .")
         try:
             dest_obj = self.obj_prefix + str(test_cfg["max_objects"]+1)
-            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj, self.src_bkt, dest_obj)
+            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj,
+                                self.src_bkt, dest_obj)
         except CTException as error:
             self.log.info("Expected exception received %s", error)
             assert_utils.assert_in(errmsg.S3_COPY_OBJECT_QUOTA_ERR, error.message, error)
