@@ -344,6 +344,7 @@ class TestCsmLoad():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
+    @pytest.mark.skip("Skipped until CCORTX-30001 is planned")
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -389,6 +390,7 @@ class TestCsmLoad():
 
 
     # pylint: disable-msg=too-many-locals
+    @pytest.mark.skip("Skipped until CORTX-34103 is fixed")
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
