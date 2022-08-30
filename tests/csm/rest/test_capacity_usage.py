@@ -36,11 +36,11 @@ from commons.constants import POD_NAME_PREFIX
 from commons.params import LOG_DIR
 from config import CMN_CFG
 from config.s3 import S3_CFG
-from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.s3 import s3_misc
 from libs.csm.csm_interface import csm_api_factory
-from libs.s3 import s3_test_lib
+from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
+from libs.s3 import s3_misc
+from libs.s3 import s3_test_lib
 from scripts.s3_bench.s3bench import s3bench
 
 
@@ -94,7 +94,6 @@ class TestSystemCapacity():
                                  password=CMN_CFG["nodes"][0]["password"])
 
         cls.log.debug("Node object list : %s", cls.nd_obj)
-        cls.restore_pod = None
         cls.restore_method = RESTORE_SCALE_REPLICAS
         cls.deployment_name = []
         cls.failed_pod = []
