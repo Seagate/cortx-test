@@ -151,8 +151,7 @@ class TestCorruptDataDetection:
                         bsize_list, count_list, layout_ids, offsets
                 ):
                     self.motr_obj.dd_cmd(b_size, cnt_c, infile, node)
-                    self.motr_obj.cp_cmd(b_size, cnt_c, object_id, layout, infile, node, client_num,
-                                         di_g=True)
+                    self.motr_obj.cp_cmd(b_size, cnt_c, object_id, layout, infile, node, client_num)
                     self.motr_obj.cat_cmd(
                         b_size, cnt_c, object_id, layout, outfile, node, client_num
                     )
@@ -424,7 +423,7 @@ class TestCorruptDataDetection:
         count_list = [["5", "1"], ["5", "2"], ["5", "3"], ["5", "4"], ["5", "5"]]
         bsize_list = ["4096", "4096", "4096", "4096", "4096"]
         layout_ids = ["3", "3", "3", "3", "3"]
-        offsets = [0, 4096, 8192, 12288, 16384]
+        offsets = [0, 4096, 8192, 12288, 12288]
         logger.info("STARTED: Test %s data unit corruption in loop - unaligned", test_prefix)
         logger.info("Step 1: Perform m0cp and corrupt the data block")
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
