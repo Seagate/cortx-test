@@ -410,7 +410,8 @@ class TestCsmLoad():
 
         resp = self.csm_obj.list_csm_users(HTTPStatus.OK, return_actual_response=True)
         existing_user = len(resp.json()['users'])
-        result = self.csm_obj.create_multi_csm_user_with_List_IAM(test_cfg["total_users"], existing_user)
+        result = self.csm_obj.create_multi_csm_user_with_List_IAM(test_cfg["total_users"],
+                                                                  existing_user)
         assert result, "Unable to create max users & list IAM"
         result = self.csm_obj.delete_multi_csm_user(test_cfg["total_users"], existing_user)
         assert result, "Unable to delete max users"
