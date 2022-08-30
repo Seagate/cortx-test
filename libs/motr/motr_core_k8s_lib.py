@@ -315,7 +315,7 @@ class MotrCoreK8s():
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = Template(common_cmd.M0CP_U).substitute(
+        cmd = Template(common_cmd.M0CP_U_G).substitute(
             ep=node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
             hax_ep=node_dict["hax_ep"],
             fid=node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
