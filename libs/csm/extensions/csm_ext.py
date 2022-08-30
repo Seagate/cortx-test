@@ -122,6 +122,9 @@ class CSMExt():
     def delete_data_pod(self):
         """
         Degrade cluster safely by deleting the last data pod from a set
+        :return str set_name: sts set name from pod was deleted
+        :return int num_replica: new replica count after deletion
+        :return bool result: flag to identify if pod deleted or not
         """
         self.log.info("[Start] deleting a data pod...")
         result = False
@@ -159,6 +162,9 @@ class CSMExt():
     def restore_data_pod(self, set_name:str, num_replica:int):
         """
         Restore cluster safely by restoring a data pod
+        :param str set_name : sts set name of data pod
+        :param int num_replica : number of replicas of data pod after delete
+        :return bool result: flag to identify if pod restored or not
         """
         self.log.info("[Start] Restore a data pod...")
         result = False
