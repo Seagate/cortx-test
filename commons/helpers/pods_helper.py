@@ -586,7 +586,7 @@ class LogicalNode(Host):
                                     container_prefix: str, **kwargs):
         """
         Select random pod and container for the given pods and container prefix
-        :param pod_prefix: Pod prefix
+        :param pod_prefix: Pod prefix/ Pod name in case of specific_pod: True
         :param container_prefix: Container Prefix
         :keyword bool specific_pod: True for retrieving containers from specific pod
         return pod_selected,container_selected
