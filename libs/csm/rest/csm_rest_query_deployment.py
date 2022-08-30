@@ -17,11 +17,14 @@
 """Test library for query deployment related operations."""
 
 from http import HTTPStatus
+from datetime import datetime
+
 import yaml
 
 from config import PROV_TEST_CFG
 from commons import configmanager
 from commons.constants import LOCAL_SOLUTION_PATH, K8S_SCRIPTS_PATH
+from commons import commands as cmds
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 
@@ -76,26 +79,39 @@ class QueryDeployment(RestTestLib):
         """
         Verify Get system topology
         """
+        err_msg = ""
         unique_list = []
+        time_list= []
         resp = self.get_system_topology()
         result = True
         if resp.status_code == expected_response:
             result = True
             get_response = resp.json()
-            self.log.info("Verify id fields have unique values")
+            self.log.info("1. Verify id fields have unique values")
             for elements in get_response["topology"]:
                 if 'id' in elements.keys():
                     unique_list.append(elements['id'])
             if len(set(unique_list)) == len(unique_list):
                 self.log.info("id fields have unique values")
             else:
-                self.log.error("duplicate values found for id fields")
-            self.log.info("Verify deployment version and time")
+                err_msg = "Duplicate values found for id fields"
+                self.log.error(err_msg)
+                result = False
+            self.log.info("2. Verify deployment version and time")
             response_version = get_response["topology"]["version"]
             if response_version == deploy_version:
                 self.log.info("Version match found")
             else:
-                self.log.error("Version mismatch found")
+                err_msg = err_msg + "Version mismatch found"
+                self.log.error(err_msg)
+                result = False
+            for nodes in get_response["topology"]["nodes"][0]:
+                time_list.append(nodes["deployment_time"])
+            #compare deployment times
+            #verify node details(call verify storage details inside)
+            self.log.info("Verify certificate details")
+            result, err_msg = self.verify_certificate_details(expected_response=HTTPStatus.OK)
+            assert result, err_msg
         else:
             self.log.error("Status code check failed.")
             result = False
@@ -207,3 +223,196 @@ class QueryDeployment(RestTestLib):
             result = False
         return resp, result, err_msg
 
+    def verify_datetime_details(self, validity_str: str, get_response_date,
+                                get_response_time):
+        """
+        Verify what date certificate is valid before
+        """
+        err_msg = ""
+        output = []
+        flat_list = []
+        result = True
+        if result:
+            self.log.info("Verify certificate startdate")
+            resp = self.master.execute_cmd(
+                 cmd=cmds.CMD_DECRYPT_CERTIFICATE.format(validity_str), read_lines=True)
+            resp = resp.decode() if isinstance(resp, bytes) else resp
+            self.log.info("Print resp: %s", resp)
+            for element in resp:
+                output.append(element.strip().split())
+            for elements in output:
+                flat_list.extend(elements)
+            date_cmd = "{}-{}-{}".format(flat_list[1], flat_list[0].split("=")[1], flat_list[3])
+            self.log.info("Date from command: %s", date_cmd)
+            my_date = datetime.strptime(get_response_date, "%Y-%m-%d")
+            date_resp = "{}-{}-{}".format(my_date.day,
+                                               my_date.strftime("%b"), my_date.year)
+            self.log.info("Date from response: %s", date_resp)
+            if date_cmd != date_resp:
+                err_msg = "Date Verification failed."
+                self.log.error(err_msg)
+                result = False
+            else:
+                self.log.info("Date Verification successful")
+            self.log.info("Verify time in date details")
+            time_cmd = flat_list[2]
+            self.log.info("Time from get_response: %s", time_cmd)
+            self.log.info("Time from command: %s", time_cmd)
+            if time_cmd != get_response_time:
+                err_msg = err_msg + " Time details match failed"
+                self.log.error(err_msg)
+            else:
+                self.log.info("Time details match successful")
+        return result, err_msg
+
+    def verify_serial_number(self, get_response_number):
+        """
+        Verify serial number for certificate
+        """
+        err_msg = ""
+        result = True
+        if result:
+            cmd = cmds.CMD_DECRYPT_CERTIFICATE.format("serial")
+            resp = self.master.execute_cmd(cmd=cmd, read_lines=True)
+            resp = resp.decode() if isinstance(resp, bytes) else resp
+            self.log.info("Print resp: %s", resp)
+            output_cmd = [res.strip().split("=")[1] for res in resp]
+            self.log.info("Print serial number from response %s ", get_response_number)
+            self.log.info("Print serial number from command %s", output_cmd)
+            if get_response_number not in output_cmd:
+                err_msg = "Serial number match failed"
+                self.log.error(err_msg)
+                result = False
+            else:
+                self.log.info("Serial number match successful")
+        return result, err_msg
+
+    def verify_version_number(self, get_response_version):
+        """
+        Verify certificate version
+        """
+        err_msg = ""
+        result = True
+        if result:
+            resp = self.master.execute_cmd(
+                 cmd=cmds.CMD_DECRYPT_CERTIFICATE.format("text"), read_lines=True)
+            resp = resp.decode() if isinstance(resp, bytes) else resp
+            self.log.info("Print resp: %s", resp)
+            for version_cmd in resp:
+                if "version" in version_cmd.lower():
+                    version_cmd = "v" + version_cmd.strip().split()[1]
+                    self.log.info("Printing version from command %s", version_cmd)
+                    break
+            get_response_version = get_response_version.split(".")[1]
+            self.log.info("Printing get response version %s", get_response_version)
+            if version_cmd == get_response_version:
+                self.log.info("Version number match successful")
+            else:
+                err_msg = "Version number match failed"
+                self.log.error(err_msg)
+                result = False
+        return result, err_msg
+
+    def verify_issuer_details(self, issuer_dict: dict):
+        """
+        Verify certificate issuer details
+        """
+        err_msg = ""
+        values_list = []
+        flat_list = []
+        result = True
+        if result:
+            resp = self.master.execute_cmd(
+                 cmd=cmds.CMD_FETCH_CERTIFICATE_DETAILS.format("issuer"), read_lines=True)
+            resp = resp.decode() if isinstance(resp, bytes) else resp
+            self.log.info("Print resp: %s", resp)
+            for elements in resp:
+                values_list.append(elements.strip().split("="))
+            for elements in values_list:
+                flat_list.extend(elements)
+            res_dct = {flat_list[i]: flat_list[i + 1] for i in range(0, len(flat_list), 2)}
+            del res_dct["issuer"]
+            self.log.info("res dict %s ", res_dct)
+            self.log.info("issuer dict %s ", issuer_dict)
+            if res_dct == issuer_dict:
+                self.log.info("Issuer details match successful")
+            else:
+                err_msg = "Issuer details match failed"
+                self.log.error(err_msg)
+                result = False
+        return result, err_msg
+
+    def verify_subject_details(self, subject_dict: dict):
+        """
+        Verify certificate subject details
+        """
+        err_msg = ""
+        values_list = []
+        flat_list = []
+        result = True
+        if result:
+            resp = self.master.execute_cmd(
+                 cmd=cmds.CMD_FETCH_CERTIFICATE_DETAILS.format("subject"), read_lines=True)
+            resp = resp.decode() if isinstance(resp, bytes) else resp
+            self.log.info("Print resp: %s", resp)
+            for elements in resp:
+                values_list.append(elements.strip().split("="))
+            for elements in values_list:
+                flat_list.extend(elements)
+            res_dct = {flat_list[i]: flat_list[i + 1] for i in range(0, len(flat_list), 2)}
+            del res_dct["subject"]
+            self.log.info("res dict %s ", res_dct)
+            self.log.info("subject dict %s ", subject_dict)
+            if res_dct == subject_dict:
+                self.log.info("Subject details match successful")
+            else:
+                err_msg = "Subject details match failed"
+                self.log.error(err_msg)
+                result = False
+        return result, err_msg
+
+    def verify_certificate_details(self, expected_response=HTTPStatus.OK):
+        """
+        Verify certificate details
+        """
+        get_response = self.get_certificate_topology()
+        result = get_response.status_code == expected_response
+        if result:
+            self.log.info("Verify Certificate date time details")
+            self.log.info("Verify valid before date")
+            get_response = get_response.json()["topology"]["certificates"][0]
+            get_response_date = get_response["not_valid_before"].split()[0]
+            get_response_time = get_response["not_valid_before"].split()[1]
+            result, err_msg = self.verify_datetime_details("startdate",
+                                      get_response_date, get_response_time)
+            assert result, err_msg
+            self.log.info("Verified certificate startdate")
+            self.log.info("Verify valid after date")
+            get_response_date = get_response["not_valid_after"].split()[0]
+            get_response_time = get_response["not_valid_after"].split()[1]
+            result, err_msg = self.verify_datetime_details("enddate",
+                                      get_response_date, get_response_time)
+            assert result, err_msg
+            self.log.info("Verified certificate enddate")
+            self.log.info("Verify serial number")
+            get_response_number = get_response["serial_number"]
+            result, err_msg = self.verify_serial_number(get_response_number)
+            assert result, err_msg
+            self.log.info("Verify version number")
+            get_response_version = get_response["version"]
+            result, err_msg = self.verify_version_number(get_response_version)
+            assert result, err_msg
+            self.log.info("Verify issuer details")
+            issuer_dict = get_response["issuer"]
+            self.log.info("Printing issuer details %s", get_response)
+            result, err_msg = self.verify_issuer_details(issuer_dict)
+            assert result, err_msg
+            self.log.info("Verify subject details")
+            subject_dict = get_response["subject"]
+            self.log.info("Printing issuer details %s", subject_dict)
+            result, err_msg = self.verify_subject_details(subject_dict)
+            assert result, err_msg
+        else:
+            err_msg = "Status code check failed"
+            self.log.error(err_msg)
+        return result, err_msg
