@@ -884,7 +884,7 @@ class RestIamUser(RestTestLib):
                                                       check_on_raw=True)
         result, resp = self.csm_obj.verify_get_set_user_quota(user_id, payload,
                                                               verify_response=True)
-        assert_utils.assert_true(result, resp)
+        assert result, f"Verification for get set user failed.{resp}"
 
     def verify_user_quota(self, akey, skey, user_id):
         """
@@ -905,4 +905,4 @@ class RestIamUser(RestTestLib):
         self.log.info("Perform & Verify GET API to get capacity usage stats")
         res, resp = self.csm_obj.verify_user_capacity(user_id, total_size,
                                                       total_size, total_objects)
-        assert_utils.assert_true(res, f"Verify User capacity failed with error msg {resp}")
+        assert res, f"Verify User capacity failed with error msg {resp}"
