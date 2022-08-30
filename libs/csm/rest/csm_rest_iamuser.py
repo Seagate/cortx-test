@@ -901,7 +901,6 @@ class RestIamUser(RestTestLib):
             objects, size = s3_misc.get_objects_size_bucket(bucket, akey, skey)
             total_objects = total_objects + objects
             total_size = total_size + size
-
         self.log.info("total objects and size %s and %s ", total_objects, total_size)
         self.log.info("Perform & Verify GET API to get capacity usage stats")
         res, resp = self.csm_obj.verify_user_capacity(user_id, total_size,

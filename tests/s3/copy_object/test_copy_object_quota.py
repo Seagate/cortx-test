@@ -74,7 +74,7 @@ class TestCopyObjectsQuota:
         if resp[0]:
             cls.nvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['data'])
         cls.aligned_size = 4 * cls.nvalue
-        cls.test_file = f"mp_obj-{}".format(perf_counter_ns())
+        cls.test_file = "mp_obj-{}".format(perf_counter_ns())
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "test_copy_object")
         cls.mp_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
         if not path_exists(cls.test_dir_path):
@@ -97,10 +97,13 @@ class TestCopyObjectsQuota:
         self.created_iam_users.add(self.user_id)
         self.akey = resp["keys"][0]["access_key"]
         self.skey = resp["keys"][0]["secret_key"]
-        self.src_bkt = "src1"
-        self.obj = "obj"
-        self.dest_bkt1 = "dest1"
+        self.src_prefix = "src-{perf_counter_ns()}-"
+        self.dest_prefix = "dest-{perf_counter_ns()}-"
+        self.obj_prefix = "obj-{perf_counter_ns()}-"
+        self.obj = self.obj_prefix + str(1)
+        self.dest_bkt1 = self.dest_prefix + str(1)
         self.log.info("Step 2: Create bucket under above IAM user")
+        self.src_bkt = self.src_prefix + str(1)
         self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                       self.src_bkt, self.akey, self.skey)
         bucket_created = s3_misc.create_bucket(self.src_bkt, self.akey, self.skey)
@@ -164,23 +167,23 @@ class TestCopyObjectsQuota:
         self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 5: Upload a simple object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
-        resp = s3_misc.create_put_objects("obj1", self.src_bkt, self.akey, self.skey,
+        resp = s3_misc.create_put_objects(self.obj, self.src_bkt, self.akey, self.skey,
                                           object_size=random_size, block_size="1K")
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 6: Perform Copy object operation within same bucket 'N-1' times using"
                       "same source bucket and object and just changing the key name of the "
                       "destination object .")
         for cnt in range(2, (test_cfg["max_objects"]+1)):
-            dest_obj = "obj" + str(cnt)
-            resp = s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1",
+            dest_obj = self.obj_prefix + str(cnt)
+            resp = s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj,
                                        self.src_bkt, dest_obj)
             assert_utils.assert_true(resp, f"Copy object Failed for {self.src_bkt}/{dest_obj}")
         self.log.info("Step 7: Perform Copy object operation again (N)th time within same bucket"
                       " using same source bucket and object and just changing the key name of the"
                       " destination object .")
         try:
-            dest_obj = "obj" + str(test_cfg["max_objects"]+1)
-            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1", self.src_bkt, dest_obj)
+            dest_obj = self.obj_prefix + str(test_cfg["max_objects"]+1)
+            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj, self.src_bkt, dest_obj)
         except CTException as error:
             self.log.info("Expected exception received %s", error)
             assert_utils.assert_in(errmsg.S3_COPY_OBJECT_QUOTA_ERR, error.message, error)
@@ -212,22 +215,23 @@ class TestCopyObjectsQuota:
         self.csm_obj.verify_user_quota(akey, skey, uid)
         self.log.info("Step 13: Upload a simple object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
-        resp = s3_misc.create_put_objects("obj1", self.src_bkt, akey, skey,
+        resp = s3_misc.create_put_objects(self.obj, self.src_bkt, akey, skey,
                                           object_size=random_size, block_size="1K")
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 14: Perform Copy object operation within same bucket 'N-1' times using"
                       "same source bucket and object and just changing the key name of the "
                       "destination object .")
         for obj_cnt in range(1, (test_cfg["max_objects"])):
-            dest_obj = "obj" + str(obj_cnt)
-            resp = s3_misc.copy_object(akey, skey, self.src_bkt, "obj1", self.dest_bkt1, dest_obj)
+            dest_obj = self.obj_prefix + str(obj_cnt)
+            resp = s3_misc.copy_object(akey, skey, self.src_bkt, self.obj,
+                                       self.dest_bkt1, dest_obj)
             assert_utils.assert_true(resp, f"Copy object Failed for {self.dest_bkt1}/{dest_obj}")
         self.log.info("Step 15: Perform Copy object operation again (N)th time within same bucket"
                       " using same source bucket and object and just changing the key name of the"
                       " destination object .")
         try:
-            dest_obj = "obj" + str(test_cfg["max_objects"])
-            s3_misc.copy_object(akey, skey, self.src_bkt, "obj1", self.dest_bkt1, dest_obj)
+            dest_obj = self.obj_prefix + str(test_cfg["max_objects"])
+            s3_misc.copy_object(akey, skey, self.src_bkt, self.obj, self.dest_bkt1, dest_obj)
         except CTException as error:
             self.log.info("Expected exception received %s", error)
             assert_utils.assert_in(errmsg.S3_COPY_OBJECT_QUOTA_ERR, error.message, error)
@@ -261,30 +265,30 @@ class TestCopyObjectsQuota:
         self.log.info("Step 4: Create 'N+1' buckets named 'src1' , 'dest1' .. 'destN' under the"
                       "user created in step 1")
         for cnt in range(1, test_cfg["max_objects"]+2):
-            bkt_name = "dest" + str(cnt)
+            bkt_name = self.src_prefix + str(cnt)
             bucket_created = s3_misc.create_bucket(bkt_name, self.akey, self.skey)
             assert_utils.assert_true(bucket_created, "Failed to create bucket")
             self.buckets_created.append([bkt_name, self.akey, self.skey])
         self.log.info("Step 5: Upload a simple object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
-        resp = s3_misc.create_put_objects("obj1", self.src_bkt, self.akey, self.skey,
+        resp = s3_misc.create_put_objects(self.obj, self.src_bkt, self.akey, self.skey,
                                           object_size=random_size, block_size="1K")
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 6:  Perform Copy object operation from bucket 'src1' --> 'dest1'"
                       " --> 'dest2' --> ... --> 'destN-1' bucket and keeping the key name of"
                       " the destination object same during every copy operation.")
         for cnt in range(1, (test_cfg["max_objects"])):
-            dest_bkt = "dest" + str(cnt)
-            resp = s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1",
-                                       dest_bkt, "obj1")
-            assert_utils.assert_true(resp, f"Copy object Failed for {dest_bkt}/obj1")
+            dest_bkt = self.dest_prefix + str(cnt)
+            resp = s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj,
+                                       dest_bkt, self.obj)
+            assert_utils.assert_true(resp, f"Copy object Failed for {dest_bkt}/{self.obj}")
             self.src_bkt = dest_bkt
         self.log.info("Step 7: Perform Copy object operation again (N)th time from 'destN-1'"
                       " to 'destN' bucket and keeping the key name of the destination object"
                       "same during every copy operation.")
         try:
-            dest_bkt = "dest" + str(test_cfg["max_objects"])
-            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1", dest_bkt, "obj1")
+            dest_bkt = self.dest_prefix + str(test_cfg["max_objects"])
+            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj, dest_bkt, self.obj)
         except CTException as error:
             self.log.info("Expected exception received %s", error)
             assert_utils.assert_in(errmsg.S3_COPY_OBJECT_QUOTA_ERR, error.message, error)
@@ -312,23 +316,23 @@ class TestCopyObjectsQuota:
         assert_utils.assert_true(bucket_created, "Failed to create bucket")
         self.buckets_created.append([self.src_bkt, akey, skey])
         for cnt in range(1, test_cfg["max_objects"]+1):
-            bkt_name = "dest" + str(cnt)
+            bkt_name = self.dest_prefix + str(cnt)
             bucket_created = s3_misc.create_bucket(bkt_name, akey, skey)
             assert_utils.assert_true(bucket_created, "Failed to create bucket")
             self.buckets_created.append([bkt_name, self.akey, self.skey])
         self.log.info("Step 13: Upload a simple object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
-        resp = s3_misc.create_put_objects("obj1", self.src_bkt, akey, skey,
+        resp = s3_misc.create_put_objects(self.obj, self.src_bkt, akey, skey,
                                           object_size=random_size, block_size="1K")
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 14:  Perform Copy object operation from bucket 'src1' --> 'dest1'"
                       " --> 'dest2' --> ... --> 'destN-1' bucket and using different key name for"
                       " the destination object during every copy operation.")
         src_bkt = self.src_bkt
-        src_obj = "obj1"
+        src_obj =self.obj
         for cnt in range(1, (test_cfg["max_objects"])):
-            dest_bkt = "dest" + str(cnt)
-            dest_obj = "obj" + str(cnt+1)
+            dest_bkt = self.dest_prefix + str(cnt)
+            dest_obj = self.obj_prefix + str(cnt+1)
             resp = s3_misc.copy_object(akey, skey, src_bkt, src_obj,
                                        dest_bkt, dest_obj)
             assert_utils.assert_true(resp, f"Copy object Failed for {dest_bkt}/{dest_obj}")
@@ -339,8 +343,8 @@ class TestCopyObjectsQuota:
                       " to 'destN' bucket and using different key name of the destination object"
                       "same during every copy operation.")
         try:
-            dest_bkt = "dest" + str(test_cfg["max_objects"])
-            dest_obj = "obj" + str(test_cfg["max_objects"]+1)
+            dest_bkt = self.dest_prefix + str(test_cfg["max_objects"])
+            dest_obj = self.obj_prefix + str(test_cfg["max_objects"]+1)
             s3_misc.copy_object(akey, skey, src_bkt, src_obj, dest_bkt, dest_obj)
         except CTException as error:
             self.log.info("Expected exception received %s", error)
@@ -379,23 +383,23 @@ class TestCopyObjectsQuota:
         self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 5: Upload a simple object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
-        resp = s3_misc.create_put_objects("obj1", self.src_bkt, self.akey, self.skey,
+        resp = s3_misc.create_put_objects(self.obj, self.src_bkt, self.akey, self.skey,
                                           object_size=random_size, block_size="1K")
         assert_utils.assert_true(resp, "Put object Failed")
         self.log.info("Step 6: Perform Copy object operation within same bucket 'N-1' times using"
                       "same source bucket and object and just changing the key name of the "
                       "destination object .")
         for cnt in range(1, (test_cfg["max_objects"])):
-            dest_obj = "obj" + str(cnt)
-            resp = s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1",
+            dest_obj = self.obj_prefix + str(cnt)
+            resp = s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj,
                                        self.dest_bkt1, dest_obj)
             assert_utils.assert_true(resp, f"Copy object Failed for {self.dest_bkt1}/{dest_obj}")
         self.log.info("Step 7: Perform Copy object operation again (N)th time from 'src1' bucket"
                       " to 'dest1' bucket using same source bucket and object and same/existing"
                       " key name of the destination object(overwrite scenario)")
         try:
-            dest_obj = "obj" + str(test_cfg["max_objects"]-1)
-            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1",
+            dest_obj = self.obj_prefix + str(test_cfg["max_objects"]-1)
+            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj,
                                 self.dest_bkt1, dest_obj)
         except CTException as error:
             self.log.info("Expected exception received %s", error)
@@ -430,22 +434,22 @@ class TestCopyObjectsQuota:
         self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 5: Upload multipart upload obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
-        resp = self.multipart_upload(self.src_bkt, "obj1", self.akey, self.skey, random_size)
+        resp = s3_misc.multipart_upload(self.src_bkt, self.obj, self.akey, self.skey, random_size)
         assert_utils.assert_true(resp, "multipart upload Failed")
         self.log.info("Step 6: Perform Copy object operation within same bucket 'N-1' times using"
                       "same source bucket and object and just changing the key name of the "
                       "destination object .")
         for cnt in range(2, (test_cfg["max_objects"]+1)):
-            dest_obj = "obj" + str(cnt)
-            resp = s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1",
+            dest_obj = self.obj_prefix + str(cnt)
+            resp = s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj,
                                        self.src_bkt, dest_obj)
             assert_utils.assert_true(resp, f"Copy object Failed for {self.src_bkt}/{dest_obj}")
         self.log.info("Step 7: Perform Copy object operation again (N)th time within same bucket"
                       " using same source bucket and object and just changing the key name of the"
                       " destination object .")
         try:
-            dest_obj = "obj" + str(test_cfg["max_objects"]+1)
-            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1", self.src_bkt, dest_obj)
+            dest_obj = self.obj_prefix + str(test_cfg["max_objects"]+1)
+            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj, self.src_bkt, dest_obj)
         except CTException as error:
             self.log.info("Expected exception received %s", error)
             assert_utils.assert_in(errmsg.S3_COPY_OBJECT_QUOTA_ERR, error.message, error)
@@ -477,21 +481,22 @@ class TestCopyObjectsQuota:
         self.csm_obj.verify_user_quota(akey, skey, uid)
         self.log.info("Step 13: Upload multipart object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
-        resp = self.multipart_upload(self.src_bkt, "obj1", self.akey, self.skey, random_size)
+        resp = s3_misc.multipart_upload(self.src_bkt, self.obj, self.akey, self.skey, random_size)
         assert_utils.assert_true(resp, "Multipart upload Failed")
         self.log.info("Step 14: Perform Copy object operation within same bucket 'N-1' times using"
                       "same source bucket and object and just changing the key name of the "
                       "destination object .")
         for obj_cnt in range(1, (test_cfg["max_objects"])):
-            dest_obj = "obj" + str(obj_cnt)
-            resp = s3_misc.copy_object(akey, skey, self.src_bkt, "obj1", self.dest_bkt1, dest_obj)
+            dest_obj = self.obj_prefix + str(obj_cnt)
+            resp = s3_misc.copy_object(akey, skey, self.src_bkt, self.obj,
+                                       self.dest_bkt1, dest_obj)
             assert_utils.assert_true(resp, f"Copy object Failed for {self.dest_bkt1}/{dest_obj}")
         self.log.info("Step 15:Perform Copy object operation again (N)th time from 'src1' bucket"
                       " to 'dest1' bucket using same source bucket and object and by just changing"
                       " the key name of the destination object ")
         try:
-            dest_obj = "obj" + str(test_cfg["max_objects"])
-            s3_misc.copy_object(akey, skey, self.src_bkt, "obj1", self.dest_bkt1, dest_obj)
+            dest_obj = self.obj_prefix + str(test_cfg["max_objects"])
+            s3_misc.copy_object(akey, skey, self.src_bkt, self.obj, self.dest_bkt1, dest_obj)
         except CTException as error:
             self.log.info("Expected exception received %s", error)
             assert_utils.assert_in(errmsg.S3_COPY_OBJECT_QUOTA_ERR, error.message, error)
@@ -526,29 +531,29 @@ class TestCopyObjectsQuota:
         self.log.info("Step 4: Create 'N+1' buckets named 'src1' , 'dest1' .. 'destN' under the"
                       "user created in step 1")
         for cnt in range(1, test_cfg["max_objects"]+2):
-            bkt_name = "dest" + str(cnt)
+            bkt_name = self.dest_prefix + str(cnt)
             bucket_created = s3_misc.create_bucket(bkt_name, self.akey, self.skey)
             assert_utils.assert_true(bucket_created, "Failed to create bucket")
             self.buckets_created.append([bkt_name, self.akey, self.skey])
         self.log.info("Step 5: Upload a multipart object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
-        resp = self.multipart_upload(self.src_bkt, "obj1", self.akey, self.skey, random_size)
+        resp = s3_misc.multipart_upload(self.src_bkt, self.obj, self.akey, self.skey, random_size)
         assert_utils.assert_true(resp, "Multipart upload Failed")
         self.log.info("Step 6:Perform Copy object operation from bucket 'src1' --> 'dest1'"
                       " --> 'dest2' --> ... --> 'destN-1' bucket and keeping the key name"
                       " of the destination object same during every copy operation.")
         for cnt in range(1, (test_cfg["max_objects"])):
-            dest_bkt = "dest" + str(cnt)
-            resp = s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1",
-                                       dest_bkt, "obj1")
-            assert_utils.assert_true(resp, f"Copy object Failed for {dest_bkt}/obj1")
+            dest_bkt = self.dest_prefix + str(cnt)
+            resp = s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj,
+                                       dest_bkt, self.obj)
+            assert_utils.assert_true(resp, f"Copy object Failed for {dest_bkt}/{self.obj}")
             self.src_bkt = dest_bkt
         self.log.info("Step 7: Perform Copy object operation again (N)th time from 'destN-1'"
                       "to 'destN' bucket and keeping the key name of the destination object"
                       "same during every copy operation.")
         try:
-            dest_bkt = "dest" + str(test_cfg["max_objects"])
-            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1", dest_bkt, "obj1")
+            dest_bkt = self.dest_prefix + str(test_cfg["max_objects"])
+            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj, dest_bkt, self.obj)
         except CTException as error:
             self.log.info("Expected exception received %s", error)
             assert_utils.assert_in(errmsg.S3_COPY_OBJECT_QUOTA_ERR, error.message, error)
@@ -576,22 +581,22 @@ class TestCopyObjectsQuota:
         assert_utils.assert_true(bucket_created, "Failed to create bucket")
         self.buckets_created.append([self.src_bkt, akey, skey])
         for cnt in range(1, test_cfg["max_objects"]+1):
-            bkt_name = "dest" + str(cnt)
+            bkt_name = self.dest_prefix + str(cnt)
             bucket_created = s3_misc.create_bucket(bkt_name, akey, skey)
             assert_utils.assert_true(bucket_created, "Failed to create bucket")
             self.buckets_created.append([bkt_name, self.akey, self.skey])
         self.log.info("Step 13: Upload a multipart object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
-        resp = self.multipart_upload(self.src_bkt, "obj1", akey, skey, random_size)
+        resp = s3_misc.multipart_upload(self.src_bkt, self.obj, akey, skey, random_size)
         assert_utils.assert_true(resp, "Multipart upload Failed")
         self.log.info("Step 14:  Perform Copy object operation from bucket 'src1' --> 'dest1'"
                       " --> 'dest2' --> ... --> 'destN-1' bucket and using different key name for"
                       " the destination object during every copy operation.")
         src_bkt = self.src_bkt
-        src_obj = "obj1"
+        src_obj = self.obj
         for cnt in range(1, (test_cfg["max_objects"])):
-            dest_bkt = "dest" + str(cnt)
-            dest_obj = "obj" + str(cnt+1)
+            dest_bkt = self.dest_prefix + str(cnt)
+            dest_obj = self.obj_prefix + str(cnt+1)
             resp = s3_misc.copy_object(akey, skey, src_bkt, src_obj,
                                        dest_bkt, dest_obj)
             assert_utils.assert_true(resp, f"Copy object Failed for {dest_bkt}/{dest_obj}")
@@ -601,8 +606,8 @@ class TestCopyObjectsQuota:
                       " bucket to 'destN' bucket and using different key name for the destination"
                       " object during every copy operation.")
         try:
-            dest_bkt = "dest" + str(test_cfg["max_objects"])
-            dest_obj = "obj" + str(test_cfg["max_objects"]+1)
+            dest_bkt = self.dest_prefix + str(test_cfg["max_objects"])
+            dest_obj = self.obj_prefix + str(test_cfg["max_objects"]+1)
             s3_misc.copy_object(akey, skey, src_bkt, src_obj, dest_bkt, dest_obj)
         except CTException as error:
             self.log.info("Expected exception received %s", error)
@@ -641,22 +646,22 @@ class TestCopyObjectsQuota:
         self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 5: Upload a multipart object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
-        resp = self.multipart_upload(self.src_bkt, "obj1", self.akey, self.skey, random_size)
+        resp = s3_misc.multipart_upload(self.src_bkt, self.obj, self.akey, self.skey, random_size)
         assert_utils.assert_true(resp, "Multipart upload Failed")
         self.log.info("Step 6: Perform Copy object operation within same bucket 'N-1' times using"
                       "same source bucket and object and just changing the key name of the "
                       "destination object .")
         for cnt in range(1, (test_cfg["max_objects"])):
-            dest_obj = "obj" + str(cnt)
-            resp = s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1",
+            dest_obj = self.obj_prefix + str(cnt)
+            resp = s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj,
                                        self.dest_bkt1, dest_obj)
             assert_utils.assert_true(resp, f"Copy object Failed for {self.dest_bkt1}/{dest_obj}")
         self.log.info("Step 7: Perform Copy object operation again (N)th time from 'src1' bucket"
                       " to 'dest1' bucket using same source bucket and object and same/existing"
                       " key name of the destination object(overwrite scenario) .")
         try:
-            dest_obj = "obj" + str(test_cfg["max_objects"]-1)
-            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1",
+            dest_obj = self.obj_prefix + str(test_cfg["max_objects"]-1)
+            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj,
                                 self.dest_bkt1, dest_obj)
         except CTException as error:
             self.log.info("Expected exception received %s", error)

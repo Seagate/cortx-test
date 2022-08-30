@@ -38,10 +38,8 @@ def create_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["iam_url"])
     LOGGER.debug("IAM endpoint : %s", endpoint)
-
     region = kwargs.get("region_name", S3_CFG["region"])
     LOGGER.debug("Region : %s", region)
-
     iam = boto3.client("iam",
                        verify=S3_CFG['validate_certs'],
                        endpoint_url=endpoint,
@@ -70,10 +68,8 @@ def delete_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["iam_url"])
     LOGGER.debug("IAM endpoint : %s", endpoint)
-
     region = kwargs.get("region_name", S3_CFG["region"])
     LOGGER.debug("Region : %s", region)
-
     iam = boto3.client("iam",
                        verify=S3_CFG['validate_certs'],
                        endpoint_url=endpoint,
@@ -82,7 +78,6 @@ def delete_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
                        region_name=region,
                        **kwargs)
     LOGGER.debug("IAM client created")
-
     iam.delete_user(UserName=user_name)
     LOGGER.debug("Delete IAM user command success")
     time.sleep(S3_CFG["delete_account_delay"])
@@ -103,10 +98,8 @@ def create_bucket(bucket_name, access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
-
     s3_resource = boto3.resource('s3', verify=S3_CFG['validate_certs'],
                         endpoint_url=endpoint,
                         aws_access_key_id=access_key,
@@ -114,10 +107,8 @@ def create_bucket(bucket_name, access_key: str, secret_key: str, **kwargs):
                         region_name=region,
                         **kwargs)
     LOGGER.debug("S3 boto resource created")
-
     s3_resource.create_bucket(Bucket=bucket_name)
     LOGGER.debug("S3 bucket created")
-
     result = False
     for bucket in s3_resource.buckets.all():
         if bucket.name == bucket_name:
@@ -137,10 +128,8 @@ def delete_objects_bucket(bucket_name, access_key: str, secret_key: str, **kwarg
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
-
     s3_resource = boto3.resource('s3', verify=S3_CFG['validate_certs'],
                                  endpoint_url=endpoint,
                                  aws_access_key_id=access_key,
@@ -148,14 +137,11 @@ def delete_objects_bucket(bucket_name, access_key: str, secret_key: str, **kwarg
                                  region_name=region,
                                  **kwargs)
     LOGGER.debug("S3 boto resource created")
-
     bucket = s3_resource.Bucket(bucket_name)
     LOGGER.debug("Delete all associated objects.")
     bucket.objects.all().delete()
-
     LOGGER.debug("Delete bucket : %s", bucket)
     bucket.delete()
-
     result = False
     for bucket in s3_resource.buckets.all():
         if bucket.name == bucket_name:
@@ -173,10 +159,8 @@ def delete_objects(bucket_name, access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
-
     s3_resource = boto3.resource('s3', verify=S3_CFG['validate_certs'],
                                  endpoint_url=endpoint,
                                  aws_access_key_id=access_key,
@@ -184,21 +168,16 @@ def delete_objects(bucket_name, access_key: str, secret_key: str, **kwargs):
                                  region_name=region,
                                  **kwargs)
     LOGGER.debug("S3 boto resource created")
-
     bucket = s3_resource.Bucket(bucket_name)
-
     LOGGER.debug("Delete all associated objects.")
     bucket.objects.all().delete()
-
     result = True
     obj_count = 0
     for _ in bucket.objects.all():
         obj_count = obj_count + 1
-
     if obj_count != 0:
         LOGGER.debug("all object not deleted")
         result = False
-
     del s3_resource
     return result
 
@@ -211,13 +190,10 @@ def create_put_objects(object_name: str, bucket_name: str,
     b_size = kwargs.get("block_size", "1M")
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
-
     if "block_size" in kwargs.keys():
         kwargs.pop("block_size")
-
     s3_resource = boto3.resource('s3', verify=S3_CFG['validate_certs'],
                                  endpoint_url=endpoint,
                                  aws_access_key_id=access_key,
@@ -225,7 +201,6 @@ def create_put_objects(object_name: str, bucket_name: str,
                                  region_name=region,
                                  **kwargs)
     LOGGER.debug("S3 boto resource created")
-
     LOGGER.debug("Created an object : %s", object_name)
     if not os.path.exists(TEST_DATA_FOLDER):
         os.mkdir(TEST_DATA_FOLDER)
@@ -238,7 +213,6 @@ def create_put_objects(object_name: str, bucket_name: str,
     LOGGER.debug("Put object: %s in the bucket: %s", object_name, bucket_name)
     s3_resource.Bucket(bucket_name).put_object(Key=object_name, Body=data)
     data.close()
-
     result = False
     for my_bucket_object in s3_resource.Bucket(bucket_name).objects.all():
         if my_bucket_object.key == object_name:
@@ -257,10 +231,8 @@ def delete_object(obj_name, bucket_name, access_key: str, secret_key: str, **kwa
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
-
     s3_resource = boto3.resource('s3', verify=S3_CFG['validate_certs'],
                                  endpoint_url=endpoint,
                                  aws_access_key_id=access_key,
@@ -290,10 +262,8 @@ def get_object_size(bucket_name, access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
-
     s3_resource = boto3.resource('s3', verify=S3_CFG['validate_certs'],
                                  endpoint_url=endpoint,
                                  aws_access_key_id=access_key,
@@ -332,10 +302,8 @@ def get_object_checksum(obj_name, bucket_name, access_key: str, secret_key: str,
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
-
     s3_resource = boto3.resource('s3', verify=S3_CFG['validate_certs'],
                                  endpoint_url=endpoint,
                                  aws_access_key_id=access_key,
@@ -361,10 +329,8 @@ def delete_all_buckets(access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
-
     s3_resource = boto3.resource('s3', verify=S3_CFG['validate_certs'],
                                  endpoint_url=endpoint,
                                  aws_access_key_id=access_key,
@@ -372,16 +338,13 @@ def delete_all_buckets(access_key: str, secret_key: str, **kwargs):
                                  region_name=region,
                                  **kwargs)
     LOGGER.debug("S3 boto resource created")
-
     for bucket in s3_resource.buckets.all():
         LOGGER.debug("Bucket: %s", bucket.name)
         bucket = s3_resource.Bucket(bucket.name)
         LOGGER.debug("Delete all associated objects.")
         bucket.objects.all().delete()
-
         LOGGER.debug("Delete bucket : %s", bucket)
         bucket.delete()
-
     result = not list(s3_resource.buckets.all())
     del s3_resource
     return result
@@ -393,10 +356,8 @@ def get_total_used(access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
-
     s3_resource = boto3.resource('s3', verify=S3_CFG['validate_certs'],
                                  endpoint_url=endpoint,
                                  aws_access_key_id=access_key,
@@ -404,7 +365,6 @@ def get_total_used(access_key: str, secret_key: str, **kwargs):
                                  region_name=region,
                                  **kwargs)
     LOGGER.debug("S3 boto resource created")
-
     size =0
     for bucket in s3_resource.buckets.all():
         size += get_objects_size_bucket(bucket.name, access_key, secret_key, **kwargs)[1]
@@ -429,10 +389,8 @@ def copy_object(access_key: str, secret_key: str, src_bkt: str = None, src_obj: 
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
-
     s3_resource = boto3.resource('s3', verify=S3_CFG['validate_certs'],
                                  endpoint_url=endpoint,
                                  aws_access_key_id=access_key,
@@ -463,10 +421,8 @@ def list_bucket(access_key: str, secret_key: str, **kwargs):
     LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
-
     s3_resource = boto3.resource('s3', verify=S3_CFG['validate_certs'],
                                  endpoint_url=endpoint,
                                  aws_access_key_id=access_key,
@@ -496,7 +452,6 @@ def multipart_upload(bucket: str, obj: str, access_key: str, secret_key: str,
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     parts = kwargs.get("parts", 4)
     LOGGER.debug("S3 Endpoint : %s", endpoint)
-
     region = S3_CFG["region"]
     LOGGER.debug("Region : %s", region)
     s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
