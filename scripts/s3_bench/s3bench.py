@@ -28,7 +28,8 @@ from datetime import datetime, timedelta
 
 from commons.utils import assert_utils
 from commons.utils.config_utils import read_yaml
-from commons.utils.system_utils import path_exists, run_local_cmd, make_dirs
+from commons.utils.system_utils import path_exists, run_local_cmd, make_dirs, run_remote_cmd
+from commons.utils.system_utils import execute_cmd, make_remote_dirs
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 
 LOGGER = logging.getLogger(__name__)
@@ -38,31 +39,33 @@ S3_BENCH_PATH = cfg_obj["s3bench_path"]
 S3_BENCH_BINARY = cfg_obj["s3bench_binary"]
 
 
-def setup_s3bench():
+def setup_s3bench(hostname: str = None, username: str = None, password: str = None, remote=False):
     """
     Configuring client machine with s3bench dependencies.
 
     :return bool: True/False
     """
-    ret = run_local_cmd("s3bench --help")
+    ret = execute_cmd("s3bench --help 2>&1", hostname, username, password, remote=remote)
     if not ret[0]:
         LOGGER.info("ERROR: s3bench is not installed. Installing s3bench.")
-        ret = os.system(f"wget -O {S3_BENCH_PATH} {S3_BENCH_BINARY}")
-        if ret:
+        ret = execute_cmd(f"wget -O {S3_BENCH_PATH} {S3_BENCH_BINARY} 2>&1", hostname, username,
+                          password, remote=remote)
+        if not ret[0]:
             LOGGER.error("ERROR: Unable to download s3bench binary from github")
             return False
-        ret = run_local_cmd(f"chmod +x {S3_BENCH_PATH}")
+        ret = execute_cmd(f"chmod +x {S3_BENCH_PATH} 2>&1", hostname, username, password,
+                          remote=remote)
         if not ret[0]:
             LOGGER.error("ERROR: Unable to add execute permission to s3bench")
             return False
-        ret = os.system("s3bench --help")
-        if ret:
+        ret = execute_cmd("s3bench --help 2>&1", hostname, username, password, remote=remote)
+        if not ret[0]:
             LOGGER.error("ERROR: Unable to install s3bench")
             return False
     return True
 
 
-def create_log(resp, log_file_prefix, client, samples, size):
+def create_log(resp, log_file_prefix, client, samples, size, **kwargs):
     """
     To create log file for s3bench run
     :param resp: List of string response
@@ -72,8 +75,17 @@ def create_log(resp, log_file_prefix, client, samples, size):
     :param size: object size
     :return: Path of the log file
     """
-    if not path_exists(LOG_DIR):
-        make_dirs(LOG_DIR)
+    host = kwargs.get("host", None)
+    user = kwargs.get("user", None)
+    pwd = kwargs.get("pwd", None)
+    remote = True if host else False
+    if remote:
+        ret = make_remote_dirs(LOG_DIR, host, user, pwd)
+        if not ret:
+            return ret
+    else:
+        if not path_exists(LOG_DIR):
+            make_dirs(LOG_DIR)
 
     now = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
     path = f"{LOG_DIR}{log_file_prefix}_s3bench_{client}_{samples}_{size}_{now}.log"
@@ -205,9 +217,16 @@ def s3bench(
     max_retries = kwargs.get("max_retries", None)
     response_header_timeout = kwargs.get("response_header_timeout", None)
     httpclientimeout = kwargs.get("httpclientimeout", None)
+    connect_timeout = kwargs.get("connectTimeout", None)
+    remote = kwargs.get("remote", False)
+    host = kwargs.get("host", None)
+    user = kwargs.get("user", None)
+    pwd = kwargs.get("pwd", None)
+
     result = []
     # Creating log file
-    log_path = create_log(result, log_file_prefix, num_clients, num_sample, obj_size)
+    log_path = create_log(result, log_file_prefix, num_clients, num_sample, obj_size, host=host,
+                          user=user, pwd=pwd)
     LOGGER.info("Running s3 bench tool")
     # GO command formatter
     cmd = f"s3bench -accessKey={access_key} -accessSecret={secret_key} " \
@@ -230,6 +249,8 @@ def s3bench(
         cmd = cmd + "-skipCleanup "
     if validate:
         cmd = cmd + "-validate "
+    if connect_timeout:
+        cmd = cmd + f"-connectTimeout={connect_timeout} "
     if verbose:
         cmd = cmd + "-verbose "
     cmd = f"{cmd}>> {log_path} 2>&1"
@@ -246,10 +267,15 @@ def s3bench(
             res1 = run_local_cmd(cmd)
             LOGGER.debug("Response: %s", res1)
             result.append(res1[1])
-    else:  # In case duration is None
+    elif not remote:
         res1 = run_local_cmd(cmd)
         LOGGER.debug("Response: %s", res1)
         result.append(res1[1])
+    else:
+        res1 = run_remote_cmd(cmd=cmd, hostname=host, username=user, password=pwd)
+        LOGGER.debug("Response: %s", res1)
+        result.append(str(res1[1]))
+
     LOGGER.info("Workload execution completed.")
 
     # Creating json response this function skips the verbose data

@@ -41,6 +41,7 @@ from commons.params import PROV_CONFIG_PATH
 from commons.constants import PROD_FAMILY_LC
 from commons.constants import S3_ENGINE_RGW
 from commons.params import DTM_CFG_PATH
+from commons.params import DTM_TEST_CFG_PATH
 
 
 def split_args(sys_cmd: List):
@@ -73,6 +74,8 @@ elif proc_name == 'pytest' and '--target' in pytest_args:
 elif proc_name == 'pytest' and os.getenv('TARGET') is not None:  # test runner process
     # This condition will execute when target is passed from environment
     target = os.environ["TARGET"]
+elif proc_name == "ceph_s3tests_runner.py":
+    target = pytest_args[pytest_args.index("--target") + 1].lower()
 elif proc_name not in ["testrunner.py", "testrunner"]:
     target = os.environ.get("TARGET")
 # Will revisit this once we fix the singleton/s3helper issue
@@ -157,6 +160,7 @@ PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
 HA_CFG = configmanager.get_config_wrapper(fpath=HA_TEST_CONFIG_PATH)
 PROV_TEST_CFG = configmanager.get_config_wrapper(fpath=PROV_CONFIG_PATH)
 DTM_CFG = configmanager.get_config_wrapper(fpath=DTM_CFG_PATH)
+DTM_TEST_CFG = configmanager.get_config_wrapper(fpath=DTM_TEST_CFG_PATH)
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath=DEPLOY_TEST_CONFIG_PATH)
 
 DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH)
