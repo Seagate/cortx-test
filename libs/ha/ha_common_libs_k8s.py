@@ -247,7 +247,10 @@ class HAK8s:
             nsamples: int = 10,
             nclients: int = 10,
             large_workload: bool = False,
-            setup_s3bench: bool = True):
+            setup_s3bench: bool = True,
+            end_point=S3_CFG["s3_url"],
+            connect_timeout=None,
+            **kwargs):
         """
         This function creates s3 acc, buckets and performs WRITEs/READs/DELETEs
         operations on VM/HW
@@ -260,14 +263,20 @@ class HAK8s:
         :param nclients: Number of clients/workers
         :param large_workload: Flag to start large workload IOs
         :param setup_s3bench: Flag if s3bench need to be setup
+        :param end_point: Endpoint to run IOs
+        :param connect_timeout: Maximum amount of time a dial will wait for a connect to complete
         :return: bool/operation response
         """
+        host = kwargs.get("host", None)
+        user = kwargs.get("user", None)
+        pwd = kwargs.get("pwd", None)
+        remote = True if host else False
         workloads = copy.deepcopy(HA_CFG["s3_bench_workloads"])
         if self.setup_type == "HW" or large_workload:
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
 
         if setup_s3bench:
-            resp = s3bench.setup_s3bench()
+            resp = s3bench.setup_s3bench(hostname=host, username=user, password=pwd, remote=remote)
             if not resp:
                 return resp, "Couldn't setup s3bench on client machine."
         for workload in workloads:
@@ -277,7 +286,8 @@ class HAK8s:
                 num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
                 skip_cleanup=skipcleanup, log_file_prefix=log_prefix.upper(),
-                end_point=S3_CFG["s3_url"], validate_certs=S3_CFG["validate_certs"])
+                end_point=end_point, validate_certs=S3_CFG["validate_certs"], host=host,
+                user=user, pwd=pwd, remote=remote, connectTimeout=connect_timeout)
             resp = system_utils.validate_s3bench_parallel_execution(log_path=resp[1])
             if not resp[0]:
                 return False, f"s3bench operation failed: {resp[1]}"
@@ -789,7 +799,8 @@ class HAK8s:
     def event_s3_operation(self, event, setup_s3bench=True, log_prefix=None, s3userinfo=None,
                            skipread=False, skipwrite=False, skipcleanup=False, nsamples=10,
                            nclients=10, output=None, event_set_clr=None, max_retries=None,
-                           httpclientimeout=HA_CFG["s3_operation_data"]["httpclientimeout"]):
+                           httpclientimeout=HA_CFG["s3_operation_data"]["httpclientimeout"],
+                           connect_timeout=None, end_point=S3_CFG["s3_url"], **kwargs):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
         :param event: Thread event to be sent in case of parallel IOs
@@ -806,16 +817,22 @@ class HAK8s:
         :param event_set_clr: Thread event set-clear flag reference when s3bench workload
         execution miss the event set-clear time window
         :param max_retries: Number of retries for IO operations
+        :param connect_timeout: Maximum amount of time a dial will wait for a connect to complete
+        :param end_point: Endpoint to run IOs
         :return: None
         """
         pass_res = []
         fail_res = []
         results = dict()
+        host = kwargs.get("host", None)
+        user = kwargs.get("user", None)
+        pwd = kwargs.get("pwd", None)
+        remote = True if host else False
         workloads = HA_CFG["s3_bench_workloads"]
         if self.setup_type == "HW":
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
         if setup_s3bench:
-            resp = s3bench.setup_s3bench()
+            resp = s3bench.setup_s3bench(hostname=host, username=user, password=pwd, remote=remote)
             if not resp:
                 status = (resp, "Couldn't setup s3bench on client machine.")
                 output.put(status)
@@ -827,8 +844,9 @@ class HAK8s:
                 num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 skip_write=skipwrite, skip_read=skipread, obj_size=workload,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
-                end_point=S3_CFG["s3_url"], validate_certs=S3_CFG["validate_certs"],
-                httpclientimeout=httpclientimeout, max_retries=max_retries)
+                end_point=end_point, validate_certs=S3_CFG["validate_certs"],
+                httpclientimeout=httpclientimeout, max_retries=max_retries,
+                connectTimeout=connect_timeout, host=host, user=user, pwd=pwd, remote=remote)
             if event.is_set() or (isinstance(event_set_clr, list) and event_set_clr[0]):
                 LOGGER.debug("The state of event set clear Flag is %s", event_set_clr)
                 fail_res.append(resp)
@@ -1868,3 +1886,24 @@ class HAK8s:
             return False, download_checksum
         LOGGER.info("Successfully downloaded the object and verified the checksum")
         return True, download_checksum
+
+    @staticmethod
+    def form_endpoint_port(pod_obj, pod_list, port_name="rgw-https"):
+        """
+        Function to form endpoints using pod ip and port
+        :param pod_obj: Object of master node
+        :param pod_list: List of pods
+        :param port_name: Name of the port, e.g. https, http, etc
+        :return: dict
+        """
+        pod_ep_dict = dict()
+        ports = pod_obj.get_pod_ports(pod_list, port_name)
+        for pod in pod_list:
+            pod_prefix = "-".join(pod.split("-")[:2])
+            LOGGER.info("Getting internal IPs of %s pods", pod_prefix)
+            pod_ip = pod_obj.get_all_pods_and_ips(pod_prefix)[pod]
+            port = ports[pod]
+            ip_port = f"{pod_ip}:{port}"
+            pod_ep_dict[pod] = ip_port
+
+        return pod_ep_dict

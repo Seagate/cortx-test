@@ -49,6 +49,7 @@ from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_common_test_lib import copy_obj_di_check
 
 LOGGER = logging.getLogger(__name__)
 
@@ -397,8 +398,9 @@ class TestCopyObjects:
         LOGGER.info("Step 4: From Account2 on bucket2 grant Write ACL to Account1 and full control "
                     "to account2.")
         resp = s3_acl_obj2.put_bucket_multiple_permission(bucket_name=self.bucket_name2,
-                                                   grant_full_control="id={}".format(canonical_id2),
-                                                    grant_write="id={}".format(canonical_id1))
+                                                          grant_full_control=\
+                                                          "id={}".format(canonical_id2),
+                                                          grant_write="id={}".format(canonical_id1))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: From Account2 check the applied ACL in above step.")
         resp = s3_acl_obj2.get_bucket_acl(self.bucket_name2)
@@ -1672,7 +1674,7 @@ class TestCopyObjects:
                     "to account2.")
         resp = s3_acl_obj2.put_bucket_multiple_permission(bucket_name=self.bucket_name2,
                                                           grant_full_control=\
-                                                              "id={}".format(canonical_id2),
+                                                          "id={}".format(canonical_id2),
                                                           grant_write="id={}".format(canonical_id1))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: From Account2 check the applied ACL in above step.")
@@ -1967,26 +1969,36 @@ class TestCopyObjects:
         obj_list.append(self.object_name2)
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
                                                      self.bucket_name2,self.object_name2)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2, s3_testobj=self.s3_obj)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2 + "_im", is_expect_err=False, is_match=etag)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_im", s3_testobj=self.s3_obj)
         obj_list.append(self.object_name2 + "_im")
         LOGGER.info("Step 4: Copy object to different bucket with condition"
                     "x-amz-copy-source-if-none-match (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2 + "_inm", is_expect_err=False, is_none_match=etag+"_")
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_inm", s3_testobj=self.s3_obj)
         obj_list.append(self.object_name2 + "_inm")
         LOGGER.info("Step 5: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-modified-since (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_ims", is_expect_err=False, is_modified=pre_date)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_ims", s3_testobj=self.s3_obj)
         obj_list.append(self.object_name2 + "_ims")
         LOGGER.info("Step 6: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-unmodified-since (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_iums", is_expect_err=False, is_unmodified=post_date)
-        obj_list.append(self.object_name2 + "_iums")
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_iums", s3_testobj=self.s3_obj)
+        obj_list.append(self.object_name2+"_iums")
         status, response = self.s3_obj.object_list(self.bucket_name2)
         assert_utils.assert_list_equal(obj_list, response)
         LOGGER.info("ENDED: Copy simple object with all conditional headers as true")
@@ -2011,27 +2023,37 @@ class TestCopyObjects:
         LOGGER.info("Step 2: Copy object to different bucket")
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
                                                      self.bucket_name2, self.object_name2)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2, s3_testobj=self.s3_obj)
         obj_list.append(self.object_name2)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2 + "_im", is_expect_err=False, is_match=etag)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_im", s3_testobj=self.s3_obj)
         obj_list.append(self.object_name2 + "_im")
         LOGGER.info("Step 4: Copy object to different bucket with condition"
                     "x-amz-copy-source-if-none-match (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2 + "_inm", is_expect_err=False, is_none_match=etag+"_")
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_inm", s3_testobj=self.s3_obj)
         obj_list.append(self.object_name2 + "_inm")
         LOGGER.info("Step 5: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-modified-since (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_ims", is_expect_err=False, is_modified=pre_date)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_ims", s3_testobj=self.s3_obj)
         obj_list.append(self.object_name2 + "_ims")
         LOGGER.info("Step 6: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-unmodified-since (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_iums", is_expect_err=False, is_unmodified=post_date)
         obj_list.append(self.object_name2 + "_iums")
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_iums", s3_testobj=self.s3_obj)
         status, response = self.s3_obj.object_list(self.bucket_name2)
         assert_utils.assert_list_equal(obj_list, response)
         LOGGER.info("ENDED: Copy multipart object with all conditional headers as true")
@@ -2055,6 +2077,8 @@ class TestCopyObjects:
         LOGGER.info("Step 2: Copy object to different bucket")
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
                                                      self.bucket_name2, self.object_name2)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2, s3_testobj=self.s3_obj)
         LOGGER.info("Step 3: Copy object to different bucket with condition "                             
                     "x-amz-copy-source-if-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
@@ -2137,12 +2161,16 @@ class TestCopyObjects:
         etag, pre_date, _ = self.handle_copy(self.bucket_name1, self.object_name1,
                                              self.bucket_name2, self.object_name2,
                                              is_expect_err=False)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2, s3_testobj=self.s3_obj)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-unmodified-since ("
                     "False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_im_us", is_expect_err=False, is_match=etag,
                          is_unmodified=pre_date)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_im_us", s3_testobj=self.s3_obj)
         LOGGER.info("Step 4: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "modified-since (True) and x-amz-copy-source-if-none-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
@@ -2159,6 +2187,8 @@ class TestCopyObjects:
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2+"mpu_im_us", is_expect_err=False, is_match=etag,
                          is_unmodified=pre_date)
+        copy_obj_di_check(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
+                          self.object_name2+"mpu_im_us", s3_testobj=self.s3_obj)
         LOGGER.info("Step 7: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "modified-since (True) and x-amz-copy-source-if-none-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
@@ -2188,12 +2218,16 @@ class TestCopyObjects:
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
                                                      self.bucket_name2, self.object_name2,
                                                      is_expect_err=False)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2, s3_testobj=self.s3_obj)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-modified-since ("
                     "True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_im_ms", is_expect_err=False,
                          is_modified=pre_date, is_match=etag)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_im_ms", s3_testobj=self.s3_obj)
         LOGGER.info("Step 4: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "modified-since (False) and x-amz-copy-source-if-match (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
@@ -2223,13 +2257,15 @@ class TestCopyObjects:
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2+"mpu_im_ms", is_expect_err=False,
                          is_modified=pre_date, is_match=etag)
-        LOGGER.info("Step 3: Copy object to different bucket with condition "
+        copy_obj_di_check(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
+                          self.object_name2+"mpu_im_ms", s3_testobj=self.s3_obj)
+        LOGGER.info("Step 9: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-modified-since ("
                     "False)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
-                         self.object_name2+"mpu_im_msf", is_expect_err=False,
-                         is_modified=post_date, is_match=etag)
-        LOGGER.info("Step 4: Copy object to different bucket with condition x-amz-copy-source-if-"
+                         self.object_name2+"mpu_im_msf", is_expect_err=True, is_modified=post_date,
+                         is_match=etag, errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
+        LOGGER.info("Step 10: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "modified-since (True) and x-amz-copy-source-if-match (False)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2+"mpu_im_mst", is_expect_err=True,
@@ -2259,12 +2295,16 @@ class TestCopyObjects:
         LOGGER.info("Step 2: Copy object to different bucket")
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
                                                      self.bucket_name2, self.object_name2)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2, s3_testobj=self.s3_obj)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-unmodified-since ("
                     "True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_imt_umst", is_expect_err=False,
                          is_unmodified=post_date, is_match=etag)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_imt_umst", s3_testobj=self.s3_obj)
         LOGGER.info("Step 4: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "match (False) and x-amz-copy-source-if-unmodified-since (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
@@ -2290,10 +2330,12 @@ class TestCopyObjects:
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu1", self.bucket_name2,
                          self.object_name2+"mpu_imt_umst", is_expect_err=False,
                          is_unmodified=post_date, is_match=etag)
+        copy_obj_di_check(self.bucket_name1, self.object_name1+"mpu1", self.bucket_name2,
+                          self.object_name2+"mpu_imt_umst", s3_testobj=self.s3_obj)
         LOGGER.info("Step 8: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "match (False) and x-amz-copy-source-if-unmodified-since (True)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
-                         self.object_name2 + "mpu_imf_umst", is_expect_err=True,
+                         self.object_name2+"mpu_imf_umst", is_expect_err=True,
                          is_unmodified=pre_date, is_match=etag+"_",
                          errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("Step 9: Copy object to different bucket with condition x-amz-copy-source-if-"
@@ -2327,17 +2369,23 @@ class TestCopyObjects:
         LOGGER.info("Step 2: Copy object to different bucket")
         etag, pre_date, post_date = self.handle_copy(self.bucket_name1, self.object_name1,
                                                      self.bucket_name2, self.object_name2)
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2, s3_testobj=self.s3_obj)
         LOGGER.info("Step 3: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-none-match (True) and "
                     "x-amz-copy-source-if-modified-since (True)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_inmt_mst", is_expect_err=False,
                          is_modified=pre_date, is_none_match=etag+"_")
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_inmt_mst", s3_testobj=self.s3_obj)
         LOGGER.info("Step 4: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (True) and x-amz-copy-source-if-modified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_inmt_msf", is_expect_err=False,
                          is_modified=post_date, is_none_match=etag+"_")
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_inmt_msf", s3_testobj=self.s3_obj)
         LOGGER.info("Step 5: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "match (False) and x-amz-copy-source-if-modified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
@@ -2355,17 +2403,21 @@ class TestCopyObjects:
                     "x-amz-copy-source-if-none-match (True) and "
                     "x-amz-copy-source-if-modified-since (True)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
-                         self.object_name2 + "_inmt_mst", is_expect_err=False,
+                         self.object_name2+"_inmt_mst", is_expect_err=False,
                          is_modified=pre_date, is_none_match=etag + "_")
+        copy_obj_di_check(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
+                          self.object_name2+"_inmt_mst", s3_testobj=self.s3_obj)
         LOGGER.info("Step 8: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (True) and x-amz-copy-source-if-modified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2+"_inmt_msf", is_expect_err=False,
                          is_modified=post_date, is_none_match=etag+"_")
+        copy_obj_di_check(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
+                          self.object_name2+"_inmt_msf", s3_testobj=self.s3_obj)
         LOGGER.info("Step 9: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "match (False) and x-amz-copy-source-if-modified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
-                         self.object_name2 + "_inmf_msf", is_expect_err=True,
+                         self.object_name2+"_inmf_msf", is_expect_err=True,
                          is_modified=post_date, is_none_match=etag,
                          errmsg=errmsg.RGW_ERR_CPY_IF_COND_FALSE)
         LOGGER.info("ENDED: Test to validate the combinations of conditions with "
@@ -2399,6 +2451,8 @@ class TestCopyObjects:
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,
                          self.object_name2+"_inmt_umst", is_expect_err=False,
                          is_unmodified=post_date, is_none_match=etag+"_")
+        copy_obj_di_check(self.bucket_name1, self.object_name1, self.bucket_name2,
+                          self.object_name2+"_inmt_umst", s3_testobj=self.s3_obj)
         LOGGER.info("Step 4: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "none-match (True) and x-amz-copy-source-if-unmodified-since (False)")
         self.handle_copy(self.bucket_name1, self.object_name1, self.bucket_name2,

@@ -1213,3 +1213,22 @@ def validate_checksum(file_path_1: str, file_path_2: str, **kwargs):
     if check_1 == check_2:
         return True
     return False
+
+
+def make_remote_dirs(dpath: str, host: str, user: str, pwd: str) -> bool:
+    """
+    Create directory path recursively
+    :param dpath: Directory path
+    :param host: Hostname of the server
+    :param user: Username of the server
+    :param pwd: Password of the server
+    :return: bool.
+    """
+    ls_cmd = commands.LS_CMD.format(dpath) + "> /dev/null"
+    if not execute_cmd(ls_cmd, hostname=host, username=user, password=pwd, remote=True)[0]:
+        cmd = commands.CMD_MKDIR.format(dpath)
+        resp = execute_cmd(cmd, host, user, pwd, remote=True)
+        return resp[0]
+
+    LOGGER.info("Directory path %s already exists", dpath)
+    return True
