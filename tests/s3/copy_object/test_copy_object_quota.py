@@ -25,7 +25,6 @@ from http import HTTPStatus
 from time import perf_counter_ns
 
 import pytest
-
 from commons import configmanager
 from commons import error_messages as errmsg
 from commons.exceptions import CTException
@@ -37,7 +36,6 @@ from libs.csm.csm_interface import csm_api_factory
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3 import s3_misc
-from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,6 +47,7 @@ class TestCopyObjectsQuota:
     # pylint: disable-msg=too-many-statements
     # pylint: disable=too-many-arguments
     # pylint: disable-msg=too-many-locals
+    # pylint: disable=attribute-defined-outside-init
     @classmethod
     def setup_class(cls):
         """
@@ -169,56 +168,8 @@ class TestCopyObjectsQuota:
         skey = resp.json()["keys"][0]["secret_key"]
         return akey, skey, user_id
 
-    def set_get_user_quota(self, config_dict, user_id):
-        """
-        It will create IAM user and return s3test obj and s3multipart obj.
-        :param config_dict: Config Dictionary.
-        :param user_id : User id of iam user
-        """
-        self.log.info("Perform get set user quota")
-        payload = self.csm_obj.iam_user_quota_payload(config_dict["enabled"],
-                                                      config_dict["max_size"],
-                                                      config_dict["max_objects"],
-                                                      check_on_raw=True)
-        result, resp = self.csm_obj.verify_get_set_user_quota(user_id, payload,
-                                                              verify_response=True)
-        assert_utils.assert_true(result, resp)
 
-    def verify_user_quota(self, akey, skey, user_id):
-        """
-        It will create IAM user and return s3test obj and s3multipart obj.
-        :param access_key: Access Key.
-        :param secrete_key: Secrete Key.
-        :param user_id : User id of iam user
-        """
-        total_objects = 0
-        total_size = 0
-        self.log.info("Get capacity count from AWS")
-        bkt_lst = s3_misc.list_bucket(akey, skey)
-        for bucket in bkt_lst:
-            objects, size = s3_misc.get_objects_size_bucket(bucket, akey, skey)
-            total_objects = total_objects + objects
-            total_size = total_size + size
 
-        self.log.info("total objects and size %s and %s ", total_objects, total_size)
-        self.log.info("Perform & Verify GET API to get capacity usage stats")
-        res, resp = self.csm_obj.verify_user_capacity(user_id, total_size,
-                                                      total_size, total_objects)
-        assert_utils.assert_true(res, f"Verify User capacity failed with error msg {resp}")
-
-    def multipart_upload(self, bucket, obj, akey, skey, filesize):
-        """
-        It will create IAM user and return s3test obj and s3multipart obj.
-        :param bucket: Bucket name.
-        :param obj: Object name.
-        :param access_key: Access Key.
-        :param secrete_key: Secrete Key.
-        :param file_size: Size of file.
-        :return : repsonse of mulitpart upload
-        """
-        s3_mp_test_obj = S3MultipartTestLib(access_key=akey, secret_key=skey,
-                                            endpoint_url=S3_CFG["s3_url"])
-        return s3_mp_test_obj.simple_multipart_upload(bucket, obj, filesize, self.mp_obj_path, 4)
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
@@ -236,10 +187,10 @@ class TestCopyObjectsQuota:
         self.log.info("Step 3: Perform PUT API to set user level quota fields i.e."
                       "enabled(bool)=true, max_size(integer value)= -1 ,"
                       " max_objects(integer value) = N ")
-        self.set_get_user_quota(config_dict, self.user_id)
+        self.csm_obj.set_get_user_quota(config_dict, self.user_id)
         self.log.info("Step 4:Perform GET API to get user level quota fields and verify the"
                       " user level quota fields as per above PUT request.")
-        self.verify_user_quota(self.akey, self.skey, self.user_id)
+        self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 5: Upload a simple object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
         resp = s3_misc.create_put_objects("obj1", self.src_bkt, self.akey, self.skey,
@@ -265,7 +216,7 @@ class TestCopyObjectsQuota:
         self.log.info("Step 8:Perform Get API to get user and bucket stats and validate the object"
                       "count and space utilization for user/bucket .")
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
-        self.verify_user_quota(self.akey, self.skey, self.user_id)
+        self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 9: Create one more user (user2)")
         akey, skey, uid = self.create_iam_user()
         self.log.info("Step 10: Create 2 buckets named 'src1' and 'dest1' under the user created"
@@ -279,10 +230,10 @@ class TestCopyObjectsQuota:
         self.log.info("Step 11: Perform PUT API to set user level quota fields"
                       " i.e. enabled(bool)=true, max_size(integer value)= -1 ,"
                       " max_objects(integer value) = N .")
-        self.set_get_user_quota(config_dict, uid)
+        self.csm_obj.set_get_user_quota(config_dict, uid)
         self.log.info("Step 12:Perform GET API to get user level quota fields and verify the"
                       " user level quota fields as per above PUT request.")
-        self.verify_user_quota(akey, skey, uid)
+        self.csm_obj.verify_user_quota(akey, skey, uid)
         self.log.info("Step 13: Upload a simple object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
         resp = s3_misc.create_put_objects("obj1", self.src_bkt, akey, skey,
@@ -307,7 +258,7 @@ class TestCopyObjectsQuota:
         self.log.info("Step 16:Perform Get API to get user and bucket stats and validate the"
                       "object count and space utilization for user/bucket .")
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
-        self.verify_user_quota(akey, skey, uid)
+        self.csm_obj.verify_user_quota(akey, skey, uid)
         self.log.info("ENDED:Test copy-object operation within same bucket and across different"
                       " buckets for simple object when max-object limit is set in user level quota")
 
@@ -327,10 +278,10 @@ class TestCopyObjectsQuota:
         self.log.info("Step 2: Perform PUT API to set user level quota fields i.e."
                       "enabled(bool)=true, max_size(integer value)= -1 ,"
                       " max_objects(integer value) = N ")
-        self.set_get_user_quota(config_dict, self.user_id)
+        self.csm_obj.set_get_user_quota(config_dict, self.user_id)
         self.log.info("Step 3:Perform GET API to get user level quota fields and verify the"
                       " user level quota fields as per above PUT request.")
-        self.verify_user_quota(self.akey, self.skey, self.user_id)
+        self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 4: Create 'N+1' buckets named 'src1' , 'dest1' .. 'destN' under the"
                       "user created in step 1")
         for cnt in range(1, test_cfg["max_objects"]+2):
@@ -364,16 +315,16 @@ class TestCopyObjectsQuota:
         self.log.info("Step 8:Perform Get API to get user and bucket stats and validate the object"
                       "count and space utilization for user/bucket .")
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
-        self.verify_user_quota(self.akey, self.skey, self.user_id)
+        self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 9: Create one more user (user2)")
         akey, skey, uid = self.create_iam_user()
         self.log.info("Step 10: Perform PUT API to set user level quota fields"
                       " i.e. enabled(bool)=true, max_size(integer value)= -1 ,"
                       " max_objects(integer value) = N .")
-        self.set_get_user_quota(config_dict, uid)
+        self.csm_obj.set_get_user_quota(config_dict, uid)
         self.log.info("Step 11:Perform GET API to get user level quota fields and verify the"
                       " user level quota fields as per above PUT request.")
-        self.verify_user_quota(akey, skey, uid)
+        self.csm_obj.verify_user_quota(akey, skey, uid)
         self.log.info("Step 12:  Create 'N+1' buckets named 'src1' , 'dest1' .. 'destN' under"
                       "the user created in step 9.")
         bucket_created = s3_misc.create_bucket(self.src_bkt, akey, skey)
@@ -416,7 +367,7 @@ class TestCopyObjectsQuota:
         self.log.info("Step 16:Perform Get API to get user and bucket stats and validate the object"
                       "count and space utilization for user/bucket .")
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
-        self.verify_user_quota(akey, skey, uid)
+        self.csm_obj.verify_user_quota(akey, skey, uid)
         self.log.info("ENDED:Test copy-object operation across different buckets(multi-hop) for"
                       " simple object when max-object limit is set in user level quota")
 
@@ -441,10 +392,10 @@ class TestCopyObjectsQuota:
         self.log.info("Step 3: Perform PUT API to set user level quota fields i.e."
                       "enabled(bool)=true, max_size(integer value)= -1 ,"
                       " max_objects(integer value) = N ")
-        self.set_get_user_quota(config_dict, self.user_id)
+        self.csm_obj.set_get_user_quota(config_dict, self.user_id)
         self.log.info("Step 4:Perform GET API to get user level quota fields and verify the"
                       " user level quota fields as per above PUT request.")
-        self.verify_user_quota(self.akey, self.skey, self.user_id)
+        self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 5: Upload a simple object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
         resp = s3_misc.create_put_objects("obj1", self.src_bkt, self.akey, self.skey,
@@ -460,7 +411,7 @@ class TestCopyObjectsQuota:
             assert_utils.assert_true(resp, f"Copy object Failed for {self.dest_bkt1}/{dest_obj}")
         self.log.info("Step 7: Perform Copy object operation again (N)th time from 'src1' bucket"
                       " to 'dest1' bucket using same source bucket and object and same/existing"
-                      " key name of the destination object(overwrite scenario)")    
+                      " key name of the destination object(overwrite scenario)")
         try:
             dest_obj = "obj" + str(test_cfg["max_objects"]-1)
             s3_misc.copy_object(self.akey, self.skey, self.src_bkt, "obj1",
@@ -471,7 +422,7 @@ class TestCopyObjectsQuota:
         self.log.info("Step 8:Perform Get API to get user and bucket stats and validate the object"
                       "count and space utilization for user/bucket .")
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
-        self.verify_user_quota(self.akey, self.skey, self.user_id)
+        self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("ENDED:Test copy-object overwrite operation for simple object when"
                       " max-object limit is set in user level quota")
 
@@ -492,10 +443,10 @@ class TestCopyObjectsQuota:
         self.log.info("Step 3: Perform PUT API to set user level quota fields i.e."
                       "enabled(bool)=true, max_size(integer value)= -1 ,"
                       " max_objects(integer value) = N ")
-        self.set_get_user_quota(config_dict, self.user_id)
+        self.csm_obj.set_get_user_quota(config_dict, self.user_id)
         self.log.info("Step 4:Perform GET API to get user level quota fields and verify the"
                       " user level quota fields as per above PUT request.")
-        self.verify_user_quota(self.akey, self.skey, self.user_id)
+        self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 5: Upload multipart upload obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
         resp = self.multipart_upload(self.src_bkt, "obj1", self.akey, self.skey, random_size)
@@ -520,7 +471,7 @@ class TestCopyObjectsQuota:
         self.log.info("Step 8:Perform Get API to get user and bucket stats and validate the object"
                       "count and space utilization for user/bucket .")
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
-        self.verify_user_quota(self.akey, self.skey, self.user_id)
+        self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 9: Create one more user (user2)")
         akey, skey, uid = self.create_iam_user()
         self.log.info("Step 10: Create 2 buckets named 'src1' and 'dest1' under the user created"
@@ -534,10 +485,10 @@ class TestCopyObjectsQuota:
         self.log.info("Step 11: Perform PUT API to set user level quota fields"
                       " i.e. enabled(bool)=true, max_size(integer value)= -1 ,"
                       " max_objects(integer value) = N .")
-        self.set_get_user_quota(config_dict, uid)
+        self.csm_obj.set_get_user_quota(config_dict, uid)
         self.log.info("Step 12:Perform GET API to get user level quota fields and verify the"
                       " user level quota fields as per above PUT request.")
-        self.verify_user_quota(akey, skey, uid)
+        self.csm_obj.verify_user_quota(akey, skey, uid)
         self.log.info("Step 13: Upload multipart object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
         resp = self.multipart_upload(self.src_bkt, "obj1", self.akey, self.skey, random_size)
@@ -561,7 +512,7 @@ class TestCopyObjectsQuota:
         self.log.info("Step 16:Perform Get API to get user and bucket stats and validate the object"
                       "count and space utilization for user/bucket .")
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
-        self.verify_user_quota(akey, skey, uid)
+        self.csm_obj.verify_user_quota(akey, skey, uid)
         self.log.info("ENDED:Test copy-object operation within same bucket and across different"
                       " buckets for multipart object when max-object limit is set in user level"
                       " quota")
@@ -582,10 +533,10 @@ class TestCopyObjectsQuota:
         self.log.info("Step 2: Perform PUT API to set user level quota fields i.e."
                       "enabled(bool)=true, max_size(integer value)= -1 ,"
                       " max_objects(integer value) = N ")
-        self.set_get_user_quota(config_dict, self.user_id)
+        self.csm_obj.set_get_user_quota(config_dict, self.user_id)
         self.log.info("Step 3:Perform GET API to get user level quota fields and verify the"
                       " user level quota fields as per above PUT request.")
-        self.verify_user_quota(self.akey, self.skey, self.user_id)
+        self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 4: Create 'N+1' buckets named 'src1' , 'dest1' .. 'destN' under the"
                       "user created in step 1")
         for cnt in range(1, test_cfg["max_objects"]+2):
@@ -618,16 +569,16 @@ class TestCopyObjectsQuota:
         self.log.info("Step 8:Perform Get API to get user and bucket stats and validate the object"
                       "count and space utilization for user/bucket .")
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
-        self.verify_user_quota(self.akey, self.skey, self.user_id)
+        self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 9: Create one more user (user2)")
         akey, skey, uid = self.create_iam_user()
         self.log.info("Step 10: Perform PUT API to set user level quota fields"
                       " i.e. enabled(bool)=true, max_size(integer value)= -1 ,"
                       " max_objects(integer value) = N .")
-        self.set_get_user_quota(config_dict, uid)
+        self.csm_obj.set_get_user_quota(config_dict, uid)
         self.log.info("Step 11:Perform GET API to get user level quota fields and verify the"
                       " user level quota fields as per above PUT request.")
-        self.verify_user_quota(akey, skey, uid)
+        self.csm_obj.verify_user_quota(akey, skey, uid)
         self.log.info("Step 12:  Create 'N+1' buckets named 'src1' , 'dest1' .. 'destN' under"
                       "the user created in step 9.")
         bucket_created = s3_misc.create_bucket(self.src_bkt, akey, skey)
@@ -668,7 +619,7 @@ class TestCopyObjectsQuota:
         self.log.info("Step 16:Perform Get API to get user and bucket stats and validate the object"
                       "count and space utilization for user/bucket .")
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
-        self.verify_user_quota(akey, skey, uid)
+        self.csm_obj.verify_user_quota(akey, skey, uid)
         self.log.info("ENDED:Test copy-object operation across different buckets(multi-hop) for"
                       " multipart object when max-object limit is set in user level quota")
 
@@ -693,10 +644,10 @@ class TestCopyObjectsQuota:
         self.log.info("Step 3: Perform PUT API to set user level quota fields i.e."
                       "enabled(bool)=true, max_size(integer value)= -1 ,"
                       " max_objects(integer value) = N ")
-        self.set_get_user_quota(config_dict, self.user_id)
+        self.csm_obj.set_get_user_quota(config_dict, self.user_id)
         self.log.info("Step 4:Perform GET API to get user level quota fields and verify the"
                       " user level quota fields as per above PUT request.")
-        self.verify_user_quota(self.akey, self.skey, self.user_id)
+        self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 5: Upload a multipart object obj1 of some random size S in src1")
         random_size = self.csm_obj.random_gen.randrange(1, test_cfg["max_size"])
         resp = self.multipart_upload(self.src_bkt, "obj1", self.akey, self.skey, random_size)
@@ -722,6 +673,6 @@ class TestCopyObjectsQuota:
         self.log.info("Step 8:Perform Get API to get user and bucket stats and validate the object"
                       "count and space utilization for user/bucket .")
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
-        self.verify_user_quota(self.akey, self.skey, self.user_id)
+        self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("ENDED:Test copy-object overwrite operation for multipart object when"
                       " max-object limit is set in user level quota")
