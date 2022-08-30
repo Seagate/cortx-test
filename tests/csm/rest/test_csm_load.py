@@ -388,7 +388,6 @@ class TestCsmLoad():
         self.iam_users_created.extend(delete_user_list)
 
 
-
     # pylint: disable-msg=too-many-locals
     @pytest.mark.skip("Skipped until CORTX-34103 is fixed")
     @pytest.mark.lc
