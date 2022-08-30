@@ -449,7 +449,8 @@ class TestCopyObjectsQuota:
                       " destination object .")
         try:
             dest_obj = self.obj_prefix + str(test_cfg["max_objects"]+1)
-            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj, self.src_bkt, dest_obj)
+            s3_misc.copy_object(self.akey, self.skey, self.src_bkt, self.obj,
+                                self.src_bkt, dest_obj)
         except CTException as error:
             self.log.info("Expected exception received %s", error)
             assert_utils.assert_in(errmsg.S3_COPY_OBJECT_QUOTA_ERR, error.message, error)
