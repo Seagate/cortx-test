@@ -91,18 +91,12 @@ class TestCopyObjectsQuota:
         """
         self.log.info("STARTED: Test setup.")
         self.log.info("Step 1: Create a user (user1)")
-        payload = self.csm_obj.iam_user_payload_rgw("random")
-        resp = self.csm_obj.create_iam_user_rgw(payload)
-        self.log.info("Verify Response : %s", resp)
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.CREATED,
-                                   "IAM user creation failed")
+        resp = self.csm_obj.verify_create_iam_user_rgw(user_type="valid",
+                                                       verify_response=True)
         self.user_id = resp.json()["keys"][0]['user']
         self.created_iam_users.add(self.user_id)
-        resp1 = self.csm_obj.compare_iam_payload_response(resp, payload)
-        self.log.info("Printing response %s", resp1)
-        assert_utils.assert_true(resp1[0], resp1[1])
-        self.akey = resp.json()["keys"][0]["access_key"]
-        self.skey = resp.json()["keys"][0]["secret_key"]
+        self.akey = resp["keys"][0]["access_key"]
+        self.skey = resp["keys"][0]["secret_key"]
         self.src_bkt = "src1"
         self.obj = "obj"
         self.dest_bkt1 = "dest1"
@@ -147,29 +141,6 @@ class TestCopyObjectsQuota:
         assert_utils.assert_true(len(self.buckets_created) == 0, "Bucket deletion failed")
         assert_utils.assert_true(len(self.created_iam_users) == 0, "IAM deletion failed")
         self.log.info("ENDED: Test teardown.")
-
-    def create_iam_user(self):
-        """
-        It will create IAM user.
-        :return: access key, secrete key and user_id.
-        """
-        self.log.info("Creating S3 account and IAM user")
-        payload = self.csm_obj.iam_user_payload_rgw("random")
-        resp = self.csm_obj.create_iam_user_rgw(payload)
-        self.log.info("Verify Response : %s", resp)
-        assert_utils.assert_equals(resp.status_code, HTTPStatus.CREATED,
-                                   "IAM user creation failed")
-        user_id = resp.json()["keys"][0]['user']
-        self.created_iam_users.add(user_id)
-        resp1 = self.csm_obj.compare_iam_payload_response(resp, payload)
-        self.log.info("Printing response %s", resp1)
-        assert_utils.assert_true(resp1[0], resp1[1])
-        akey = resp.json()["keys"][0]["access_key"]
-        skey = resp.json()["keys"][0]["secret_key"]
-        return akey, skey, user_id
-
-
-
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
@@ -218,7 +189,12 @@ class TestCopyObjectsQuota:
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
         self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 9: Create one more user (user2)")
-        akey, skey, uid = self.create_iam_user()
+        resp = self.csm_obj.verify_create_iam_user_rgw(user_type="valid",
+                                                       verify_response=True)
+        uid = resp.json()["keys"][0]['user']
+        akey = resp["keys"][0]["access_key"]
+        skey = resp["keys"][0]["secret_key"]
+        self.created_iam_users.add(uid)
         self.log.info("Step 10: Create 2 buckets named 'src1' and 'dest1' under the user created"
                       " in step 9.")
         bucket_created = s3_misc.create_bucket(self.src_bkt, akey, skey)
@@ -317,7 +293,12 @@ class TestCopyObjectsQuota:
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
         self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 9: Create one more user (user2)")
-        akey, skey, uid = self.create_iam_user()
+        resp = self.csm_obj.verify_create_iam_user_rgw(user_type="valid",
+                                                       verify_response=True)
+        uid = resp.json()["keys"][0]['user']
+        akey = resp["keys"][0]["access_key"]
+        skey = resp["keys"][0]["secret_key"]
+        self.created_iam_users.add(uid)
         self.log.info("Step 10: Perform PUT API to set user level quota fields"
                       " i.e. enabled(bool)=true, max_size(integer value)= -1 ,"
                       " max_objects(integer value) = N .")
@@ -473,7 +454,12 @@ class TestCopyObjectsQuota:
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
         self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 9: Create one more user (user2)")
-        akey, skey, uid = self.create_iam_user()
+        resp = self.csm_obj.verify_create_iam_user_rgw(user_type="valid",
+                                                       verify_response=True)
+        uid = resp.json()["keys"][0]['user']
+        akey = resp["keys"][0]["access_key"]
+        skey = resp["keys"][0]["secret_key"]
+        self.created_iam_users.add(uid)
         self.log.info("Step 10: Create 2 buckets named 'src1' and 'dest1' under the user created"
                       " in step 9.")
         bucket_created = s3_misc.create_bucket(self.src_bkt, akey, skey)
@@ -571,7 +557,12 @@ class TestCopyObjectsQuota:
         self.log.debug("Perform & Verify GET API to get capacity usage stats")
         self.csm_obj.verify_user_quota(self.akey, self.skey, self.user_id)
         self.log.info("Step 9: Create one more user (user2)")
-        akey, skey, uid = self.create_iam_user()
+        resp = self.csm_obj.verify_create_iam_user_rgw(user_type="valid",
+                                                       verify_response=True)
+        uid = resp.json()["keys"][0]['user']
+        akey = resp["keys"][0]["access_key"]
+        skey = resp["keys"][0]["secret_key"]
+        self.created_iam_users.add(uid)
         self.log.info("Step 10: Perform PUT API to set user level quota fields"
                       " i.e. enabled(bool)=true, max_size(integer value)= -1 ,"
                       " max_objects(integer value) = N .")
