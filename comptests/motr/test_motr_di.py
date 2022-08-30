@@ -261,8 +261,8 @@ class TestCorruptDataDetection:
         Validate the corruption with md5sum after M0CAT and unlink the object
         """
         logger.info("STARTED: m0cat_md5sum_m0unlink workflow")
-        infile = kwargs.get("infile", TEMP_PATH + 'input')
-        outfile = kwargs.get("outfile", TEMP_PATH + 'output')
+        infile = kwargs.get("infile", TEMP_PATH + "input")
+        outfile = kwargs.get("outfile", TEMP_PATH + "output")
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
         for client_num in range(motr_client_num):
@@ -526,8 +526,8 @@ class TestCorruptDataDetection:
         logger.info("STARTED: Test %s for m0cp in healthy mode and "
                     "data block corruption in degraded mode", test_prefix)
         logger.info("Step 1: m0cp, corrupt workflow in healthy state")
-        infile = TEMP_PATH + 'input'
-        outfile = TEMP_PATH + 'output'
+        infile = TEMP_PATH + "input"
+        outfile = TEMP_PATH + "output"
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
         object_id_list = []
@@ -579,8 +579,8 @@ class TestCorruptDataDetection:
         layout_ids = ['2']
         offsets = [4096]
         infile_size = '14K'
-        infile = TEMP_PATH + 'input'
-        outfile = TEMP_PATH + 'output'
+        infile = TEMP_PATH + "input"
+        outfile = TEMP_PATH + "output"
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
         object_id_list = []
@@ -639,8 +639,8 @@ class TestCorruptDataDetection:
         infile_size = '14K'
         logger.info("STARTED: Test %s m0cp in healthy mode and"
                     "m0cat workflow for short block -unaligned in Degraded Mode", test_prefix)
-        infile = TEMP_PATH + 'input'
-        outfile = TEMP_PATH + 'output'
+        infile = TEMP_PATH + "input"
+        outfile = TEMP_PATH + "output"
         node_pod_dict = self.motr_obj.get_node_pod_dict()
         motr_client_num = self.motr_obj.get_number_of_motr_clients()
         object_id_list = []

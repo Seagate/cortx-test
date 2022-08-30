@@ -39,6 +39,7 @@ from commons.constants import NAMESPACE
 from commons.constants import CONTAINER_PATH
 from commons.constants import CLUSTER_YAML
 from commons.constants import PARSE_SIZE
+from config import di_cfg
 from commons import commands as common_cmd
 from commons.helpers.pods_helper import LogicalNode
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
@@ -216,8 +217,8 @@ class MotrCorruptionAdapter(InjectCorruption):
         # Iterate over data pods to copy the error_injection.py script on motr container
         for pod in pod_list:
             result = self.master_node_list[0].copy_file_to_container(
-                "error_injection.py", pod, CONTAINER_PATH, MOTR_CONTAINER_PREFIX + "-001"
-            )
+                di_cfg["error_injection"], pod, CONTAINER_PATH, MOTR_CONTAINER_PREFIX
+                + "-001")
             if not result:
                 raise FileNotFoundError
             # Run script to list emap and dump the output to the file
@@ -313,7 +314,6 @@ class MotrCorruptionAdapter(InjectCorruption):
         try:
             data_pods = self.master_node_list[0].get_all_pods(POD_NAME_PREFIX)
             pod_name = secrets.choice(data_pods)
-            LOGGER.debug("pod name is %s", pod_name)
             motr_containers = self.master_node_list[0].get_container_of_pod(
                 pod_name, MOTR_CONTAINER_PREFIX)
             LOGGER.debug("Inside.......... pod_name = %s", pod_name)
@@ -336,7 +336,6 @@ class MotrCorruptionAdapter(InjectCorruption):
                         logging.debug("resp = %s", resp)
                         if resp:
                             success = True
-                            self.dtm
                             break
                         retries -= 1
                 except IOError as ex:
@@ -351,14 +350,14 @@ class MotrCorruptionAdapter(InjectCorruption):
             LOGGER.exception("Exception occurred while injecting emap fault", exc_info=ex)
             return False, resp
 
-    def inject_checksum_corruption(self, oid: list, md_path):
+    def inject_checksum_corruption(self, oid: str, md_path):
         """Injects data checksum error by providing the DU FID."""
         return self.inject_fault_k8s(oid, md_path)
 
-    def inject_parity_corruption(self, oid: list, md_path):
+    def inject_parity_corruption(self, oid: str, md_path):
         """Injects parity checksum error by providing the Parity FID."""
         return self.inject_fault_k8s(oid, md_path)
 
-    def inject_metadata_corruption(self, oid: list, md_path):
+    def inject_metadata_corruption(self, oid: str, md_path):
         """Not supported."""
         raise NotImplementedError("Not Implemented")

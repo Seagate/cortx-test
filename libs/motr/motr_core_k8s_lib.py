@@ -793,63 +793,6 @@ class MotrCoreK8s():
         log.debug("DICT is %s", checksum_dict)
         return checksum_dict
 
-    # pylint: disable=too-many-locals
-    def fetch_gob(self, metadata_device, parse_size, fid:dict):
-        """
-        This method helps to verify the gob id by running emap_list using error_injection script
-        it returns the corresponding data,parity block checksum id
-        """
-        pod_list = self.node_obj.get_all_pods(common_const.POD_NAME_PREFIX)
-        log.debug("pod list is %s", pod_list)
-        d_fid = []
-        p_fid = []
-        data_checksum_list = []
-        parity_checksum_list = []
-        for key, value in fid.items():
-            if "DATA" in key:        # fetch the value from dict for data block
-                fid_val = value[7:16]
-                d_fid.append(fid_val)
-            else:                   # fetch the value from dict for parity block
-                fid_val = value[7:16]
-                p_fid.append(fid_val)
-        # Iterate over data pods to copy the error_injection.py script on motr container
-        for pod in pod_list:
-            result = self.master_node_list[0].copy_file_to_container(
-                di_cfg["error_injection.py"], pod, common_const.CONTAINER_PATH,
-                common_const.MOTR_CONTAINER_PREFIX+"-001")
-            if not result:
-                raise FileNotFoundError
-            # Run script to list emap and dump the output to the file
-            cmd = Template(common_cmd.EMAP_LIST).substitute(path=metadata_device, size=parse_size,
-                                                            file=f"{pod}-emap_list.txt")
-            self.node_obj.send_k8s_cmd(
-                operation="exec", pod=pod, namespace=common_const.NAMESPACE,
-                command_suffix=f"-c {common_const.MOTR_CONTAINER_PREFIX}-001 "
-                               f"-- {cmd}", decode=True)
-            d_fid = [*set(d_fid)]
-            p_fid = [*set(p_fid)]
-            log.debug("lists of d_fid, p_fid %s \n %s", d_fid, p_fid)
-            # Fetch the target fid from emap list output captured in file while running
-            # emap list on motr container
-            for data_fid in d_fid:
-                cmd = common_cmd.FETCH_ID_EMAP.format(
-                    f"{pod}-emap_list.txt", data_fid)
-                d_resp = self.master_node_list[0].execute_cmd(cmd)
-                d_resp = d_resp.decode('UTF-8').strip(",\n")  # strip the resp and make it readable
-                if d_resp:
-                    # log.debug("gob data entity %s", d_resp)
-                    data_checksum_list.append(d_resp)
-            for parity_fid in p_fid:
-                cmd = common_cmd.FETCH_ID_EMAP.format(
-                    f"{pod}-emap_list.txt", parity_fid)
-                p_resp = self.master_node_list[0].execute_cmd(cmd)
-                p_resp = p_resp.decode('UTF-8').strip(",\n")  # strip the resp and make it readable
-                if p_resp:
-                    parity_checksum_list.append(p_resp)
-        log.debug("gob data %s", data_checksum_list)
-        log.debug("gob Parity %s", parity_checksum_list)
-        return data_checksum_list, parity_checksum_list
-
     def switch_to_degraded_mode(self):
         """
         This method kill's m0d process and make setup to degraded mode
@@ -865,9 +808,7 @@ class MotrCoreK8s():
                                                                       container_name=container,
                                                                       process_name=process)
             log.debug("Resp : %s", resp)
-            log.info("Sleep till %s", di_cfg['wait_time_m0d_restart'])
-            # added 20 seconds delay for container to restart.
-            time.sleep(20)
+            time.sleep(5)
             return True, pod_selected, container
         except (ValueError, IOError) as ex:
             log.error("Exception Occurred during killing process : %s", ex)
