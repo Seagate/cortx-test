@@ -1683,3 +1683,178 @@ class TestControlPodRestart:
         LOGGER.info("Step 7: Successfully completed IOs.")
 
         LOGGER.info("ENDED: Test chunk upload during control pod restart")
+
+    # pylint: disable=too-many-branches
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-45497")
+    def test_cruds_during_all_ctrl_pod_rst(self):
+        """
+        Verify IAM user and bucket operations while N control pod restart in loop
+        """
+        LOGGER.info("STARTED: Verify IAM user and bucket operations while N control pod "
+                    "restart in loop with replica method")
+        LOGGER.info("Prereq: Scale replicas for control pod to %s", self.repl_num)
+        pod_name = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
+        resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
+                                                            pod_name=pod_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Prereq: Total number of control pods in the cluster are: %s",
+                    self.repl_num)
+        LOGGER.info("Get the control pod list")
+        pod_list = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        event = threading.Event()
+        iam_output = Queue()
+        bkt_output = Queue()
+        num_users = HA_CFG["s3_operation_data"]["iam_users"]
+        num_bkts = HA_CFG["s3_operation_data"]["no_bkt_del_ctrl_pod"]
+        org_user = HA_CFG["s3_operation_data"]["no_csm_users"]
+        LOGGER.info("Step 1: Create IAM user.")
+        users_org = self.mgnt_ops.create_account_users(nusers=org_user)
+        self.s3_clean = users_org
+        uids = list(users_org.keys())
+        access_key = list(users_org.values())[0]["accesskey"]
+        secret_key = list(users_org.values())[0]["secretkey"]
+        s3_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                           endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Step 1: Created IAM user successfully")
+        LOGGER.info("Create %s iam users for deletion", num_users)
+        users = self.mgnt_ops.create_account_users(nusers=num_users)
+        LOGGER.info("Step 2: Perform IAM user creation/deletion in background")
+        args = {'user_crud': True, 'bkt_crud': False, 'num_users': num_users, 's3_obj': s3_obj,
+                'output': iam_output, 'del_users_dict': users}
+        thread1 = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
+                                   args=(event,), kwargs=args)
+        thread1.daemon = True  # Daemonize thread
+        thread1.start()
+        LOGGER.info("Start buckets creation/deletion in background")
+        args = {'user_crud': False, 'bkt_crud': True, 'num_bkts': num_bkts, 's3_obj': s3_obj,
+                'output': bkt_output}
+        thread2 = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
+                                   args=(event,), kwargs=args)
+        thread2.daemon = True  # Daemonize thread
+        thread2.start()
+        LOGGER.info("Step 2: Successfully started IAM user and bucket creation/deletion in "
+                    "background")
+        LOGGER.info("Waiting for %s sec for background operations to start",
+                    HA_CFG["common_params"]["10sec_delay"])
+        time.sleep(HA_CFG["common_params"]["10sec_delay"])
+        LOGGER.info("Step 3: Restart %s control pods while creation/deletion of IAM users and "
+                    "buckets is running in background.", self.repl_num)
+        for count in range(HA_CFG["common_params"]["short_loop"]):
+            LOGGER.info("Restarting %s control pods for loop : %s with replica method",
+                        self.repl_num, count + 1)
+            for pod in pod_list:
+                resp = self.node_master_list[0].delete_pod(pod)
+                assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 3.1: Check cluster status")
+            delay = HA_CFG["common_params"]["60sec_delay"]
+            resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=delay)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 3.1: Cluster status is online")
+        LOGGER.info("%s pod are restarted successfully in loop of %s", self.repl_num - 1,
+                    HA_CFG["common_params"]["short_loop"])
+        event.clear()
+        LOGGER.info("Waiting for threads to join")
+        thread1.join()
+        thread2.join()
+        LOGGER.info("Step 4: Verify if IAM users %s are persistent across control pods restart",
+                    uids)
+        for user in uids:
+            resp = self.rest_iam_user.get_iam_user(user)
+            assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
+                                      f"Couldn't find user {user} after control pods restart")
+            LOGGER.info("User %s is persistent: %s", user, resp)
+        LOGGER.info("Step 4: Verified all IAM users %s are persistent across control pods "
+                    "restart", uids)
+        LOGGER.info("Step 5: Verifying responses from background processes")
+        LOGGER.info("Checking background process for IAM user CRUDs")
+        iam_resp = tuple()
+        while len(iam_resp) != 4:
+            iam_resp = iam_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not iam_resp:
+            assert_utils.assert_true(False, "Background process failed to do IAM user CRUD "
+                                            "operations")
+        exp_fail = iam_resp[0]
+        failed = iam_resp[1]
+        user_del_failed = iam_resp[2]
+        created_users = iam_resp[3]
+        if failed:
+            assert_utils.assert_true(False, "Failures observed in background process for IAM "
+                                            f"user CRUD operations. \nFailed buckets: {failed}")
+        elif exp_fail:
+            LOGGER.info("In-Flight IAM user creation/deletion failed for users: %s", exp_fail)
+            LOGGER.info("In-Flight IAM user deletion failed for users: %s", user_del_failed)
+            for i_i in user_del_failed:
+                self.s3_clean.update({i_i: users[i_i]})
+        else:
+            assert_utils.assert_true(False,
+                                     "IAM user CRUD operations are expected to be failed "
+                                     "during control pod failover")
+
+        LOGGER.info("Checking background process for bucket CRUD operations")
+        bkt_resp = tuple()
+        while len(bkt_resp) != 2:
+            bkt_resp = bkt_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not bkt_resp:
+            assert_utils.assert_true(False, "Background process failed to do bucket CRUD "
+                                            "operations")
+        exp_fail = bkt_resp[0]
+        failed = bkt_resp[1]
+        assert_utils.assert_false(len(exp_fail) or len(failed),
+                                  "Failures observed in background process for bucket "
+                                  f"CRUD operations. \nIn-flight Failed buckets: {exp_fail}"
+                                  f"\nFailed buckets: {failed}")
+        LOGGER.info("Step 5: Successfully verified responses from background processes")
+        LOGGER.info(
+            "Step 6: Perform new IAM users(%s) and buckets(%s) creation/deletion in loop",
+            num_users, num_bkts)
+        users_dict = dict()
+        for i_i in created_users:
+            users_dict.update(i_i)
+        output = Queue()
+        args = {'user_crud': True, 'bkt_crud': True, 'num_users': 10,
+                'del_users_dict': users_dict, 'num_bkts': 10, 's3_obj': s3_obj,
+                'output': output}
+        self.ha_obj.iam_bucket_cruds(event, **args)
+        LOGGER.info("Checking responses for IAM user CRUD operations")
+        iam_resp = tuple()
+        while len(iam_resp) != 4:
+            iam_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not iam_resp:
+            assert_utils.assert_true(False, "Failed to do IAM user CRUD operations")
+        exp_fail = iam_resp[0]
+        failed = iam_resp[1]
+        user_del_failed = iam_resp[2]
+        new_created_users = iam_resp[3]
+        if user_del_failed:
+            for i_i in created_users:
+                if list(i_i.keys())[0] in user_del_failed:
+                    self.s3_clean.update(i_i)
+        if new_created_users:
+            for i_i in new_created_users:
+                self.s3_clean.update(i_i)
+        assert_utils.assert_false(len(exp_fail) or len(failed), "Failure in IAM user CRUD "
+                                                                "operations. \nFailed users: "
+                                                                f"\nexp_fail: {exp_fail} and "
+                                                                f"\nfailed: {failed}")
+
+        LOGGER.info("Checking responses for bucket CRUD operations")
+        bkt_resp = tuple()
+        while len(bkt_resp) != 2:
+            bkt_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not bkt_resp:
+            assert_utils.assert_true(False, "Failed to do bucket CRUD operations")
+        exp_fail = bkt_resp[0]
+        failed = bkt_resp[1]
+        assert_utils.assert_false(len(exp_fail) or len(failed),
+                                  "Failures observed in bucket CRUD operations. "
+                                  f"\nFailed buckets: \nexp_fail: {exp_fail} and "
+                                  f"\nfailed: {failed}")
+        LOGGER.info(
+            "Step 6: Successfully created/deleted %s new IAM users and %s buckets in loop",
+            num_users, num_bkts)
+        LOGGER.info("ENDED: Verify IAM user and bucket operations while N control pod "
+                    "restart in loop")
