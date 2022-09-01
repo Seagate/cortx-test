@@ -307,6 +307,12 @@ CMD_PCS_SERV = "pcs status | grep {}"
 CMD_PCS_GET_XML = "pcs status xml"
 CMD_PCS_GREP = "pcs status --full | grep {}"
 CMD_SALT_GET_HOST = 'salt "*" grains.get host'
+CMD_CORTX_VERSION = 'cat /opt/seagate/cortx/RELEASE.INFO | grep VERSION'
+CMD_DECRYPT_CERTIFICATE = "openssl x509 -in " \
+        "/root/deploy-scripts/charts/cortx/ssl-cert/s3.seagate.com.pem -noout -{}"
+CMD_FETCH_CERTIFICATE_DETAILS = "openssl x509 -in " \
+                                "/root/deploy-scripts/charts/cortx/ssl-cert/s3.seagate.com.pem " \
+                                "-noout -{} -nameopt lname -nameopt sep_multiline"
 # LDAP commands
 CMD_GET_S3CIPHER_CONST_KEY = "s3cipher generate_key --const_key cortx"
 CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {} --data {}"
