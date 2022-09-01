@@ -260,6 +260,7 @@ class QueryDeployment(RestTestLib):
         if time_cmd != get_response_time:
             err_msg = err_msg + " Time details match failed"
             self.log.error(err_msg)
+            result = False
         else:
             self.log.info("Time details match successful")
         return result, err_msg
@@ -269,7 +270,6 @@ class QueryDeployment(RestTestLib):
         Verify serial number for certificate
         """
         err_msg = ""
-        result = True
         cmd = cmds.CMD_DECRYPT_CERTIFICATE.format("serial")
         resp = self.master.execute_cmd(cmd=cmd, read_lines=True)
         resp = resp.decode() if isinstance(resp, bytes) else resp
@@ -278,12 +278,12 @@ class QueryDeployment(RestTestLib):
         output_cmd = int((''.join(output_cmd)), 16)
         self.log.info("Print serial number from response %s ", get_response_number)
         self.log.info("Print serial number from command %s", output_cmd)
-        if output_cmd == get_response_number:
+        result = output_cmd == get_response_number
+        if result:
             self.log.info("Serial number match successful")
         else:
             err_msg = "Serial number match failed"
             self.log.error(err_msg)
-            result = False
         return result, err_msg
 
     def verify_version_number(self, get_response_version: str):
@@ -291,7 +291,6 @@ class QueryDeployment(RestTestLib):
         Verify certificate version
         """
         err_msg = ""
-        result = True
         resp = self.master.execute_cmd(
                 cmd=cmds.CMD_DECRYPT_CERTIFICATE.format("text"), read_lines=True)
         resp = resp.decode() if isinstance(resp, bytes) else resp
@@ -303,12 +302,12 @@ class QueryDeployment(RestTestLib):
                 break
         get_response_version = get_response_version.split(".")[1]
         self.log.info("Printing get response version %s", get_response_version)
-        if version_cmd == get_response_version:
+        result = version_cmd == get_response_version
+        if result:
             self.log.info("Version number match successful")
         else:
             err_msg = "Version number match failed"
             self.log.error(err_msg)
-            result = False
         return result, err_msg
 
     def verify_issuer_details(self, issuer_dict: dict):
@@ -318,7 +317,6 @@ class QueryDeployment(RestTestLib):
         err_msg = ""
         values_list = []
         flat_list = []
-        result = True
         resp = self.master.execute_cmd(
                 cmd=cmds.CMD_FETCH_CERTIFICATE_DETAILS.format("issuer"), read_lines=True)
         resp = resp.decode() if isinstance(resp, bytes) else resp
@@ -331,12 +329,12 @@ class QueryDeployment(RestTestLib):
         del res_dct["issuer"]
         self.log.info("res dict %s ", res_dct)
         self.log.info("issuer dict %s ", issuer_dict)
-        if res_dct == issuer_dict:
+        result = res_dct == issuer_dict
+        if result:
             self.log.info("Issuer details match successful")
         else:
             err_msg = "Issuer details match failed"
             self.log.error(err_msg)
-            result = False
         return result, err_msg
 
     def verify_subject_details(self, subject_dict: dict):
@@ -359,12 +357,12 @@ class QueryDeployment(RestTestLib):
         del res_dct["subject"]
         self.log.info("res dict %s ", res_dct)
         self.log.info("subject dict %s ", subject_dict)
-        if res_dct == subject_dict:
+        result = res_dct == subject_dict
+        if result:
             self.log.info("Subject details match successful")
         else:
             err_msg = "Subject details match failed"
             self.log.error(err_msg)
-            result = False
         return result, err_msg
 
     def verify_certificate_details(self, expected_response=HTTPStatus.OK):
@@ -398,6 +396,7 @@ class QueryDeployment(RestTestLib):
             self.log.info("Verify version number")
             get_response_version = get_response["version"]
             result, err_msg = self.verify_version_number(get_response_version)
+            self.log.info("result err_msg is %s and %s ", result, err_msg)
             assert result, err_msg
             self.log.info("Verify issuer details")
             issuer_dict = get_response["issuer"]
