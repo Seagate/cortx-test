@@ -344,7 +344,6 @@ class QueryDeployment(RestTestLib):
         err_msg = ""
         values_list = []
         flat_list = []
-        result = True
         resp = self.master.execute_cmd(
                 cmd=cmds.CMD_FETCH_CERTIFICATE_DETAILS.format("subject"), read_lines=True)
         resp = resp.decode() if isinstance(resp, bytes) else resp
