@@ -525,8 +525,8 @@ def pytest_collection(session):
     else:
         required_tests = read_test_list_csv()  # e.g. required_tests = ['TEST-17413', 'TEST-17414']
         Globals.TE_TKT = config.option.te_tkt
-        selected_items = []
-        selected_tests = []
+        selected_items = [None] * len(required_tests)
+        selected_tests = [None] * len(required_tests)
         for item in items:
             parallel_found = False
             test_found = ''
@@ -539,9 +539,13 @@ def pytest_collection(session):
                     test_found = mark.args[0]
             if parallel_found == is_parallel and test_found != '':
                 if test_found in required_tests:
-                    selected_items.append(item)
-                    selected_tests.append(test_found)
+                    index = required_tests.index(test_found)
+                    selected_items[index] = item
+                    selected_tests[index] = test_found
             CACHE.store(item.nodeid, test_found)
+        selected_items = list(filter(lambda x: x, selected_items))
+        selected_tests = list(filter(lambda x: x, selected_tests))
+        LOGGER.info("Items = %s", selected_tests)
         with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS), 'w') \
                 as test_file:
             write = csv.writer(test_file)
