@@ -535,7 +535,7 @@ class ProvDeployK8sCortxLib:
             if log_disk_flag:
                 # the '2' is being added to accumulate the final data disk count
                 # after excluding the log disks
-                data_devices_f = device_list[cvg_count * 2:]
+                data_devices_f = device_list[cvg_count*2:]
                 LOGGER.debug("The data disk final is %s", data_devices_f)
             else:
                 data_devices_f = device_list[cvg_count:]
