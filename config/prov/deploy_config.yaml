@@ -63,6 +63,7 @@ nodes_3:
     dix_spare : 0
     cvg_per_node : 3
     data_disk_per_cvg : 1
+# Below configuration is use for log device disk.
   config_6:
     sns_data: 4
     sns_parity: 2
@@ -193,6 +194,7 @@ nodes_5:
     dix_spare: 0
     cvg_per_node: 2
     data_disk_per_cvg: 2
+# Below configuration is use for log device disk.
   config_8:
     sns_data: 8
     sns_parity: 2
