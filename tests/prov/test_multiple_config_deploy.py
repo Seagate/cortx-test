@@ -98,11 +98,7 @@ class TestMultipleConfDeploy:
             dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
             cvg_count=config['cvg_per_node'], data_disk_per_cvg=config['data_disk_per_cvg'],
             master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
-<<<<<<< HEAD
-            s3_instance=2, log_disk_flag=log_device, log_disk_size=self.log_disk_size)
-=======
-            s3_instance=1)
->>>>>>> eab389c85022041b9791664da972a71c87982c8e
+            s3_instance=1, log_disk_flag=log_device, log_disk_size=self.log_disk_size)
         self.collect_sb = False
         self.destroy_flag = True
 
