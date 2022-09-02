@@ -61,7 +61,6 @@ class TestMultipleConfDeploy:
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
-        cls.log_disk_size = os.getenv('log_disk_size')
         cls.collect_sb = True
         cls.destroy_flag = False
 
@@ -98,7 +97,7 @@ class TestMultipleConfDeploy:
             dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
             cvg_count=config['cvg_per_node'], data_disk_per_cvg=config['data_disk_per_cvg'],
             master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
-            s3_instance=1, log_disk_flag=log_device, log_disk_size=self.log_disk_size)
+            s3_instance=1, log_disk_flag=log_device)
         self.collect_sb = False
         self.destroy_flag = True
 
