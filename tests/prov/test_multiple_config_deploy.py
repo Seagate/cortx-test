@@ -87,7 +87,7 @@ class TestMultipleConfDeploy:
         :param: config: Its the config for each node defined
                         in deploy_config.yaml file
         """
-        log_device = kwargs.get("log_device_flag", None)
+        log_device = kwargs.get("log_device_flag", False)
         config = DEPLOY_CFG[f'nodes_{node}'][f'config_{config}']
         self.log.info("Running %s N with config %s+%s+%s",
                       node, config['sns_data'], config['sns_parity'], config['sns_spare'])
