@@ -33,6 +33,7 @@ from botocore.exceptions import ClientError
 from commons import commands
 from commons import errorcodes as err
 from commons.exceptions import CTException
+from commons.utils.s3_utils import create_random_file
 from commons.utils.s3_utils import poll
 from commons.utils.system_utils import create_file
 from commons.utils.system_utils import run_local_cmd
@@ -571,14 +572,7 @@ class S3TestLib(S3Lib):
                 objects = f"{object_name}_{str(obj)}_{str(time.time())}"
                 if os.path.exists(file_path):
                     os.remove(file_path)
-                with open(file_path, 'wb') as fout:
-                    fout.write(
-                        os.urandom(
-                            randint(  # nosec
-                                1024000 *
-                                int(min_size),
-                                1024000 *
-                                int(max_size))))
+                create_random_file(file_path, min_size, max_size)
                 LOGGER.info(
                     "Uploading object of size %d", os.path.getsize(file_path))
                 self.s3_resource.meta.client.upload_file(

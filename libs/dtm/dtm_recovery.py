@@ -277,6 +277,74 @@ class DTMRecoveryTestLib:
 
         return True
 
+    def multi_process_restart_with_delay(self, master_node, health_obj, pod_prefix,
+                                         container_prefix, process,
+                                         check_proc_state: bool = False,
+                                         proc_state: str = const.DTM_RECOVERY_STATE,
+                                         k_value: int = 1, proc_restart_delay: int = 300,
+                                         kill_restart_delay: int = 120):
+        """
+        Restart specified Process of specific pod and container
+        :param master_node: Master node object
+        :param health_obj: Health object of the master node
+        :param pod_prefix: Pod Prefix
+        :param container_prefix: Container Prefix
+        :param process: Process to be restarted.
+        :param check_proc_state: Flag to check process state
+        :param proc_state: Expected state of the process
+        :param k_value: number of processes to be restarted
+        :param kill_restart_delay: Delay in seconds to restart the process after killing it.
+        :param proc_restart_delay: Delay in seconds to restart the process after killing it.
+        return : boolean
+        """
+        copy_pod_container = dict
+        self.log.info("Get process IDs of %s", process)
+        resp = self.get_process_ids(health_obj=health_obj, process=process)
+        if not resp[0]:
+            return resp[0]
+        process_ids = resp[1]
+        pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
+        self.log.info("k_value:: %s", k_value)
+        for i_i in range(k_value):
+            self.log.info("Restart count for %s process %s in a cluster", i_i + 1, process)
+            self.log.info("Selecting Pod and container for restart")
+            pod_prefix = pod_list.pop(random.SystemRandom().randint(0, len(pod_list) - 1))
+            pod_selected, container = master_node.select_random_pod_container(pod_prefix,
+                                                                              container_prefix,
+                                                                              specific_pod=True)
+            self.set_proc_restart_duration(master_node, pod_selected, container, proc_restart_delay)
+            try:
+                self.log.info("Kill %s from %s pod %s container ", process, pod_selected, container)
+                resp = master_node.kill_process_in_container(pod_name=pod_selected,
+                                                             container_name=container,
+                                                             process_name=process)
+                copy_pod_container.update(pod_selected, container)
+                self.log.debug("Resp : %s", resp)
+                self.log.info("Sleep till %s", kill_restart_delay)
+                time.sleep(kill_restart_delay)
+                self.set_proc_restart_duration(master_node, pod_selected, container, 0)
+            except (ValueError, IOError) as ex:
+                self.log.error("Exception Occurred during killing process : %s", ex)
+                self.set_proc_restart_duration(master_node, pod_selected, container, 0)
+                return False
+
+        self.log.info("Polling hctl status to check if all services are online")
+        resp = self.ha_obj.poll_cluster_status(pod_obj=master_node, timeout=300)
+        if not resp[0]:
+            return resp[0]
+
+        if check_proc_state:
+            for pod, container in copy_pod_container.items():
+                self.log.info("Check process states")
+                resp = self.poll_process_state(master_node=master_node, pod_name=pod,
+                                               container_name=container, process_ids=process_ids,
+                                               status=proc_state)
+                if not resp:
+                    self.log.error("Failed during polling status of process")
+                    return False
+                self.log.info("Process %s restarted successfully", process)
+        return True
+
     def get_process_state(self, master_node, pod_name, container_name, process_ids: list):
         """
         Function to get given process state
@@ -375,7 +443,7 @@ class DTMRecoveryTestLib:
             self.log.debug("File path not exists")
             system_utils.make_dirs(TEST_DATA_FOLDER)
 
-        self.log.info("Bucket Name : %s",bucket_name)
+        self.log.info("Bucket Name : %s", bucket_name)
         self.log.info("Object Name : %s", object_name)
         self.log.info("Total Iteration : %s", iteration)
         self.log.info("Max Object size : %sMB", object_size)

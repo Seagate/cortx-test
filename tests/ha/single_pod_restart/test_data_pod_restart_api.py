@@ -42,6 +42,7 @@ from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
+from libs.ha.ha_common_api_libs_k8s import HAK8sApiLibs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -66,12 +67,13 @@ class TestDataPodRestartAPI:
         LOGGER.info("STARTED: Setup Module operations.")
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.setup_type = CMN_CFG["setup_type"]
-        cls.username = []
-        cls.password = []
-        cls.node_master_list = []
-        cls.hlth_master_list = []
-        cls.node_worker_list = []
+        cls.username = list()
+        cls.password = list()
+        cls.node_master_list = list()
+        cls.hlth_master_list = list()
+        cls.node_worker_list = list()
         cls.ha_obj = HAK8s()
+        cls.ha_api = HAK8sApiLibs()
         cls.s3_clean = cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.multipart_obj_path = cls.set_name = cls.version_etag = cls.extra_files = None
@@ -108,6 +110,7 @@ class TestDataPodRestartAPI:
         LOGGER.info("STARTED: Setup Operations")
         self.restore_pod = False
         self.s3_clean = dict()
+        self.version_etag = dict()
         self.s3acc_name = f"ha_s3acc_{int(perf_counter_ns())}"
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
         self.bucket_name = f"ha-mp-bkt-{int(perf_counter_ns())}"
@@ -231,14 +234,13 @@ class TestDataPodRestartAPI:
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
-        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        pod_name = list(resp[1].keys())[0]
-        self.set_name = resp[1][pod_name]['deployment_name']
-        self.restore_method = resp[1][pod_name]['method']
-        pod_name = list(resp[1].keys())[0]
+        assert_utils.assert_true(resp[1], f"Failed to shutdown/delete {self.delete_pod} pod")
+        self.set_name = resp[1][self.delete_pod]['deployment_name']
+        self.restore_method = resp[1][self.delete_pod]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
-                    "services states are as expected & remaining pods status is online.", pod_name)
+                    "services states are as expected & remaining pods status is online.",
+                    self.delete_pod)
         self.restore_pod = True
         LOGGER.info("Step 3: Download the uploaded object %s in healthy cluster & verify checksum",
                     self.object_name)
@@ -390,14 +392,13 @@ class TestDataPodRestartAPI:
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
-        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        pod_name = list(resp[1].keys())[0]
-        self.set_name = resp[1][pod_name]['deployment_name']
-        self.restore_method = resp[1][pod_name]['method']
-        pod_name = list(resp[1].keys())[0]
+        assert_utils.assert_true(resp[1], f"Failed to shutdown/delete {self.delete_pod} pod")
+        self.set_name = resp[1][self.delete_pod]['deployment_name']
+        self.restore_method = resp[1][self.delete_pod]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
-                    "services states are as expected & remaining pods status is online.", pod_name)
+                    "services states are as expected & remaining pods status is online.",
+                    self.delete_pod)
         self.restore_pod = True
         remaining_parts = list(filter(lambda i: i not in part_numbers,
                                       list(range(1, total_parts + 1))))
@@ -526,14 +527,13 @@ class TestDataPodRestartAPI:
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
-        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        pod_name = list(resp[1].keys())[0]
-        self.set_name = resp[1][pod_name]['deployment_name']
-        self.restore_method = resp[1][pod_name]['method']
-        pod_name = list(resp[1].keys())[0]
+        assert_utils.assert_true(resp[1], f"Failed to shutdown/delete {self.delete_pod} pod")
+        self.set_name = resp[1][self.delete_pod]['deployment_name']
+        self.restore_method = resp[1][self.delete_pod]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
-                    "services states are as expected & remaining pods status is online.", pod_name)
+                    "services states are as expected & remaining pods status is online.",
+                    self.delete_pod)
         self.restore_pod = True
         LOGGER.info("Step 3: Download the copied objects & verify etags.")
         for bkt, obj in bkt_obj_dict.items():
@@ -691,14 +691,13 @@ class TestDataPodRestartAPI:
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
-        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        pod_name = list(resp[1].keys())[0]
-        self.set_name = resp[1][pod_name]['deployment_name']
-        self.restore_method = resp[1][pod_name]['method']
-        pod_name = list(resp[1].keys())[0]
+        assert_utils.assert_true(resp[1], f"Failed to shutdown/delete {self.delete_pod} pod")
+        self.set_name = resp[1][self.delete_pod]['deployment_name']
+        self.restore_method = resp[1][self.delete_pod]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
-                    "services states are as expected & remaining pods status is online.", pod_name)
+                    "services states are as expected & remaining pods status is online.",
+                    self.delete_pod)
         self.restore_pod = True
 
         LOGGER.info("Step 3: Download the uploaded object in healthy cluster and verify checksum")
@@ -864,14 +863,13 @@ class TestDataPodRestartAPI:
             master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
             delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
-        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-        pod_name = list(resp[1].keys())[0]
-        self.set_name = resp[1][pod_name]['deployment_name']
-        self.restore_method = resp[1][pod_name]['method']
-        pod_name = list(resp[1].keys())[0]
+        assert_utils.assert_true(resp[1], f"Failed to shutdown/delete {self.delete_pod} pod")
+        self.set_name = resp[1][self.delete_pod]['deployment_name']
+        self.restore_method = resp[1][self.delete_pod]['method']
         assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
         LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
-                    "services states are as expected & remaining pods status is online.", pod_name)
+                    "services states are as expected & remaining pods status is online.",
+                    self.delete_pod)
         self.restore_pod = True
 
         LOGGER.info("Step 3: Download the copied objects & verify etags.")
@@ -911,12 +909,13 @@ class TestDataPodRestartAPI:
         # While loop to sync this operation with background thread to achieve expected scenario
         LOGGER.info("Waiting for creation of %s buckets", bkt_cnt)
         bkt_list = list()
-        timeout = time.time() + 60 * 3
+        timeout = time.time() + HA_CFG["common_params"]["bucket_creation_delay"]
         while len(bkt_list) < bkt_cnt:
             time.sleep(HA_CFG["common_params"]["20sec_delay"])
             bkt_list = self.s3_test_obj.bucket_list()[1]
             if timeout < time.time():
-                LOGGER.error("Bucket creation is taking longer than 3 mins")
+                LOGGER.error("Bucket creation is taking longer than % sec",
+                             HA_CFG["common_params"]["bucket_creation_delay"])
                 assert_utils.assert_true(False, "Please check background process logs")
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
 
@@ -1012,3 +1011,737 @@ class TestDataPodRestartAPI:
         LOGGER.info("Step 9: Downloaded copied objects & verify etags.")
 
         LOGGER.info("ENDED: Test to verify copy object during data pod restart")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-45641")
+    def test_bkt_ver_suspension_data_pod_restart(self):
+        """
+        Verify bucket versioning suspension before and after data pod restart
+        """
+        LOGGER.info("STARTED: Test to verify bucket versioning suspension before & after "
+                    "data pod restart.")
+        event = threading.Event()
+        LOGGER.info("Step 1: Create bucket and upload object %s of %s size. Enable versioning "
+                    "on %s.", self.object_name, self.f_size, self.bucket_name)
+        self.extra_files.append(self.multipart_obj_path)
+        args = {'chk_null_version': True, 'is_unversioned': True, 'file_path':
+            self.multipart_obj_path, 'enable_ver': True, 's3_ver': self.s3_ver}
+        resp = self.ha_api.crt_bkt_put_obj_enbl_ver(event, self.s3_test_obj, self.bucket_name,
+                                                    self.object_name, **args)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Created bucket and uploaded object %s of %s size. Enabled "
+                    "versioning on %s.", self.object_name, self.f_size, self.bucket_name)
+        self.version_etag.update({self.bucket_name: []})
+        self.version_etag[self.bucket_name].extend(resp[1])
+        bucket_list = list()
+        bucket_list.append(self.bucket_name)
+        LOGGER.info("Step 2: Upload same object %s after enabling versioning. List & verify "
+                    "the VersionID for the same for %s.", self.object_name, self.bucket_name)
+        args = {'file_path': self.multipart_obj_path}
+        resp = self.ha_api.parallel_put_object(event, self.s3_test_obj, self.bucket_name,
+                                               self.object_name, **args)
+        assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
+        self.version_etag[self.bucket_name].extend(resp[1])
+        resp = self.ha_api.list_verify_version(self.s3_ver, self.bucket_name, self.version_etag[
+            self.bucket_name])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Uploaded same object %s after enabling versioning. Listed & verified"
+                    " the VersionID for the same for %s.", self.object_name, self.bucket_name)
+
+        LOGGER.info("Step 3: Suspend versioning on %s.", self.bucket_name)
+        resp = self.s3_ver.put_bucket_versioning(bucket_name=self.bucket_name, status="Suspended")
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 3: Suspended versioning on %s.", self.bucket_name)
+
+        LOGGER.info("Step 4: Get versions of %s with & without specifying VersionID & verify etags "
+                    "for %s.", self.object_name, self.bucket_name)
+        resp = self.ha_api.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
+                                               bkt_name=self.bucket_name, obj_name=self.object_name,
+                                               ver_etag=self.version_etag[self.bucket_name])
+        assert_utils.assert_true(resp[0], f"Get Object with specifying versionID failed {resp[1]}")
+        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+        latest_vetag = self.version_etag[self.bucket_name][-1]
+        latest_v = list(latest_vetag.keys())[0]
+        etag = list(latest_vetag.values())[0]
+        if resp[1]["VersionId"] != latest_v:
+            assert_utils.assert_true(False, "Get Object without specifying VersionID does not "
+                                            f"match with latest {latest_v} {resp[1]}")
+        if resp[1]["ETag"] != etag:
+            assert_utils.assert_true(False, "Etag without specifying VersionID does not match with "
+                                            f"etag {etag} {resp[1]}")
+        LOGGER.info("Step 4: Got versions of %s with & without specifying VersionID & verified "
+                    "etags for %s.", self.object_name, self.bucket_name)
+
+        LOGGER.info("Step 5: Shutdown random data pod with replica method and verify cluster & "
+                    "remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=self.num_replica - 1)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], f"Failed to shutdown/delete {self.delete_pod} pod")
+        self.restore_pod = True
+        self.set_name = resp[1][self.delete_pod]['deployment_name']
+        self.restore_method = resp[1][self.delete_pod]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 5: Successfully shutdown data pod %s. Verified cluster and services "
+                    "states are as expected & remaining pods status is online.", self.delete_pod)
+
+        LOGGER.info("Step 6: Get versions of %s with & without specifying VersionID & verify "
+                    "etags for %s.", self.object_name, self.bucket_name)
+        resp = self.ha_api.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
+                                               bkt_name=self.bucket_name, obj_name=self.object_name,
+                                               ver_etag=self.version_etag[self.bucket_name])
+        assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
+        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+        latest_vetag = self.version_etag[self.bucket_name][-1]
+        latest_v = list(latest_vetag.keys())[0]
+        etag = list(latest_vetag.values())[0]
+        if resp[1]["VersionId"] != latest_v:
+            assert_utils.assert_true(False, "Get Object without specifying VersionID does not "
+                                            f"match with latest {latest_v} {resp[1]}")
+        if resp[1]["ETag"] != etag:
+            assert_utils.assert_true(False, "Etag without specifying VersionID does not match with "
+                                            f"etag {etag} {resp[1]}")
+        LOGGER.info("Step 6: Got versions of %s with & without specifying VersionID & verified "
+                    "etags for %s", self.object_name, self.bucket_name)
+
+        new_bucket = self.bucket_name
+        download_path = self.multipart_obj_path
+        if CMN_CFG["dtm0_disabled"]:
+            download_path = os.path.join(self.test_dir_path, self.test_file + "_new")
+            self.extra_files.append(download_path)
+            new_bucket = f"ha-mp-bkt-{int(perf_counter_ns())}"
+            LOGGER.info("Step 7: Create new bucket and upload object %s of %s size. Enable "
+                        "versioning on %s.", self.object_name, self.f_size, new_bucket)
+            args = {'chk_null_version': True, 'is_unversioned': True, 'file_path': download_path,
+                    'enable_ver': True, 's3_ver': self.s3_ver}
+            resp = self.ha_api.crt_bkt_put_obj_enbl_ver(event, self.s3_test_obj, new_bucket,
+                                                        self.object_name, **args)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.version_etag.update({new_bucket: []})
+            self.version_etag[new_bucket].extend(resp[1])
+            bucket_list.append(new_bucket)
+            LOGGER.info("Step 7: Created bucket and uploaded object %s of %s size. Enabled "
+                        "versioning on %s.", self.object_name, self.f_size, new_bucket)
+
+            LOGGER.info("Step 8: Upload same object %s after enabling versioning. List & verify "
+                        "the VersionID for the same for %s.", self.object_name, new_bucket)
+            args = {'file_path': download_path}
+            resp = self.ha_api.parallel_put_object(event, self.s3_test_obj, new_bucket,
+                                                   self.object_name, **args)
+            assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
+            self.version_etag[new_bucket].extend(resp[1])
+            resp = self.ha_api.list_verify_version(self.s3_ver, new_bucket,
+                                                   self.version_etag[new_bucket])
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 8: Uploaded same object %s after enabling versioning. Listed & "
+                        "verified the VersionID for the same for %s.", self.object_name, new_bucket)
+
+            LOGGER.info("Step 9: Get versions of %s with & without specifying VersionID & verify "
+                        "etags for %s.", self.object_name, new_bucket)
+            resp = self.ha_api.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
+                                                   bkt_name=new_bucket, obj_name=self.object_name,
+                                                   ver_etag=self.version_etag[new_bucket])
+            assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
+            resp = self.s3_test_obj.get_object(new_bucket, self.object_name)
+            latest_vetag = self.version_etag[new_bucket][-1]
+            latest_v = list(latest_vetag.keys())[0]
+            etag = list(latest_vetag.values())[0]
+            if resp[1]["VersionId"] != latest_v:
+                assert_utils.assert_true(False, "Get Object without specifying VersionID does not "
+                                                f"match with latest {latest_v} {resp[1]}")
+            if resp[1]["ETag"] != etag:
+                assert_utils.assert_true(False, "Etag without specifying VersionID does not match "
+                                                f"with etag {etag} {resp[1]}")
+            LOGGER.info("Step 9: Got versions of %s with & without specifying VersionID & verified "
+                        "etags for %s", self.object_name, new_bucket)
+        LOGGER.info("Step 10: Restart data pod with replica method and check cluster status")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
+                                       clstr_status=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+        self.restore_pod = False
+        LOGGER.info("Step 10: Successfully restart data pod with replica method & checked "
+                    "cluster status")
+
+        # TODO: Need to check if enabling or disabling versioning is supported or not with dtm
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 11: Get versions of %s with & without specifying VersionID & verify "
+                        "etags for %s.", self.object_name, new_bucket)
+            resp = self.ha_api.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
+                                                   bkt_name=new_bucket, obj_name=self.object_name,
+                                                   ver_etag=self.version_etag[new_bucket])
+            assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
+            resp = self.s3_test_obj.get_object(new_bucket, self.object_name)
+            latest_vetag = self.version_etag[new_bucket][-1]
+            latest_v = list(latest_vetag.keys())[0]
+            etag = list(latest_vetag.values())[0]
+            if resp[1]["VersionId"] != latest_v:
+                assert_utils.assert_true(False, "Get Object without specifying VersionID does not "
+                                                f"match with latest {latest_v} {resp[1]}")
+            if resp[1]["ETag"] != etag:
+                assert_utils.assert_true(False,
+                                         "Etag without specifying VersionID does not match with"
+                                         f" etag {etag} {resp[1]}")
+            LOGGER.info(
+                "Step 11: Got versions of %s with & without specifying VersionID & verified "
+                "etag for %s", self.object_name, new_bucket)
+            LOGGER.info("Step 12: Suspend versioning on %s.", new_bucket)
+            resp = self.s3_ver.put_bucket_versioning(bucket_name=new_bucket, status="Suspended")
+            assert_utils.assert_true(resp[0], resp)
+            LOGGER.info("Step 12: Suspended versioning on %s.", new_bucket)
+            LOGGER.info("Step 13: Upload same object %s after suspending versioning and verify its "
+                        "null for %s.", self.object_name, new_bucket)
+            args = {'file_path': download_path, 'chk_null_version': True, 'is_unversioned': True}
+            resp = self.ha_api.parallel_put_object(event, self.s3_test_obj, new_bucket,
+                                                   self.object_name, **args)
+            assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
+            self.version_etag[new_bucket].extend(resp[1])
+            LOGGER.info("Step 13: Uploaded same object %s after suspending versioning and verified "
+                        "its null for %s.", self.object_name, new_bucket)
+
+        LOGGER.info("Step 14: Verify existing versions are remained intact")
+        for bucket in bucket_list:
+            resp = self.ha_api.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
+                                                   bkt_name=bucket, obj_name=self.object_name,
+                                                   ver_etag=self.version_etag[bucket])
+            assert_utils.assert_true(resp[0], f"Get object with versionID failed {resp[1]} for"
+                                              f" {bucket}")
+        LOGGER.info("Step 14: Verified existing versions are remained intact")
+        LOGGER.info("COMPLETED: Test to verify bucket versioning suspension before & after data "
+                    "pod restart.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-45640")
+    def test_bkt_ver_during_data_pod_restart(self):
+        """
+        This test verify bucket versioning during data pod restart
+        """
+        LOGGER.info("STARTED: Test to verify bucket versioning during data pod restart.")
+        event = threading.Event()
+        get_output = Queue()
+        put_output = Queue()
+        LOGGER.info("Step 1: Create bucket and upload object %s of %s size. Enable versioning "
+                    "on %s.", self.object_name, self.f_size, self.bucket_name)
+        self.extra_files.append(self.multipart_obj_path)
+        args = {'chk_null_version': True, 'is_unversioned': True, 'file_path':
+            self.multipart_obj_path, 'enable_ver': True, 's3_ver': self.s3_ver}
+        resp = self.ha_api.crt_bkt_put_obj_enbl_ver(event, self.s3_test_obj, self.bucket_name,
+                                                    self.object_name, **args)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Created bucket and uploaded object %s of %s size. Enabled "
+                    "versioning on %s.", self.object_name, self.f_size, self.bucket_name)
+        self.version_etag.update({self.bucket_name: []})
+        self.version_etag[self.bucket_name].extend(resp[1])
+
+        LOGGER.info("Step 2: Upload same object %s after enabling versioning. List & verify "
+                    "the VersionID for the same for %s.", self.object_name, self.bucket_name)
+        args = {'file_path': self.multipart_obj_path}
+        resp = self.ha_api.parallel_put_object(event, self.s3_test_obj, self.bucket_name,
+                                               self.object_name, **args)
+        assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
+        self.version_etag[self.bucket_name].extend(resp[1])
+        resp = self.ha_api.list_verify_version(self.s3_ver, self.bucket_name, self.version_etag[
+            self.bucket_name])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Uploaded same object %s after enabling versioning. Listed & verified"
+                    " the VersionID for the same for %s.", self.object_name, self.bucket_name)
+
+        LOGGER.info("Step 3: Shutdown data pod with replica method and verify cluster & "
+                    "remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=self.num_replica - 1)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], f"Failed to shutdown/delete {self.delete_pod} pod")
+        self.set_name = resp[1][self.delete_pod]['deployment_name']
+        self.restore_method = resp[1][self.delete_pod]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and services "
+                    "states are as expected & remaining pods status is online.", self.delete_pod)
+
+        LOGGER.info("Step 4: Get object versions of %s with VersionID & verify etags for %s.",
+                    self.object_name, self.bucket_name)
+        resp = self.ha_api.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
+                                               bkt_name=self.bucket_name, obj_name=self.object_name,
+                                               ver_etag=self.version_etag[self.bucket_name])
+        assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
+        LOGGER.info("Step 4: Got object versions of %s with VersionID & verified etags for %s.",
+                    self.object_name, self.bucket_name)
+
+        count = HA_CFG["common_params"]["put_get_version"]
+        LOGGER.info("Step 5: Starting background threads for Get and Put version for count %s "
+                    "while data pod restarting.", count)
+        LOGGER.info("Upload same object %s for %s times for background Get.", self.object_name,
+                    count)
+        args = {'file_path': self.multipart_obj_path, 'count': count}
+        resp = self.ha_api.parallel_put_object(event, self.s3_test_obj, self.bucket_name,
+                                               self.object_name, **args)
+        assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
+        self.version_etag[self.bucket_name].extend(resp[1])
+        args = {'file_path': self.multipart_obj_path, 'count': count, 'background': True}
+        put_thread = threading.Thread(
+            target=self.ha_api.parallel_put_object,
+            args=(event, self.s3_test_obj, self.bucket_name, self.object_name, put_output),
+            kwargs=args)
+        args = {'background': True, 'output': get_output}
+        get_thread = threading.Thread(
+            target=self.ha_api.parallel_get_object,
+            args=(event, self.s3_ver, self.bucket_name, self.object_name,
+                  self.version_etag[self.bucket_name]), kwargs=args)
+        LOGGER.info("Uploaded same object %s for %s times for background Get.", self.object_name,
+                    count)
+        put_thread.daemon = True  # Daemonize thread
+        get_thread.daemon = True  # Daemonize thread
+        put_thread.start()
+        get_thread.start()
+        event.set()
+        LOGGER.info("Step 5: Started background threads for Get and Put Version")
+
+        LOGGER.info("Step 6: Restart data pod with replica method and check cluster status")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
+                                       clstr_status=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+        self.restore_pod = False
+        event.clear()
+        put_thread.join()
+        get_thread.join()
+        LOGGER.info("Step 6: Successfully restart data pod with replica method & checked "
+                    "cluster status.")
+
+        LOGGER.info("Step 7: Verify background Put & Get Version for %s", self.object_name)
+        get_resp = tuple()
+        put_resp = tuple()
+        while len(get_resp) != 2:
+            get_resp = get_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        while len(put_resp) != 2:
+            put_resp = put_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        assert_utils.assert_false(len(get_resp[1]) or len(put_resp[1]),
+                                  "Failure in put or get object during restart"
+                                  f"GET resp: {get_resp[1]} PUT resp: {put_resp[1]}")
+        self.version_etag[self.bucket_name].extend(put_resp[0])
+        LOGGER.info("Step 7: Verified background Put & Get Version for %s", self.object_name)
+
+        LOGGER.info("Step 8: Get object with version IDs & verify etags for %s.", self.bucket_name)
+        resp = self.ha_api.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
+                                               bkt_name=self.bucket_name, obj_name=self.object_name,
+                                               ver_etag=self.version_etag[self.bucket_name])
+        assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
+        LOGGER.info("Step 8: Got object with version IDs & verified etags for %s.",
+                    self.bucket_name)
+
+        new_bucket = self.bucket_name
+        download_path = self.multipart_obj_path
+        if CMN_CFG["dtm0_disabled"]:
+            new_bucket = f"ha-mp-bkt-{int(perf_counter_ns())}"
+            download_path = os.path.join(self.test_dir_path, self.test_file + "_new")
+            self.extra_files.append(download_path)
+            LOGGER.info("Step 9: Create new bucket and upload object %s of %s size. Enable "
+                        "versioning on %s.", self.object_name, self.f_size, new_bucket)
+            args = {'chk_null_version': True, 'is_unversioned': True, 'file_path': download_path,
+                    'enable_ver': True, 's3_ver': self.s3_ver}
+            resp = self.ha_api.crt_bkt_put_obj_enbl_ver(event, self.s3_test_obj, new_bucket,
+                                                        self.object_name, **args)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.version_etag.update({new_bucket: []})
+            self.version_etag[new_bucket].extend(resp[1])
+            LOGGER.info("Step 9: Created bucket and uploaded object %s of %s size. Enabled "
+                        "versioning on %s.", self.object_name, self.f_size, new_bucket)
+
+        LOGGER.info("Step 10: Upload same object %s. List & verify the VersionID for "
+                    "the same for %s.", self.object_name, new_bucket)
+        args = {'file_path': download_path}
+        resp = self.ha_api.parallel_put_object(event, self.s3_test_obj, new_bucket,
+                                               self.object_name, **args)
+        assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
+        self.version_etag[new_bucket].extend(resp[1])
+        resp = self.ha_api.list_verify_version(self.s3_ver, new_bucket,
+                                               self.version_etag[new_bucket])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 10: Uploaded same object %s after enabling versioning. Listed & "
+                    "verified VersionID for the same for %s.", self.object_name, new_bucket)
+
+        LOGGER.info("Step 11: Get object versions of %s & verify etags for %s.",
+                    self.object_name, new_bucket)
+        resp = self.ha_api.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
+                                               bkt_name=new_bucket, obj_name=self.object_name,
+                                               ver_etag=self.version_etag[new_bucket])
+        assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
+        LOGGER.info("Step 11: Got object versions of %s & verified etags for %s.",
+                    self.object_name, new_bucket)
+        LOGGER.info("COMPLETED: Test to verify bucket versioning during data pod restart.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-45639")
+    def test_bkt_ver_after_data_pod_restart(self):
+        """
+        This test tests bucket versioning after data pod restart
+        """
+        LOGGER.info("STARTED: Test to verify bucket versioning after data pod restart.")
+        event = threading.Event()
+        LOGGER.info("Step 1: Create bucket and upload object %s of %s size. Enable versioning "
+                    "on %s.", self.object_name, self.f_size, self.bucket_name)
+        self.extra_files.append(self.multipart_obj_path)
+        args = {'chk_null_version': True, 'is_unversioned': True, 'file_path':
+            self.multipart_obj_path, 'enable_ver': True, 's3_ver': self.s3_ver}
+        resp = self.ha_api.crt_bkt_put_obj_enbl_ver(event, self.s3_test_obj, self.bucket_name,
+                                                    self.object_name, **args)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Created bucket and uploaded object %s of %s size. Enabled "
+                    "versioning on %s.", self.object_name, self.f_size, self.bucket_name)
+        self.version_etag.update({self.bucket_name: []})
+        self.version_etag[self.bucket_name].extend(resp[1])
+        bucket_list = list()
+        bucket_list.append(self.bucket_name)
+
+        LOGGER.info("Step 2: Upload same object %s after enabling versioning. List & verify "
+                    "the VersionID for the same for %s.", self.object_name, self.bucket_name)
+        args = {'file_path': self.multipart_obj_path}
+        resp = self.ha_api.parallel_put_object(event, self.s3_test_obj, self.bucket_name,
+                                               self.object_name, **args)
+        assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
+        self.version_etag[self.bucket_name].extend(resp[1])
+        resp = self.ha_api.list_verify_version(self.s3_ver, self.bucket_name, self.version_etag[
+            self.bucket_name])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Uploaded same object %s after enabling versioning. Listed & verified"
+                    " the VersionID for the same for %s.", self.object_name, self.bucket_name)
+
+        LOGGER.info("Step 3: Shutdown data pod with replica method and verify cluster & "
+                    "remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=self.num_replica - 1)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], f"Failed to shutdown/delete {self.delete_pod} pod")
+        self.set_name = resp[1][self.delete_pod]['deployment_name']
+        self.restore_method = resp[1][self.delete_pod]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and services "
+                    "states are as expected & remaining pods status is online.", self.delete_pod)
+
+        LOGGER.info("Step 4: Get object with version IDs & verify etags for %s.", self.bucket_name)
+        resp = self.ha_api.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
+                                               bkt_name=self.bucket_name, obj_name=self.object_name,
+                                               ver_etag=self.version_etag[self.bucket_name])
+        assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
+        LOGGER.info("Step 4: Got object with version IDs & verify etags for %s.", self.bucket_name)
+
+        LOGGER.info("Step 5: Upload same object %s after data pod shutdown. List & verify "
+                    "the VersionID for the same for %s.", self.object_name, self.bucket_name)
+        args = {'file_path': self.multipart_obj_path}
+        resp = self.ha_api.parallel_put_object(event, self.s3_test_obj, self.bucket_name,
+                                               self.object_name, **args)
+        assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
+        self.version_etag[self.bucket_name].extend(resp[1])
+        resp = self.ha_api.list_verify_version(self.s3_ver, self.bucket_name, self.version_etag[
+            self.bucket_name])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 5: Uploaded same object %s after data pod shutdown. Listed & verified"
+                    " the VersionID for the same for %s.", self.object_name, self.bucket_name)
+
+        if CMN_CFG["dtm0_disabled"]:
+            new_bucket = f"ha-mp-bkt-{int(perf_counter_ns())}"
+            bucket_list.append(new_bucket)
+            download_path = os.path.join(self.test_dir_path, self.test_file + "_new")
+            self.extra_files.append(download_path)
+            LOGGER.info("Step 6: Create new bucket and upload object %s of %s size. Enable "
+                        "versioning on %s.", self.object_name, self.f_size, new_bucket)
+            args = {'chk_null_version': True, 'is_unversioned': True, 'file_path': download_path,
+                    'enable_ver': True, 's3_ver': self.s3_ver}
+            resp = self.ha_api.crt_bkt_put_obj_enbl_ver(event, self.s3_test_obj, new_bucket,
+                                                        self.object_name, **args)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.version_etag.update({new_bucket: []})
+            self.version_etag[new_bucket].extend(resp[1])
+            LOGGER.info("Step 6: Created bucket and uploaded object %s of %s size. Enabled "
+                        "versioning on %s.", self.object_name, self.f_size, new_bucket)
+
+            LOGGER.info("Step 7: Upload same object %s after enabling versioning. List & verify "
+                        "the VersionID for the same for %s.", self.object_name, new_bucket)
+            args = {'file_path': download_path}
+            resp = self.ha_api.parallel_put_object(event, self.s3_test_obj, new_bucket,
+                                                   self.object_name, **args)
+            assert_utils.assert_true(resp[0], f"Upload Object failed {resp[1]}")
+            self.version_etag[new_bucket].extend(resp[1])
+            resp = self.ha_api.list_verify_version(self.s3_ver, new_bucket,
+                                                   self.version_etag[new_bucket])
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 7: Uploaded same object %s after enabling versioning. Listed & "
+                        "verified VersionID for the same for %s.", self.object_name, new_bucket)
+
+            LOGGER.info("Step 8: Get object with version IDs and verify etags for %s.", new_bucket)
+            resp = self.ha_api.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
+                                                   bkt_name=new_bucket, obj_name=self.object_name,
+                                                   ver_etag=self.version_etag[new_bucket])
+            assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
+            LOGGER.info("Step 8: Got object with version IDs and verify etags for %s.", new_bucket)
+
+        LOGGER.info("Step 9: Restart data pod with replica method and check cluster status")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
+                                       clstr_status=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+        self.restore_pod = False
+        LOGGER.info("Step 9: Successfully restart data pod with replica method & checked "
+                    "cluster status")
+
+        LOGGER.info("Step 10: Get object versions of %s buckets with version IDs & verify etags.",
+                    bucket_list)
+        for bucket in bucket_list:
+            resp = self.ha_api.parallel_get_object(event=event, s3_ver_obj=self.s3_ver,
+                                                   bkt_name=bucket, obj_name=self.object_name,
+                                                   ver_etag=self.version_etag[bucket])
+            assert_utils.assert_true(resp[0], f"Get object with versionID failed {resp[1]} for"
+                                              f" {bucket}")
+        LOGGER.info("Step 10: Got object versions of %s buckets with version IDs & verified etags.",
+                    bucket_list)
+        LOGGER.info("COMPLETED: Test to verify bucket versioning after data pod restart.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-45637")
+    def test_obj_overwrite_data_pod_restart(self):
+        """
+        Verify object overwrite before and after data pod restart
+        """
+        LOGGER.info("STARTED: Test to verify object overwrite before and after data pod restart")
+        file_size = HA_CFG["5gb_mpu_data"]["file_size"]
+        LOGGER.info("Step 1: Create bucket %s and perform upload of object size %s MB and "
+                    "Overwrite the object", self.bucket_name, file_size)
+        s3_data = {self.bucket_name: [self.object_name, file_size]}
+        resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
+                                                 random_size=False)
+        assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
+        for _, checksum in resp[1].items():
+            assert_utils.assert_equal(checksum[0], checksum[1],
+                                      f"Checksum doesn't match, Expected: {checksum[0]} "
+                                      f"Received: {checksum[1]}")
+        LOGGER.info("Step 1: Create bucket %s and perform upload of object size %s MB and "
+                    "Overwrite the object", self.bucket_name, file_size)
+
+        LOGGER.info("Step 2: Shutdown data pod with replica method and verify cluster & "
+                    "remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=self.num_replica - 1)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete data pod")
+        pod_name = list(resp[1].keys())[0]
+        self.set_name = resp[1][pod_name]['deployment_name']
+        self.restore_pod = True
+        self.restore_method = resp[1][pod_name]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+
+        LOGGER.info("Step 3: Overwrite existing object %s of bucket %s.", self.object_name,
+                    self.bucket_name)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 3.1: Create new bucket and overwrite object in new bucket")
+            t_t = int(perf_counter_ns())
+            bucket_name = f"bucket-{t_t}"
+            object_name = f"object-{t_t}"
+            s3_data.update({bucket_name: [object_name, file_size]})
+        resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
+                                                 random_size=False)
+        assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
+        for checksum in resp[1].values():
+            assert_utils.assert_equal(checksum[0], checksum[1],
+                                      f"Checksum does not match, Expected: {checksum[0]} "
+                                      f"Received: {checksum[1]}")
+        LOGGER.info("Step 3: Successfully performed overwrite object operation after %s "
+                    "shutdown.", pod_name)
+
+        LOGGER.info("Step 4: Restart the pod with replica method and check cluster status")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
+                                       clstr_status=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way or "
+                                          f"cluster status is not good")
+        LOGGER.info("Step 4: Successfully restarted the pod with replica method and checked "
+                    "cluster status")
+        self.restore_pod = False
+
+        LOGGER.info("Step 5: Overwrite existing object %s of bucket %s.", self.object_name,
+                    self.bucket_name)
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Step 5.1: Create new bucket and overwrite object in new bucket")
+            t_t = int(perf_counter_ns())
+            bucket_name = f"bucket-{t_t}"
+            object_name = f"object-{t_t}"
+            s3_data.update({bucket_name: [object_name, file_size]})
+        resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
+                                                 random_size=False)
+        assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
+        for checksum in resp[1].values():
+            assert_utils.assert_equal(checksum[0], checksum[1],
+                                      f"Checksum doesn't match, Expected: {checksum[0]} "
+                                      f"Received: {checksum[1]}")
+        LOGGER.info("Step 5: Successfully performed overwrite object operation after %s "
+                    "restart.", pod_name)
+
+        LOGGER.info("ENDED: Test to verify object overwrite before and after data pod restart")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-45638")
+    def test_obj_overwrite_during_data_pod_restart(self):
+        """
+        Verify object overwrite during data pod restart
+        """
+        LOGGER.info("STARTED: Test to verify object overwrite during data pod restart")
+        file_size = HA_CFG["5gb_mpu_data"]["file_size"]
+        output = Queue()
+        event = threading.Event()
+
+        LOGGER.info("Step 1: Create bucket %s and perform upload of object size %s MB and "
+                    "Overwrite the object", self.bucket_name, file_size)
+        s3_data = {self.bucket_name: [self.object_name, file_size]}
+        resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
+                                                 random_size=False)
+        assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
+        upld_chcksm = list(resp[1].values())[0][0]
+        for checksum in resp[1].values():
+            assert_utils.assert_equal(checksum[0], checksum[1],
+                                      f"Checksum doesn't match, Expected: {checksum[0]} "
+                                      f"Received: {checksum[1]}")
+        LOGGER.info("Step 1: Create bucket %s and perform upload of object size %s MB and "
+                    "Overwrite the object", self.bucket_name, file_size)
+
+        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_multi"]
+        new_s3_data = dict()
+        LOGGER.info("Create %s buckets and upload objects for background overwrite during "
+                    "pod restart.", bkt_cnt)
+        t_t = int(perf_counter_ns())
+        for cnt in range(bkt_cnt):
+            new_s3_data.update({f"ha-bkt{cnt}-{t_t}": [f"ha-obj{cnt}-{t_t}", file_size]})
+        resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, new_s3_data, iteration=0,
+                                                 random_size=False)
+        assert_utils.assert_true(resp[0], "Failure observed in create new bucket, "
+                                          "upload object.")
+
+        LOGGER.info("Step 2: Shutdown data pod with replica method and verify cluster & "
+                    "remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=self.num_replica - 1)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete data pod")
+        pod_name = list(resp[1].keys())[0]
+        self.set_name = resp[1][pod_name]['deployment_name']
+        self.restore_pod = True
+        self.restore_method = resp[1][pod_name]['method']
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 2: Successfully shutdown data pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+
+        LOGGER.info("Step 3: Read-Verify already overwritten object in healthy cluster")
+        download_path = os.path.join(self.test_dir_path, f"{self.object_name}_download.txt")
+        resp = self.s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        assert_utils.assert_true(resp[0], f"Object download failed. Response: {resp[1]}")
+        dnld_checksum = self.ha_obj.cal_compare_checksum([download_path], compare=False)[0]
+        system_utils.remove_file(file_path=download_path)
+        assert_utils.assert_equal(upld_chcksm, dnld_checksum,
+                                  "Upload & download checksums doesn't match. Expected: "
+                                  f"{upld_chcksm} Actual: {dnld_checksum}")
+        LOGGER.info("Step 3: Successfully Read-Verify already overwritten object in healthy "
+                    "cluster")
+
+        LOGGER.info("Step 4: Start overwrite operation on buckets created in healthy cluster")
+        args = {"s3_test_obj": self.s3_test_obj, "s3_data": new_s3_data, "iteration": 1,
+                "random_size": True, "queue": output, "background": True, "event": event}
+        thread = threading.Thread(target=self.ha_api.object_overwrite_dnld, kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Step 4: Started overwrite object in background")
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+
+        LOGGER.info("Step 5: Restart the pod with replica method and check cluster status")
+        event.set()
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                       "num_replica": self.num_replica,
+                                                       "set_name": self.set_name},
+                                       clstr_status=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way or "
+                                          f"cluster status is not good")
+        LOGGER.info("Step 5: Successfully restarted the pod with replica method and checked "
+                    "cluster status")
+        self.restore_pod = False
+        event.clear()
+        thread.join()
+
+        LOGGER.info("Step 6: Verify responses from background process")
+        responses = tuple()
+        while len(responses) < 3:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not responses:
+            assert_utils.assert_true(False, "Failure in background process")
+        checksums = responses[1]
+        exp_fail_count = responses[2]
+        assert_utils.assert_true(responses[0],
+                                 "Failures observed in overwrite or download background process")
+        assert_utils.assert_false(exp_fail_count, "Failures observed in overwrite or download "
+                                                  "in background process while event was set")
+        for checksum in checksums.values():
+            assert_utils.assert_equal(checksum[0], checksum[1],
+                                      f"Checksum does not match, Expected: {checksum[0]} "
+                                      f"Received: {checksum[1]}")
+        LOGGER.info("Step 6: Successfully verified responses from background process")
+
+        LOGGER.info("Step 7: Read-Verify already overwritten object in healthy cluster")
+        download_path = os.path.join(self.test_dir_path, f"{self.object_name}_download.txt")
+        resp = self.s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        assert_utils.assert_true(resp[0], f"Object download failed. Response: {resp[1]}")
+        dnld_checksum = self.ha_obj.cal_compare_checksum([download_path], compare=False)[0]
+        system_utils.remove_file(file_path=download_path)
+        assert_utils.assert_equal(upld_chcksm, dnld_checksum, "Upload & download checksums don't "
+                                                              f"match. Expected: {upld_chcksm} "
+                                                              f"Actual: {dnld_checksum}")
+        LOGGER.info("Step 7: Successfully Read-Verify already overwritten object in healthy "
+                    "cluster")
+
+        LOGGER.info("Step 8: Overwrite existing object of bucket %s", self.bucket_name)
+        resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
+                                                 random_size=False)
+        assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
+        for checksum in resp[1].values():
+            assert_utils.assert_equal(checksum[0], checksum[1],
+                                      f"Checksum doesn't match, Expected: {checksum[0]} "
+                                      f"Received: {checksum[1]}")
+        LOGGER.info("Step 8: Successfully overwritten existing object of bucket %s",
+                    self.bucket_name)
+        LOGGER.info("ENDED: Test to verify object overwrite during data pod restart")

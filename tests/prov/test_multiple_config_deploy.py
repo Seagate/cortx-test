@@ -63,6 +63,7 @@ class TestMultipleConfDeploy:
                 cls.worker_node_list.append(node_obj)
         cls.log_disk_size = os.getenv('log_disk_size')
         cls.collect_sb = True
+        cls.destroy_flag = False
 
     def teardown_method(self):
         """
@@ -73,9 +74,10 @@ class TestMultipleConfDeploy:
             support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                             scripts_path=
                                                             self.deploy_conf['k8s_dir'])
-        resp = self.deploy_obj.destroy_setup(self.master_node_list[0],
-                                             self.worker_node_list)
-        assert_utils.assert_true(resp)
+        if self.destroy_flag:
+            resp = self.deploy_obj.destroy_setup(self.master_node_list[0],
+                                                 self.worker_node_list)
+            assert_utils.assert_true(resp)
         self.deploy_obj.close_connections(self.master_node_list, self.worker_node_list)
 
     def multiple_node_deployment(self, node, config, **kwargs):
@@ -96,8 +98,13 @@ class TestMultipleConfDeploy:
             dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
             cvg_count=config['cvg_per_node'], data_disk_per_cvg=config['data_disk_per_cvg'],
             master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
+<<<<<<< HEAD
             s3_instance=2, log_disk_flag=log_device, log_disk_size=self.log_disk_size)
+=======
+            s3_instance=1)
+>>>>>>> eab389c85022041b9791664da972a71c87982c8e
         self.collect_sb = False
+        self.destroy_flag = True
 
     @pytest.mark.lc
     @pytest.mark.three_node_deployment

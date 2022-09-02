@@ -39,7 +39,6 @@ from commons import pswdmanager
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from commons.helpers.pods_helper import LogicalNode
-from commons.params import TEST_DATA_FOLDER
 from commons.utils import config_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import run_local_cmd
@@ -52,6 +51,8 @@ from libs.di.di_mgmt_ops import ManagementOPs
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
+from libs.s3.s3_versioning_common_test_lib import empty_versioned_bucket
+from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
@@ -189,15 +190,12 @@ class HAK8s:
         return resp
 
     # pylint: disable-msg=too-many-locals
-    def delete_s3_acc_buckets_objects(self, s3_data: dict, obj_crud: bool = False,
-                                      is_ver: bool = False, v_etag=None):
+    def delete_s3_acc_buckets_objects(self, s3_data: dict, obj_crud: bool = False):
         """
-        This function deletes all s3 buckets objects for the s3 account
+        This function deletes all s3 buckets objects(Versioned or unversioned) for the s3 account
         and all s3 accounts
         :param s3_data: Dictionary for s3 operation info
         :param obj_crud: If true, it will delete only objects of all buckets
-        :param is_ver: If True, Delete the version object before deleting buckets
-        :param v_etag: Dictionary of object version-etag value list for each bucket
         :return: (bool, response)
         """
         try:
@@ -214,28 +212,25 @@ class HAK8s:
                         response = s3_del.delete_multiple_objects(_bucket, obj_list[1], quiet=True)
                         LOGGER.debug("Delete multiple objects response %s", response)
                 return True, "Successfully performed Objects Delete operation"
-            if is_ver:
-                try:
-                    obj_name = v_etag.pop("obj_name")
-                    s3_ver = v_etag.pop("s3_ver")
-                except KeyError:
-                    return False, "Failed to get required data for deleting versioned objects"
-                for bucket in list(v_etag.keys()):
-                    LOGGER.info("Deleting object versions for %s", bucket)
-                    for v_e in v_etag[bucket]:
-                        v_id = list(v_e.keys())[0]
-                        s3_ver.delete_object_version(bucket=bucket, key=obj_name, version_id=v_id)
             for details in s3_data.values():
                 s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
-                                   access_key=details['accesskey'],
-                                   secret_key=details['secretkey'])
-                response = s3_del.delete_all_buckets()
-                if not response[0]:
-                    return response
+                                   access_key=details['accesskey'], secret_key=details['secretkey'])
+                s3_ver = S3VersioningTestLib(access_key=details['accesskey'],
+                                             secret_key=details['secretkey'],
+                                             endpoint_url=S3_CFG["s3_url"])
+                buckets = s3_del.bucket_list()[1]
+                LOGGER.info("Delete all versions and delete markers present for all the buckets.")
+                for _bucket in buckets:
+                    empty_versioned_bucket(s3_ver, _bucket)
+                    obj_list = s3_del.object_list(_bucket)
+                    LOGGER.debug("List of object response for %s bucket %s", _bucket, obj_list)
+                    response = s3_del.delete_multiple_objects(_bucket, obj_list[1], quiet=True)
+                    LOGGER.debug("Delete multiple objects response %s", response[1])
+                    s3_del.delete_bucket(_bucket, force=True)
                 response = self.s3_rest_obj.delete_s3_account(details['user_name'])
                 if not response[0]:
                     return response
-            return True, "Successfully performed S3 operation clean up"
+            return True, "Successfully performed S3 clean up operations"
         except (ValueError, KeyError, CTException) as error:
             LOGGER.exception("%s %s: %s", Const.EXCEPTION_ERROR,
                              HAK8s.delete_s3_acc_buckets_objects.__name__, error)
@@ -252,7 +247,10 @@ class HAK8s:
             nsamples: int = 10,
             nclients: int = 10,
             large_workload: bool = False,
-            setup_s3bench: bool = True):
+            setup_s3bench: bool = True,
+            end_point=S3_CFG["s3_url"],
+            connect_timeout=None,
+            **kwargs):
         """
         This function creates s3 acc, buckets and performs WRITEs/READs/DELETEs
         operations on VM/HW
@@ -265,14 +263,20 @@ class HAK8s:
         :param nclients: Number of clients/workers
         :param large_workload: Flag to start large workload IOs
         :param setup_s3bench: Flag if s3bench need to be setup
+        :param end_point: Endpoint to run IOs
+        :param connect_timeout: Maximum amount of time a dial will wait for a connect to complete
         :return: bool/operation response
         """
+        host = kwargs.get("host", None)
+        user = kwargs.get("user", None)
+        pwd = kwargs.get("pwd", None)
+        remote = True if host else False
         workloads = copy.deepcopy(HA_CFG["s3_bench_workloads"])
         if self.setup_type == "HW" or large_workload:
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
 
         if setup_s3bench:
-            resp = s3bench.setup_s3bench()
+            resp = s3bench.setup_s3bench(hostname=host, username=user, password=pwd, remote=remote)
             if not resp:
                 return resp, "Couldn't setup s3bench on client machine."
         for workload in workloads:
@@ -282,7 +286,8 @@ class HAK8s:
                 num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
                 skip_cleanup=skipcleanup, log_file_prefix=log_prefix.upper(),
-                end_point=S3_CFG["s3_url"], validate_certs=S3_CFG["validate_certs"])
+                end_point=end_point, validate_certs=S3_CFG["validate_certs"], host=host,
+                user=user, pwd=pwd, remote=remote, connectTimeout=connect_timeout)
             resp = system_utils.validate_s3bench_parallel_execution(log_path=resp[1])
             if not resp[0]:
                 return False, f"s3bench operation failed: {resp[1]}"
@@ -793,8 +798,9 @@ class HAK8s:
 
     def event_s3_operation(self, event, setup_s3bench=True, log_prefix=None, s3userinfo=None,
                            skipread=False, skipwrite=False, skipcleanup=False, nsamples=10,
-                           nclients=10, output=None, event_set_clr=None,
-                           httpclientimeout=HA_CFG["s3_operation_data"]["httpclientimeout"]):
+                           nclients=10, output=None, event_set_clr=None, max_retries=None,
+                           httpclientimeout=HA_CFG["s3_operation_data"]["httpclientimeout"],
+                           connect_timeout=None, end_point=S3_CFG["s3_url"], **kwargs):
         """
         This function executes s3 bench operation on VM/HW.(can be used for parallel execution)
         :param event: Thread event to be sent in case of parallel IOs
@@ -810,16 +816,23 @@ class HAK8s:
         :param httpclientimeout: Time limit in ms for requests made by this Client.
         :param event_set_clr: Thread event set-clear flag reference when s3bench workload
         execution miss the event set-clear time window
+        :param max_retries: Number of retries for IO operations
+        :param connect_timeout: Maximum amount of time a dial will wait for a connect to complete
+        :param end_point: Endpoint to run IOs
         :return: None
         """
         pass_res = []
         fail_res = []
         results = dict()
+        host = kwargs.get("host", None)
+        user = kwargs.get("user", None)
+        pwd = kwargs.get("pwd", None)
+        remote = True if host else False
         workloads = HA_CFG["s3_bench_workloads"]
         if self.setup_type == "HW":
             workloads.extend(HA_CFG["s3_bench_large_workloads"])
         if setup_s3bench:
-            resp = s3bench.setup_s3bench()
+            resp = s3bench.setup_s3bench(hostname=host, username=user, password=pwd, remote=remote)
             if not resp:
                 status = (resp, "Couldn't setup s3bench on client machine.")
                 output.put(status)
@@ -831,8 +844,9 @@ class HAK8s:
                 num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 skip_write=skipwrite, skip_read=skipread, obj_size=workload,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
-                end_point=S3_CFG["s3_url"], validate_certs=S3_CFG["validate_certs"],
-                httpclientimeout=httpclientimeout)
+                end_point=end_point, validate_certs=S3_CFG["validate_certs"],
+                httpclientimeout=httpclientimeout, max_retries=max_retries,
+                connectTimeout=connect_timeout, host=host, user=user, pwd=pwd, remote=remote)
             if event.is_set() or (isinstance(event_set_clr, list) and event_set_clr[0]):
                 LOGGER.debug("The state of event set clear Flag is %s", event_set_clr)
                 fail_res.append(resp)
@@ -1874,244 +1888,22 @@ class HAK8s:
         return True, download_checksum
 
     @staticmethod
-    def parallel_put_object(event, s3_test_obj, bkt_name: str, obj_name: str, output=None,
-                            **kwargs):
+    def form_endpoint_port(pod_obj, pod_list, port_name="rgw-https"):
         """
-        Function to upload object
-        Upload an object to a versioning enabled/suspended bucket and return list of dictionary of
-        uploaded versions in parallel or non parallel.
-        :param event: event to intimate thread about main thread operations
-        :param s3_test_obj: Object of the s3 test lib
-        :param bkt_name: Bucket name for calling PUT Object
-        :param obj_name: Object name for calling PUT Object
-        :param output: Output queue in which results should be put
-        :keyword file_path: File path that can be used for PUT Object call
-        :keyword count: Count for number of PUT object call
-        :keyword chk_null_version: True, if 'null' version id is expected, else False
-        :keyword background: Set to true if background function call
-        :keyword is_unversioned: Set to true if object is uploaded to an unversioned bucket
-        Can be used for setting up pre-existing objects before enabling/suspending bucket
-        versioning
-        :return: Tuple (bool, list)
+        Function to form endpoints using pod ip and port
+        :param pod_obj: Object of master node
+        :param pod_list: List of pods
+        :param port_name: Name of the port, e.g. https, http, etc
+        :return: dict
         """
-        chk_null_version = kwargs.get("chk_null_version", False)
-        file_path = kwargs.get("file_path")
-        count = kwargs.get("count", 1)
-        is_unversioned = kwargs.get("is_unversioned", False)
-        background = kwargs.get("background", False)
-        pass_put_ver = list()
-        fail_put_ver = list()
-        for put in range(count):
-            try:
-                put_resp = s3_test_obj.put_object(bucket_name=bkt_name, object_name=obj_name,
-                                                  file_path=file_path)
-                if is_unversioned:
-                    version_id = "null"
-                else:
-                    version_id = put_resp[1].get("VersionId", None)
-                    etag = put_resp[1].get("ETag", None)
-                    if chk_null_version:
-                        if version_id != "null":
-                            fail_put_ver.append({version_id: etag})
-                    else:
-                        if version_id is None:
-                            fail_put_ver.append({version_id: etag})
-                versions_dict = {version_id: put_resp[1]["ETag"]}
-                pass_put_ver.append(versions_dict)
-            except CTException as error:
-                LOGGER.exception("Error in %s: %s", HAK8s.parallel_put_object.__name__, error)
-                if event.is_set():
-                    continue
-                fail_put_ver.append(put)
-        if fail_put_ver and not background:
-            return False, fail_put_ver
-        return True, pass_put_ver if not background else output.put((pass_put_ver, fail_put_ver))
+        pod_ep_dict = dict()
+        ports = pod_obj.get_pod_ports(pod_list, port_name)
+        for pod in pod_list:
+            pod_prefix = "-".join(pod.split("-")[:2])
+            LOGGER.info("Getting internal IPs of %s pods", pod_prefix)
+            pod_ip = pod_obj.get_all_pods_and_ips(pod_prefix)[pod]
+            port = ports[pod]
+            ip_port = f"{pod_ip}:{port}"
+            pod_ep_dict[pod] = ip_port
 
-    @staticmethod
-    def parallel_get_object(event, s3_ver_obj, bkt_name: str, obj_name: str, ver_etag: list,
-                            output=None, **kwargs):
-        """
-        Function to GET a version of an object in parallel or non parallel and verify Etag for
-        the same version object with expected PUT object response in ver_etag list.
-        :param event: event to intimate thread about main thread operations
-        :param s3_ver_obj: S3VersioningTestLib instance
-        :param bkt_name: Target bucket for GET Object with VersionId call.
-        :param obj_name: Target key for GET Object with VersionId call.
-        :param ver_etag: Target list of dictionary of uploaded versions to be GET
-        :param output: Output queue in which results should be put
-        :keyword background: Set to true if background function call
-        :return: Tuple (bool, list)
-        """
-        background = kwargs.get("background", False)
-        fail_get_ver = list()
-        pass_get_ver = list()
-        for v_etag in ver_etag:
-            v_id = list(v_etag.keys())[0]
-            etag = list(v_etag.values())[0]
-            try:
-                get_resp = s3_ver_obj.get_object_version(bucket=bkt_name, key=obj_name,
-                                                         version_id=v_id)
-                if get_resp[1]["VersionId"] != v_id or get_resp[1]["ETag"] != etag:
-                    failed = {v_id: [get_resp[1]["VersionId"], get_resp[1]["ETag"]]}
-                    fail_get_ver.append(failed)
-                else:
-                    pass_get_ver.append(v_etag)
-            except CTException as error:
-                LOGGER.exception("Error in %s: %s", HAK8s.parallel_get_object.__name__, error)
-                if event.is_set():
-                    continue
-                fail_get_ver.append(v_etag)
-        if fail_get_ver and not background:
-            return False, fail_get_ver
-        return True, pass_get_ver if not background else output.put((pass_get_ver, fail_get_ver))
-
-    @staticmethod
-    def list_verify_version(s3_ver_obj, bucket_name: str, expected_versions: dict):
-        """
-        Function to List all the versions of bucket objects and verify the output with expected
-        version etag values
-        :param s3_ver_obj: S3VersioningTestLib instance
-        :param bucket_name: Target bucket for List Object version
-        :param expected_versions: Target list of dictionary of uploaded versions to be List and
-        verify
-        :return: Tuple (bool, str)
-        """
-        resp = s3_ver_obj.list_object_versions(bucket_name)
-        v_etag = list()
-        list_version = resp[1]["Versions"]
-        for v_e in list_version:
-            versions_dict = {v_e["VersionId"]: v_e["ETag"]}
-            v_etag.append(versions_dict)
-        for v_e in v_etag:
-            if v_e not in expected_versions:
-                return False, "Fetched list of VersionId-Etag is not matching with Expected"
-        return True, "Fetched list of VersionId-Etag is as Expected"
-
-    def crt_bkt_put_obj_enbl_ver(self, event, s3_test, bkt, obj, **kwargs):
-        """
-        Function will create a new bucket and upload an new object on un-versioned bucket.
-        If enable_ver is set to true, it will enable versioning on given bucket.
-        :param event: event to intimate thread about main thread operations
-        :param s3_test: Object of the s3 test lib
-        :param bkt: Bucket name for calling PUT Object
-        :param obj: Object name for calling PUT Object
-        :keyword file_path: File path that can be used for PUT Object call
-        :keyword count: Count for number of PUT object call
-        :keyword chk_null_version: True, if 'null' version id is expected, else False
-        :keyword background: Set to true if background function call
-        :keyword is_unversioned: Set to true if object is uploaded to an unversioned bucket
-        :keyword enable_ver: Set to true if want to enable versioning on given bucket
-        Can be used for setting up pre-existing objects before enabling/suspending bucket
-        versioning
-        :return: Tuple (bool, response)
-        """
-        chk_null_version = kwargs.get("chk_null_version", False)
-        file_path = kwargs.get("file_path")
-        f_size = kwargs.get("f_size", str(HA_CFG["5gb_mpu_data"]["file_size_512M"]) + "M")
-        f_count = kwargs.get("f_count", 1)
-        put_count = kwargs.get("put_count", 1)
-        is_unversioned = kwargs.get("is_unversioned", False)
-        enable_ver = kwargs.get("enable_ver", False)
-        LOGGER.info("Create bucket with %s name.", bkt)
-        resp = s3_test.create_bucket(bkt)
-        if not resp[1]:
-            return resp
-        LOGGER.info("Created bucket with %s name.", bkt)
-        LOGGER.info("Creating file %s.", file_path)
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        system_utils.create_file(file_path, b_size=f_size, count=f_count)
-        args = {'chk_null_version': chk_null_version, 'is_unversioned': is_unversioned,
-                'file_path': file_path, 'count': put_count}
-        LOGGER.info("Upload object %s before enabling versioning", obj)
-        put_resp = self.parallel_put_object(event, s3_test, bkt, obj, **args)
-        if not put_resp[0]:
-            return False, f"Upload Object failed {put_resp[1]}"
-        LOGGER.info("Successfully uploaded object %s", obj)
-        if enable_ver:
-            try:
-                s3_ver = kwargs.get("s3_ver")
-            except KeyError:
-                return False, "Required s3_ver argument is not passed"
-            LOGGER.info("Enable versioning on %s.", bkt)
-            resp = s3_ver.put_bucket_versioning(bucket_name=bkt)
-            if not resp[0]:
-                return False, f"Enabling versioning failed with {resp[1]}"
-            LOGGER.info("Enabled versioning on %s.", bkt)
-        return put_resp
-
-    def object_overwrite_dnld(self, s3_test_obj, s3_data, iteration, random_size, event=None,
-                              queue=None, background=False):
-        """
-        Function to create bucket, put object and overwrite existing object
-        :param s3_test_obj: Object of s3 test lib
-        :param s3_data: Dict that contains bucket and object info
-        ({self.bucket_name: [self.object_name, file_size]})
-        :param iteration: Number of iterations for overwrite
-        :param random_size: Flag to select random size of object
-        :param event: Event for background IOs
-        :param queue: Queue to fill output in case of background IOs
-        :param background: Flag to start background process
-        :return: (bool, dict)
-        """
-        checksums = dict()
-        fail_count = 0
-        exp_fail_count = 0
-        test_dir_path = os.path.join(TEST_DATA_FOLDER, "HAOverWrite")
-        if not os.path.isdir(test_dir_path):
-            LOGGER.debug("Creating file path %s", test_dir_path)
-            system_utils.make_dirs(test_dir_path)
-
-        resp = s3_test_obj.bucket_list()[1]
-        for bkt, value in s3_data.items():
-            object_name = value[0]
-            object_size = value[1]
-            if bkt not in resp:
-                LOGGER.info("Creating a bucket with name %s and uploading object of size %s MB",
-                            bkt, object_size)
-                file_path = os.path.join(test_dir_path, f"{bkt}.txt")
-                _ = s3_test_obj.create_bucket_put_object(bkt, object_name, file_path, object_size)
-                LOGGER.info("Created a bucket with name %s and uploaded object %s of size %s MB",
-                            bkt, object_name, object_size)
-                system_utils.remove_file(file_path)
-
-        LOGGER.info("Total Iteration : %s", iteration)
-        for bucket_name, value in s3_data.items():
-            object_name = value[0]
-            object_size = value[1]
-            LOGGER.info("Bucket Name : %s", bucket_name)
-            LOGGER.info("Object Name : %s", object_name)
-            LOGGER.info("Max Object size : %s MB", object_size)
-            for i_i in range(iteration):
-                loop = i_i + 1
-                LOGGER.info("Iteration : %s", loop)
-                file_size = random.SystemRandom().randint(0, object_size) if random_size \
-                    else object_size
-                try:
-                    upload_path = os.path.join(test_dir_path, f"{object_name}_upload.txt")
-                    LOGGER.info("Creating a file with name %s", object_name)
-                    system_utils.create_file(upload_path, file_size, "/dev/urandom", '1M')
-                    LOGGER.info("Retrieving checksum of file %s", upload_path)
-                    up_checksum = self.cal_compare_checksum([upload_path], compare=False)[0]
-                    LOGGER.info("Uploading object (Overwriting)...")
-                    _ = s3_test_obj.put_object(bucket_name, object_name, upload_path)
-
-                    LOGGER.info("Downloading object...")
-                    download_path = os.path.join(test_dir_path, f"{object_name}_download.txt")
-                    _ = s3_test_obj.object_download(bucket_name, object_name, download_path)
-                    dnld_checksum = self.cal_compare_checksum([download_path], compare=False)[0]
-                    checksums[f"{bucket_name}_{loop}"] = [up_checksum, dnld_checksum]
-                except CTException as error:
-                    if event.is_set:
-                        LOGGER.error("Event is set, overwrite/object download failure is expected. "
-                                     "Error: %s", error)
-                        exp_fail_count += 1
-                    else:
-                        LOGGER.error("Event is cleared, Overwrite failed or Object download "
-                                     "failed. \nError: %s", error)
-                        fail_count += 1
-                finally:
-                    system_utils.cleanup_dir(test_dir_path)
-        LOGGER.debug("Fail count is : %s", fail_count)
-        return not fail_count, checksums, exp_fail_count if not background else \
-            queue.put((not fail_count, checksums, exp_fail_count))
+        return pod_ep_dict

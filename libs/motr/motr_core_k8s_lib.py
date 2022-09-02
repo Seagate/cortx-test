@@ -24,22 +24,25 @@ Python library contains methods which provides the services endpoints.
 import json
 import logging
 import os
+import time
 from random import SystemRandom
 from string import Template
 
-from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from libs.motr import TEMP_PATH
 from libs.motr import FILE_BLOCK_COUNT
 from libs.motr.layouts import BSIZE_LAYOUT_MAP
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from config import CMN_CFG
+from config import di_cfg
+from commons import commands as common_cmd
+from commons import constants as common_const
+from commons.params import LOG_DIR, LATEST_LOG_FOLDER
 from commons.utils import system_utils
 from commons.utils import config_utils
 from commons.utils import assert_utils
 from commons.helpers.pods_helper import LogicalNode
 from commons.helpers.health_helper import Health
-from commons import commands as common_cmd
-from commons import constants as common_const
 
 log = logging.getLogger(__name__)
 
@@ -76,6 +79,7 @@ class MotrCoreK8s():
         self.node_dict = self._get_cluster_info
         self.node_pod_dict = self.get_node_pod_dict()
         self.ha_obj = HAK8s()
+        self.dtm_obj = DTMRecoveryTestLib()
 
 
     @property
@@ -99,7 +103,7 @@ class MotrCoreK8s():
             nodes_data = cluster_info["nodes"]
             for node in nodes_data:
                 if 'client' in node['name']:
-                    nodename = node["name"].split('.')[0]
+                    nodename = node["name"]
                     self.cortx_node_list.append(nodename)
                     node_dict[nodename] = {}
                     node_dict[nodename][common_const.MOTR_CLIENT] = []
@@ -135,20 +139,30 @@ class MotrCoreK8s():
 
     def get_primary_cortx_node(self):
         """
-        To get the primary cortx node name
+        To get the primary cortx client node name
 
-        :returns: Primary(RC) node name in the cluster
+        :returns: Primary(RC) client node name in the cluster
         :rtype: str
         """
         motr_client_pod = self.node_obj.get_pod_name(
             pod_prefix=common_const.CLIENT_POD_NAME_PREFIX)[1]
-        cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
+        rc_node_cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
         primary_cortx_node = self.node_obj.send_k8s_cmd(
             operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                           f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}",
+                           f"-- {common_cmd.MOTR_STATUS_CMD} {rc_node_cmd}",
             decode=True)
-        return primary_cortx_node.replace("data", "client")
+        data_pod_name = primary_cortx_node.split('.')[0]
+        k8_node_cmd = "| grep \"{}\" | awk '{{print $7}}'".format(data_pod_name)
+        primary_k8s_node = self.node_obj.send_k8s_cmd(
+            operation="get", pod="pods -o wide", namespace=common_const.NAMESPACE,
+            command_suffix=f"{k8_node_cmd}", decode=True)
+        client_pod_cmd = "| grep \"{}\" | awk '{{print $1}}' | grep \"{}\"".format(
+            primary_k8s_node, common_const.CLIENT_POD_NAME_PREFIX)
+        primary_client_pod = self.node_obj.send_k8s_cmd(
+            operation="get", pod="pods -o wide", namespace=common_const.NAMESPACE,
+            command_suffix=f"{client_pod_cmd}", decode=True)
+        return primary_client_pod + '.' + common_const.CORTX_CLIENT_SVC_POSTFIX
 
     def get_cortx_node_endpoints(self, cortx_node=None):
         """
@@ -186,13 +200,13 @@ class MotrCoreK8s():
         :returns: Corresponding Node name
         :rtype: str
         """
-        cmd = "hostname"
+        cmd = "hctl status  | grep {} | awk 'FNR <= 1'".format(motr_client_pod)
         node_name = self.node_obj.send_k8s_cmd(
             operation="exec", pod=motr_client_pod, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                            f"-- {cmd}",
             decode=True)
-        return node_name
+        return node_name.strip()
 
     def m0crate_run(self, local_file_path, remote_file_path, cortx_node):
         """
@@ -311,7 +325,7 @@ class MotrCoreK8s():
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = Template(common_cmd.M0CP_U).substitute(
+        cmd = Template(common_cmd.M0CP_U_G).substitute(
             ep=node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
             hax_ep=node_dict["hax_ep"],
             fid=node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
@@ -328,7 +342,7 @@ class MotrCoreK8s():
                                    f'"{cmd}" Failed, Please check the log')
 
     # pylint: disable=too-many-arguments
-    def cat_cmd(self, b_size, count, obj, layout, file, node, client_num=None):
+    def cat_cmd(self, b_size, count, obj, layout, file, node, client_num=None, di_g=False):
         """
         M0CAT command creation
 
@@ -343,19 +357,42 @@ class MotrCoreK8s():
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = common_cmd.M0CAT.format(node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
-                                      node_dict["hax_ep"],
-                                      node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-                                      self.profile_fid, b_size.lower(),
-                                      count, obj, layout, file)
+        if di_g:
+            cmd = common_cmd.M0CAT_G.format(
+                node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                node_dict["hax_ep"],
+                node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                self.profile_fid,
+                b_size.lower(),
+                count,
+                obj,
+                layout,
+                file,
+            )
+        else:
+            cmd = common_cmd.M0CAT.format(
+                node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                node_dict["hax_ep"],
+                node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                self.profile_fid,
+                b_size.lower(),
+                count,
+                obj,
+                layout,
+                file,
+            )
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                                          f"-- {cmd}", decode=True)
 
         log.info("CAT Resp: %s", resp)
-
-        assert_utils.assert_not_in("ERROR" or "Error", resp,
+        if di_g:
+            assert_utils.assert_in("ERROR" or b'Checksum validation failed for Obj',
+                                   resp, f'"{cmd}" The m0cat operation failed'
+                                   f' as expected for corrupt block')
+        else:
+            assert_utils.assert_not_in("ERROR" or "Error", resp,
                                    f'"{cmd}" Failed, Please check the log')
 
     def unlink_cmd(self, obj, layout, node, client_num=None):
@@ -423,6 +460,8 @@ class MotrCoreK8s():
         log.info("MD5SUM Resp: %s", resp)
         chksum = resp.split()
         if flag:
+            if chksum[0] != chksum[1]:
+                log.info("Checksum is mismatched ")
             assert_utils.assert_not_equal(chksum[0], chksum[1], f'{cmd}, Checksum did not match')
         else:
             assert_utils.assert_equal(chksum[0], chksum[2], f'Failed {cmd}, Checksum did not match')
@@ -764,59 +803,25 @@ class MotrCoreK8s():
         log.debug("DICT is %s", checksum_dict)
         return checksum_dict
 
-    # pylint: disable=too-many-locals
-    def fetch_gob(self, metadata_device, parse_size, fid:dict):
+    def switch_to_degraded_mode(self):
         """
-        This method helps to verify the gob id by running emap_list using error_injection script
-        it returns the corresponding data,parity block checksum id
+        This method kill's m0d process and make setup to degraded mode
         """
-        pod_list = self.node_obj.get_all_pods(common_const.POD_NAME_PREFIX)
-        log.debug("pod list is %s", pod_list)
-        d_fid = []
-        p_fid = []
-        data_checksum_list = []
-        parity_checksum_list = []
-        for key, value in fid.items():
-            if "DATA" in key:        # fetch the value from dict for data block
-                fid_val = value[7:16]
-                d_fid.append(fid_val)
-            else:                   # fetch the value from dict for parity block
-                fid_val = value[7:16]
-                p_fid.append(fid_val)
-        # Iterate over data pods to copy the error_injection.py script on motr container
-        for pod in pod_list:
-            result = self.master_node_list[0].copy_file_to_container(
-                "error_injection.py", pod, common_const.CONTAINER_PATH,
-                common_const.MOTR_CONTAINER_PREFIX+"-001")
-            if not result:
-                raise FileNotFoundError
-            # Run script to list emap and dump the output to the file
-            cmd = Template(common_cmd.EMAP_LIST).substitute(path=metadata_device, size=parse_size,
-                                                            file=f"{pod}-emap_list.txt")
-            self.node_obj.send_k8s_cmd(
-                operation="exec", pod=pod, namespace=common_const.NAMESPACE,
-                command_suffix=f"-c {common_const.MOTR_CONTAINER_PREFIX}-001 "
-                               f"-- {cmd}", decode=True)
-            d_fid = [*set(d_fid)]
-            p_fid = [*set(p_fid)]
-            log.debug("lists of d_fid, p_fid %s \n %s", d_fid, p_fid)
-            # Fetch the target fid from emap list output captured in file while running
-            # emap list on motr container
-            for data_fid in d_fid:
-                cmd = common_cmd.FETCH_ID_EMAP.format(
-                    f"{pod}-emap_list.txt", data_fid)
-                d_resp = self.master_node_list[0].execute_cmd(cmd)
-                d_resp = d_resp.decode('UTF-8').strip(",\n")  # strip the resp and make it readable
-                if d_resp:
-                    # log.debug("gob data entity %s", d_resp)
-                    data_checksum_list.append(d_resp)
-            for parity_fid in p_fid:
-                cmd = common_cmd.FETCH_ID_EMAP.format(
-                    f"{pod}-emap_list.txt", parity_fid)
-                p_resp = self.master_node_list[0].execute_cmd(cmd)
-                p_resp = p_resp.decode('UTF-8').strip(",\n")  # strip the resp and make it readable
-                if p_resp:
-                    parity_checksum_list.append(p_resp)
-        log.debug("gob data %s", data_checksum_list)
-        log.debug("gob Parity %s", parity_checksum_list)
-        return data_checksum_list, parity_checksum_list
+        process = common_const.PID_WATCH_LIST[0]
+        pod_selected, container = self.master_node_list[0].select_random_pod_container(
+            common_const.POD_NAME_PREFIX, common_const.MOTR_CONTAINER_PREFIX)
+        self.dtm_obj.set_proc_restart_duration(
+            self.master_node_list[0], pod_selected, container, di_cfg['wait_time_m0d_restart'])
+        try:
+            log.info("Kill %s from %s pod %s container ", process, pod_selected, container)
+            resp = self.master_node_list[0].kill_process_in_container(pod_name=pod_selected,
+                                                                      container_name=container,
+                                                                      process_name=process)
+            log.debug("Resp : %s", resp)
+            time.sleep(5)
+            return True, pod_selected, container
+        except (ValueError, IOError) as ex:
+            log.error("Exception Occurred during killing process : %s", ex)
+            self.dtm_obj.set_proc_restart_duration(self.master_node_list[0],
+                                                   pod_selected, container, 0)
+            return False, pod_selected, container

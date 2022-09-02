@@ -516,11 +516,11 @@ class ProvDeployK8sCortxLib:
             count = cvg_count
             if data_disk_per_cvg == 0:
                 if log_disk_flag:
-                    # Here the increment for 1 is due to 1 disk each reserved
-                    # log disk respectively
-                    data_disk_per_cvg = int(len(device_list[cvg_count + 1:]) / cvg_count)
+                    # Here the increment for 2 is due to 1 disk each reserved
+                    # metadata,log disk respectively
+                    data_disk_per_cvg = int(len(device_list[cvg_count + 2:]) / cvg_count)
                 else:
-                    data_disk_per_cvg = int(len(device_list[cvg_count:]) / cvg_count)
+                    data_disk_per_cvg = int(len(device_list[cvg_count+1:]) / cvg_count)
 
             LOGGER.debug("Data disk per cvg : %s", data_disk_per_cvg)
             # The condition to validate the config.
@@ -533,8 +533,13 @@ class ProvDeployK8sCortxLib:
                 assert False, "The requested data disk is more than" \
                               " the data disk available on the system"
             if log_disk_flag:
+<<<<<<< HEAD
                 # the '2' is being added to accumulate the final data disk count
                 # after excluding the log disks
+=======
+                # the '2' is being multiplied to accumulate the final data disk count
+                # after excluding the metadata,log disks
+>>>>>>> eab389c85022041b9791664da972a71c87982c8e
                 data_devices_f = device_list[cvg_count*2:]
                 LOGGER.debug("The data disk final is %s", data_devices_f)
             else:
@@ -581,7 +586,7 @@ class ProvDeployK8sCortxLib:
         if not resource_resp:
             assert False, "Failed to update the resources for thirdparty"
         # Update resources for cortx component
-        cortx_resource_resp = self.update_res_limit_cortx(filepath)
+        cortx_resource_resp = self.update_res_limit_cortx(filepath, cvg_count)
         if not cortx_resource_resp:
             assert False, "Failed to update the resources for cortx components"
         # Update the solution yaml file with images
@@ -1979,7 +1984,7 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    def update_res_limit_cortx(self, filepath):
+    def update_res_limit_cortx(self, filepath, cvg_count):
         """
         This Method is used to update the resource limits for cortx services
         param: filepath: solution.yaml filepath
@@ -2002,20 +2007,34 @@ class ProvDeployK8sCortxLib:
             cortx_resource = self.deploy_cfg['cortx_resource']
 
             for res_type in type_list:
-                hare_hax_res[res_type]['memory'] = \
-                    cortx_resource['hax'][res_type]['mem']
-                hare_hax_res[res_type]['cpu'] = \
-                    cortx_resource['hax'][res_type]['cpu']
-                server_res[res_type]['memory'] = cortx_resource['rgw'][res_type]['mem']
-                server_res[res_type]['cpu'] = cortx_resource['rgw'][res_type]['cpu']
+                if res_type == "limits":
+                    hare_hax_res[res_type]['memory'] = \
+                        str(cortx_resource['hax'][res_type]['mem']//cvg_count)+"Mi"
+                    server_res[res_type]['memory'] = \
+                        str(cortx_resource['rgw'][res_type]['mem']//cvg_count)+"Mi"
+                    server_res[res_type]['cpu'] = \
+                        str(cortx_resource['rgw'][res_type]['cpu']//cvg_count)+"m"
+                else:
+                    hare_hax_res[res_type]['memory'] = \
+                        cortx_resource['hax'][res_type]['mem']
+                    hare_hax_res[res_type]['cpu'] = \
+                        cortx_resource['hax'][res_type]['cpu']
+                    server_res[res_type]['memory'] = cortx_resource['rgw'][res_type]['mem']
+                    server_res[res_type]['cpu'] = cortx_resource['rgw'][res_type]['cpu']
                 control_res[res_type]['memory'] = cortx_resource['agent'][res_type]['mem']
                 control_res[res_type]['cpu'] = cortx_resource['agent'][res_type]['cpu']
                 # updating the motr /confd requests and limits resources
                 for elem in data_list:
-                    data_res[elem]['resources'][res_type]['memory'] = \
-                        cortx_resource[elem][res_type]['mem']
-                    data_res[elem]['resources'][res_type]['cpu'] = \
-                        cortx_resource[elem][res_type]['cpu']
+                    if res_type == "limits" and elem == "motr":
+                        data_res[elem]['resources'][res_type]['memory'] = \
+                            str(cortx_resource[elem][res_type]['mem']//cvg_count)+"Mi"
+                        data_res[elem]['resources'][res_type]['cpu'] = \
+                            str(cortx_resource[elem][res_type]['cpu']//cvg_count)+"m"
+                    else:
+                        data_res[elem]['resources'][res_type]['memory'] = \
+                            str(cortx_resource[elem][res_type]['mem'])
+                        data_res[elem]['resources'][res_type]['cpu'] = \
+                            str(cortx_resource[elem][res_type]['cpu'])
                 # updating the ha component resources
                 for ha_elem in ha_list:
                     ha_res[ha_elem]['resources'][res_type]['memory'] = \

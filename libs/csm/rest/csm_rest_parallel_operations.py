@@ -19,10 +19,12 @@ import os
 from commons.utils import config_utils
 from commons.constants import HAX_CONTAINER_NAME
 from commons.constants import NAMESPACE
+from commons.constants import Rest as rest_const
 from commons.commands import GET_MAX_USERS
 from commons.commands import GET_REQUEST_USAGE
 from libs.jmeter.jmeter_integration import JmeterInt
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
+
 
 # pylint: disable-msg=unexpected-keyword-arg
 class RestParallelOps(RestTestLib):
@@ -32,6 +34,7 @@ class RestParallelOps(RestTestLib):
         super(RestParallelOps, self).__init__()
         self.jmx_obj = JmeterInt()
         self.counter = 0
+        self.created_iam_users = []
 
     def get_request_usage_limit(self):
         """
@@ -113,6 +116,57 @@ class RestParallelOps(RestTestLib):
         self.counter = 0
         return result
 
+    def execute_max_iam_user_loop(self, jmx_file, users, request_limit, ops:str):
+        """
+        Executes jmeter in batches to create max users
+        """
+        req_loop = self.get_thread_loop(users, request_limit)
+        result = True
+        for thread, loop in req_loop.items():
+            self.log.info("Running jmeter for Thread: %s and loop: %s", thread, loop)
+            batch_cnt = thread * loop + self.counter
+            if ops == "create":
+                self.write_iam_users_to_create_csv(batch_cnt)
+            else:
+                self.write_iam_users_to_delete_csv(batch_cnt)
+            self.counter += batch_cnt
+            tmp = self.jmx_obj.run_verify_jmx(jmx_file, threads=thread, rampup=1, loop=loop)
+            if tmp:
+                self.log.info("%s Users %s", ops, thread * loop)
+            else:
+                self.log.error("%s failed.", ops)
+            result = result and tmp
+        self.counter = 0
+        return result
+
+    def create_multi_iam_user_loaded(self, users:int, existing_user:int=1):
+        """
+        Create count number of IAM in parallel using jmeter libs
+        :param users: Number of users to be created
+        """
+        if users is None:
+            user_limit = rest_const.MAX_IAM_USERS
+            users = user_limit - existing_user
+        jmx_file = "CSM_Create_N_IAM_Users_Loaded.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        request_limit = self.get_request_usage_limit()
+        result = self.execute_max_iam_user_loop(jmx_file, users, request_limit,
+                                                       ops = "create")
+        return result
+
+    def delete_multi_iam_user_loaded(self):
+        """
+        Delete IAM users in parallel using jmeter libs
+        """
+        users = len(self.created_iam_users)
+        jmx_file = "CSM_Delete_N_IAM_Users_Loaded.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+
+        request_limit = self.get_request_usage_limit()
+        result = self.execute_max_iam_user_loop(jmx_file, users, request_limit,
+                                                       ops = "delete")
+        return result
+
     @RestTestLib.authenticate_and_login
     def create_multi_csm_user(self, users:int, existing_user:int=3):
         """
@@ -124,6 +178,22 @@ class RestParallelOps(RestTestLib):
         users = users - existing_user
 
         jmx_file = "CSM_Create_N_CSM_Users.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        request_limit = self.get_request_usage_limit()
+        result = self.execute_max_user_loop(jmx_file, users, request_limit, ops = "create")
+        return result
+
+    @RestTestLib.authenticate_and_login
+    def create_multi_csm_user_with_List_IAM(self, users:int, existing_user:int=3):
+        """
+        Create count number of CSM in parallel using jmeter libs
+        :param users: Number of users to be created
+        """
+        if users is None:
+            users = self.get_max_csm_user_limit()
+        users = users - existing_user
+
+        jmx_file = "CSM_Create_N_Monitor_Create_List_N_IAM.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
         request_limit = self.get_request_usage_limit()
         result = self.execute_max_user_loop(jmx_file, users, request_limit, ops = "create")
@@ -169,6 +239,39 @@ class RestParallelOps(RestTestLib):
             content.append({fieldnames[0]: "manage",
                         fieldnames[1]: f"newmanageuser{i}",
                         fieldnames[2]: "Seagate@1"})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+
+    def write_iam_users_to_create_csv(self, users):
+        """
+        Creates a csv with list of user to be created
+        """
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        fieldnames = ["uid"]
+        i = self.counter
+        while i < users:
+            uid_suffix = self.random_gen.randrange(9, 9999999)
+            if f"newiamuser_{uid_suffix}" not in self.created_iam_users:
+                self.created_iam_users.append(f"newiamuser_{uid_suffix}")
+                content.append({
+                            fieldnames[0]: f"newiamuser_{uid_suffix}",
+                            })
+                i +=1
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+
+    def write_iam_users_to_delete_csv(self, users:int):
+        """
+        Creates a csv with list of users to be deleted
+        """
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        fieldnames = ["user"]
+        for i in range(self.counter, users):
+            content.append({fieldnames[0]: self.created_iam_users[i]})
         self.log.info("Test data file path : %s", fpath)
         self.log.info("Test data content : %s", content)
         config_utils.write_csv(fpath, fieldnames, content)
