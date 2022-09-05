@@ -74,10 +74,9 @@ class SystemCapacity(RestTestLib):
         response = self.get_capacity_usage(endpoint_param="bytecount", auth_header=auth_header)
         return response
 
-    def verify_get_degraded_capacity(self, auth_header=None, expected_response=HTTPStatus.OK):
+    def verify_get_bytecount(self, auth_header=None, expected_response=HTTPStatus.OK):
         """
         Get and verify status code for degraded capacity from CSM
-        :param endpoint_param: which endpoint to check for parameters
         :return : Rest output response
         """
         response = self.get_degraded_capacity(auth_header=auth_header)
@@ -91,7 +90,6 @@ class SystemCapacity(RestTestLib):
     def verify_get_pools_stats(self, auth_header=None, expected_response=HTTPStatus.OK):
         """
         Get and verify status code for  pool stats from CSM
-        :param endpoint_param: which endpoint to check for parameters
         :return : Rest output response
         """
         response = self.get_capacity_usage(auth_header=auth_header)
