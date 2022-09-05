@@ -47,7 +47,7 @@ class QueryDeployment(RestTestLib):
         solution_path = self.master.copy_file_to_local(remote_path=remote_sol_path,
                                                                local_path=local_sol_path)
         self.log.info(solution_path)
-        with open(local_sol_path, 'r') as yaml_file:
+        with open(local_sol_path, 'rb') as yaml_file:
             data = yaml.safe_load(yaml_file)
         self.log.info("Printing solution yaml contents: %s", data)
         return data
