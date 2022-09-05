@@ -267,7 +267,7 @@ class TestQueryDeployment():
         assert result, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    #@pytest.mark.skip("Test not ready")
+    @pytest.mark.skip("Test not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
