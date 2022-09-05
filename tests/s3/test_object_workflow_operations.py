@@ -20,8 +20,11 @@
 """Object Workflow Operations Test Module."""
 
 import os
+import random
+import string
 import time
 import logging
+import secrets
 import pytest
 
 from commons.ct_fail_on import CTFailOn
@@ -52,6 +55,7 @@ class TestObjectWorkflowOperations:
         self.s3_test_obj = s3_test_lib.S3TestLib()
         self.s3_cmd_obj = s3_cmd_test_lib.S3CmdTestLib()
         self.s3_mp_obj = s3_multipart_test_lib.S3MultipartTestLib()
+        self.system_random = secrets.SystemRandom()
         self.buckets_list = list()
         self.bkt_name_prefix = "obj-workflow-bkt"
         self.bucket_name = "{0}{1}".format(self.bkt_name_prefix, time.perf_counter_ns())
@@ -106,6 +110,40 @@ class TestObjectWorkflowOperations:
         self.log.info("Step 2: Uploaded %s objects to the bucket ", object_count)
 
         return obj_list
+
+    def create_bucket_put_get_object(self, bucket_name, obj_key_name, file_path, mb_count):
+        """
+        Function creates a bucket and uploads an object
+        and then retrieves object from specified S3 bucket.
+
+        :param bucket_name: Name of bucket to be created.
+        :param obj_key_name: Key name of an object.
+        :param file_path: Path of the file to be created and uploaded to bucket.
+        :param mb_count: Size of file in MBs.
+        """
+        if isinstance(obj_key_name, list):
+            for key in obj_key_name:
+                resp = self.s3_test_obj.create_bucket_put_object(
+                    bucket_name, key, file_path, mb_count)
+                assert resp[0], resp[1]
+                resp = self.s3_test_obj.get_object(
+                    bucket_name, key)
+                assert resp[0], resp[1]
+                self.log.info(
+                    "GET operation successful for object %s from bucket %s",
+                    key, bucket_name)
+                resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
+                assert resp[0], resp[1]
+        else:
+            resp = self.s3_test_obj.create_bucket_put_object(
+                bucket_name, obj_key_name, file_path, mb_count)
+            assert resp[0], resp[1]
+            resp = self.s3_test_obj.get_object(
+                bucket_name, obj_key_name)
+            assert resp[0], resp[1]
+            self.log.info(
+                "GET operation successful for object %s from bucket %s",
+                obj_key_name, bucket_name)
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -727,3 +765,184 @@ class TestObjectWorkflowOperations:
             cfg_7657["del_obj_cnt"])
         self.buckets_list.append(self.bucket_name)
         self.log.info("ENDED: Delete objects and mention 1000 objects.")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.tags("TEST-45504")
+    def test_45504(self):
+        """Test GET operation for object with key name consisting of 1024 bytes"""
+        self.log.info(
+            "STARTED: Test GET operation for object with key name consisting "
+            "of 1024 bytes")
+        obj_key_name = "".join(
+            random.choices(
+                f"{string.ascii_letters}{string.digits}",
+                k=S3_OBJ_TST["test_8547"]["obj_key_length"]))
+        self.create_bucket_put_get_object(
+            self.bucket_name, obj_key_name, self.file_path,
+            S3_OBJ_TST["s3_object"]["mb_count"])
+        self.buckets_list.append(self.bucket_name)
+        self.log.info(
+            "ENDED: Test GET operation for object with key name consisting "
+            "of 1024 bytes")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.tags("TEST-45506")
+    def test_45506(self):
+        """Test GET operation for object with key name consisting of prefix and delimiter"""
+        self.log.info(
+            "STARTED: Test GET operation for object with key name consisting "
+            "of prefix and delimiter")
+        obj_key_name = "Finance/statements"
+        self.create_bucket_put_get_object(
+            self.bucket_name, obj_key_name, self.file_path,
+            S3_OBJ_TST["s3_object"]["mb_count"])
+        self.buckets_list.append(self.bucket_name)
+        self.log.info(
+            "ENDED: Test GET operation for object with key name consisting "
+            "of prefix and delimiter")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.tags("TEST-45507")
+    def test_45507(self):
+        """Test GET operation for object with key name consisting of alphanumeric chars"""
+        self.log.info(
+            "STARTED: Test GET operation for object with key name consisting "
+            "of alphanumeric chars")
+        count_limit = self.system_random.randrange(4,10)
+        letters = "".join(random.choices(string.ascii_letters, k=count_limit))
+        digits = "".join(random.choices(string.digits, k=count_limit))
+        obj_key_name = f"{letters}{digits}"
+        self.create_bucket_put_get_object(
+            self.bucket_name, obj_key_name, self.file_path,
+            S3_OBJ_TST["s3_object"]["mb_count"])
+        self.buckets_list.append(self.bucket_name)
+        self.log.info(
+            "ENDED: Test GET operation for object with key name consisting "
+            "of alphanumeric chars")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.tags("TEST-45508")
+    def test_45508(self):
+        """Test GET operation for object with key name consisting of underscore(_)"""
+        self.log.info(
+            "STARTED: Test GET operation for object with key name consisting "
+            "of underscore(_)")
+        obj_key_name = ["_objworkflow", "objworkflow_", "_objworkflow_", "obj_workflow"]
+        self.create_bucket_put_get_object(
+            self.bucket_name, obj_key_name, self.file_path,
+            S3_OBJ_TST["s3_object"]["mb_count"])
+        self.log.info(
+            "ENDED: Test GET operation for object with key name consisting "
+            "of underscore(_)")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.tags("TEST-45509")
+    def test_45509(self):
+        """Test GET operation for object with key name consisting of Exclamation point(!)"""
+        self.log.info(
+            "STARTED: Test GET operation for object with key name consisting "
+            "of Exclamation point(!)")
+        obj_key_name = ["!objworkflow", "objworkflow!", "!objworkflow!", "obj!workflow"]
+        self.create_bucket_put_get_object(
+            self.bucket_name, obj_key_name, self.file_path,
+            S3_OBJ_TST["s3_object"]["mb_count"])
+        self.log.info(
+            "ENDED: Test GET operation for object with key name consisting "
+            "of Exclamation point(!)")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.tags("TEST-45511")
+    def test_45511(self):
+        """Test GET operation for object with key name consisting of Hyphen(-)"""
+        self.log.info(
+            "STARTED: Test GET operation for object with key name consisting "
+            "of Hyphen(-)")
+        obj_key_name = ["-objworkflow", "objworkflow-", "-objworkflow-", "obj-workflow"]
+        self.create_bucket_put_get_object(
+            self.bucket_name, obj_key_name, self.file_path,
+            S3_OBJ_TST["s3_object"]["mb_count"])
+        self.log.info(
+            "ENDED: Test GET operation for object with key name consisting "
+            "of Hyphen(-)")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.tags("TEST-45512")
+    def test_45512(self):
+        """Test GET operation for object with key name consisting of Period(.)"""
+        self.log.info(
+            "STARTED: Test GET operation for object with key name consisting "
+            "of Period(.)")
+        obj_key_name = [".objworkflow", "objworkflow.", ".objworkflow.", "obj.workflow"]
+        self.create_bucket_put_get_object(
+            self.bucket_name, obj_key_name, self.file_path,
+            S3_OBJ_TST["s3_object"]["mb_count"])
+        self.log.info(
+            "ENDED: Test GET operation for object with key name consisting "
+            "of Period(.)")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.tags("TEST-45513")
+    def test_45513(self):
+        """Test GET operation for object with key name consisting of Single quote(')"""
+        self.log.info(
+            "STARTED: Test GET operation for object with key name consisting "
+            "of Single quote(')")
+        obj_key_name = ["'objworkflow", "objworkflow'", "'objworkflow'", "obj'workflow"]
+        self.create_bucket_put_get_object(
+            self.bucket_name, obj_key_name, self.file_path,
+            S3_OBJ_TST["s3_object"]["mb_count"])
+        self.log.info(
+            "ENDED: Test GET operation for object with key name consisting "
+            "of Single quote(')")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.tags("TEST-45514")
+    def test_45514(self):
+        """Test GET operation for object with key name consisting of Asterisk(*)"""
+        self.log.info(
+            "STARTED: Test GET operation for object with key name consisting "
+            "of Asterisk(*)")
+        obj_key_name = ["*objworkflow", "objworkflow*", "*objworkflow*", "obj*workflow"]
+        self.create_bucket_put_get_object(
+            self.bucket_name, obj_key_name, self.file_path,
+            S3_OBJ_TST["s3_object"]["mb_count"])
+        self.log.info(
+            "ENDED: Test GET operation for object with key name consisting "
+            "of Asterisk(*)")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.tags("TEST-45515")
+    def test_45515(self):
+        """Test GET operation for object with key name consisting of alphanumeric chars
+        and special chars with prefix and delimiter"""
+        self.log.info(
+            "STARTED: Test GET operation for object with key name consisting of "
+            "alphanumeric chars and special chars with prefix and delimiter")
+        obj_key_name = [
+            "My.family_photos-2014/jan/myvacation1.jpg", "videos/2014/birthday/video1.wmv"]
+        self.create_bucket_put_get_object(
+            self.bucket_name, obj_key_name, self.file_path,
+            S3_OBJ_TST["s3_object"]["mb_count"])
+        self.log.info(
+            "ENDED: Test GET operation for object with key name consisting of "
+            "alphanumeric chars and special chars with prefix and delimiter")
