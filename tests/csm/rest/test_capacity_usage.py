@@ -96,14 +96,14 @@ class TestSystemCapacity():
                                  password=CMN_CFG["nodes"][0]["password"])
 
         cls.log.debug("Node object list : %s", cls.nd_obj)
-        #cls.restore_method = RESTORE_SCALE_REPLICAS
         cls.restore_method = None
         cls.restore_list = []
         cls.deployment_name = []
         cls.failed_pod = []
         cls.deployment_backup = None
         cls.fail_cnt = 0
-        cls.restore_pod_data = cls.set_name = None
+        cls.restore_pod_data = None
+        cls.set_name = None
         cls.num_replica = 0
         cls.deploy_list = cls.master.get_deployment_name(POD_NAME_PREFIX)
         cls.update_seconds = cls.csm_conf["update_seconds"]
@@ -1114,7 +1114,6 @@ class TestSystemCapacity():
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
-    @pytest.mark.parallel
     @pytest.mark.tags('TEST-45679')
     def test_45679(self):
         """
