@@ -180,7 +180,7 @@ class TestSystemCapacity():
         self.log.info("[START] Teardown Method")
         if self.restore_pod_data:
             self.log.info("Restore deleted data pods.")
-            for failure_cnt in range(len(self.restore_list)):
+            for failure_cnt, _ in enumerate(self.restore_list):
                 self.log.info("Restoring for list %s", self.restore_list[failure_cnt])
                 resp = self.ext_obj.restore_data_pod(self.restore_list[failure_cnt][0],
                                                      self.restore_list[failure_cnt][1])
@@ -1565,4 +1565,3 @@ class TestSystemCapacityFixedPlacement():
 
         self.deploy = True
 
-    

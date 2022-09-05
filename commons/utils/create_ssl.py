@@ -16,10 +16,12 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+"""Script for generating custom certificate."""
 
-from OpenSSL import crypto, SSL
 import os
+from OpenSSL import crypto
 
+# pylint: disable-msg=too-many-locals
 def generate_certificate(days=1, file_save_path=".", **kwargs):
     """
     This function is used to generate SSL certificate PEM file
@@ -27,54 +29,54 @@ def generate_certificate(days=1, file_save_path=".", **kwargs):
     :param file_save_path:  The file path to be saved
     :return:  final file path
     """
-    emailAddress = kwargs.get("emailAddress", "administrator_test@seagate.com")
-    commonName = kwargs.get("commonName", "Seagate")
-    countryName=kwargs.get("countryName", "IN")
-    localityName=kwargs.get("localityName", "Pune")
-    stateOrProvinceName=kwargs.get("stateOrProvinceName", "MH")
-    organizationName=kwargs.get("organizationName", "Seagate")
-    organizationUnitName=kwargs.get("organizationUnitName", "CFT")
-    serialNumber=days
-    validityStartInSeconds=0
-    KEY_FILE = "private.key"
-    CERT_FILE="selfsigned.crt"
+    email_address = kwargs.get("emailAddress", "administrator_test@seagate.com")
+    common_name = kwargs.get("commonName", "Seagate")
+    country_name=kwargs.get("countryName", "IN")
+    locality_name=kwargs.get("localityName", "Pune")
+    state_province_name=kwargs.get("stateOrProvinceName", "MH")
+    organization_name=kwargs.get("organizationName", "Seagate")
+    organization_unitname=kwargs.get("organizationUnitName", "CFT")
+    serial_number=days
+    validity_start_in_seconds=0
+    key_file = "private.key"
+    cert_file = "selfsigned.crt"
     k = crypto.PKey()
     k.generate_key(crypto.TYPE_RSA, 4096)
-    validityEndInSeconds = 86400 * days
+    validity_end_in_seconds = 86400 * days
 
     # create a self-signed cert
     cert = crypto.X509()
-    cert.get_subject().C = countryName
-    cert.get_subject().ST = stateOrProvinceName
-    cert.get_subject().L = localityName
-    cert.get_subject().O = organizationName
-    cert.get_subject().OU = organizationUnitName
-    cert.get_subject().CN = commonName
-    cert.get_subject().emailAddress = emailAddress
-    cert.set_serial_number(serialNumber)
-    cert.gmtime_adj_notBefore(validityStartInSeconds)
-    cert.gmtime_adj_notAfter(validityEndInSeconds)
+    cert.get_subject().C = country_name
+    cert.get_subject().ST = state_province_name
+    cert.get_subject().L = locality_name
+    cert.get_subject().O = organization_name
+    cert.get_subject().OU = organization_unitname
+    cert.get_subject().CN = common_name
+    cert.get_subject().emailAddress = email_address
+    cert.set_serial_number(serial_number)
+    cert.gmtime_adj_notBefore(validity_start_in_seconds)
+    cert.gmtime_adj_notAfter(validity_end_in_seconds)
     cert.set_issuer(cert.get_subject())
     cert.set_pubkey(k)
     cert.sign(k, 'sha512')
-    with open(CERT_FILE, "wt") as f:
-        f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
-    with open(KEY_FILE, "wt") as f:
-        f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
+    with open(cert_file, "wt") as cert_file1:
+        cert_file1.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
+    with open(key_file, "wt") as key_file1:
+        key_file1.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
 
     certificate = temp = ""
-    with open(CERT_FILE) as fp:
-        certificate = fp.read()
-    with open(KEY_FILE) as fp:
-        temp = fp.read()
+    with open(cert_file) as cert_file1:
+        certificate = cert_file1.read()
+    with open(key_file) as key_file1:
+        temp = key_file1.read()
     certificate += temp
 
     file_name = "stx_"+str(days)+".pem"
     file_save_path = str(file_save_path)+os.sep+str(file_name)
 
-    with open (file_save_path, 'w') as fp:
-        fp.write(certificate)
+    with open (file_save_path, 'w') as file_path:
+        file_path.write(certificate)
 
-    os.remove(CERT_FILE)
-    os.remove(KEY_FILE)
+    os.remove(cert_file)
+    os.remove(key_file)
     return file_save_path
