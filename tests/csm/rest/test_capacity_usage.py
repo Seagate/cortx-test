@@ -180,10 +180,10 @@ class TestSystemCapacity():
         self.log.info("[START] Teardown Method")
         if self.restore_pod_data:
             self.log.info("Restore deleted data pods.")
-            for failure_cnt, _ in enumerate(self.restore_list):
-                self.log.info("Restoring for list %s", self.restore_list[failure_cnt])
-                resp = self.ext_obj.restore_data_pod(self.restore_list[failure_cnt][0],
-                                                     self.restore_list[failure_cnt][1])
+            for restore_pod_info in self.restore_list:
+                self.log.info("Restoring for list %s", restore_pod_info)
+                resp = self.ext_obj.restore_data_pod(restore_pod_info[0],
+                                                     restore_pod_info[1])
                 self.log.debug("Response: %s", resp)
                 assert resp, "Failed to restore pod"
             self.log.info("Successfully restored data pod")
@@ -1124,12 +1124,7 @@ class TestSystemCapacity():
         self.log.info("[START] Failure loop")
         for failure_cnt in range(1, self.kvalue + 1):
             self.log.info("Starting failure loop for iteration %s ", failure_cnt)
-            self.log.info("Step 1: Send Get cluster topology")
-            resp = self.csm_obj.get_system_topology()
-            assert resp.status_code == HTTPStatus.OK, \
-                               "Status code check failed for get system topology"
-
-            self.log.info("Step 2: Shutdown data pod safely")
+            self.log.info("Step 1: Shutdown data pod safely")
             resp, self.set_name, self.num_replica = self.ext_obj.delete_data_pod()
             self.log.debug("Response: %s", resp)
             assert resp, "Failed to degrade cluster"
@@ -1139,7 +1134,7 @@ class TestSystemCapacity():
             self.restore_pod_data = True
             self.log.info("[End] Successfully deleted pod")
 
-            self.log.info("Step 3: Send Get cluster topology")
+            self.log.info("Step 2: Send Get cluster topology")
             resp = self.csm_obj.get_system_topology()
             assert resp.status_code == HTTPStatus.OK, \
                                "Status code check failed for get system topology"

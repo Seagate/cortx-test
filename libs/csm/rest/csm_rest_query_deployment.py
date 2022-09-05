@@ -241,11 +241,10 @@ class QueryDeployment(RestTestLib):
             output.append(element.strip().split())
         for elements in output:
             flat_list.extend(elements)
-        date_cmd = "{}-{}-{}".format(flat_list[1], flat_list[0].split("=")[1], flat_list[3])
+        date_cmd = f'{flat_list[1]}-{flat_list[0].split("=")[1]}-{flat_list[3]}'
         self.log.info("Date from command: %s", date_cmd)
         my_date = datetime.strptime(get_response_date, "%Y-%m-%d")
-        date_resp = "{}-{}-{}".format(my_date.day,
-                                            my_date.strftime("%b"), my_date.year)
+        date_resp = f'{my_date.day}-{my_date.strftime("%b")}-{my_date.year}'
         self.log.info("Date from response: %s", date_resp)
         if date_cmd != date_resp:
             err_msg = "Date Verification failed."
@@ -291,6 +290,7 @@ class QueryDeployment(RestTestLib):
         Verify certificate version
         """
         err_msg = ""
+        version_cmd = None
         resp = self.master.execute_cmd(
                 cmd=cmds.CMD_DECRYPT_CERTIFICATE.format("text"), read_lines=True)
         resp = resp.decode() if isinstance(resp, bytes) else resp

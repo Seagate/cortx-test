@@ -274,7 +274,7 @@ class TestQueryDeployment():
     @pytest.mark.tags('TEST-45749')
     def test_45749(self):
         """
-        Verify certificate details in GET cluster topology with
+        Verify certificate details in GET system topology with
         custom certificate
         """
         test_case_name = cortxlogging.get_frame()
@@ -285,9 +285,9 @@ class TestQueryDeployment():
         file_path = test_cfg["file_path"]
         required_path = test_cfg["required_path"]
         cert_file_path = create_ssl.generate_certificate(days, file_path,
-                                         emailAddress=test_cfg["emailAddress"])
+                                         emailAddress=test_cfg["emailAddress"],
+                                         commonName=test_cfg["commonName"])
         self.log.info(cert_file_path)
-        
         self.log.info("Step 2: Copy certificate from %s to %s ", cert_file_path, required_path)
         resp = self.csm_obj.master.copy_file_to_remote(local_path=cert_file_path,
                                     remote_path=required_path)
