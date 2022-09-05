@@ -1,3 +1,19 @@
+# CORTX LC specific Delayed Delete test config
 test_28993:
   file_size: 3000
   total_parts: 3
+
+# CORTX RGW specific Async Delete test config
+# Fixed object sizes to test in MB
+fixed_obj_size:
+  - 1
+  - 10
+  - 1024
+  - 5120
+
+# Random object size range in MB
+random_obj_size:
+  min: 1
+  max: 5120
+
+gc_min_wait_time_min: 15

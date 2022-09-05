@@ -101,12 +101,12 @@ class TestQueryDeployment():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Send GET request for fetching system topology"
-                      "without storage set id")
+                      " without storage set id")
         resp, result, err_msg = self.csm_obj.verify_storage_set()
         assert result, err_msg
         self.log.info("Response : %s", err_msg)
         self.log.info("Step 2: Send GET request for fetching system topology"
-                    "with storage set id")
+                    " with storage set id")
         storage_sets = resp.json()["topology"]["storage_sets"]
         for storage_set_id in storage_sets:
             self.log.info("Sending request for %s ", storage_set_id)
@@ -209,7 +209,7 @@ class TestQueryDeployment():
             assert resp, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    #Test not ready
+    @pytest.mark.skip("Test not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -249,4 +249,54 @@ class TestQueryDeployment():
                 assert hostnames["hostname"] == resp[1], "Hostname mismatch found"
             self.log.info("Step 5: Check services list")
             self.log.info("Step 6: Check component list")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-45674')
+    def test_45674(self):
+        """
+        Verify certificate details in GET system topology with default certificate.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Send get certificate request")
+        result, err_msg = self.csm_obj.verify_certificate_details(expected_response=HTTPStatus.OK)
+        assert result, err_msg
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Test not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-45749')
+    def test_45749(self):
+        """
+        Verify certificate details in GET cluster topology with
+        custom certificate
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Generate the certificate and update at required path")
+        #code for generating custom certificate
+        self.log.info("Step 3: Send get certificate request")
+        result, err_msg = self.csm_obj.verify_certificate_details(expected_response=HTTPStatus.OK)
+        assert result, err_msg
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.skip("Test not ready")
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-45670')
+    def test_45670(self):
+        """
+        Verify GET system topology
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Step 1: Verify GET system topology ")
+        result, err_msg = self.csm_obj.verify_system_topology(expected_response=HTTPStatus.OK)
+        assert result, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)

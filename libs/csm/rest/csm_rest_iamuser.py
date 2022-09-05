@@ -29,9 +29,12 @@ from commons import constants as cons
 from commons.constants import S3_ENGINE_RGW
 from commons.exceptions import CTException
 from commons.utils import config_utils
+from commons.utils import assert_utils
 from config import CMN_CFG, CSM_REST_CFG
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
+from libs.s3 import s3_misc
+
 # pylint: disable-msg=unexpected-keyword-arg
 # pylint: disable-msg=too-many-public-methods
 class RestIamUser(RestTestLib):
@@ -867,3 +870,39 @@ class RestIamUser(RestTestLib):
         else:
             res = temp
         return res
+
+    def set_get_user_quota(self, config_dict, user_id):
+        """
+        It will create IAM user and return s3test obj and s3multipart obj.
+        :param config_dict: Config Dictionary.
+        :param user_id : User id of iam user
+        """
+        self.log.info("Perform get set user quota")
+        payload = self.csm_obj.iam_user_quota_payload(config_dict["enabled"],
+                                                      config_dict["max_size"],
+                                                      config_dict["max_objects"],
+                                                      check_on_raw=True)
+        result, resp = self.csm_obj.verify_get_set_user_quota(user_id, payload,
+                                                              verify_response=True)
+        assert result, f"Verification for get set user failed.{resp}"
+
+    def verify_user_quota(self, akey, skey, user_id):
+        """
+        It will create IAM user and return s3test obj and s3multipart obj.
+        :param access_key: Access Key.
+        :param secrete_key: Secrete Key.
+        :param user_id : User id of iam user
+        """
+        total_objects = 0
+        total_size = 0
+        self.log.info("Get capacity count from AWS")
+        bkt_lst = s3_misc.list_bucket(akey, skey)
+        for bucket in bkt_lst:
+            objects, size = s3_misc.get_objects_size_bucket(bucket, akey, skey)
+            total_objects = total_objects + objects
+            total_size = total_size + size
+        self.log.info("total objects and size %s and %s ", total_objects, total_size)
+        self.log.info("Perform & Verify GET API to get capacity usage stats")
+        res, resp = self.csm_obj.verify_user_capacity(user_id, total_size,
+                                                      total_size, total_objects)
+        assert res, f"Verify User capacity failed with error msg {resp}"
