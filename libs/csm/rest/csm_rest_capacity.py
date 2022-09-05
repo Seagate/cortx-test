@@ -69,7 +69,6 @@ class SystemCapacity(RestTestLib):
     def get_degraded_capacity(self, auth_header=None):
         """
         Get degraded capacity from CSM
-        :param endpoint_param: which endpoint to check for parameters
         :return : Rest output response
         """
         response = self.get_capacity_usage(endpoint_param="bytecount", auth_header=auth_header)
@@ -77,7 +76,7 @@ class SystemCapacity(RestTestLib):
 
     def verify_get_degraded_capacity(self, auth_header=None, expected_response=HTTPStatus.OK):
         """
-        Get degraded capacity from CSM
+        Get and verify status code for degraded capacity from CSM
         :param endpoint_param: which endpoint to check for parameters
         :return : Rest output response
         """
@@ -91,7 +90,7 @@ class SystemCapacity(RestTestLib):
 
     def verify_get_pools_stats(self, auth_header=None, expected_response=HTTPStatus.OK):
         """
-        Get pool stats from CSM
+        Get and verify status code for  pool stats from CSM
         :param endpoint_param: which endpoint to check for parameters
         :return : Rest output response
         """
@@ -105,8 +104,7 @@ class SystemCapacity(RestTestLib):
 
     def verify_get_profiles_stats(self, auth_header=None, expected_response=HTTPStatus.OK):
         """
-        Get degraded capacity from CSM
-        :param endpoint_param: which endpoint to check for parameters
+        Get and verify status code for profile stats from CSM
         :return : Rest output response
         """
         response = self.get_capacity_usage(auth_header=auth_header)
@@ -119,8 +117,7 @@ class SystemCapacity(RestTestLib):
 
     def verify_get_filesystem_stats(self, auth_header=None, expected_response=HTTPStatus.OK):
         """
-        Get degraded capacity from CSM
-        :param endpoint_param: which endpoint to check for parameters
+        Get and verify status code for filesystem stats from CSM
         :return : Rest output response
         """
         response = self.get_capacity_usage(auth_header=auth_header)
@@ -133,9 +130,8 @@ class SystemCapacity(RestTestLib):
 
     def verify_get_nodes_stats(self, auth_header=None, expected_response=HTTPStatus.OK):
         """
-        Get degraded capacity from CSM
-        :param endpoint_param: which endpoint to check for parameters
-        :return : Rest output response
+        Get and verify status code for node stats from CSM
+        :return : Rest output response in munch format
         """
         response = self.get_capacity_usage(auth_header=auth_header)
         assert response.status_code == expected_response, "GET capacity Status code check failed."
