@@ -37,7 +37,8 @@ from commons.utils.system_utils import remove_dirs
 from commons.utils import assert_utils
 from config.s3 import DEL_CFG
 from config.s3 import S3_CFG
-from libs.s3.s3_common_test_lib import get_cortx_capacity
+from libs.s3.s3_common_test_lib import get_cortx_rgw_bytecount
+from libs.s3.s3_common_test_lib import poll_cluster_capacity
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_versioning_test_lib import S3VersioningTestLib
 from libs.s3.s3_versioning_common_test_lib import check_get_head_object_version
@@ -126,7 +127,7 @@ class TestAsyncDelete:
                 res = remove_file(fpath)
                 self.log.info("cleaned path: %s, res: %s", fpath, res)
         res = self.s3_test_obj.bucket_list()
-        empty_versioned_bucket(self.bucket_name)
+        empty_versioned_bucket(self.s3_ver_obj, self.bucket_name)
         self.s3_test_obj.delete_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("ENDED: Teardown test method operations")
@@ -138,49 +139,56 @@ class TestAsyncDelete:
         Test delete and overwrite for simple object having random size.
         """
         self.log.info("STARTED: Test delete and overwrite for simple object having random size")
-        self.log.info("Step 1: Upload 2 objects having random sizes")
-        for obj_name, fpath in zip(self.obj_names[:2], self.upload_paths[:2]):
-            create_random_file(fpath, DEL_CFG["random_obj_size"]["min"],
-                               DEL_CFG["random_obj_size"]["max"])
-            resp = self.s3_test_obj.put_object(self.bucket_name, obj_name, fpath)
-            assert_utils.assert_true(resp[0], resp[1])
-        overwrite_file_size_1 = os.path.getsize(self.upload_paths[1])
-        used_capacity1 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after upload: %s", used_capacity1)
-        self.log.info("Step 2: Delete object 1")
-        resp = self.s3_test_obj.delete_object(self.bucket_name, self.obj_names[0])
+        self.log.info("Step 1: Upload 2 objects having random size")
+        create_random_file(self.upload_paths[0], DEL_CFG["random_obj_size"]["min"],
+                           DEL_CFG["random_obj_size"]["max"])
+        resp = self.s3_test_obj.put_object(self.bucket_name, self.obj_names[0],
+                                           self.upload_paths[0])
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: Overwrite object 2")
+        overwrite_file_size_1 = os.path.getsize(self.upload_paths[0])
+        self.log.info("Original file size for overwrite: %s", overwrite_file_size_1)
+        used_capacity1 = get_cortx_rgw_bytecount()['healthy']
+        self.log.info("Initial CORTX capacity: %s", used_capacity1)
+        create_random_file(self.upload_paths[1], DEL_CFG["random_obj_size"]["min"],
+                           DEL_CFG["random_obj_size"]["max"])
+        resp = self.s3_test_obj.put_object(self.bucket_name, self.obj_names[1],
+                                           self.upload_paths[1])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 2: Overwrite object 1")
         create_random_file(self.upload_paths[2], DEL_CFG["random_obj_size"]["min"],
                            DEL_CFG["random_obj_size"]["max"])
-        overwrite_resp = self.s3_test_obj.put_object(self.bucket_name, self.obj_names[1],
+        overwrite_resp = self.s3_test_obj.put_object(self.bucket_name, self.obj_names[0],
                                                      self.upload_paths[2])
         assert_utils.assert_true(overwrite_resp[0], overwrite_resp[1])
         overwrite_file_size_2 = os.path.getsize(self.upload_paths[2])
+        self.log.info("Overwritten file size: %s", overwrite_file_size_2)
+        self.log.info("Step 3: Delete object 2")
+        resp = self.s3_test_obj.delete_object(self.bucket_name, self.obj_names[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Verify object deletion")
         check_get_head_object_version(self.s3_test_obj, self.s3_ver_obj,
-                                      bucket_name=self.bucket_name, object_name=self.obj_names[0],
+                                      bucket_name=self.bucket_name, object_name=self.obj_names[1],
                                       get_error_msg=errmsg.NO_SUCH_KEY_ERR,
                                       head_error_msg=errmsg.NOT_FOUND_ERR)
         check_list_objects(self.s3_test_obj, bucket_name=self.bucket_name,
-                           expected_objects=[self.obj_names[1]])
+                           expected_objects=[self.obj_names[0]])
         self.log.info("Step 5: Sleep for GC minimum wait time")
-        time.sleep(DEL_CFG["gc_min_wait_time_min"] * 60)
+        time.sleep(DEL_CFG["gc_min_wait_time"])
         self.log.info("Step 6: Verify space reclaimed")
-        used_capacity2 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after GC: %s", used_capacity2)
-        if overwrite_file_size_1 <= overwrite_file_size_2:
-            assert_utils.assert_true(used_capacity1 <= used_capacity2, "Space not reclaimed.")
-        else:
-            assert_utils.assert_true(used_capacity1 > used_capacity2, "Space not reclaimed.")
+        # NOTE: we can compare exact bytecount after F-71B
+        chk_increase = overwrite_file_size_1 <= overwrite_file_size_2
+        space_reclaimed = poll_cluster_capacity(chk_increase, DEL_CFG["space_reclaim_retry_time"],
+                                                DEL_CFG["space_reclaim_max_retries"],
+                                                initial_capacity=used_capacity1)
+        assert_utils.assert_true(space_reclaimed, "Space not reclaimed.")
         self.log.info("Step 7: Verify object overwrite")
         check_get_head_object_version(self.s3_test_obj, self.s3_ver_obj,
-                                      bucket_name=self.bucket_name, object_name=self.obj_names[1],
+                                      bucket_name=self.bucket_name, object_name=self.obj_names[0],
                                       etag=overwrite_resp[1]["ETag"])
-        download_and_check(self.s3_test_obj, self.bucket_name, self.obj_names[1],
+        download_and_check(self.s3_test_obj, self.bucket_name, self.obj_names[0],
                            file_path=self.upload_paths[2], download_path=self.download_path)
         check_list_objects(self.s3_test_obj, bucket_name=self.bucket_name,
-                           expected_objects=[self.obj_names[1]])
+                           expected_objects=[self.obj_names[0]])
         self.log.info("ENDED: Test delete and overwrite for simple object having random size")
 
     @pytest.mark.s3_ops
@@ -190,12 +198,14 @@ class TestAsyncDelete:
         Test object deletion with GC in an unversioned bucket.
         """
         self.log.info("STARTED: Test object deletion with GC in an unversioned bucket")
+        used_capacity1 = get_cortx_rgw_bytecount()['healthy']
+        self.log.info("Initial CORTX capacity: %s", used_capacity1)
         self.log.info("Step 1: Upload objects")
         for obj_name, fpath in zip(self.obj_names, self.fixed_size_fpaths):
             resp = self.s3_test_obj.put_object(self.bucket_name, obj_name, fpath)
             assert_utils.assert_true(resp[0], resp[1])
-        used_capacity1 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after upload: %s", used_capacity1)
+        used_capacity1 = get_cortx_rgw_bytecount()['healthy']
+        self.log.info("Initial CORTX capacity: %s", used_capacity1)
         self.log.info("Step 2: Delete objects")
         for obj_name in self.obj_names:
             resp = self.s3_test_obj.delete_object(self.bucket_name, obj_name)
@@ -208,11 +218,13 @@ class TestAsyncDelete:
                                           head_error_msg=errmsg.NOT_FOUND_ERR)
         check_list_objects(self.s3_test_obj, bucket_name=self.bucket_name, expected_objects=[])
         self.log.info("Step 4: Sleep for GC minimum wait time")
-        time.sleep(DEL_CFG["gc_min_wait_time_min"] * 60)
+        time.sleep(DEL_CFG["gc_min_wait_time"])
         self.log.info("Step 5: Verify space reclaimed")
-        used_capacity2 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after GC: %s", used_capacity2)
-        assert_utils.assert_true(used_capacity1 <= used_capacity2, "Space not reclaimed.")
+        # NOTE: we can compare exact bytecount after F-71B
+        space_reclaimed = poll_cluster_capacity(False, DEL_CFG["space_reclaim_retry_time"],
+                                                DEL_CFG["space_reclaim_max_retries"],
+                                                initial_capacity=used_capacity1)
+        assert_utils.assert_true(space_reclaimed, "Space not reclaimed.")
         self.log.info("ENDED: Test object deletion with GC in an unversioned bucket")
 
     @pytest.mark.s3_ops
@@ -226,8 +238,8 @@ class TestAsyncDelete:
         for obj_name, fpath in zip(self.obj_names, self.fixed_size_fpaths):
             resp = self.s3_test_obj.put_object(self.bucket_name, obj_name, fpath)
             assert_utils.assert_true(resp[0], resp[1])
-        used_capacity1 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after upload: %s", used_capacity1)
+        used_capacity1 = get_cortx_rgw_bytecount()['healthy']
+        self.log.info("Initial CORTX capacity: %s", used_capacity1)
         self.log.info("Step 2: Overwrite objects with random size")
         overwrite_resp = []
         total_overwrite_file_size = 0
@@ -239,15 +251,14 @@ class TestAsyncDelete:
             overwrite_resp.append(resp)
             total_overwrite_file_size += os.path.getsize(fpath)
         self.log.info("Step 3: Sleep for GC minimum wait time")
-        time.sleep(DEL_CFG["gc_min_wait_time_min"] * 60)
+        time.sleep(DEL_CFG["gc_min_wait_time"])
         self.log.info("Step 4: Verify space reclaimed")
-        used_capacity2 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after GC: %s", used_capacity2)
-        if self.total_fixed_file_size <= total_overwrite_file_size:
-            assert_utils.assert_true(used_capacity1 <= used_capacity2, "Space not reclaimed.")
-        else:
-            assert_utils.assert_true(used_capacity1 > used_capacity2, "Space not reclaimed.")
-        self.log.info("Step 5: Verify object overwrite")
+        # NOTE: we can compare exact bytecount after F-71B
+        chk_increase = self.total_fixed_file_size <= total_overwrite_file_size
+        space_reclaimed = poll_cluster_capacity(chk_increase, DEL_CFG["space_reclaim_retry_time"],
+                                                DEL_CFG["space_reclaim_max_retries"],
+                                                initial_capacity=used_capacity1)
+        assert_utils.assert_true(space_reclaimed, "Space not reclaimed.")
         for obj_name, fpath, resp in zip(self.obj_names, self.upload_paths, overwrite_resp):
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_obj,
                                           bucket_name=self.bucket_name, object_name=obj_name,
@@ -271,16 +282,15 @@ class TestAsyncDelete:
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 2: Upload objects")
         for obj_name, fpath in zip(self.obj_names, self.fixed_size_fpaths):
-            resp = upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions)
-            assert_utils.assert_true(resp[0], resp[1])
-        used_capacity1 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after upload: %s", used_capacity1)
-        self.log.info("Step 2: Delete objects by version id")
+            upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions)
+        used_capacity1 = get_cortx_rgw_bytecount()['healthy']
+        self.log.info("Initial CORTX capacity: %s", used_capacity1)
+        self.log.info("Step 3: Delete objects by version id")
         for obj_name in self.obj_names:
             v_id = versions[obj_name]["is_latest"]
-            resp = delete_version(self.s3_test_obj, self.s3_ver_obj, self.bucket_name, obj_name,
-                                  versions, v_id)
-        self.log.info("Step 3: Verify object deletion")
+            delete_version(self.s3_test_obj, self.s3_ver_obj, self.bucket_name, obj_name,
+                           versions, v_id)
+        self.log.info("Step 4: Verify object deletion")
         for obj_name in self.obj_names:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_obj,
                                           bucket_name=self.bucket_name, object_name=obj_name,
@@ -288,12 +298,14 @@ class TestAsyncDelete:
                                           head_error_msg=errmsg.NOT_FOUND_ERR)
         check_list_objects(self.s3_test_obj, bucket_name=self.bucket_name, expected_objects=[])
         check_list_object_versions(self.s3_ver_obj, self.bucket_name, versions)
-        self.log.info("Step 4: Sleep for GC minimum wait time")
-        time.sleep(DEL_CFG["gc_min_wait_time_min"] * 60)
-        self.log.info("Step 5: Verify space reclaimed")
-        used_capacity2 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after GC: %s", used_capacity2)
-        assert_utils.assert_true(used_capacity1 <= used_capacity2, "Space not reclaimed.")
+        self.log.info("Step 5: Sleep for GC minimum wait time")
+        time.sleep(DEL_CFG["gc_min_wait_time"])
+        self.log.info("Step 6: Verify space reclaimed")
+        # NOTE: we can compare exact bytecount after F-71B
+        space_reclaimed = poll_cluster_capacity(False, DEL_CFG["space_reclaim_retry_time"],
+                                                DEL_CFG["space_reclaim_max_retries"],
+                                                initial_capacity=used_capacity1)
+        assert_utils.assert_true(space_reclaimed, "Space not reclaimed.")
         self.log.info("ENDED: Test object deletion with GC in a versioning enabled bucket")
 
     @pytest.mark.s3_ops
@@ -306,42 +318,43 @@ class TestAsyncDelete:
         versions = {}
         self.log.info("Step 1: Upload objects")
         for obj_name, fpath in zip(self.obj_names, self.fixed_size_fpaths):
-            resp = upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions)
-            assert_utils.assert_true(resp[0], resp[1])
+            upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions,
+                           is_unversioned=True)
         total_uploaded_file_size = self.total_fixed_file_size
         self.log.info("Step 2: Enable bucket versioning")
         res = self.s3_ver_obj.put_bucket_versioning(bucket_name=self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 3: Upload new versions")
+        new_versions_file_size = 0
         for obj_name, fpath in zip(self.obj_names, self.upload_paths):
             create_random_file(fpath, DEL_CFG["random_obj_size"]["min"],
                                DEL_CFG["random_obj_size"]["max"])
-            resp = upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions)
-            assert_utils.assert_true(resp[0], resp[1])
-            total_uploaded_file_size += os.path.getsize(fpath)
-        used_capacity1 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after upload: %s", used_capacity1)
+            upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions)
+            new_versions_file_size += os.path.getsize(fpath)
+        total_uploaded_file_size += new_versions_file_size
+        used_capacity1 = get_cortx_rgw_bytecount()['healthy']
+        self.log.info("Initial CORTX capacity: %s", used_capacity1)
         self.log.info("Step 4: Suspend bucket versioning")
         res = self.s3_ver_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                     status="Suspended")
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 5: Overwrite null version with random size")
-        total_overwrite_file_size = 0
+        total_overwrite_file_size = new_versions_file_size
         for obj_name, fpath in zip(self.obj_names, self.upload_paths):
             create_random_file(fpath, DEL_CFG["random_obj_size"]["min"],
                                DEL_CFG["random_obj_size"]["max"])
-            resp = upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions)
-            assert_utils.assert_true(resp[0], resp[1])
+            upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions,
+                           chk_null_version=True)
             total_overwrite_file_size += os.path.getsize(fpath)
         self.log.info("Step 6: Sleep for GC minimum wait time")
-        time.sleep(DEL_CFG["gc_min_wait_time_min"] * 60)
+        time.sleep(DEL_CFG["gc_min_wait_time"])
         self.log.info("Step 7: Verify space reclaimed")
-        used_capacity2 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after GC: %s", used_capacity2)
-        if total_uploaded_file_size <= total_overwrite_file_size:
-            assert_utils.assert_true(used_capacity1 <= used_capacity2, "Space not reclaimed.")
-        else:
-            assert_utils.assert_true(used_capacity1 > used_capacity2, "Space not reclaimed.")
+        # NOTE: we can compare exact bytecount after F-71B
+        chk_increase = total_uploaded_file_size <= total_overwrite_file_size
+        space_reclaimed = poll_cluster_capacity(chk_increase, DEL_CFG["space_reclaim_retry_time"],
+                                                DEL_CFG["space_reclaim_max_retries"],
+                                                initial_capacity=used_capacity1)
+        assert_utils.assert_true(space_reclaimed, "Space not reclaimed.")
         self.log.info("Step 8: Verify object overwrite")
         for obj_name, fpath in zip(self.obj_names, self.upload_paths):
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_obj,
@@ -351,7 +364,7 @@ class TestAsyncDelete:
                                file_path=fpath, download_path=self.download_path)
         check_list_objects(self.s3_test_obj, bucket_name=self.bucket_name,
                            expected_objects=self.obj_names)
-        check_list_object_versions(self.s3_test_obj, self.bucket_name, versions)
+        check_list_object_versions(self.s3_ver_obj, self.bucket_name, versions)
         self.log.info("ENDED: Test object overwrite with GC in a versioning enabled bucket")
 
     @pytest.mark.s3_ops
@@ -364,10 +377,10 @@ class TestAsyncDelete:
         versions = {}
         self.log.info("Step 1: Upload objects")
         for obj_name, fpath in zip(self.obj_names, self.fixed_size_fpaths):
-            resp = upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions)
-            assert_utils.assert_true(resp[0], resp[1])
-        used_capacity1 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after upload: %s", used_capacity1)
+            upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions,
+                           is_unversioned=True)
+        used_capacity1 = get_cortx_rgw_bytecount()['healthy']
+        self.log.info("Initial CORTX capacity: %s", used_capacity1)
         self.log.info("Step 2: Suspend bucket versioning")
         res = self.s3_ver_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                     status="Suspended")
@@ -377,11 +390,11 @@ class TestAsyncDelete:
             with_vid = random.choice([True, False]) #nosec
             if with_vid:
                 v_id = versions[obj_name]["is_latest"]
-                resp = delete_version(self.s3_test_obj, self.s3_ver_obj, self.bucket_name,
-                                      obj_name, versions, v_id)
+                delete_version(self.s3_test_obj, self.s3_ver_obj, self.bucket_name,
+                               obj_name, versions, v_id)
             else:
-                resp = delete_version(self.s3_test_obj, self.s3_ver_obj, self.bucket_name,
-                                      obj_name, versions)
+                delete_version(self.s3_test_obj, self.s3_ver_obj, self.bucket_name,
+                               obj_name, versions)
         self.log.info("Step 4: Verify object deletion")
         for obj_name in self.obj_names:
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_obj,
@@ -391,11 +404,13 @@ class TestAsyncDelete:
         check_list_objects(self.s3_test_obj, bucket_name=self.bucket_name, expected_objects=[])
         check_list_object_versions(self.s3_ver_obj, self.bucket_name, versions)
         self.log.info("Step 5: Sleep for GC minimum wait time")
-        time.sleep(DEL_CFG["gc_min_wait_time_min"] * 60)
+        time.sleep(DEL_CFG["gc_min_wait_time"])
         self.log.info("Step 6: Verify space reclaimed")
-        used_capacity2 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after GC: %s", used_capacity2)
-        assert_utils.assert_true(used_capacity1 <= used_capacity2, "Space not reclaimed.")
+        # NOTE: we can compare exact bytecount after F-71B
+        space_reclaimed = poll_cluster_capacity(False, DEL_CFG["space_reclaim_retry_time"],
+                                                DEL_CFG["space_reclaim_max_retries"],
+                                                initial_capacity=used_capacity1)
+        assert_utils.assert_true(space_reclaimed, "Space not reclaimed.")
         self.log.info("ENDED: Test object deletion with GC in a versioning suspended bucket")
 
     @pytest.mark.s3_ops
@@ -408,31 +423,31 @@ class TestAsyncDelete:
         versions = {}
         self.log.info("Step 1: Upload objects")
         for obj_name, fpath in zip(self.obj_names, self.fixed_size_fpaths):
-            resp = upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions)
-            assert_utils.assert_true(resp[0], resp[1])
+            upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions,
+                           is_unversioned=True)
         self.log.info("Step 2: Suspend bucket versioning")
         res = self.s3_ver_obj.put_bucket_versioning(bucket_name=self.bucket_name,
                                                     status="Suspended")
         assert_utils.assert_true(res[0], res[1])
-        used_capacity1 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after upload: %s", used_capacity1)
+        used_capacity1 = get_cortx_rgw_bytecount()['healthy']
+        self.log.info("Initial CORTX capacity: %s", used_capacity1)
         self.log.info("Step 3: Overwrite null version with random size")
         total_overwrite_file_size = 0
         for obj_name, fpath in zip(self.obj_names, self.upload_paths):
             create_random_file(fpath, DEL_CFG["random_obj_size"]["min"],
                                DEL_CFG["random_obj_size"]["max"])
-            resp = upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions)
-            assert_utils.assert_true(resp[0], resp[1])
+            upload_version(self.s3_test_obj, self.bucket_name, obj_name, fpath, versions,
+                           chk_null_version=True)
             total_overwrite_file_size += os.path.getsize(fpath)
         self.log.info("Step 4: Sleep for GC minimum wait time")
-        time.sleep(DEL_CFG["gc_min_wait_time_min"] * 60)
+        time.sleep(DEL_CFG["gc_min_wait_time"])
         self.log.info("Step 5: Verify space reclaimed")
-        used_capacity2 = get_cortx_capacity()[-1]
-        self.log.info("CORTX capacity after GC: %s", used_capacity2)
-        if self.total_fixed_file_size <= total_overwrite_file_size:
-            assert_utils.assert_true(used_capacity1 <= used_capacity2, "Space not reclaimed.")
-        else:
-            assert_utils.assert_true(used_capacity1 > used_capacity2, "Space not reclaimed.")
+        # NOTE: we can compare exact bytecount after F-71B
+        chk_increase = self.total_fixed_file_size <= total_overwrite_file_size
+        space_reclaimed = poll_cluster_capacity(chk_increase, DEL_CFG["space_reclaim_retry_time"],
+                                                DEL_CFG["space_reclaim_max_retries"],
+                                                initial_capacity=used_capacity1)
+        assert_utils.assert_true(space_reclaimed, "Space not reclaimed.")
         self.log.info("Step 6: Verify object overwrite")
         for obj_name, fpath in zip(self.obj_names, self.upload_paths):
             check_get_head_object_version(self.s3_test_obj, self.s3_ver_obj,
@@ -442,5 +457,5 @@ class TestAsyncDelete:
                                file_path=fpath, download_path=self.download_path)
         check_list_objects(self.s3_test_obj, bucket_name=self.bucket_name,
                            expected_objects=self.obj_names)
-        check_list_object_versions(self.s3_test_obj, self.bucket_name, versions)
+        check_list_object_versions(self.s3_ver_obj, self.bucket_name, versions)
         self.log.info("ENDED: Test object overwrite with GC in a versioning suspended bucket")
