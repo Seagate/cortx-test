@@ -966,6 +966,7 @@ class TestAccountCapacity():
 
 
     # pylint: disable=too-many-statements
+    @pytest.mark.skip("Skipped until CORTX-34105 is fixed")
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
