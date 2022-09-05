@@ -1130,13 +1130,12 @@ class TestSystemCapacity():
                                "Status code check failed for get system topology"
 
             self.log.info("Step 2: Shutdown data pod safely")
-            resp,self.set_name,self.num_replica = self.ext_obj.delete_data_pod()
+            resp, self.set_name, self.num_replica = self.ext_obj.delete_data_pod()
             self.log.debug("Response: %s", resp)
             assert resp, "Failed to degrade cluster"
             self.restore_list.append([self.set_name, self.num_replica])
-            self.log.info("Printing set name and replica number for %s iteration: %s",
-                                        failure_cnt, self.restore_list)
-
+            self.log.info("Printing set and replica for %s iteration", failure_cnt)
+            self.log.info("Set name and replica number is: %s", self.restore_list)
             self.restore_pod_data = True
             self.log.info("[End] Successfully deleted pod")
 

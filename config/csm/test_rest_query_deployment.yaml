@@ -14,6 +14,7 @@ test_45678:
 test_45749:
   number_of_days: 20
   file_path: "/tmp"
+  required_path: "/root/deploy-scripts/charts/cortx/ssl-cert/new_cert.pem"
   emailAddress: "testuser@seagate.com"
   commonName: "Seagate1"
   countryName: "IN"

@@ -283,13 +283,12 @@ class TestQueryDeployment():
         test_cfg = self.csm_conf["test_45749"]
         days = test_cfg["number_of_days"]
         file_path = test_cfg["file_path"]
+        required_path = test_cfg["required_path"]
         cert_file_path = create_ssl.generate_certificate(days, file_path,
-                                         emailAddress=test_cfg["emailAddress"],
-                                         commonName=test_cfg["commonName"])
+                                         emailAddress=test_cfg["emailAddress"])
         self.log.info(cert_file_path)
-        required_path = "/root/deploy-scripts/charts/cortx/ssl-cert/new_cert.pem"
+        
         self.log.info("Step 2: Copy certificate from %s to %s ", cert_file_path, required_path)
-
         resp = self.csm_obj.master.copy_file_to_remote(local_path=cert_file_path,
                                     remote_path=required_path)
         assert resp, "Failed to copy file to remote"
