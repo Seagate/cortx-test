@@ -258,7 +258,11 @@ class TestMultiProcessRestart:
         self.test_completed = True
         self.log.info("ENDED: Verify READ during m0d restart using pkill")
 
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-4XXXX")
     def test_delete_after_multi_m0d_restart(self):
+        """Verify delete after multiple m0d restart using pkill"""
         self.log.info("STARTED: Verify delete after multiple m0d restart using pkill")
         log_file_prefix = 'test-4XXXX'
         que = multiprocessing.Queue()
