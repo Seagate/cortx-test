@@ -51,6 +51,19 @@ class IOStabilityLib:
         self.max_retries = max_retries
         self.http_client_timeout = timeout
 
+    def get_s3bench_logfile_label_from_test_log_file(self, test_log_file):
+        """
+        get s3bench log file label from test log file
+        :param test_log_file: file path of test log file
+        """
+        label = ""
+        with open(test_log_file, "r") as s3blog_obj:
+            for line in s3blog_obj:
+                if "label" in line:
+                    self.log.debug("line: %s", line)
+                    label = line.replace("label:", "").strip()
+        return label
+
     def execute_workload_distribution(self, distribution, clients, total_obj,
                                       duration_in_days, log_file_prefix, buckets_created=None):
         """Execution given workload distribution.
@@ -80,19 +93,71 @@ class IOStabilityLib:
                 resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
                                        num_clients=cur_clients, num_sample=samples,
                                        obj_name_pref="object-", obj_size=size,
-                                       skip_cleanup=skip_cleanup, duration=None,
+                                       duration=None,
                                        log_file_prefix=str(log_file_prefix).upper(),
                                        end_point=S3_CFG["s3_url"],
                                        validate_certs=S3_CFG["validate_certs"],
                                        max_retries=self.max_retries,
-                                       httpclientimeout=self.http_client_timeout)
+                                       httpclientimeout=self.http_client_timeout,
+                                       skip_cleanup=True,
+                                       skip_read=True,
+                                       validate=False
+                                       )
                 self.log.info("Loop: %s Workload: %s objects of %s with %s parallel clients.",
                               loop, samples, size, clients)
                 self.log.info("Log Path %s", resp[1])
                 assert not s3bench.check_log_file_error(resp[1]), \
                     f"S3bench workload failed in loop {loop}. Please read log file {resp[1]}"
                 # delete file if operation successful.
+                label = self.get_s3bench_logfile_label_from_test_log_file(resp[1])
                 system_utils.remove_file(resp[1])
+                system_utils.remove_file(f"s3bench-{label}.log")
+                resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
+                                       num_clients=cur_clients, num_sample=samples,
+                                       obj_name_pref="object-", obj_size=size,
+                                       duration=None,
+                                       log_file_prefix=str(log_file_prefix).upper(),
+                                       end_point=S3_CFG["s3_url"],
+                                       validate_certs=S3_CFG["validate_certs"],
+                                       max_retries=self.max_retries,
+                                       httpclientimeout=self.http_client_timeout,
+                                       skip_write=True,
+                                       skip_cleanup=True,
+                                       skip_read=False,
+                                       validate=True
+                                       )
+                self.log.info("Loop: %s Workload: %s objects of %s with %s parallel clients.",
+                              loop, samples, size, clients)
+                self.log.info("Log Path %s", resp[1])
+                assert not s3bench.check_log_file_error(resp[1]), \
+                    f"S3bench workload failed in loop {loop}. Please read log file {resp[1]}"
+                # delete file if operation successful.
+                label = self.get_s3bench_logfile_label_from_test_log_file(resp[1])
+                system_utils.remove_file(resp[1])
+                system_utils.remove_file(f"s3bench-{label}.log")
+                resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
+                                       num_clients=cur_clients, num_sample=samples,
+                                       obj_name_pref="object-", obj_size=size,
+                                       duration=None,
+                                       log_file_prefix=str(log_file_prefix).upper(),
+                                       end_point=S3_CFG["s3_url"],
+                                       validate_certs=S3_CFG["validate_certs"],
+                                       max_retries=self.max_retries,
+                                       httpclientimeout=self.http_client_timeout,
+                                       skip_write=True,
+                                       skip_cleanup=False,
+                                       skip_read=False,
+                                       validate=True
+                                       )
+                self.log.info("Loop: %s Workload: %s objects of %s with %s parallel clients.",
+                              loop, samples, size, clients)
+                self.log.info("Log Path %s", resp[1])
+                assert not s3bench.check_log_file_error(resp[1]), \
+                    f"S3bench workload failed in loop {loop}. Please read log file {resp[1]}"
+                # delete file if operation successful.
+                label = self.get_s3bench_logfile_label_from_test_log_file(resp[1])
+                system_utils.remove_file(resp[1])
+                system_utils.remove_file(f"s3bench-{label}.log")
                 if skip_cleanup:
                     # delete only objects, to be used for degraded mode.
                     self.log.info("Delete Created Objects")
