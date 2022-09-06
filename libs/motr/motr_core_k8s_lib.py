@@ -367,7 +367,7 @@ class MotrCoreK8s():
                 count,
                 obj,
                 layout,
-                file,
+                file
             )
         else:
             cmd = common_cmd.M0CAT.format(
@@ -384,16 +384,20 @@ class MotrCoreK8s():
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                                                         f"-- {cmd}", decode=True)
+                                                         f"-- {cmd}", decode=False, exc=False)
 
         log.info("CAT Resp: %s", resp)
         if di_g:
-            assert_utils.assert_in("ERROR" or b'Checksum validation failed for Obj',
-                                   resp, f'"{cmd}" The m0cat operation failed'
-                                   f' as expected for corrupt block')
+            if b'-5' in resp:
+                assert_utils.assert_in(b'Checksum validation failed for Obj',
+                                       resp,f'"{cmd}" The m0cat operation failed'
+                                       f' as expected for corrupt block')
+            else:
+                assert_utils.assert_not_in(b'ERROR' or b"Error", resp,
+                                           f'"{cmd}" Failed, Please check the log')
         else:
-            assert_utils.assert_not_in("ERROR" or "Error", resp,
-                                   f'"{cmd}" Failed, Please check the log')
+            assert_utils.assert_not_in(b'ERROR' or b"Error", resp,
+                                       f'"{cmd}" Failed, Please check the log')
 
     def unlink_cmd(self, obj, layout, node, client_num=None):
         """

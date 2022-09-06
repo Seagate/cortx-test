@@ -82,10 +82,10 @@ class EmapCommand:
             # Cob FID of object is specified for corrupt_emap
             option = "-corrupt_emap " + str(self.opts.get("corrupt_emap"))
             self.add_option(option)
-        if self.opts.get("emap_count"):
-            # number of checksum corruption instances for parity or data
-            option = "-e " + str(self.opts.get("emap_count"))
-            self.add_option(option)
+        # if self.opts.get("emap_count"):
+        #     # number of checksum corruption instances for parity or data
+        #     option = "-e " + str(self.opts.get("emap_count"))
+        #     self.add_option(option)
         if self.opts.get("metadata_db_path"):
             # Metadata DB path within each motr fid dir as shown below.
             # /etc/cortx/motr/m0d-0x7200000000000001\:0x32/db/o/100000000000000:2a'
@@ -214,13 +214,7 @@ class MotrCorruptionAdapter(InjectCorruption):
             else:  # fetch the value from dict for parity block
                 fid_val = value[7:16]
                 parity_fid_list.append(fid_val)
-        # Iterate over data pods to copy the error_injection.py script on motr container
         for pod in pod_list:
-            result = self.master_node_list[0].copy_file_to_container(
-                di_cfg["error_injection"], pod, CONTAINER_PATH, MOTR_CONTAINER_PREFIX
-                + "-001")
-            if not result:
-                raise FileNotFoundError
             # Run script to list emap and dump the output to the file
             cmd = Template(common_cmd.EMAP_LIST).substitute(
                 path=metadata_device, size=parse_size, file=f"{pod}-emap_list.txt"
@@ -285,7 +279,7 @@ class MotrCorruptionAdapter(InjectCorruption):
                 LOGGER.exception("Error: Not able to read local yaml file")
                 return False, error
             metadata_device = data["cluster"]["node_types"][0]["storage"][0]["devices"]["metadata"]
-            LOGGER.debug("Data is %s and metadata device is %s", data, metadata_device)
+            LOGGER.debug("metadata device is %s", metadata_device)
         return metadata_device
 
     def build_emap_command(self, fid: str, selected_meta_dev=None):
@@ -297,7 +291,7 @@ class MotrCorruptionAdapter(InjectCorruption):
         self.emap_bldr = EmapCommandBuilder()
         if (fid or selected_meta_dev) is None:
             return False, "metadata path or fid cannot be None"
-        kwargs = dict(corrupt_emap=fid, parse_size=10485760, emap_count=1,
+        kwargs = dict(corrupt_emap=fid, parse_size=10485760,
                       metadata_db_path=selected_meta_dev)
         cmd = self.emap_bldr.build(**kwargs)
         return cmd

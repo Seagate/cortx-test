@@ -413,7 +413,7 @@ M0CP_U_G = "m0cp -G -l $ep -H $hax_ep -P $fid -p $prof_fid -s $bsize -c $count -
 M0TRACE = "m0trace -i $trace > $file"
 LIST_M0TRACE = "ls -ltr| grep m0|awk '{print $9}'"
 GREP_DP_BLOCK_FID = "grep -E \"prepare io fops|UTyp\" $file| cut -d , -f2"
-EMAP_LIST = "python3 /root/error_injection.py -list_emap -m $path -parse_size $size 2>$file"
+EMAP_LIST = "python3 /root/wrapper_runner.py -list_emap -m $path -parse_size $size 2>$file"
 FETCH_ID_EMAP = "grep -n {} -e \"{}\"|awk 'END{{print $9}}'"
 
 # m0cp from data unit aligned offset 0
