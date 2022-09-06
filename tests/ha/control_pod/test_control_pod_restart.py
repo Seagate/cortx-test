@@ -110,11 +110,7 @@ class TestControlPodRestart:
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestData")
         control_pods = cls.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
         ctrl_pod = list(control_pods.keys())[0]
-        backup_path = cls.node_master_list[0].backup_deployment(
-            deployment_name=cls.node_master_list[0].get_deploy_replicaset(ctrl_pod)[1])[1]
-        cls.original_backup = backup_path.split(".")[0] + "_original.yaml"
-        cls.node_master_list[0].rename_file(old_filename=backup_path,
-                                            new_filename=cls.original_backup)
+        cls.original_backup = cls.modified_yaml = cls.backup_yaml = cls.num_replica = None
         cls.original_control_node = control_pods.get(ctrl_pod)
 
     def setup_method(self):
@@ -128,7 +124,8 @@ class TestControlPodRestart:
         self.res_taint = False
         self.s3_clean = dict()
         self.user_list = list()
-        self.restore_pod = None
+        self.restore_pod = False
+        self.num_replica = 1
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
@@ -142,18 +139,10 @@ class TestControlPodRestart:
         if not os.path.exists(self.test_dir_path):
             sysutils.make_dirs(self.test_dir_path)
         self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
-        LOGGER.info("Updating control pod deployment yaml")
         self.control_pods = self.node_master_list[0].get_pods_node_fqdn(
             const.CONTROL_POD_NAME_PREFIX)
         self.control_pod_name = list(self.control_pods.keys())[0]
         self.control_node = self.control_pods.get(self.control_pod_name)
-        resp = self.ha_obj.update_deployment_yaml(pod_obj=self.node_master_list[0],
-                                                  pod_name=self.control_pod_name,
-                                                  find_key="persistentVolumeClaim",
-                                                  replace_key="emptyDir", replace_val=dict())
-        assert_utils.assert_true(resp[0], resp)
-        self.modified_yaml = resp[1]
-        self.backup_yaml = resp[2]
         self.repl_num = int(len(self.node_worker_list) / 2 + 1)
         LOGGER.info("Number of replicas can be scaled for this cluster are: %s", self.repl_num)
         LOGGER.info("Done: Setup operations.")
@@ -177,19 +166,18 @@ class TestControlPodRestart:
             resp = self.node_master_list[0].create_pod_replicas(num_replica=1,
                                                                 pod_name=pod_list[0])
             assert_utils.assert_true(resp[0], resp[1])
-        # TODO: Uncomment following code after getting confirmation from Rick on control pod
-        #  restoration
-        # if self.restore_pod:
-            # LOGGER.info("Restoring control pod to its original state using yaml file %s",
-            #             self.original_backup)
-            # control_pod_name = self.node_master_list[0].get_all_pods(
-            #     const.CONTROL_POD_NAME_PREFIX)[0]
-            # pod_yaml = {control_pod_name: self.original_backup}
-            # resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
-            #                                 failover_node=self.original_control_node)
-            # LOGGER.debug("Response: %s", resp)
-            # assert_utils.assert_true(resp[0], "Failed to restore control pod to original state")
-            # LOGGER.info("Successfully restored control pod to original state")
+        if self.restore_pod:
+            resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                           restore_method=self.restore_method,
+                                           restore_params={
+                                               "deployment_name": self.deployment_name,
+                                               "deployment_backup":
+                                                   self.deployment_backup,
+                                               "num_replica": self.num_replica,
+                                               "set_name": self.set_name},
+                                           clstr_status=True)
+            assert_utils.assert_true(resp[0],
+                                     f"Failed to restore pod by {self.restore_method} way")
         if self.restore_node:
             LOGGER.info("Cleanup: Power on the %s down node.", self.control_node)
             resp = self.ha_obj.host_power_on(host=self.control_node)
@@ -197,40 +185,11 @@ class TestControlPodRestart:
             LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
                         " node", self.control_node, HA_CFG["common_params"]["pod_joinback_time"])
             time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
-        # TODO: As control node is restarted, Need to redeploy cluster after every test (We may
-        #  need this after control pod deployment file is changed)
-        if self.deploy:
-            LOGGER.info("Cleanup: Destroying the cluster ")
-            resp = self.deploy_lc_obj.destroy_setup(self.node_master_list[0],
-                                                    self.node_worker_list,
-                                                    const.K8S_SCRIPTS_PATH)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Cleanup: Cluster destroyed successfully")
-
-            LOGGER.info("Cleanup: Setting prerequisite")
-            self.deploy_lc_obj.execute_prereq_cortx(self.node_master_list[0],
-                                                    const.K8S_SCRIPTS_PATH,
-                                                    const.K8S_PRE_DISK)
-            for node in self.node_worker_list:
-                self.deploy_lc_obj.execute_prereq_cortx(node, const.K8S_SCRIPTS_PATH,
-                                                        const.K8S_PRE_DISK)
-            LOGGER.info("Cleanup: Prerequisite set successfully")
-
-            LOGGER.info("Cleanup: Deploying the Cluster")
-            resp_cls = self.deploy_lc_obj.deploy_cluster(self.node_master_list[0],
-                                                         const.K8S_SCRIPTS_PATH)
-            assert_utils.assert_true(resp_cls[0], resp_cls[1])
-            LOGGER.info("Cleanup: Cluster deployment successfully")
-
         LOGGER.info("Cleanup: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cleanup: Cluster status checked successfully")
-
         LOGGER.info("Removing extra files")
-        sysutils.remove_file(self.modified_yaml)
-        self.node_master_list[0].remove_remote_file(self.modified_yaml)
-        self.node_master_list[0].remove_remote_file(self.backup_yaml)
         sysutils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
