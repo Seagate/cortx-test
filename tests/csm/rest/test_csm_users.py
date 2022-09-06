@@ -4742,6 +4742,7 @@ class TestCsmUser():
             assert init_token != new_token, "unexpected token mismatch"
 
 
+    @pytest.mark.skip("Skipped until CORTX-33869 is fixed")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4789,6 +4790,7 @@ class TestCsmUser():
             self.log.info("Check Bearer token should not be different")
             self.log.info("token before password change = %s ", init_token)
             self.log.info("token after password change = %s ", new_token)
+            # update the assert based on CORTX-33869
             assert init_token == new_token, "unexpected token mismatch"
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
