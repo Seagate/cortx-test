@@ -29,7 +29,7 @@ from http import HTTPStatus
 import pytest
 
 from commons import configmanager, cortxlogging
-from commons.utils import create_ssl
+from commons.utils import cert_utils
 from commons.constants import K8S_SCRIPTS_PATH, K8S_PRE_DISK, POD_NAME_PREFIX
 from libs.csm.csm_interface import csm_api_factory
 from libs.ha.ha_common_libs_k8s import HAK8s
@@ -284,7 +284,7 @@ class TestQueryDeployment():
         days = test_cfg["number_of_days"]
         file_path = test_cfg["file_path"]
         required_path = test_cfg["required_path"]
-        cert_file_path = create_ssl.generate_certificate(days, file_path,
+        cert_file_path = cert_utils.generate_certificate(days, file_path,
                                          emailAddress=test_cfg["emailAddress"],
                                          commonName=test_cfg["commonName"])
         self.log.info(cert_file_path)
