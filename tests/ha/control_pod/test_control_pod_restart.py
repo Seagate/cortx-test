@@ -1709,6 +1709,7 @@ class TestControlPodRestart:
             time.sleep(HA_CFG["common_params"]["30sec_delay"])
             pod_list = self.node_master_list[0].get_all_pods(
                 pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+            pod_name = pod_list[0]
             assert_utils.assert_equal(len(pod_list), num_replica,
                                       "Did not scale desired number of replica")
             if num_replica != 0:
@@ -1723,8 +1724,8 @@ class TestControlPodRestart:
                 LOGGER.info("Step 3.1: Verified all IAM users %s are persistent across control "
                             "pods shutdown one by one", uids)
         LOGGER.info("Create back replicas %s", self.repl_num)
-        resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
-                                                            pod_name=pod_name)
+        cmd_rpl = cmd.KUBECTL_CREATE_REPLICA.format(self.repl_num, const.CONTROL_POD_NAME_PREFIX)
+        resp = self.node_master_list[0].execute_cmd(cmd=cmd_rpl, read_lines=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Wait for %s and Get the control pod list",
                     HA_CFG["common_params"]["60sec_delay"])
