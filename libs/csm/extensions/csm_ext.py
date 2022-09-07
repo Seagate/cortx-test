@@ -133,6 +133,8 @@ class CSMExt():
         sts_list = list(sts_dict.keys())
         self.log.debug("%s Statefulset: %s", POD_NAME_PREFIX, sts_list)
         sts = random.sample(sts_list, 1)[0]
+        while len(sts_dict[sts]) == 0:
+            sts = random.sample(sts_list, 1)[0]
         delete_pod = sts_dict[sts][-1]
         self.log.info("Pod to be deleted is %s", delete_pod)
         set_type, set_name = self.master.get_set_type_name(pod_name=delete_pod)
