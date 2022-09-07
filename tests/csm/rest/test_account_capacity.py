@@ -966,6 +966,7 @@ class TestAccountCapacity():
 
 
     # pylint: disable=too-many-statements
+    @pytest.mark.skip("Skipped until CORTX-34105 is fixed")
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -1009,7 +1010,7 @@ class TestAccountCapacity():
         self.log.info("stop_res -  %s", stop_res)
 
         self.log.info("Step 5: Call degraded capacity api")
-        response = self.csm_obj.get_degraded_capacity(endpoint_param=None)
+        response = self.csm_obj.get_capacity_usage()
         assert response.status_code == HTTPStatus.OK , "Status code check failed"
         self.log.info("Step 6: Check all variables are present in rest response")
         resp = self.csm_obj.validate_metrics(response.json(), endpoint_param=None)
@@ -1024,6 +1025,6 @@ class TestAccountCapacity():
 
         self.log.info("delete objects.")
         resp = self.ha_obj.delete_s3_acc_buckets_objects(s3_data=users, obj_crud=True)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert resp[0], resp[1]
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
