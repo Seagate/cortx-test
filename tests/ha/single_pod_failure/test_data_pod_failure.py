@@ -36,12 +36,15 @@ from commons import commands as cmd
 from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
+from commons.params import LATEST_LOG_FOLDER
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
+from commons.utils import support_bundle_utils as sb_utils
 from commons.utils import system_utils as sysutils
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
+from conftest import LOG_DIR
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
@@ -80,7 +83,7 @@ class TestDataPodFailure:
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.restore_node = cls.node_name = cls.deploy = cls.multipart_obj_path = None
-        cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = None
+        cls.restore_ip = cls.node_iface = cls.new_worker_obj = cls.node_ip = cls.get_sb = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -114,6 +117,7 @@ class TestDataPodFailure:
         self.restore_node = False
         self.restore_ip = False
         self.deploy = False
+        self.get_sb = True
         self.s3_clean = dict()
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -149,6 +153,11 @@ class TestDataPodFailure:
         This function will be invoked after each test function in the module.
         """
         LOGGER.info("STARTED: Teardown Operations.")
+        if self.get_sb:
+            LOGGER.info("Test Failure observed, collecting support bundle")
+            path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
+            sb_utils.collect_support_bundle_k8s(local_dir_path=path,
+                                                scripts_path=const.K8S_SCRIPTS_PATH)
         if self.s3_clean:
             LOGGER.info("Cleanup: Cleaning created IAM users and buckets.")
             if CMN_CFG["dtm0_disabled"]:
@@ -205,7 +214,7 @@ class TestDataPodFailure:
 
             LOGGER.info("Cleanup: Deploying the Cluster")
             LOGGER.debug("Adding HA pod delay workaround")
-            # TODO: Remove workround once CC is implemented
+            # TODO: Remove workaround once CC is implemented
             cmd_ha = "export CORTX_DEPLOY_HA_TIMEOUT=1000"
             self.node_master_list[0].execute_cmd(cmd=cmd_ha)
             resp_cls = self.deploy_lc_obj.deploy_cluster(self.node_master_list[0],
@@ -241,7 +250,7 @@ class TestDataPodFailure:
         LOGGER.info("Step 2: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Performed READs and verified DI on the written data")
 
@@ -265,10 +274,10 @@ class TestDataPodFailure:
         LOGGER.info("Step 4: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed READs and verified DI on the written data")
-
+        self.get_sb = False
         LOGGER.info("ENDED: Test to verify degraded reads before and after safe pod shutdown.")
 
     @pytest.mark.ha
@@ -294,7 +303,7 @@ class TestDataPodFailure:
         LOGGER.info("Step 2: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Performed READs and verified DI on the written data")
 
@@ -317,10 +326,10 @@ class TestDataPodFailure:
         LOGGER.info("Step 4: Perform READs and verify DI on the written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed READs and verified DI on the written data")
-
+        self.get_sb = False
         LOGGER.info("ENDED: Test to verify degraded reads before and after unsafe pod shutdown.")
 
     @pytest.mark.ha
@@ -360,10 +369,11 @@ class TestDataPodFailure:
 
         LOGGER.info("Step 3: Perform WRITEs, READs and verify DI on the already created bucket")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Successfully performed WRITEs, READs & verify DI on the written data")
-
+        self.get_sb = False
         LOGGER.info("ENDED: Test to verify degraded writes before and after safe pod shutdown.")
 
     @pytest.mark.ha
@@ -404,10 +414,11 @@ class TestDataPodFailure:
 
         LOGGER.info("Step 3: Perform WRITEs, READs and verify DI on the already created bucket")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Successfully performed WRITEs, READs & verify DI on the written data")
-
+        self.get_sb = False
         LOGGER.info("ENDED: Test to verify degraded writes before and after unsafe pod shutdown.")
 
     # pylint: disable-msg=too-many-locals
@@ -514,6 +525,7 @@ class TestDataPodFailure:
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
         LOGGER.info("Step 4: Successfully performed READs on the remaining %s buckets.",
                     remain_bkt)
+        self.get_sb = False
         LOGGER.info("COMPLETED: Test to verify degraded deletes before & after safe pod shutdown.")
 
     @pytest.mark.ha
@@ -620,6 +632,7 @@ class TestDataPodFailure:
                                                      f"or DI_CHECK: {fail_di_bkt} {event_di_bkt}")
         LOGGER.info("Step 4: Successfully performed READs on the remaining %s buckets.",
                     remain_bkt)
+        self.get_sb = False
         LOGGER.info("COMPLETED: Test to verify degraded deletes before and after unsafe "
                     "pod shutdown.")
 
@@ -704,9 +717,10 @@ class TestDataPodFailure:
             self.test_prefix = 'test-32444-1'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True,
-                                                    nsamples=2, nclients=2)
+                                                    nsamples=2, nclients=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Successfully ran IOs with variable object sizes.")
+        self.get_sb = False
         LOGGER.info("ENDED: Test to verify degraded reads during pod is going down.")
 
     @pytest.mark.ha
@@ -753,16 +767,17 @@ class TestDataPodFailure:
             self.s3_clean.update(users)
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        nsamples=2, nclients=2)
+                                                        nsamples=2, nclients=2, setup_s3bench=False)
         else:
             LOGGER.info("Step 3: Perform WRITEs-READs-Verify with variable object "
                         "sizes on degraded cluster")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        skipcleanup=True, nsamples=2, nclients=2)
+                                                        skipcleanup=True, nsamples=2, nclients=2,
+                                                        setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed IOs with variable sizes objects.")
-
+        self.get_sb = False
         LOGGER.info("Completed: Verify IOs before and after data pod failure; pod shutdown "
                     "by deleting deployment.")
 
@@ -882,10 +897,11 @@ class TestDataPodFailure:
         self.test_prefix = 'test-26445-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix)
+                                                    log_prefix=self.test_prefix,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed WRITEs-READs-Verify-DELETEs with variable sizes objects.")
-
+        self.get_sb = False
         LOGGER.info("ENDED: Test to verify DELETEs during data pod down with replica method")
 
     # pylint: disable=C0321
@@ -958,10 +974,10 @@ class TestDataPodFailure:
             self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True,
-                                                    nsamples=2, nclients=2)
+                                                    nsamples=2, nclients=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed IOs with variable sizes objects.")
-
+        self.get_sb = False
         LOGGER.info("ENDED: Test to verify WRITEs during data pod down with replica method")
 
     @pytest.mark.ha
@@ -1008,16 +1024,17 @@ class TestDataPodFailure:
             self.s3_clean.update(users)
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        nsamples=2, nclients=2)
+                                                        nsamples=2, nclients=2, setup_s3bench=False)
         else:
             LOGGER.info("Step 3: Perform WRITEs-READs-Verify with variable object sizes on "
                         "degraded cluster")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        skipcleanup=True, nsamples=2, nclients=2)
+                                                        skipcleanup=True, nsamples=2, nclients=2,
+                                                        setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed IOs with variable sizes objects.")
-
+        self.get_sb = False
         LOGGER.info("Completed: Verify IOs before and after data pod failure; pod shutdown "
                     "with replica method")
 
@@ -1145,6 +1162,7 @@ class TestDataPodFailure:
                                                     nsamples=2, nclients=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Successfully ran IOs with variable object sizes.")
+        self.get_sb = False
         LOGGER.info("ENDED: Test to verify READs/WRITEs during data pod down with replica method.")
 
     # pylint: disable=C0321
@@ -1315,7 +1333,7 @@ class TestDataPodFailure:
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully created multiple buckets and ran IOs")
-
+        self.get_sb = False
         LOGGER.info("ENDED: Test to verify WRITEs and DELETEs during data pod down  "
                     "with replica method")
 
@@ -1516,7 +1534,7 @@ class TestDataPodFailure:
                                                     nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Successfully created multiple buckets and ran IOs")
-
+        self.get_sb = False
         LOGGER.info("ENDED: Test to verify READs and DELETEs during data pod down "
                     "with replica method")
 
@@ -1625,7 +1643,7 @@ class TestDataPodFailure:
                                   f" {download_checksum1}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum1, download_checksum1)
         LOGGER.info("Step 4: Did multipart upload and download with 5GB object")
-
+        self.get_sb = False
         LOGGER.info("COMPLETED: Test to verify degraded multipart upload after data pod"
                     " safe shutdown.")
 
@@ -1733,6 +1751,7 @@ class TestDataPodFailure:
                                   f" {download_checksum1}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum1, download_checksum1)
         LOGGER.info("Step 4: Did multipart upload and download with 5GB object")
+        self.get_sb = False
         LOGGER.info("COMPLETED: Test to verify degraded multipart upload after data pod"
                     " unsafe shutdown.")
 
@@ -1819,7 +1838,7 @@ class TestDataPodFailure:
         node_fqdn_new = ha_pods_new.get(ha_pod_name_new)
         LOGGER.info("Step 6: %s pod has been failed over to %s node",
                     ha_pod_name_new, node_fqdn_new)
-
+        self.get_sb = False
         LOGGER.info("COMPLETED: Verify IOs before and after HA pod failure, "
                     "pod shutdown by making worker node down.")
 
@@ -1963,7 +1982,7 @@ class TestDataPodFailure:
                                   f" {download_checksum}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 6: Successfully downloaded the object and verified the checksum")
-
+        self.get_sb = False
         LOGGER.info("COMPLETED: Test to verify multipart upload during data pod shutdown with"
                     " replica method")
 
@@ -2095,7 +2114,7 @@ class TestDataPodFailure:
                                   f" {download_checksum}")
         LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 7: Successfully downloaded the object and verified the checksum")
-
+        self.get_sb = False
         LOGGER.info("ENDED: Test to verify degraded partial multipart upload after data pod "
                     " shutdown with replica method")
 
@@ -2192,7 +2211,7 @@ class TestDataPodFailure:
                                                           f"object {object3} of bucket {bucket3}.")
             LOGGER.info("Step 5: Downloaded the uploaded %s on %s & verified etags.",
                         object3, bucket3)
-
+        self.get_sb = False
         LOGGER.info("COMPLETED: Verify degraded copy object after data pod down - pod shutdown "
                     "with replica method ")
 
@@ -2291,7 +2310,7 @@ class TestDataPodFailure:
                                                           f"object {object3} of bucket {bucket3}.")
             LOGGER.info("Step 5: Downloaded the uploaded %s on %s & verified etags.",
                         object3, bucket3)
-
+        self.get_sb = False
         LOGGER.info("COMPLETED: Verify degraded copy object after data pod down - "
                     "pod unsafe shutdown (by deleting deployment) ")
 
@@ -2374,16 +2393,17 @@ class TestDataPodFailure:
             self.s3_clean.update(users)
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        nsamples=2, nclients=2)
+                                                        nsamples=2, nclients=2, setup_s3bench=False)
         else:
             LOGGER.info("STEP 6: Perform WRITEs-READs-Verify with variable object sizes on "
                         "degraded cluster")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        skipcleanup=True, nsamples=2, nclients=2)
+                                                        skipcleanup=True, nsamples=2, nclients=2,
+                                                        setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
-
+        self.get_sb = False
         LOGGER.info("COMPLETED: Verify IOs before and after data pod failure, "
                     "pod shutdown by making worker node down.")
 
@@ -2466,16 +2486,17 @@ class TestDataPodFailure:
             self.s3_clean.update(users)
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        nsamples=2, nclients=2)
+                                                        nsamples=2, nclients=2, setup_s3bench=False)
         else:
             LOGGER.info("STEP 6: Perform WRITEs-READs-Verify with variable object sizes "
                         "on degraded cluster")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        skipcleanup=True, nsamples=2, nclients=2)
+                                                        skipcleanup=True, nsamples=2, nclients=2,
+                                                        setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Performed IOs with variable sizes objects.")
-
+        self.get_sb = False
         LOGGER.info("COMPLETED: Verify IOs before and after data pod failure, "
                     "pod shutdown by making worker node network down.")
 
@@ -2628,7 +2649,7 @@ class TestDataPodFailure:
                                                           f"object {object3} of bucket {bucket3}.")
             LOGGER.info("Step 7: Downloaded the uploaded %s on %s & verified etags.",
                         object3, bucket3)
-
+        self.get_sb = False
         LOGGER.info("COMPLETED: Verify copy object during data pod shutdown with replica method")
 
     @pytest.mark.ha
@@ -2715,16 +2736,17 @@ class TestDataPodFailure:
             self.s3_clean.update(users)
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        nsamples=2, nclients=2)
+                                                        nsamples=2, nclients=2, setup_s3bench=False)
         else:
             LOGGER.info("Step 7: Perform WRITEs-READs-Verify-DELETEs with variable object sizes "
                         "on degraded cluster")
             resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                         log_prefix=self.test_prefix,
-                                                        skipcleanup=True, nsamples=2, nclients=2)
+                                                        skipcleanup=True, nsamples=2, nclients=2,
+                                                        setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Performed IOs with variable sizes objects.")
-
+        self.get_sb = False
         LOGGER.info("COMPLETED: Verify IOs before & after pod failure by making RC node down")
 
     @pytest.mark.ha
@@ -2848,7 +2870,7 @@ class TestDataPodFailure:
                                                         nsamples=2, nclients=2, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Successfully completed IOs.")
-
+        self.get_sb = False
         LOGGER.info("ENDED: Test chunk upload during pod down")
 
     @pytest.mark.ha
@@ -2891,18 +2913,19 @@ class TestDataPodFailure:
                     "written data")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipwrite=True,
-                                                    skipcleanup=True)
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Performed READs-Verify on already written data.")
 
         LOGGER.info("Step 4: Create new objects and run IOs")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("IOs completed, delete objects.")
         resp = self.ha_obj.delete_s3_acc_buckets_objects(s3_data=users, obj_crud=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: IOs ran successfully and objects deleted.")
-
+        self.get_sb = False
         LOGGER.info("Completed: Verify object CRUDs before and after pod failure; pod shutdown "
                     "with replica method")

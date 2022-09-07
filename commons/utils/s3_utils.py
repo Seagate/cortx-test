@@ -28,6 +28,7 @@ import time
 import urllib
 from hashlib import md5
 from hashlib import sha256
+from random import randint
 from random import shuffle
 from typing import Any
 
@@ -389,3 +390,10 @@ def assert_s3_err_msg(rgw_error, cortx_error, cmn_cfg, error):
         assert_utils.assert_in(rgw_error, error.message, error.message)
     else:
         assert_utils.assert_in(cortx_error, error.message, error.message)
+
+
+def create_random_file(file_path, min_size, max_size):
+    """Create a random sized file in the specified range in MB."""
+    with open(file_path, 'wb') as fout:
+        fout.write(os.urandom(randint(const.Sizes.MB * int(min_size),  # nosec
+                                      const.Sizes.MB * int(max_size))))

@@ -155,6 +155,7 @@ class TestCsmLoad():
 
 
     # pylint: disable-msg=too-many-locals
+    @pytest.mark.skip("Skipped until CORTX-34104 is fixed")
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -216,6 +217,7 @@ class TestCsmLoad():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
+    @pytest.mark.skip("Skipped until CORTX-34098 is fixed")
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -342,6 +344,94 @@ class TestCsmLoad():
             loop=test_cfg["loop"])
         assert result, "Errors reported in the Jmeter execution"
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.skip("Skipped until CCORTX-30001 is planned")
+    @pytest.mark.lc
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44789')
+    def test_44789(self):
+        """
+        CSM load testing with Max number of Manage user which creates IAM users and set their Quota.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_44789"]
+        jmx_file = "CSM_Create_N_Monitor_Create_N_IAM_Set_Quota.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
+        user_data = resp.json()
+        self.log.info("Step 1: List user response : %s", user_data)
+
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file,
+            threads=test_cfg["threads"],
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
+        assert result, "Errors reported in the Jmeter execution"
+
+
+        self.log.info("Find all newly created users")
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
+        user_data_new = resp.json()
+        init_users = user_data['users']
+        current_users = user_data_new['users']
+        self.log.info("List initial user  : %s", init_users)
+        self.log.info("List current user : %s", current_users)
+        delete_user_list = current_users
+        for user in init_users:
+            if user in current_users:
+                delete_user_list.remove(user)
+        self.iam_users_created.extend(delete_user_list)
+
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.skip("Skipped until CORTX-34103 is fixed")
+    @pytest.mark.lc
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44790')
+    def test_44790(self):
+        """
+        CSM load testing with Max number of monitor user with List IAM user with default limits
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_44790"]
+
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
+        user_data = resp.json()
+        self.log.info("Step 1: List user response : %s", user_data)
+
+        resp = self.csm_obj.list_csm_users(HTTPStatus.OK, return_actual_response=True)
+        existing_user = len(resp.json()['users'])
+        result = self.csm_obj.create_multi_csm_user_with_List_IAM(test_cfg["total_users"],
+                                                                  existing_user)
+        assert result, "Unable to create max users & list IAM"
+        result = self.csm_obj.delete_multi_csm_user(test_cfg["total_users"], existing_user)
+        assert result, "Unable to delete max users"
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+        self.log.info("Find all newly created users")
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
+        user_data_new = resp.json()
+        init_users = user_data['users']
+        current_users = user_data_new['users']
+        self.log.info("List initial user  : %s", init_users)
+        self.log.info("List current user : %s", current_users)
+        delete_user_list = current_users
+        for user in init_users:
+            if user in current_users:
+                delete_user_list.remove(user)
+        self.iam_users_created.extend(delete_user_list)
 
 
     @pytest.mark.lc
@@ -482,6 +572,7 @@ class TestCsmLoad():
 
 
     # pylint: disable=too-many-statements
+    @pytest.mark.skip("Skipped until CORTX-34103 is fixed")
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
