@@ -660,3 +660,24 @@ class LogicalNode(Host):
                         pod_ip_dict[pod] = j_obj["containerPort"]
 
         return pod_ip_dict
+
+    def get_node_multipod_dict(self):
+        """
+        Returns the node with its hosted pods
+        rtype: dict
+            dict of format
+            {'ssc-vm-g4-rhev4-1059.colo.seagate.com': ['cortx-data-g0-1', 'cortx-data-g1-1']
+             'ssc-vm-g4-rhev4-1060.colo.seagate.com': ['cortx-data-g1-2', 'cortx-data-g0-2']}
+        """
+        pods = self.get_all_pods(const.POD_NAME_PREFIX)
+        node_pod_dict = {}
+        for pod in pods:
+            k8_node_cmd = "| grep \"{}\" | awk '{{print $7}}'".format(pod)
+            k8s_node = self.send_k8s_cmd(
+            operation="get", pod="pods -o wide", namespace=const.NAMESPACE,
+            command_suffix=f"{k8_node_cmd}", decode=True)
+            if node_pod_dict.get(k8s_node) is not None:
+                node_pod_dict[k8s_node].append(pod)
+            else:
+                node_pod_dict[k8s_node] = [pod]
+        return node_pod_dict

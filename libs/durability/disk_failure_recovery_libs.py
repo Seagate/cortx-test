@@ -23,7 +23,9 @@ HA disk failure recovery utility methods
 import copy
 import json
 import logging
+import os
 import random
+import yaml
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -54,28 +56,28 @@ class DiskFailureRecoveryLib:
         temp = resp['bytecount']
         return temp[byte_count_type]
 
-    def change_disk_status_hctl(self, pod_obj: LogicalNode, pod_name: str, data_pod_hostname: str,
+    def change_disk_status_hctl(self, pod_obj: LogicalNode, pod_name: str, data_pod_svc_name: str,
                                 device: str, status: str):
         """
         This function is used to change the disk status(online, offline etc)
         using hctl command
         :param pod_obj: Object for master nodes
         :param pod_name: name of the pod
-        :param data_pod_hostname: hostname of the cortx data pod of which disk status
+        :param data_pod_svc_name: hostname of the cortx data pod of which disk status
                                     will be changed
         :param device: name of disk of which status will be changed
         :param status: status of the disk
         :rtype Json response of hctl command
         """
         cmd = common_cmd.CHANGE_DISK_STATE_USING_HCTL.replace(
-                        "cortx_nod", str(data_pod_hostname)).replace("device_val", str(device)).\
+                        "cortx_nod", str(data_pod_svc_name)).replace("device_val", str(device)).\
                         replace("status_val", str(status))
         out = pod_obj.send_k8s_cmd(operation="exec", pod=pod_name,
                                    namespace=common_const.NAMESPACE,
                                    command_suffix=f"-c {self.hax_container}"
                                                   f" -- {cmd}",
                                    decode=True)
-        return json.loads(out)
+        return out
 
     def sns_repair(self, pod_obj: LogicalNode, option: str, pod_name: str):
         """
@@ -108,7 +110,28 @@ class DiskFailureRecoveryLib:
         return out
 
     @staticmethod
-    def retrieve_durability_values(master_obj: LogicalNode, ec_type: str) -> tuple:
+    def read_solution_config(master_obj: LogicalNode) -> tuple:
+        """
+        This function read the solution.yaml
+        :param master_obj: Node Object of Master
+        :return : tuple(bool,dict)
+        """
+        remote_sol_path = os.path.join(common_const.K8S_SCRIPTS_PATH, "solution.yaml")
+        local_path = common_const.LOCAL_SOLUTION_PATH
+        result = master_obj.copy_file_to_local(remote_sol_path, local_path)
+        if not result[0]:
+            raise Exception("Copy from {} to {} failed with error: {}".format(remote_sol_path,
+                                                                              local_path,
+                                                                              result[1]))
+        try:
+            with open(local_path, "r", encoding="utf-8") as file_data:
+                data = yaml.safe_load(file_data)
+        except IOError as error:
+            LOGGER.exception("Error: Not able to read local config file")
+            return False, error
+        return True, data
+
+    def retrieve_durability_values(self, master_obj: LogicalNode, ec_type: str) -> tuple:
         """
         Return the durability Configuration for Data/Metadata (SNS/DIX) for the cluster
         :param master_obj: Node Object of Master
@@ -116,13 +139,14 @@ class DiskFailureRecoveryLib:
         :return : tuple(bool,dict)
                   dict of format { 'data': '1','parity': '4','spare': '0'}
         """
-        resp = HAK8s.get_config_value(master_obj)
+        resp = self.read_solution_config(master_obj)
         if not resp[0]:
             return resp
         config_data = resp[1]
         try:
-            ret = config_data['cluster']['storage_set'][0]['durability'][ec_type.lower()]
-            return True, ret
+            ret = config_data['solution']['storage_sets'][0]['durability'][ec_type.lower()]
+            data, parity, spare = ret.split('+')
+            return True, {'data': data, 'parity': parity, 'spare': spare}
         except KeyError as err:
             LOGGER.error("Exception while retrieving Durability config : %s", err)
             return False, err
@@ -158,41 +182,73 @@ class DiskFailureRecoveryLib:
             LOGGER.error("Exception while retrieving CVG details : %s", err)
             return False, err
 
-    def get_all_nodes_disks(self, master_obj: LogicalNode, worker_obj: list) -> tuple:
+    def get_all_nodes_disks(self, master_obj: LogicalNode) -> tuple:
         """
         Return the unique list of disks available on all worker nodes.
         :param master_obj: Node Object of Master
-        :param worker_obj: list of worker node object
         :return : tuple(bool,dict)
                  dict of format
                  {'disk1': ['ssc-vm-g4-rhev4-1059.colo.seagate.com', 'cvg-01', '/dev/sdh'],
                   'disk2': ['ssc-vm-g4-rhev4-1059.colo.seagate.com', 'cvg-02', '/dev/sdd']}
         """
+        resp = self.read_solution_config(master_obj)
+        if not resp[0]:
+            return resp
+        config_data = resp[1]
         return_dict = {}
         cntr = 1
-        for node in worker_obj:
-            resp = self.retrieve_cvg_from_node(master_obj, node)
-            if not resp[0]:
-                return resp
-            try:
-                for cvg in resp[1]:
-                    disk_list = resp[1][cvg]['data']
-                    for disk in disk_list:
-                        val = [node.hostname, cvg, disk]
+        try:
+            cvgs = config_data['solution']['storage_sets'][0]['storage']
+            nodes = config_data['solution']['storage_sets'][0]['nodes']
+            for node in nodes:
+                for cvg in cvgs:
+                    cvg_name = cvg['name']
+                    data_devices = cvg['devices']['data']
+                    for data_device in data_devices:
+                        disk_path = data_device['path']
+                        val = [node, cvg_name, disk_path]
                         return_dict['disk' + str(cntr)] = val
                         cntr += 1
-            except KeyError as err:
+        except KeyError as err:
                 LOGGER.error("Exception while retrieving disk details : %s", err)
                 return False, err
         return True, return_dict
 
-    def fail_disk(self, disk_fail_cnt: int, master_obj: LogicalNode,worker_obj: list,
+    def get_multi_pod_disks(self, master_obj: LogicalNode, health_obj: Health) -> dict:
+        """
+        Return the unique list of disks available for all the data pods.
+        :param master_obj: Node Object of Master
+        :param health_obj: Health object of primary node
+        :return : dict
+                 dict of format
+                 {'disk1': ['cortx-data-g1-4.cortx-data-headless.cortx.svc.cluster.local',
+                 'cvg-01', '/dev/sdh'],
+                  'disk2': ['cortx-data-g0-4.cortx-data-headless.cortx.svc.cluster.local',
+                  'cvg-02', '/dev/sdd']}
+        """
+        resp = self.get_all_nodes_disks(master_obj)
+        LOGGER.info(resp)
+        if not resp[0]:
+            return resp
+        all_node_disks = resp[1]
+        pod_disk_status = health_obj.hctl_disk_status()
+        pod_node_dict = master_obj.get_node_multipod_dict()
+        for disk in all_node_disks:
+            if all_node_disks[disk][0] in pod_node_dict.keys():
+                for pod in pod_node_dict[all_node_disks[disk][0]]:
+                    if all_node_disks[disk][2] in pod_disk_status[pod + '.'+ \
+                        common_const.CORTX_DATA_NODE_POSTFIX]:
+                        all_node_disks[disk][0] = pod + '.'+ common_const.CORTX_DATA_NODE_POSTFIX
+        LOGGER.info("Data pod disk mappings: %s", all_node_disks)
+        return all_node_disks
+
+    def fail_disk(self, disk_fail_cnt: int, master_obj: LogicalNode, health_obj: Health,
                    pod_name: str, on_diff_cvg: bool = False, on_same_cvg = False) -> tuple:
         """
         Return the unique list of failed disks.
         :param disk_fail_cnt: Number of disks to be failed
-        :param master_obj: Node Object of Master
-        :param worker_obj: list of worker node object
+        :param master_obj: Node Object of primary node
+        :param health_obj: Health object of primary node
         :param pod_name: name of the pod
         :param on_diff_cvg: selects disks from different cvg if set True
         :param on_same_cvg: selects disks from same cvg if set True
@@ -204,12 +260,9 @@ class DiskFailureRecoveryLib:
 
         LOGGER.info("No of disks to be failed: %s", disk_fail_cnt)
         failed_disks_dict = {}
-        resp = self.get_all_nodes_disks(master_obj, worker_obj)
-        if not resp[0]:
-            return resp
-        all_disks = resp[1]
+        resp = self.get_multi_pod_disks(master_obj, health_obj)
+        all_disks = resp
         LOGGER.info("list of all disks: %s", all_disks)
-
         if on_diff_cvg:
             one_disk_per_cvg_dict = {}
             for disk in all_disks:
@@ -243,7 +296,7 @@ class DiskFailureRecoveryLib:
             LOGGER.info("disk fail loop: %s, disk selected for failure: %s",
                         cnt + 1, all_disks[selected_disk])
             resp = self.change_disk_status_hctl(master_obj, pod_name,
-                                common_const.CORTX_DATA_NODE_PREFIX + all_disks[selected_disk][0],
+                                all_disks[selected_disk][0],
                                 all_disks[selected_disk][2], "failed")
             LOGGER.info("fail disk command resp: %s", resp)
             failed_disks_dict['disk' + str(cnt)] = all_disks[selected_disk]

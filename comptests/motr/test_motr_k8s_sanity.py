@@ -310,15 +310,14 @@ class TestExecuteK8Sanity:
         logger.info("Failed disk count: %s", disk_fail_cnt)
         cortx_node = self.motr_obj.get_primary_cortx_node()
         resp = self.disk_recvry_obj.fail_disk(disk_fail_cnt, self.motr_obj.node_obj,
-                self.motr_obj.worker_node_objs,
-                self.motr_obj.node_pod_dict[cortx_node])
+                self.motr_obj.health_obj, self.motr_obj.node_pod_dict[cortx_node])
         assert_utils.assert_true(resp[0], resp[1])
         failed_disks_dict = resp[1]
         logger.info("Step 2: Check if the disks are marked failed")
         disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()
         time.sleep(10)
         for disk in failed_disks_dict:
-            disk_status = disk_status_dict[common_const.CORTX_DATA_NODE_PREFIX + \
+            disk_status = disk_status_dict[
                             failed_disks_dict[disk][0]][failed_disks_dict[disk][2]]
             assert_utils.assert_exact_string("failed", disk_status,
                 message="Disk is not marked failed")
@@ -326,12 +325,12 @@ class TestExecuteK8Sanity:
         for disk in failed_disks_dict:
             resp = self.disk_recvry_obj.change_disk_status_hctl(self.motr_obj.node_obj,
                     self.motr_obj.node_pod_dict[cortx_node],
-                    common_const.CORTX_DATA_NODE_PREFIX + failed_disks_dict[disk][0],
+                    failed_disks_dict[disk][0],
                     failed_disks_dict[disk][2], "repair")
         logger.info("Step 4: Checking if the disks are marked as repairing")
         disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()
         for disk in failed_disks_dict:
-            disk_status = disk_status_dict[common_const.CORTX_DATA_NODE_PREFIX + \
+            disk_status = disk_status_dict[
                             failed_disks_dict[disk][0]][failed_disks_dict[disk][2]]
             assert_utils.assert_exact_string("repairing", disk_status,
                 message="Disk is not marked repairing")
@@ -346,7 +345,7 @@ class TestExecuteK8Sanity:
         logger.info("Step 7: Checking if the disks are marked as repaired")
         disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()
         for disk in failed_disks_dict:
-            disk_status = disk_status_dict[common_const.CORTX_DATA_NODE_PREFIX + \
+            disk_status = disk_status_dict[
                             failed_disks_dict[disk][0]][failed_disks_dict[disk][2]]
             assert_utils.assert_exact_string("repaired", disk_status,
                 message="Disk is not marked repaired")
@@ -360,7 +359,7 @@ class TestExecuteK8Sanity:
         logger.info("Step 9: Checking if the disks are marked as rebalancing")
         disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()
         for disk in failed_disks_dict:
-            disk_status = disk_status_dict[common_const.CORTX_DATA_NODE_PREFIX + \
+            disk_status = disk_status_dict[
                             failed_disks_dict[disk][0]][failed_disks_dict[disk][2]]
             assert_utils.assert_exact_string("rebalancing", disk_status,
                 message="Disk is not marked rebalancing")
@@ -375,7 +374,7 @@ class TestExecuteK8Sanity:
         logger.info("Step 12: Checking if the disks are marked as online")
         disk_status_dict = self.motr_obj.health_obj.hctl_disk_status()
         for disk in failed_disks_dict:
-            disk_status = disk_status_dict[common_const.CORTX_DATA_NODE_PREFIX + \
+            disk_status = disk_status_dict[
                             failed_disks_dict[disk][0]][failed_disks_dict[disk][2]]
             assert_utils.assert_exact_string("online", disk_status,
                 message="Disk is not marked online")
