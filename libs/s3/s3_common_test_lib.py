@@ -315,6 +315,53 @@ def create_bucket_put_object(s3_tst_lib, bucket_name: str, obj_name: str, file_p
     assert_utils.assert_true(resp[0], resp[1])
     LOG.info("Uploaded an object %s to bucket %s", obj_name, bucket_name)
 
+def create_bucket_put_get_objects(bucket_name, object_count=None, obj_name_prefix=None,
+                                  obj_list=None, **kwargs):
+    """
+    Function will create a bucket with specified name, upload given no of objects
+    to the bucket and also will download the objects from bucket.
+
+    :param str bucket_name: Name of a bucket to be created.
+    :param int object_count: No of objects to be uploaded into the bucket.
+    :param str obj_name_prefix: Prefix for object name.
+    :param list obj_list: List of objects to be uploaded into the bucket and
+    downloaded from the bucket.
+    :param s3_testobj: s3 test lib object.
+    :param file_path: Path of the file to be created and uploaded to bucket.
+    :param mb_count: Size of file in MBs.
+    :return: List of objects uploaded to bucket.
+    :rtype: list
+    """
+    s3_test_object = kwargs.get("s3_testobj", "None")
+    file_path = kwargs.get("file_path", "None")
+    mb_count = kwargs.get("mb_count", "None")
+    if obj_list is None:
+        obj_list = []
+    LOG.info("Creating a bucket with name %s", bucket_name)
+    resp = s3_test_object.create_bucket(bucket_name)
+    assert_utils.assert_true(resp[0], resp[1])
+    assert resp[1] == bucket_name, resp[0]
+    LOG.info("Created a bucket with name %s", bucket_name)
+    if object_count:
+        LOG.info("Uploading %s objects to the bucket ",  object_count)
+        for cnt in range(object_count):
+            obj_name = f"{obj_name_prefix}{cnt}"
+            system_utils.create_file(file_path, mb_count)
+            resp = s3_test_object.put_object(bucket_name, obj_name, file_path)
+            assert_utils.assert_true(resp[0], resp[1])
+            obj_list.append(obj_name)
+        LOG.info("Uploaded %s objects to the bucket ", object_count)
+        return obj_list
+    if obj_list:
+        for key in obj_list:
+            system_utils.create_file(file_path, mb_count)
+            resp = s3_test_object.put_object(bucket_name, key, file_path)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOG.info("Uploaded object %s to the bucket %s", key, bucket_name)
+            resp = s3_test_object.get_object(bucket_name, key)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOG.info("GET operation successful for object %s from bucket %s", key, bucket_name)
+    return None
 
 def create_attach_list_iam_policy(access, secret, policy_name, iam_policy, iam_user):
     """
