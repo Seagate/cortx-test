@@ -23,10 +23,9 @@
 from http import HTTPStatus
 from random import SystemRandom
 import json
+from munch import munchify
 from config import CMN_CFG
 from commons.constants import Rest as const
-import commons.errorcodes as err
-from commons.exceptions import CTException
 from commons.helpers.pods_helper import LogicalNode
 from commons import commands
 from commons import constants
@@ -47,32 +46,98 @@ class SystemCapacity(RestTestLib):
         self.cryptogen = SystemRandom()
 
     @RestTestLib.authenticate_and_login
-    def get_capacity_usage(self):
+    def get_capacity_usage(self, endpoint_param=None ,auth_header=None):
         """Get the system capacity usage
 
         :return [obj]: Json response
         """
-        try:
-            # Building request url
-            self.log.info("Reading System Capacity...")
-            endpoint = self.config["capacity_endpoint"]
-            self.log.info("Endpoint for reading capacity is %s", endpoint)
+        if auth_header is None:
+            headers = self.headers
+        else:
+            headers = auth_header
 
-            # Fetching api response
-            response = self.restapi.rest_call(request_type="get",
-                                              endpoint=endpoint,
-                                              headers=self.headers)
-            self.log.info(
-                "CSM REST response returned is:\n %s", response.json())
-            return response
+        self.log.info("Reading System Capacity...")
+        endpoint = self.config["capacity_endpoint"]
+        if endpoint_param is not None:
+            endpoint = self.config["capacity_endpoint"] + "/" + endpoint_param
+        self.log.info("Endpoint for reading capacity is %s", endpoint)
+        # Fetching api response
+        response = self.restapi.rest_call(request_type="get", endpoint=endpoint,
+                                          headers=headers)
+        return response
 
-        except BaseException as error:
-            self.log.error("%s %s: %s",
-                           const.EXCEPTION_ERROR,
-                           SystemCapacity.get_capacity_usage.__name__,
-                           error)
-            raise CTException(
-                err.CSM_REST_VERIFICATION_FAILED, error) from error
+    def get_degraded_capacity(self, auth_header=None):
+        """
+        Get degraded capacity from CSM
+        :return : Rest output response
+        """
+        response = self.get_capacity_usage(endpoint_param="bytecount", auth_header=auth_header)
+        return response
+
+    def verify_get_bytecount(self, auth_header=None, expected_response=HTTPStatus.OK):
+        """
+        Get and verify status code for degraded capacity from CSM
+        :return : Rest output response
+        """
+        response = self.get_degraded_capacity(auth_header=auth_header)
+        assert response.status_code == expected_response, "GET capacity Status code check failed."
+        response = response.json()
+        # NOTE: Incase capacity/status ['pool] response changes
+        # Add a conversion logic to support backward compatibity here.
+        mresponse = munchify(response)
+        return mresponse
+
+    def verify_get_pools_stats(self, auth_header=None, expected_response=HTTPStatus.OK):
+        """
+        Get and verify status code for  pool stats from CSM
+        :return : Rest output response
+        """
+        response = self.get_capacity_usage(auth_header=auth_header)
+        assert response.status_code == expected_response, "GET capacity Status code check failed."
+        response = response.json()['pools']
+        # NOTE: Incase capacity/status ['pool] response changes
+        # Add a conversion logic to support backward compatibity here.
+        mresponse = munchify(response)
+        return mresponse
+
+    def verify_get_profiles_stats(self, auth_header=None, expected_response=HTTPStatus.OK):
+        """
+        Get and verify status code for profile stats from CSM
+        :return : Rest output response
+        """
+        response = self.get_capacity_usage(auth_header=auth_header)
+        assert response.status_code == expected_response, "GET capacity Status code check failed."
+        response = response.json()['profiles']
+        # NOTE: Incase capacity/status ['pool] response changes
+        # Add a conversion logic to support backward compatibity here.
+        mresponse = munchify(response)
+        return mresponse
+
+    def verify_get_filesystem_stats(self, auth_header=None, expected_response=HTTPStatus.OK):
+        """
+        Get and verify status code for filesystem stats from CSM
+        :return : Rest output response
+        """
+        response = self.get_capacity_usage(auth_header=auth_header)
+        assert response.status_code == expected_response, "GET capacity Status code check failed."
+        response = response.json()['filesystem']
+        # NOTE: Incase capacity/status ['pool] response changes
+        # Add a conversion logic to support backward compatibity here.
+        mresponse = munchify(response)
+        return mresponse
+
+    def verify_get_nodes_stats(self, auth_header=None, expected_response=HTTPStatus.OK):
+        """
+        Get and verify status code for node stats from CSM
+        :return : Rest output response in munch format
+        """
+        response = self.get_capacity_usage(auth_header=auth_header)
+        assert response.status_code == expected_response, "GET capacity Status code check failed."
+        response = response.json()['nodes']
+        # NOTE: Incase capacity/status ['pool] response changes
+        # Add a conversion logic to support backward compatibity here.
+        mresponse = munchify(response)
+        return mresponse
 
     def parse_capacity_usage(self, expected_response=const.SUCCESS_STATUS):
         """Parse the Json response to extract used, available and total capacity
@@ -116,38 +181,14 @@ class SystemCapacity(RestTestLib):
                     return False
         return True
 
-    @RestTestLib.authenticate_and_login
-    def get_degraded_capacity(self, endpoint_param='bytecount'):
-        """
-        Get degraded capacity from CSM
-        :param endpoint_param: which endpoint to check for parameters
-        :return : Rest output response
-        """
-        self.log.info("Reading System Capacity...")
-        endpoint = self.config["degraded_cap_endpoint"]
-        if endpoint_param is not None:
-            endpoint = self.config["degraded_cap_endpoint"] + "/" + endpoint_param
-        self.log.info("Endpoint for reading capacity is %s", endpoint)
-        # Fetching api response
-        response = self.restapi.rest_call(request_type="get", endpoint=endpoint,
-                                          headers=self.headers)
-        return response
-
-    def get_degraded_capacity_custom_login(self, header, endpoint_param='bytecount'):
+    def get_degraded_capacity_custom_login(self, header):
         """
         Get degraded capacity from CSM
         :param header: header for authentication
         :param endpoint_param: which endpoint to check for parameters
         :return : Rest output response
         """
-        self.log.info("Reading System Capacity...")
-        endpoint = self.config["degraded_cap_endpoint"]
-        if endpoint_param is not None:
-            endpoint = self.config["degraded_cap_endpoint"] + "/" + endpoint_param
-        self.log.info("Endpoint for reading capacity is %s", endpoint)
-        # Fetching api response
-        response = self.restapi.rest_call(request_type="get", endpoint=endpoint,
-                                          headers=header)
+        response = self.get_capacity_usage(endpoint_param ="bytecount", auth_header=header)
         return response
 
     # pylint: disable=eval-used

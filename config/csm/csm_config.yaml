@@ -99,7 +99,7 @@ Restcall_LC:
   system_topology_endpoint: "/api/v2/system/topology"
   accounts_capacity_endpoint: "/api/v2/metrics/capacity/account"
   account_capacity_endpoint: "/api/v2/metrics/capacity/account/{}"
-  degraded_cap_endpoint: "/api/v2/capacity/status"
+  capacity_endpoint: "/api/v2/capacity/status"
   degraded_cap_keys: [['healthy', 'degraded', 'critical', 'damaged'],
                        ['stats','timestamp','date']]
   percentage_compare: 10
