@@ -346,7 +346,6 @@ class TestCsmLoad():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
-    @pytest.mark.skip("Skipped until CCORTX-30001 is planned")
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -373,7 +372,6 @@ class TestCsmLoad():
             rampup=test_cfg["rampup"],
             loop=test_cfg["loop"])
         assert result, "Errors reported in the Jmeter execution"
-
 
         self.log.info("Find all newly created users")
         resp = self.csm_obj.list_iam_users_rgw()
@@ -409,6 +407,15 @@ class TestCsmLoad():
         assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
         user_data = resp.json()
         self.log.info("Step 1: List user response : %s", user_data)
+        existing_user = len(user_data['users'])
+        self.log.info("Existing iam users count: %s", existing_user)
+        self.log.info("Max iam users : %s", rest_const.MAX_IAM_USERS)
+        new_iam_users = rest_const.MAX_IAM_USERS - existing_user
+        self.log.info("New users to create: %s", new_iam_users)
+
+        self.log.info("Step 2: Create users in parallel")
+        result = self.csm_obj.create_multi_iam_user_loaded(new_iam_users, existing_user)
+        assert result, "Unable to create users"
 
         resp = self.csm_obj.list_csm_users(HTTPStatus.OK, return_actual_response=True)
         existing_user = len(resp.json()['users'])
@@ -417,7 +424,6 @@ class TestCsmLoad():
         assert result, "Unable to create max users & list IAM"
         result = self.csm_obj.delete_multi_csm_user(test_cfg["total_users"], existing_user)
         assert result, "Unable to delete max users"
-        self.log.info("##### Test completed -  %s #####", test_case_name)
 
         self.log.info("Find all newly created users")
         resp = self.csm_obj.list_iam_users_rgw()
@@ -432,6 +438,7 @@ class TestCsmLoad():
             if user in current_users:
                 delete_user_list.remove(user)
         self.iam_users_created.extend(delete_user_list)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
     @pytest.mark.lc
