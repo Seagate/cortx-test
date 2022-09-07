@@ -1695,6 +1695,7 @@ class TestControlPodRestart:
         time.sleep(HA_CFG["common_params"]["10sec_delay"])
         LOGGER.info("Step 3: Restart %s control pods while creation/deletion of IAM users and "
                     "buckets is running in background.", self.repl_num)
+        event.set()
         for loop in range(self.repl_num):
             num_replica = self.repl_num - (loop + 1)
             LOGGER.info("Scaling down replica to %s", num_replica)
@@ -1709,10 +1710,10 @@ class TestControlPodRestart:
             time.sleep(HA_CFG["common_params"]["30sec_delay"])
             pod_list = self.node_master_list[0].get_all_pods(
                 pod_prefix=const.CONTROL_POD_NAME_PREFIX)
-            pod_name = pod_list[0]
             assert_utils.assert_equal(len(pod_list), num_replica,
                                       "Did not scale desired number of replica")
             if num_replica != 0:
+                pod_name = pod_list[0]
                 LOGGER.info("Step 3.1: Verify if IAM users %s are persistent across control "
                             "pods shutdown one by one", uids)
                 for user in uids:
@@ -1725,8 +1726,7 @@ class TestControlPodRestart:
                             "pods shutdown one by one", uids)
         LOGGER.info("Create back replicas %s", self.repl_num)
         cmd_rpl = cmd.KUBECTL_CREATE_REPLICA.format(self.repl_num, const.CONTROL_POD_NAME_PREFIX)
-        resp = self.node_master_list[0].execute_cmd(cmd=cmd_rpl, read_lines=True)
-        assert_utils.assert_true(resp[0], resp[1])
+        self.node_master_list[0].execute_cmd(cmd=cmd_rpl, read_lines=True)
         LOGGER.info("Wait for %s and Get the control pod list",
                     HA_CFG["common_params"]["60sec_delay"])
         time.sleep(HA_CFG["common_params"]["60sec_delay"])
@@ -1735,7 +1735,12 @@ class TestControlPodRestart:
         assert_utils.assert_equal(len(pod_list), self.repl_num, "Did not scale desired number of "
                                                                 "replica")
         LOGGER.info("Step 3: %s pod are restarted successfully", self.repl_num)
-        LOGGER.info("Step 4: Verify if IAM users %s are persistent after all control pods "
+        LOGGER.info("Step 4: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Cluster status is online.")
+        event.clear()
+        LOGGER.info("Step 5: Verify if IAM users %s are persistent after all control pods "
                     "restarted", uids)
         for user in uids:
             resp = self.rest_iam_user.get_iam_user(user)
@@ -1743,13 +1748,8 @@ class TestControlPodRestart:
                                       f"Couldn't find user {user} after control "
                                       "pods restart")
             LOGGER.info("User %s is persistent: %s", user, resp)
-        LOGGER.info("Step 4: Verified all IAM users %s are persistent after all control pods "
+        LOGGER.info("Step 5: Verified all IAM users %s are persistent after all control pods "
                     "restarted", uids)
-        LOGGER.info("Step 5: Check cluster status")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Cluster status is online.")
-        event.clear()
         LOGGER.info("Waiting for threads to join")
         thread1.join()
         thread2.join()
