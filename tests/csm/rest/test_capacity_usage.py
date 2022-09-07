@@ -37,6 +37,7 @@ from commons.params import LOG_DIR
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.csm.csm_interface import csm_api_factory
+from libs.csm.extensions.csm_ext import CSMExt
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3 import s3_misc
@@ -53,6 +54,7 @@ class TestSystemCapacity():
         cls.log = logging.getLogger(__name__)
         cls.log.info("[START] Setup Class")
         cls.csm_obj = csm_api_factory("rest")
+        cls.ext_obj = CSMExt(cls.csm_obj.master, cls.csm_obj.workers, cls.csm_obj.hlth_master)
         cls.log.info("Initiating Rest Client ...")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_capacity.yaml")
         cls.username = cls.csm_obj.config["csm_admin_user"]["username"]
@@ -94,11 +96,15 @@ class TestSystemCapacity():
                                  password=CMN_CFG["nodes"][0]["password"])
 
         cls.log.debug("Node object list : %s", cls.nd_obj)
-        cls.restore_method = RESTORE_SCALE_REPLICAS
+        cls.restore_method = None
+        cls.restore_list = []
         cls.deployment_name = []
         cls.failed_pod = []
         cls.deployment_backup = None
         cls.fail_cnt = 0
+        cls.restore_pod_data = None
+        cls.set_name = None
+        cls.num_replica = 0
         cls.deploy_list = cls.master.get_deployment_name(POD_NAME_PREFIX)
         cls.update_seconds = cls.csm_conf["update_seconds"]
         cls.log.info("Get the value of K for the given cluster.")
@@ -114,7 +120,6 @@ class TestSystemCapacity():
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.err_margin = (cls.nvalue/(cls.nvalue+cls.kvalue))*100 + 1
         cls.s3_cleanup = False
-        cls.restore_pod = True
         cls.log.info("[END] Setup Class")
 
     def setup_method(self):
@@ -173,15 +178,15 @@ class TestSystemCapacity():
         Teardowm method for deleting s3 account created in setup.
         """
         self.log.info("[START] Teardown Method")
-        if self.restore_pod:
-            self.log.info("Failed deployments : %s", self.failed_pod)
-            for deploy_name in self.failed_pod:
-                self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
-                resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+        if self.restore_pod_data:
+            self.log.info("Restore deleted data pods.")
+            for restore_pod_info in self.restore_list:
+                self.log.info("Restoring for list %s", restore_pod_info)
+                resp = self.ext_obj.restore_data_pod(restore_pod_info[0],
+                                                     restore_pod_info[1])
                 self.log.debug("Response: %s", resp)
-                assert resp[0], f"Failed to restore pod by {self.restore_method} way"
-                self.log.info("Successfully restored pod by %s way", self.restore_method)
-                self.log.info("[End] Restore deleted pods : %s", deploy_name)
+                assert resp, "Failed to restore pod"
+            self.log.info("Successfully restored data pod")
 
         if self.s3_cleanup:
             self.log.info("Deleting bucket %s & associated objects", self.bucket)
@@ -1106,6 +1111,35 @@ class TestSystemCapacity():
         self.log.info("[END] completed")
         self.deploy = True
 
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-45679')
+    def test_45679(self):
+        """
+        Verify GET cluster topology in degraded mode
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("[START] Failure loop")
+        for failure_cnt in range(1, self.kvalue + 1):
+            self.log.info("Starting failure loop for iteration %s ", failure_cnt)
+            self.log.info("Step 1: Shutdown data pod safely")
+            resp, self.set_name, self.num_replica = self.ext_obj.delete_data_pod()
+            self.log.debug("Response: %s", resp)
+            assert resp, "Failed to degrade cluster"
+            self.restore_list.append([self.set_name, self.num_replica])
+            self.log.info("Printing set and replica for %s iteration", failure_cnt)
+            self.log.info("Set name and replica number is: %s", self.restore_list)
+            self.restore_pod_data = True
+            self.log.info("[End] Successfully deleted pod")
+
+            self.log.info("Step 2: Send Get cluster topology")
+            resp = self.csm_obj.get_system_topology()
+            assert resp.status_code == HTTPStatus.OK, \
+                               "Status code check failed for get system topology"
+        self.log.info("[END] Failure loop")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
 class TestSystemCapacityFixedPlacement():
     """System Capacity Testsuite"""
@@ -1524,37 +1558,3 @@ class TestSystemCapacityFixedPlacement():
 
         self.deploy = True
 
-    @pytest.mark.lc
-    @pytest.mark.csmrest
-    @pytest.mark.cluster_user_ops
-    @pytest.mark.parallel
-    @pytest.mark.tags('TEST-45679')
-    def test_45679(self):
-        """
-        Verify GET cluster topology in degraded mode
-        """
-        test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("[START] Failure loop")
-        for failure_cnt in range(1, self.kvalue + 1):
-            self.log.info("Starting failure loop for iteration %s ", failure_cnt)
-            self.log.info("Step 1: Send Get cluster topology")
-            resp = self.csm_obj.get_system_topology()
-            assert resp.status_code == HTTPStatus.OK, \
-                               "Status code check failed for get system topology"
-            self.log.info("Step 2: Shutdown data pod safely")
-            deploy_name = self.deploy_list[failure_cnt]
-            self.log.info("[Start] Shutdown the data pod safely")
-            self.log.info("Deleting pod %s", deploy_name)
-            resp = self.csm_obj.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
-            assert not resp[0], f"Failed to delete pod {deploy_name}"
-            self.log.info("[End] Successfully deleted pod %s", deploy_name)
-
-            self.failed_pod.append(deploy_name)
-
-            self.log.info("Step 3: Send Get cluster topology")
-            resp = self.csm_obj.get_system_topology()
-            assert resp.status_code == HTTPStatus.OK, \
-                               "Status code check failed for get system topology"
-        self.log.info("[END] Failure loop")
-        self.log.info("##### Test ended -  %s #####", test_case_name)
