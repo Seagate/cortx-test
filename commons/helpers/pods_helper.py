@@ -156,11 +156,11 @@ class LogicalNode(Host):
             elif pod_name:
                 log.info("Getting set name and set type of pod %s", pod_name)
                 set_type, set_name = self.get_set_type_name(pod_name=pod_name)
-                deploy = set_name
             else:
                 return False, "Please provide atleast one of the parameters set_name, deploy or " \
                               "pod_name"
             if set_type == const.REPLICASET:
+                deploy = self.get_deployment_name(pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
                 log.info("Scaling %s replicas for deployment %s", num_replica, deploy)
                 cmd = commands.KUBECTL_CREATE_REPLICA.format(num_replica, deploy)
                 output = self.execute_cmd(cmd=cmd, read_lines=True)

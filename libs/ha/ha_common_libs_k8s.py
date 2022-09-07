@@ -1464,13 +1464,12 @@ class HAK8s:
                 event.clear()
                 if isinstance(event_set_clr, list):
                     event_set_clr[0] = True
-            if status_chk:
-                LOGGER.info("Check services status that were running on pod %s", pod)
-                resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
+            LOGGER.info("Check services status that were running on pod %s", pod)
+            resp = health_obj.get_pod_svc_status(pod_list=[pod], fail=True,
                                                      hostname=pod_info[pod]['hostname'])
-                LOGGER.debug("Response: %s", resp)
-                if not resp[0] or False in resp[1]:
-                    return False, pod_info
+            LOGGER.debug("Response: %s", resp)
+            if not resp[0] or False in resp[1]:
+                return False, pod_info
         LOGGER.info("Successfully deleted %s by %s method", delete_pods, down_method)
 
         LOGGER.info("Check cluster status")

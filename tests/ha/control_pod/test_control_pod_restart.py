@@ -82,7 +82,7 @@ class TestControlPodRestart:
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_node = cls.deploy = cls.restore_pod = None
-        cls.repl_num = cls.res_taint = cls.user_list = cls.set_name = None
+        cls.repl_num = cls.res_taint = cls.user_list = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.rest_iam_user = RestIamUser()
@@ -152,10 +152,6 @@ class TestControlPodRestart:
         This function will be invoked after each test function in the module.
         """
         LOGGER.info("STARTED: Teardown Operations.")
-        if self.s3_clean:
-            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
-            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-            assert_utils.assert_true(resp[0], resp[1])
         if self.res_taint:
             LOGGER.info("Untaint the node back which was tainted: %s", self.control_node)
             self.node_master_list[0].execute_cmd(cmd=cmd.K8S_UNTAINT_CTRL.format(self.control_node))
@@ -166,18 +162,11 @@ class TestControlPodRestart:
             resp = self.node_master_list[0].create_pod_replicas(num_replica=1,
                                                                 pod_name=pod_list[0])
             assert_utils.assert_true(resp[0], resp[1])
-        if self.restore_pod:
-            resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
-                                           restore_method=self.restore_method,
-                                           restore_params={
-                                               "deployment_name": self.deployment_name,
-                                               "deployment_backup":
-                                                   self.deployment_backup,
-                                               "num_replica": self.num_replica,
-                                               "set_name": self.set_name},
-                                           clstr_status=True)
-            assert_utils.assert_true(resp[0],
-                                     f"Failed to restore pod by {self.restore_method} way")
+        if self.s3_clean:
+            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
+            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+            if not resp[0]:
+                LOGGER.error("Failed to delete objects/buckets")
         if self.restore_node:
             LOGGER.info("Cleanup: Power on the %s down node.", self.control_node)
             resp = self.ha_obj.host_power_on(host=self.control_node)
@@ -1659,11 +1648,15 @@ class TestControlPodRestart:
         resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
                                                             pod_name=pod_name)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Prereq: Total number of control pods in the cluster are: %s",
-                    self.repl_num)
-        LOGGER.info("Get the control pod list")
+        LOGGER.info("Wait for %s and Get the control pod list",
+                    HA_CFG["common_params"]["60sec_delay"])
+        time.sleep(HA_CFG["common_params"]["60sec_delay"])
         pod_list = self.node_master_list[0].get_all_pods(
             pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_equal(len(pod_list), self.repl_num, "Did not scale desired number of "
+                                                                "replica")
+        LOGGER.info("Prereq: Total number of control pods in the cluster are: %s",
+                    self.repl_num)
         event = threading.Event()
         iam_output = Queue()
         bkt_output = Queue()
@@ -1702,55 +1695,64 @@ class TestControlPodRestart:
         time.sleep(HA_CFG["common_params"]["10sec_delay"])
         LOGGER.info("Step 3: Restart %s control pods while creation/deletion of IAM users and "
                     "buckets is running in background.", self.repl_num)
-        for count in range(HA_CFG["common_params"]["short_loop"]):
-            LOGGER.info("Restarting %s control pods for loop : %s with replica method",
-                        self.repl_num, count + 1)
-            for pod in pod_list:
-                LOGGER.info("Step 3.1: Shutting down %s pod", pod)
-                resp = self.ha_obj.delete_kpod_with_shutdown_methods(self.node_master_list[0],
-                                                                     self.hlth_master_list[0],
-                                                                     status_chk=False,
-                                                                     delete_pod=[pod])
-                assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-                pod_name = list(resp[1].keys())[0]
-                self.deployment_name = resp[1][pod_name]['deployment_name']
-                self.deployment_backup = None
-                self.restore_pod = True
-                self.restore_method = resp[1][pod_name]['method']
-                assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-                LOGGER.info("Step 3.1: %s pod is shutdown successfully and cluster status is as "
-                            "expected", pod)
-                LOGGER.info("Step 3.2: Verify if IAM users %s are persistent across control "
-                            "pods restart", uids)
+        for loop in range(self.repl_num):
+            num_replica = self.repl_num - (loop + 1)
+            LOGGER.info("Scaling down replica to %s", num_replica)
+            resp = self.node_master_list[0].create_pod_replicas(num_replica=num_replica,
+                                                                pod_name=pod_name)
+            if num_replica == 0:
+                assert_utils.assert_false(resp[0], resp[1])
+            else:
+                assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Wait for %s and Get the control pod list",
+                        HA_CFG["common_params"]["30sec_delay"])
+            time.sleep(HA_CFG["common_params"]["30sec_delay"])
+            pod_list = self.node_master_list[0].get_all_pods(
+                pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+            assert_utils.assert_equal(len(pod_list), num_replica,
+                                      "Did not scale desired number of replica")
+            if num_replica != 0:
+                LOGGER.info("Step 3.1: Verify if IAM users %s are persistent across control "
+                            "pods shutdown one by one", uids)
                 for user in uids:
                     resp = self.rest_iam_user.get_iam_user(user)
                     assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
-                                              f"Couldn't find user {user} after control pods restart")
+                                              f"Couldn't find user {user} after control "
+                                              "pods restart")
                     LOGGER.info("User %s is persistent: %s", user, resp)
-                LOGGER.info("Step 3.2: Verified all IAM users %s are persistent across control "
-                            "pods restart", uids)
-                LOGGER.info("Step 3.3: Restart shutdown pod %s and check cluster status", pod)
-                resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
-                                               restore_method=self.restore_method,
-                                               restore_params={
-                                                   "deployment_name": self.deployment_name,
-                                                   "deployment_backup":
-                                                       self.deployment_backup,
-                                                   "num_replica": 1,
-                                                   "set_name": self.set_name},
-                                               clstr_status=True)
-                LOGGER.debug("Response: %s", resp)
-                assert_utils.assert_true(resp[0],
-                                         f"Failed to restore pod by {self.restore_method} way")
-                self.restore_pod = False
-                LOGGER.info("Step 3.3: %s pod restarted and cluster is online", pod)
-        LOGGER.info("%s pod are restarted successfully in loop of %s", self.repl_num,
-                    HA_CFG["common_params"]["short_loop"])
+                LOGGER.info("Step 3.1: Verified all IAM users %s are persistent across control "
+                            "pods shutdown one by one", uids)
+        LOGGER.info("Create back replicas %s", self.repl_num)
+        resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
+                                                            pod_name=pod_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Wait for %s and Get the control pod list",
+                    HA_CFG["common_params"]["60sec_delay"])
+        time.sleep(HA_CFG["common_params"]["60sec_delay"])
+        pod_list = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_equal(len(pod_list), self.repl_num, "Did not scale desired number of "
+                                                                "replica")
+        LOGGER.info("Step 3: %s pod are restarted successfully", self.repl_num)
+        LOGGER.info("Step 4: Verify if IAM users %s are persistent after all control pods "
+                    "restarted", uids)
+        for user in uids:
+            resp = self.rest_iam_user.get_iam_user(user)
+            assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
+                                      f"Couldn't find user {user} after control "
+                                      "pods restart")
+            LOGGER.info("User %s is persistent: %s", user, resp)
+        LOGGER.info("Step 4: Verified all IAM users %s are persistent after all control pods "
+                    "restarted", uids)
+        LOGGER.info("Step 5: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 5: Cluster status is online.")
         event.clear()
         LOGGER.info("Waiting for threads to join")
         thread1.join()
         thread2.join()
-        LOGGER.info("Step 4: Verifying responses from background processes")
+        LOGGER.info("Step 6: Verifying responses from background processes")
         LOGGER.info("Checking background process for IAM user CRUDs")
         iam_resp = tuple()
         while len(iam_resp) != 4:
@@ -1788,9 +1790,9 @@ class TestControlPodRestart:
                                   "Failures observed in background process for bucket "
                                   f"CRUD operations. \nIn-flight Failed buckets: {exp_fail}"
                                   f"\nFailed buckets: {failed}")
-        LOGGER.info("Step 4: Successfully verified responses from background processes")
+        LOGGER.info("Step 6: Successfully verified responses from background processes")
         LOGGER.info(
-            "Step 5: Perform new IAM users(%s) and buckets(%s) creation/deletion in loop",
+            "Step 7: Perform new IAM users(%s) and buckets(%s) creation/deletion in loop",
             num_users, num_bkts)
         users_dict = dict()
         for i_i in created_users:
@@ -1835,7 +1837,7 @@ class TestControlPodRestart:
                                   f"\nFailed buckets: \nexp_fail: {exp_fail} and "
                                   f"\nfailed: {failed}")
         LOGGER.info(
-            "Step 5: Successfully created/deleted %s new IAM users and %s buckets in loop",
+            "Step 7: Successfully created/deleted %s new IAM users and %s buckets in loop",
             num_users, num_bkts)
         LOGGER.info("ENDED: Verify IAM user and bucket operations while N control pod "
                     "restart in loop")
