@@ -237,8 +237,8 @@ class DiskFailureRecoveryLib:
             if all_node_disks[disk][0] in pod_node_dict.keys():
                 for pod in pod_node_dict[all_node_disks[disk][0]]:
                     if all_node_disks[disk][2] in pod_disk_status[pod + '.'+ \
-                        common_const.CORTX_DATA_NODE_POSTFIX]:
-                        all_node_disks[disk][0] = pod + '.'+ common_const.CORTX_DATA_NODE_POSTFIX
+                        common_const.CORTX_DATA_SVC_POSTFIX]:
+                        all_node_disks[disk][0] = pod + '.'+ common_const.CORTX_DATA_SVC_POSTFIX
         LOGGER.info("Data pod disk mappings: %s", all_node_disks)
         return all_node_disks
 
