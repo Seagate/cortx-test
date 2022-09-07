@@ -21,7 +21,6 @@
 """
 import logging
 import secrets
-import time
 from string import Template
 from typing import AnyStr
 from abc import ABC, abstractmethod
@@ -293,60 +292,13 @@ class MotrCorruptionAdapter(InjectCorruption):
         cmd = self.emap_bldr.build(**kwargs)
         return cmd
 
-    # def inject_fault_k8s(self, oid: str, metadata_device: str):
-    #     """
-    #     Inject fault of type checksum or parity.
-    #     :param oid object id
-    #     :param metadata_device - metadata device path
-    #     :return boolean :true :if successful
-    #                       false: if error
-    #     """
-    #     resp = None
-    #     try:
-    #         retries = 1
-    #         success = False
-    #         while retries > 0:
-    #             try:
-    #                 data_pods = self.master_node_list[0].get_all_pods(POD_NAME_PREFIX)
-    #                 # pod_name = secrets.choice(data_pods)
-    #                 for pod_name in data_pods:
-    #                     motr_containers = self.master_node_list[0].get_container_of_pod(
-    #                         pod_name, MOTR_CONTAINER_PREFIX)
-    #                     LOGGER.debug("Inside.......... pod_name = %s", pod_name)
-    #                     emap_cmd = self.build_emap_command(
-    #                         fid=oid, selected_meta_dev=metadata_device
-    #                     )
-    #                     logging.debug("emap_cmd = %s", emap_cmd)
-    #                     if emap_cmd:
-    #                         resp = self.master_node_list[0].send_k8s_cmd(
-    #                             operation="exec",
-    #                             pod=pod_name,
-    #                             namespace=NAMESPACE,
-    #                             command_suffix=f"-c {motr_containers[0]} -- " f"{emap_cmd}",
-    #                             decode=True)
-    #                         logging.debug("resp = %s", resp)
-    #                         if resp:
-    #                             success = True
-    #                             break
-    #                         retries -= 1
-    #             except IOError as ex:
-    #                 LOGGER.exception("remaining retrying: %s ", retries)
-    #                 LOGGER.exception("Exception : %s ", ex)
-    #                 retries -= 1
-    #                 time.sleep(2)
-    #             if success:
-    #                 break
-    #         return True, resp
-    #     except IOError as ex:
-    #         LOGGER.exception("Exception occurred while injecting emap fault", exc_info=ex)
-    #         return False, resp
-
     def inject_fault_k8s(self, oid, metadata_device):
         """
         Inject fault of type checksum or parity.
         :param oid: checksum or parity
-        :return boolean :true :if successful
-                          false: if error
+        :param metadata_device: metadata device path
+        :return boolean :true, resp :if successful
+                          false, resp: if error
         """
         resp = ''
         try:

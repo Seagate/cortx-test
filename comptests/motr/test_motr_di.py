@@ -245,7 +245,7 @@ class TestCorruptDataDetection:
             corrupt_resp = self.emap_adapter_obj.inject_fault_k8s(
                 parity_gob_id_resp[0], metadata_device=metadata_path[0])
         logger.debug("corrupt emap response ~~~~~~~~~~~~~~~~ %s", corrupt_resp)
-        if "Newly Computed CRC" in corrupt_resp:
+        if "Newly Computed CRC" in corrupt_resp[1]:
             logger.debug("Corrupted the block ")
             assert_utils.assert_true(corrupt_resp[0], corrupt_resp[1])
         self.dtm_obj.process_restart_with_delay(
