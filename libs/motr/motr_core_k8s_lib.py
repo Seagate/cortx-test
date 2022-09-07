@@ -464,14 +464,16 @@ class MotrCoreK8s():
         log.info("MD5SUM Resp: %s", resp)
         chksum = resp.split()
         if flag:
-            if chksum[0] != chksum[1]:
+            if chksum[0] != chksum[2]:
                 log.info("Checksum is mismatched ")
-            assert_utils.assert_not_equal(chksum[0], chksum[1], f'{cmd}, Checksum did not match')
+            assert_utils.assert_not_equal(chksum[0], chksum[2],
+                                          f'{cmd}, Checksum did not match')
         else:
             assert_utils.assert_equal(chksum[0], chksum[2], f'Failed {cmd}, Checksum did not match')
 
             assert_utils.assert_not_in("ERROR" or "Error", resp,
-                                   f'"{cmd}" Failed, Please check the log')
+                                       f'"{cmd}" Failed, Please check the log')
+
 
     def get_md5sum(self, file, node):
         """
@@ -810,6 +812,7 @@ class MotrCoreK8s():
     def switch_to_degraded_mode(self):
         """
         This method kill's m0d process and make setup to degraded mode
+        returns boolean True and pod and container on which m0d was killed
         """
         process = common_const.PID_WATCH_LIST[0]
         pod_selected, container = self.master_node_list[0].select_random_pod_container(

@@ -60,8 +60,10 @@ DURABILITY_CFG_PATH = os.path.join(CONFIG_DIR, "durability_test.yaml")
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 MOTR_DI_ERR_INJ_LOCAL_PATH = os.path.join(SCRIPT_HOME, "scripts/server_scripts/error_injection.py")
-MOTR_DI_ERR_INJ_WRAP_LOCAL_PATH = os.path.join(SCRIPT_HOME, "scripts/server_scripts/wrapper_runner.py")
-MOTR_DI_ERR_INJ_FILE_LOCAL_PATH = os.path.join(SCRIPT_HOME, "scripts/server_scripts/metadata_parser.py")
+MOTR_DI_ERR_INJ_WRAP_LOCAL_PATH = os.path.join(SCRIPT_HOME,
+                                               "scripts/server_scripts/wrapper_runner.py")
+MOTR_DI_ERR_INJ_FILE_LOCAL_PATH = os.path.join(SCRIPT_HOME,
+                                               "scripts/server_scripts/metadata_parser.py")
 
 JIRA_TEST_LIST = 'test_lists.csv'
 CSM_CONFIG_PATH = os.path.join(CONFIG_DIR, 'csm', 'csm_config.yaml')

@@ -49,24 +49,11 @@ oid = args.corrupt_emap
 parse_size = args.parse_size
 offset = args.seek_offset
 
-md = metadata_parser.metadata_parser(filename)
+md = metadata_parser.MetadataParser(filename, parse_size)
 if not os.walk(filename):
     print('Failed: The path specified does not exist or Missing file path')
     sys.exit(1)
 md.read_metadata_file()
-out = md.emap_key_parser(parse_size)
-#print("Node Type Dict: {} ".format(record_type_dict))
-#print("FKVV Node Type Dict: {} ".format(obj1.fkvv_dict))
-#print("m0 btree types: {}".format(m0_btree_types_dict))
-#print("emap_key_dict Type Dict: {} ".format(out))
-#print("emap length: {}".format(obj1.get_emap_length()))
-#print("emap_key_dict_list Type Dict: {} ".format(emap_key_dict_list))
-#print("Running test List all emap key per devices")
-#emap_key_dict = md.emap_key_dict
-#md.CorruptEmap()
-#for i in pratik_metadata_parser.m0_btree_types_dict["M0_BT_EMAP_EM_MAPPING"] :
-#   md.emap_key_parser(i)
-#print("emap_key_dict: {}".format(md.emap_key_dict))
 
 if args.list_emap:
     md.ListAllEmapPerDevice()
