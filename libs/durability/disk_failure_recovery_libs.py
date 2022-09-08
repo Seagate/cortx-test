@@ -198,15 +198,10 @@ class DiskFailureRecoveryLib:
         return_dict = {}
         cntr = 1
         try:
-            cvgs = config_data['solution']['storage_sets'][0]['storage']
-            nodes = config_data['solution']['storage_sets'][0]['nodes']
-            for node in nodes:
-                for cvg in cvgs:
-                    cvg_name = cvg['name']
-                    data_devices = cvg['devices']['data']
-                    for data_device in data_devices:
-                        disk_path = data_device['path']
-                        val = [node, cvg_name, disk_path]
+            for node in config_data['solution']['storage_sets'][0]['nodes']:
+                for cvg in config_data['solution']['storage_sets'][0]['storage']:
+                    for data_device in cvg['devices']['data']:
+                        val = [node, cvg['name'], data_device['path']]
                         return_dict['disk' + str(cntr)] = val
                         cntr += 1
         except KeyError as err:
@@ -260,8 +255,7 @@ class DiskFailureRecoveryLib:
 
         LOGGER.info("No of disks to be failed: %s", disk_fail_cnt)
         failed_disks_dict = {}
-        resp = self.get_multi_pod_disks(master_obj, health_obj)
-        all_disks = resp
+        all_disks = self.get_multi_pod_disks(master_obj, health_obj)
         LOGGER.info("list of all disks: %s", all_disks)
         if on_diff_cvg:
             one_disk_per_cvg_dict = {}
