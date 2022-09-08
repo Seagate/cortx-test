@@ -244,20 +244,21 @@ class TestCorruptDataDetection:
                 corrupt_resp = self.emap_adapter_obj.inject_fault_k8s(
                     parity_gob_id_resp[0], metadata_device=metadata_path[0])
             logger.debug("corrupt emap response ~~~~~~~~~~~~~~~~ %s", corrupt_resp)
-            if "Newly Computed CRC" in corrupt_resp[1]:
-                logger.debug("Corrupted the block ")
-                assert_utils.assert_true(corrupt_resp[0], corrupt_resp[1])
-            pod = corrupt_resp[2]
-            self.dtm_obj.process_restart_with_delay(
-                master_node=self.master_node_list[0],
-                health_obj=self.health_obj,
-                check_proc_state=True,
-                process=const.PID_WATCH_LIST[0],
-                pod_prefix=pod,
-                container_prefix=const.MOTR_CONTAINER_PREFIX,
-                proc_restart_delay=5,
-                restart_cnt=1,
-            )
+            if corrupt_resp[0]:
+                if "Newly Computed CRC" in corrupt_resp[1].split():
+                    logger.debug("Corrupted the block ")
+                    assert_utils.assert_true(corrupt_resp[0], corrupt_resp[1])
+                pod = corrupt_resp[2]
+                self.dtm_obj.process_restart_with_delay(
+                    master_node=self.master_node_list[0],
+                    health_obj=self.health_obj,
+                    check_proc_state=True,
+                    process=const.PID_WATCH_LIST[0],
+                    pod_prefix=pod,
+                    container_prefix=const.MOTR_CONTAINER_PREFIX,
+                    proc_restart_delay=5,
+                    restart_cnt=1,
+                )
         return object_id_list, self.log_file_list
 
     def m0cat_md5sum_m0unlink(self, bsize_list, count_list, layout_ids, object_list, **kwargs):
