@@ -2327,10 +2327,10 @@ class TestCopyObjects:
         LOGGER.info("Step 7: Copy object to different bucket with condition "
                     "x-amz-copy-source-if-match (True) and x-amz-copy-source-if-unmodified-since ("
                     "True)")
-        self.handle_copy(self.bucket_name1, self.object_name1+"mpu1", self.bucket_name2,
+        self.handle_copy(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                          self.object_name2+"mpu_imt_umst", is_expect_err=False,
                          is_unmodified=post_date, is_match=etag)
-        copy_obj_di_check(self.bucket_name1, self.object_name1+"mpu1", self.bucket_name2,
+        copy_obj_di_check(self.bucket_name1, self.object_name1+"mpu", self.bucket_name2,
                           self.object_name2+"mpu_imt_umst", s3_testobj=self.s3_obj)
         LOGGER.info("Step 8: Copy object to different bucket with condition x-amz-copy-source-if-"
                     "match (False) and x-amz-copy-source-if-unmodified-since (True)")
