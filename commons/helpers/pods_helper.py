@@ -473,8 +473,8 @@ class LogicalNode(Host):
         :param: container_name: Name of the container where the file will be copied
         """
         try:
-            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name, \
-                container_path, container_name)
+            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name,
+                                                          container_path, container_name)
             output = self.execute_cmd(cmd=cmd, exc=False)
             return True, output
         except Exception as error:
@@ -520,7 +520,7 @@ class LogicalNode(Host):
         hostname = output[0].strip()
         return hostname
 
-    def kill_process_in_container(self, pod_name, container_name, process_name, **kwargs):
+    def kill_process_in_container(self, pod_name, container_name, process_name=None, **kwargs):
         """
         Kill specific process in container
         :param pod_name: Pod Name
@@ -530,12 +530,16 @@ class LogicalNode(Host):
         :return resp: String.
         """
         safe_kill = kwargs.get("safe_kill", False)
-        log.info("Getting PID of %s", process_name)
-        cmd = commands.PIDOF_CMD.format(process_name)
-        resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
-                                 command_suffix=f"-c {container_name} -- {cmd}",
-                                 decode=True)
-        log.info("Killing PID %s", resp)
+        pid = kwargs.get("pid", None)
+        if pid is None:
+            log.info("Getting PID of %s", process_name)
+            cmd = commands.PIDOF_CMD.format(process_name)
+            resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
+                                     command_suffix=f"-c {container_name} -- {cmd}",
+                                     decode=True)
+            log.info("Killing PID %s", resp)
+        else:
+            resp = pid
         if safe_kill:
             cmd = commands.SAFE_KILL_CMD.format(resp)
         else:
@@ -584,7 +588,7 @@ class LogicalNode(Host):
             return False, f"{file_path} does not exist on node {self.hostname}"
         log.info("Applying deployment from %s", file_path)
         resp = self.execute_cmd(cmd=commands.K8S_APPLY_YAML_CONFIG.format(file_path),
-                                read_lines=True,exc=False)
+                                read_lines=True, exc=False)
         return True, resp
 
     def select_random_pod_container(self, pod_prefix: str,

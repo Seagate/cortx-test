@@ -29,7 +29,6 @@ import secrets
 import sys
 import time
 from ast import literal_eval
-from http import HTTPStatus
 from time import perf_counter_ns
 
 import yaml
@@ -45,13 +44,12 @@ from commons.utils import config_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import run_local_cmd
 from config import CMN_CFG
-from config import CSM_REST_CFG
 from config import HA_CFG
 from config.s3 import S3_BLKBOX_CFG
 from config.s3 import S3_CFG
-from libs.csm.rest.csm_rest_core_lib import RestClient
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
+from libs.ha.ha_common_api_libs_k8s import HAK8sApiLibs
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
@@ -86,7 +84,7 @@ class HAK8s:
         self.parallel_ios = None
         self.system_random = secrets.SystemRandom()
         self.dir_path = common_const.K8S_SCRIPTS_PATH
-        self.restapi = RestClient(CSM_REST_CFG)
+        self.ha_api = HAK8sApiLibs()
 
     def polling_host(self,
                      max_timeout: int,
@@ -1786,23 +1784,7 @@ class HAK8s:
                     if not header:
                         user = self.mgnt_ops.create_account_users(nusers=1)
                     else:
-                        payload = {}
-                        name = f"ha_iam_{i_i}_{time.perf_counter_ns()}"
-                        payload.update({"uid": name})
-                        payload.update({"display_name": name})
-                        LOGGER.info("Creating IAM user request....")
-                        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
-                        resp = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
-                                                      headers=header)
-                        LOGGER.info("IAM user request successfully sent...")
-                        if resp.status_code == HTTPStatus.CREATED:
-                            resp = resp.json()
-                            user = dict()
-                            user.update({resp["keys"][0]["user"]: {
-                                "user_name": resp["keys"][0]["user"],
-                                "password": S3_CFG["CliConfig"]["s3_account"]["password"],
-                                "accesskey": resp["keys"][0]["access_key"],
-                                "secretkey": resp["keys"][0]["secret_key"]}})
+                        user = self.ha_api.create_iam_user_with_header(i_i, header)
                     if user is None:
                         if event.is_set():
                             exp_fail.append(user)
@@ -1821,9 +1803,21 @@ class HAK8s:
                 if len(del_users) > i_i:
                     LOGGER.debug("Deleting %s user", del_users[i_i])
                     user = del_users[i_i]
-                    resp = self.delete_s3_acc_buckets_objects({user: del_users_dict[user]})
-                    if not resp[0]:
-                        user_del_failed.append(user)
+                    try:
+                        if not header:
+                            resp = self.delete_s3_acc_buckets_objects({user: del_users_dict[user]})
+                        else:
+                            resp = self.ha_api.delete_iam_user_with_header(user, header)
+                        if not resp[0]:
+                            user_del_failed.append(user)
+                            if event.is_set():
+                                exp_fail.append(user)
+                            else:
+                                failed.append(user)
+                    except (req_exception.ConnectionError, req_exception.ConnectTimeout) as error:
+                        LOGGER.exception("Error: %s", error)
+                        if user not in user_del_failed:
+                            user_del_failed.append(user)
                         if event.is_set():
                             exp_fail.append(user)
                         else:
