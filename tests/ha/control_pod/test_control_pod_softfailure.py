@@ -32,7 +32,6 @@ from multiprocessing import Queue
 import pytest
 
 from commons import constants as const
-from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
@@ -40,7 +39,7 @@ from commons.utils import system_utils
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
-from libs.csm.rest.csm_rest_iamuser import RestIamUser
+from libs.csm.csm_interface import csm_api_factory
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
@@ -65,37 +64,29 @@ class TestControlPodSoftFailure:
         """
         LOGGER.info("STARTED: Setup Module operations.")
         cls.num_nodes = len(CMN_CFG["nodes"])
+        cls.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
+        cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
         cls.username = []
         cls.password = []
-        cls.host_master_list = []
         cls.node_master_list = []
-        cls.hlth_master_list = []
-        cls.host_worker_list = []
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
-        cls.s3_clean = cls.test_prefix = None
-        cls.no_control_pod = cls.deploy = cls.restore_pod = None
-        cls.repl_num = cls.res_taint = cls.user_list = None
+        cls.s3_clean = cls.test_prefix = cls.deply_name = cls.repl_num = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
-        cls.rest_iam_user = RestIamUser()
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
+        cls.csm_obj = csm_api_factory("rest")
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
             cls.username.append(CMN_CFG["nodes"][node]["username"])
             cls.password.append(CMN_CFG["nodes"][node]["password"])
             if CMN_CFG["nodes"][node]["node_type"] == "master":
-                cls.host_master_list.append(cls.host)
                 cls.node_master_list.append(LogicalNode(hostname=cls.host,
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
-                cls.hlth_master_list.append(Health(hostname=cls.host,
-                                                   username=cls.username[node],
-                                                   password=cls.password[node]))
             else:
-                cls.host_worker_list.append(cls.host)
                 cls.node_worker_list.append(LogicalNode(hostname=cls.host,
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
@@ -107,8 +98,6 @@ class TestControlPodSoftFailure:
         This function will be invoked prior to each test case.
         """
         LOGGER.info("STARTED: Setup Operations")
-        self.random_time = int(time.time())
-        self.no_control_pod = 2
         self.s3_clean = dict()
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -116,8 +105,18 @@ class TestControlPodSoftFailure:
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cluster status is online.")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        set_type, set_name = self.node_master_list[0].get_set_type_name(
+            pod_name=pod_list[0])
+        LOGGER.info("Got set_type = %s and set_name = %s.", set_type, set_name)
+        resp = self.node_master_list[0].get_num_replicas(set_type, set_name)
+        assert_utils.assert_true(resp[0], resp)
+        self.def_replica = int(resp[1])
         self.repl_num = int(len(self.node_worker_list) / 2 + 1)
-        LOGGER.info("Number of replicas can be scaled for this cluster are: %s", self.repl_num)
+        self.deply_name = self.node_master_list[0].get_deployment_name(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
+        LOGGER.info("Default replicas for %s is %s and can be scaled to: %s",
+                    const.CONTROL_POD_NAME_PREFIX, self.def_replica, self.repl_num)
         if not os.path.exists(self.test_dir_path):
             resp = system_utils.make_dirs(self.test_dir_path)
             LOGGER.info("Created path: %s", resp)
@@ -134,11 +133,9 @@ class TestControlPodSoftFailure:
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Revert back to default single control pod per cluster if more replicas are "
                     "created.")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
-        if len(pod_list) > 1:
-            resp = self.node_master_list[0].create_pod_replicas(num_replica=1,
-                                                                pod_name=pod_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
+        resp = self.node_master_list[0].create_pod_replicas(num_replica=self.def_replica,
+                                                            deploy=self.deply_name)
+        assert_utils.assert_true(resp[0], resp[1])
         if os.path.exists(self.test_dir_path):
             system_utils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
@@ -168,11 +165,10 @@ class TestControlPodSoftFailure:
         LOGGER.info("Step 1: Created IAM user and performed IOs before soft-failure.")
 
         num_users = HA_CFG["s3_operation_data"]["iam_users"]
+        header = self.csm_obj.get_headers(self.csm_user, self.csm_passwd)
         LOGGER.info("Scale replicas for control pod to %s", self.repl_num)
-        pod_name = self.node_master_list[0].get_all_pods(
-            pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
         resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
-                                                            pod_name=pod_name)
+                                                            deploy=self.deply_name)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Total number of control pods in the cluster are: %s", self.repl_num)
 
@@ -217,13 +213,12 @@ class TestControlPodSoftFailure:
                     "user and IAM user creation.")
         LOGGER.info("Step 3.1: Start IAM user creation in background during control pod "
                     "soft-failure.")
-        args = {'user_crud': True, 'num_users': num_users, 'output': iam_output}
+        args = {'user_crud': True, 'num_users': num_users, 'output': iam_output, 'header': header}
         thr_iam = threading.Thread(target=self.ha_obj.iam_bucket_cruds, args=(event,), kwargs=args)
         thr_iam.daemon = True  # Daemonize thread
         thr_iam.start()
-
         LOGGER.info("Step 3.1: Start continuous DELETEs in background on random %s buckets",
-                    del_bucket)
+        del_bucket)
         bucket_list = s3_data.keys()
         get_random_buck = self.system_random.sample(bucket_list, del_bucket)
         args = {'test_prefix': test_prefix_del, 'test_dir_path': self.test_dir_path,
@@ -251,7 +246,7 @@ class TestControlPodSoftFailure:
                 'output': output_rd, 'setup_s3bench': False}
         thread_rd = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                      kwargs=args)
-        thread_rd.daemon = True  # Daemonize thread
+        thread_rd.daemon = True	 # Daemonize thread
         thread_rd.start()
         LOGGER.info("Step 3.3: Started READs and verify on the written data in background")
         LOGGER.info("Step 3: Started independent background threads for IOs on already created "
@@ -260,17 +255,24 @@ class TestControlPodSoftFailure:
                     HA_CFG["common_params"]["30sec_delay"])
         time.sleep(HA_CFG["common_params"]["30sec_delay"])
 
-        LOGGER.info("Step 4: Perform soft-failure of %s control pods in loop", self.repl_num - 1)
+        LOGGER.info("Step 4: Perform soft-failure of %s control pods in loop and check cluster "
+                    "has failures", self.repl_num - 1)
         LOGGER.info("Get the list of control pods")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        event.set()
         for pod in pod_list:
-            resp = self.node_master_list[0].kill_process_in_container(pod, const.CORTX_CSM_POD,
-                                                                      "csm_agent")
-            LOGGER.info("Kill PID of csm_agent in %s resp = %s", pod, resp)
-            # LOGGER.info("Step 3: Check cluster status has FAILED state.")
-            # resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-            # assert_utils.assert_true(resp[0], resp)
-            # LOGGER.info("Step 3: Checked cluster is in degraded state")
+            self.node_master_list[0].kill_process_in_container(pod_name=pod,
+                                                               container_name=const.CORTX_CSM_POD,
+                                                               process_name=const.CSM_AGENT_PRC,
+                                                               safe_kill=True)
+            LOGGER.info("Step 4.1: Check cluster has failures.")
+            resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+            assert_utils.assert_false(resp[0], resp)
+            LOGGER.info("Step 4.1: Checked cluster has failures.")
+        LOGGER.info("Step 4: Performed soft-failure of %s control pods in loop and checked cluster "
+                    "has failures", self.repl_num - 1)
+
+        time.sleep(15)
         event.clear()
         LOGGER.info("Waiting for background threads to join")
         thread_wri.join()
@@ -285,12 +287,11 @@ class TestControlPodSoftFailure:
         if not iam_resp:
             assert_utils.assert_true(False, "Background process failed to do IAM user CRUD "
                                             "operations")
-        exp_fail = iam_resp[0]
         failed = iam_resp[1]
         created_users = iam_resp[3]
-        if failed or exp_fail:
-            assert_utils.assert_true(False, "No failure expected in IAM user creation. \nFailed "
-                                            f"buckets: {failed} or {exp_fail}")
+        if failed:
+            assert_utils.assert_true(False, "No IAM user creation expected before or after "
+                                            f"soft-failure: {failed}")
         if created_users:
             for i_i in created_users:
                 self.s3_clean.update(i_i)
@@ -349,5 +350,5 @@ class TestControlPodSoftFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Created IAM user and performed IOs after soft-failure.")
 
-        LOGGER.info("STARTED: Verify IAM user creation and IOs on already created IAM user while "
+        LOGGER.info("ENDED: Verify IAM user creation and IOs on already created IAM user while "
                     "performing control pod soft-failure in loop one by one for N control pods.")

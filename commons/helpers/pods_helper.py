@@ -520,21 +520,26 @@ class LogicalNode(Host):
         hostname = output[0].strip()
         return hostname
 
-    def kill_process_in_container(self, pod_name, container_name, process_name):
+    def kill_process_in_container(self, pod_name, container_name, process_name, **kwargs):
         """
         Kill specific process in container
         :param pod_name: Pod Name
         :param container_name: Container name
         :param process_name: Process name to be killed
+        :keyword safe_kill: To perform safe kill of process PID
         :return resp: String.
         """
+        safe_kill = kwargs.get("safe_kill", False)
         log.info("Getting PID of %s", process_name)
         cmd = commands.PIDOF_CMD.format(process_name)
         resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
                                  command_suffix=f"-c {container_name} -- {cmd}",
                                  decode=True)
         log.info("Killing PID %s", resp)
-        cmd = commands.KILL_CMD.format(resp)
+        if safe_kill:
+            cmd = commands.SAFE_KILL_CMD.format(resp)
+        else:
+            cmd = commands.KILL_CMD.format(resp)
         resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
                                  command_suffix=f"-c {container_name} -- {cmd}",
                                  decode=True)

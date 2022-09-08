@@ -29,6 +29,7 @@ import secrets
 import sys
 import time
 from ast import literal_eval
+from http import HTTPStatus
 from time import perf_counter_ns
 
 import yaml
@@ -43,9 +44,11 @@ from commons.utils import config_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import run_local_cmd
 from config import CMN_CFG
+from config import CSM_REST_CFG
 from config import HA_CFG
 from config.s3 import S3_BLKBOX_CFG
 from config.s3 import S3_CFG
+from libs.csm.rest.csm_rest_core_lib import RestClient
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -82,6 +85,7 @@ class HAK8s:
         self.parallel_ios = None
         self.system_random = secrets.SystemRandom()
         self.dir_path = common_const.K8S_SCRIPTS_PATH
+        self.restapi = RestClient(CSM_REST_CFG)
 
     def polling_host(self,
                      max_timeout: int,
@@ -1752,7 +1756,7 @@ class HAK8s:
         return True, f"Successfully failed over pods {list(pod_yaml.keys())}"
 
     def iam_bucket_cruds(self, event, s3_obj=None, user_crud=False, num_users=None, bkt_crud=False,
-                         num_bkts=None, del_users_dict=None, output=None):
+                         num_bkts=None, del_users_dict=None, output=None, **kwargs):
         """
         Function to perform iam user and bucket crud operations in loop (To be used for background)
         :param event: event to intimate thread about main thread operations
@@ -1765,6 +1769,7 @@ class HAK8s:
         :param output: Output queue in which results should be put
         :return: Queue containing output lists
         """
+        header = kwargs.get("header", False)
         exp_fail = list()
         failed = list()
         created_users = list()
@@ -1777,7 +1782,26 @@ class HAK8s:
                 try:
                     LOGGER.debug("Creating %s user", i_i)
                     user = None
-                    user = self.mgnt_ops.create_account_users(nusers=1)
+                    if not header:
+                        user = self.mgnt_ops.create_account_users(nusers=1)
+                    else:
+                        payload = {}
+                        name = f"ha_iam_{i_i}_{time.perf_counter_ns()}"
+                        payload.update({"uid": name})
+                        payload.update({"display_name": name})
+                        LOGGER.info("Creating IAM user request....")
+                        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
+                        resp = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
+                                                      headers=header)
+                        LOGGER.info("IAM user request successfully sent...")
+                        if resp.status_code == HTTPStatus.CREATED:
+                            resp = resp.json()
+                            user = dict()
+                            user.update({resp["keys"][0]["user"]: {
+                                "user_name": resp["keys"][0]["user"],
+                                "password": S3_CFG["CliConfig"]["s3_account"]["password"],
+                                "accesskey": resp["keys"][0]["access_key"],
+                                "secretkey": resp["keys"][0]["secret_key"]}})
                     if user is None:
                         if event.is_set():
                             exp_fail.append(user)
