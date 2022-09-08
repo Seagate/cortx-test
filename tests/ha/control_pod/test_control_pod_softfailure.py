@@ -164,7 +164,7 @@ class TestControlPodSoftFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Created IAM user and performed IOs before soft-failure.")
 
-        num_users = HA_CFG["s3_operation_data"]["iam_users"]
+        num_users = HA_CFG["s3_operation_data"]["iam_users"] + 50
         header = self.csm_obj.get_headers(self.csm_user, self.csm_passwd)
         LOGGER.info("Scale replicas for control pod to %s", self.repl_num)
         resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
@@ -173,18 +173,17 @@ class TestControlPodSoftFailure:
         LOGGER.info("Total number of control pods in the cluster are: %s", self.repl_num)
 
         LOGGER.info("Step 2: Perform WRITEs for background READs and DELETEs")
-        wr_bucket = HA_CFG["s3_bucket_data"]["no_buckets_for_deg_deletes"]
+        wr_bucket = HA_CFG["s3_bucket_data"]["degraded_bucket"]
         LOGGER.info("Step 2.1: Perform WRITEs with variable object sizes on %s buckets "
                     "for parallel DELETEs.", wr_bucket)
         wr_output = Queue()
         del_output = Queue()
         iam_output = Queue()
         event = threading.Event()
-        remaining_bkt = HA_CFG["s3_bucket_data"]["no_bck_writes"]
-        del_bucket = wr_bucket - remaining_bkt
         test_prefix_del = 'test-45498-delete'
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
+        existing_bkt = len(s3_test_obj.bucket_list()[1])
         LOGGER.info("Create %s buckets and put variable size objects.", wr_bucket)
         args = {'test_prefix': test_prefix_del, 'test_dir_path': self.test_dir_path,
                 'skipget': True, 'skipdel': True, 'bkts_to_wr': wr_bucket, 'output': wr_output}
@@ -192,10 +191,9 @@ class TestControlPodSoftFailure:
         wr_resp = tuple()
         while len(wr_resp) != 3:
             wr_resp = wr_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        buckets = s3_test_obj.bucket_list()[1]
-        assert_utils.assert_equal(len(buckets), wr_bucket, f"Failed to create {wr_bucket} number "
-                                                           f"of buckets. Created {len(buckets)} "
-                                                           "number of buckets")
+        buckets = len(s3_test_obj.bucket_list()[1]) - existing_bkt
+        assert_utils.assert_equal(buckets, wr_bucket, f"Failed to create {wr_bucket} number "
+                                                      f"of buckets. Created {buckets} buckets")
         s3_data = wr_resp[0]
         LOGGER.info("Step 2.1: Successfully performed WRITEs with variable object sizes on %s "
                     "buckets for parallel DELETEs.", wr_bucket)
@@ -218,16 +216,16 @@ class TestControlPodSoftFailure:
         thr_iam.daemon = True  # Daemonize thread
         thr_iam.start()
         LOGGER.info("Step 3.1: Start continuous DELETEs in background on random %s buckets",
-        del_bucket)
+                    wr_bucket)
         bucket_list = s3_data.keys()
-        get_random_buck = self.system_random.sample(bucket_list, del_bucket)
+        get_random_buck = self.system_random.sample(bucket_list, wr_bucket)
         args = {'test_prefix': test_prefix_del, 'test_dir_path': self.test_dir_path,
                 'skipput': True, 'skipget': True, 'bkt_list': get_random_buck, 'output': del_output}
         thread_del = threading.Thread(target=self.ha_obj.put_get_delete,
                                       args=(event, s3_test_obj,), kwargs=args)
         thread_del.daemon = True  # Daemonize thread
         thread_del.start()
-        LOGGER.info("Step 3.1: Started DELETEs in background for %s buckets", del_bucket)
+        LOGGER.info("Step 3.1: Started DELETEs in background for %s buckets", wr_bucket)
         LOGGER.info("Step 3.2: Start WRITEs with variable object sizes in background")
         test_prefix_write = 'test-45498-write'
         output_wr = Queue()
@@ -305,39 +303,33 @@ class TestControlPodSoftFailure:
         event_del_bkt = del_resp[0]
         fail_del_bkt = del_resp[1]
         assert_utils.assert_false(len(fail_del_bkt) or len(event_del_bkt),
-                                  "Bucket deletion failed in server pod restart process "
+                                  "Bucket deletion failed in control pod soft-failure process "
                                   f"{fail_del_bkt} {event_del_bkt}")
-        rem_bkts_aftr_del = s3_test_obj.bucket_list()[1]
-        assert_utils.assert_equals(len(rem_bkts_aftr_del), wr_bucket - del_bucket,
-                                   "All buckets are expected to be deleted while server pod "
-                                   "restarted")
         LOGGER.info("Step 5.2: Verified status for In-flight DELETEs")
         LOGGER.info("Step 5.3: Verify status for In-flight WRITEs")
-        responses_wr = dict()
-        while len(responses_wr) != 2:
-            responses_wr = output_wr.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        pass_logs = list(x[1] for x in responses_wr["pass_res"])
-        fail_logs = list(x[1] for x in responses_wr["fail_res"])
-        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), "WRITEs before and after pod deletion are "
-                                                "expected to pass.Logs which contain failures:"
-                                                f"{resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
-        assert_utils.assert_false(len(resp[1]), "In-flight WRITEs Logs which contain failures: "
-                                                f"{resp[1]}")
+        wr_resp = dict()
+        while len(wr_resp) != 2:
+            wr_resp = output_wr.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in wr_resp["pass_res"])
+        fail_logs = list(x[1] for x in wr_resp["fail_res"])
+        LOGGER.debug("Logs during control pod soft-failure: %s\nLogs after "
+                     "control pod soft-failure: %s", pass_logs, fail_logs)
+        all_logs = pass_logs + fail_logs
+        resp = self.ha_obj.check_s3bench_log(file_paths=all_logs)
+        assert_utils.assert_false(len(resp[1]), f"WRITEs which contain failures: {resp[1]}")
+
         LOGGER.info("Step 5.3: Verified status for In-flight WRITEs")
         LOGGER.info("Step 5.4: Verify status for In-flight READs/Verify DI")
-        responses_rd = dict()
-        while len(responses_rd) != 2:
-            responses_rd = output_rd.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-        pass_logs = list(x[1] for x in responses_rd["pass_res"])
-        fail_logs = list(x[1] for x in responses_rd["fail_res"])
-        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), "READs/VerifyDI logs which contain failures:"
-                                                f"{resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs)
-        assert_utils.assert_false(len(resp[1]), "READs/VerifyDI Logs which contain failures: "
-                                                f"{resp[1]}")
+        rd_resp = dict()
+        while len(rd_resp) != 2:
+            rd_resp = output_rd.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        pass_logs = list(x[1] for x in rd_resp["pass_res"])
+        fail_logs = list(x[1] for x in rd_resp["fail_res"])
+        LOGGER.debug("Logs during control pod soft-failure: %s\nLogs after "
+                     "control pod soft-failure: %s", pass_logs, fail_logs)
+        all_logs = pass_logs + fail_logs
+        resp = self.ha_obj.check_s3bench_log(file_paths=all_logs)
+        assert_utils.assert_false(len(resp[1]), f"READs/VerifyDI which contain failures: {resp[1]}")
         LOGGER.info("Step 5.4: Verified status for In-flight READs/Verify DI")
         LOGGER.info("Step 5: Verifying responses from background processes")
 
@@ -346,7 +338,8 @@ class TestControlPodSoftFailure:
         self.test_prefix = 'test-45498-1'
         self.s3_clean.update(users)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nclients=2, nsamples=2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Created IAM user and performed IOs after soft-failure.")
 

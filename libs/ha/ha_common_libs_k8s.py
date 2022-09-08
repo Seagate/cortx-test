@@ -47,6 +47,7 @@ from config import CMN_CFG
 from config import CSM_REST_CFG
 from config import HA_CFG
 from config.s3 import S3_BLKBOX_CFG
+from requests import exceptions as req_exception
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_core_lib import RestClient
 from libs.csm.rest.csm_rest_system_health import SystemHealth
@@ -1809,7 +1810,8 @@ class HAK8s:
                             failed.append(user)
                     else:
                         created_users.append(user)
-                except CTException as error:
+                except (CTException, req_exception.ConnectionError, req_exception.ConnectTimeout) \
+                        as error:
                     LOGGER.exception("Error: %s", error)
                     if event.is_set():
                         exp_fail.append(user)
