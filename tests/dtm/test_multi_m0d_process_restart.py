@@ -19,7 +19,7 @@
 #
 
 """
-Test suite for testing Multiple Process Restart with DTM enabled.
+Test suite for testing Multiple m0d Process Restart with DTM enabled.
 """
 import logging
 import multiprocessing
@@ -303,3 +303,131 @@ class TestMultiProcessRestart:
 
         self.test_completed = True
         self.log.info("ENDED: Verify delete after multiple m0d restart using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-4XXXX")
+    def test_delete_after_same_m0d_restart_multiple_times(self):
+        """Verify delete after same m0d restart multiple times using pkill"""
+        self.log.info("STARTED: Verify delete after same m0d restart multiple times using pkill")
+        log_file_prefix = 'test-4XXXX'
+        que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Create bucket for IO operations")
+        self.s3_test_obj.create_bucket(self.bucket_name)
+
+        self.log.info("Step 2: Perform write Operations")
+        self.dtm_obj.perform_write_op(bucket_prefix=self.bucket_name,
+                                      object_prefix=self.object_name,
+                                      no_of_clients=self.test_cfg['clients'],
+                                      no_of_samples=self.test_cfg['samples'],
+                                      obj_size=self.test_cfg['size'],
+                                      log_file_prefix=log_file_prefix,
+                                      queue=que)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+        self.log.info("Step 2: sleeping for %s", self.delay)
+        time.sleep(self.delay)
+
+        self.log.info("Step 3: Perform same m0d Process Restarts multiple times")
+        resp_proc = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True,
+            restart_cnt=10,
+            specific_pod=True)
+
+        # Assert if process restart failed
+        assert_utils.assert_true(resp_proc, "Failure observed during process restart/recovery")
+
+        self.log.info("Step 4: Perform read, validate and delete Operations on data written in "
+                      "Step 1")
+        self.dtm_obj.perform_ops(workload_info, que, False, False, False)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.test_completed = True
+        self.log.info("ENDED: Verify delete after same m0d restart multiple times using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-4xxxx")
+    def test_continuous_write_read_during_same_m0d_restart_multiple_times(self):
+        """Verify continuous WRITE and READ during same m0d restart multiple times using pkill"""
+        self.log.info("STARTED: Verify continuous WRITE and READ during same m0d restart multiple "
+                      "times "
+                      "using pkill")
+        log_file_prefix = 'test-4xxxx'
+        que_1 = multiprocessing.Queue()
+        que_2 = multiprocessing.Queue()
+        bucket_list = []
+
+        self.log.info("Step 1: Create %s buckets for write operation during m0d restart",
+                      self.test_cfg['loop_count'])
+        for each in range(self.test_cfg['loop_count']):
+            bucket = f'{self.bucket_name}-{each}'
+            self.s3_test_obj.create_bucket(bucket)
+            bucket_list.append(bucket)
+        self.log.info("Step 2a: Start write Operation:")
+        self.dtm_obj.perform_write_op(bucket_prefix=self.bucket_name,
+                                      object_prefix=self.object_name,
+                                      no_of_clients=self.test_cfg['clients'],
+                                      no_of_samples=self.test_cfg['samples'],
+                                      obj_size=self.test_cfg['size'],
+                                      log_file_prefix=log_file_prefix, queue=que_1)
+        resp = que_1.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info_write = resp[1]
+        self.log.info("Step 2a: Start READ Operations in loop in background for data written in "
+                      "step 1:")
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
+                                               args=(workload_info_write, que_1, False, True,
+                                                     True, self.test_cfg['loop_count']))
+        proc_read_op.start()
+        self.log.info("Step 2b: Start write Operations in loop in background:")
+        args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
+                'no_of_clients': self.test_cfg['clients'],
+                'no_of_samples': self.test_cfg['samples'], 'log_file_prefix': log_file_prefix,
+                'queue': que_2, 'loop': self.test_cfg['loop_count'], 'created_bucket': bucket_list}
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
+        proc_write_op.start()
+
+        time.sleep(self.delay)
+        self.log.info("Step 3 : Perform Single m0d Process Restart During Write Operations")
+        resp_proc = self.dtm_obj.process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True,
+            proc_restart_delay=self.test_cfg['m0d_restart_continuous_ios_delay'],
+            restart_cnt=10,
+            specific_pod=True)
+
+        self.log.info("Step 4a: Wait for READ Operation to complete.")
+        if proc_read_op.is_alive():
+            proc_read_op.join()
+        resp = que_1.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 4b: Wait for Write Operation to complete.")
+        if proc_write_op.is_alive():
+            proc_write_op.join()
+        resp = que_2.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        # assert if failure in process restart
+        assert_utils.assert_true(resp_proc, "Failure observed during process restart/recovery")
+
+        workload_info = resp[1]
+        self.log.info("Step 5: Perform Read-Validate on data written in Step 2b")
+        self.dtm_obj.perform_ops(workload_info, que_2, False, True, True)
+        resp = que_2.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.test_completed = True
+        self.log.info("ENDED: Verify continuous WRITE and READ during same m0d restart multiple "
+                      "times using pkill")
