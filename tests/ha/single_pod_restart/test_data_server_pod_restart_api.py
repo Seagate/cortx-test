@@ -406,8 +406,8 @@ class TestDataServerPodRestartAPI:
                                                "deployment_name": self.pod_dict.get(pod_prefix)[-2],
                                                "deployment_backup": self.deployment_backup,
                                                "num_replica": self.pod_dict.get(pod_prefix)[2],
-                                               "set_name": self.pod_dict.get(pod_prefix)[1]})
-            #    clstr_status=True)
+                                               "set_name": self.pod_dict.get(pod_prefix)[1]},
+                                           clstr_status=True)
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
