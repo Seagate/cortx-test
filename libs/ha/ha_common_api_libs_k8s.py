@@ -23,17 +23,12 @@ HA common utility methods for API tests
 import logging
 import os
 import random
-import time
-from http import HTTPStatus
 
 from commons import constants as common_const
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
-from config import CSM_REST_CFG
 from config import HA_CFG
-from config.s3 import S3_CFG
-from libs.csm.rest.csm_rest_core_lib import RestClient
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.ha.ha_common_libs_k8s import HAK8s
 
@@ -49,7 +44,6 @@ class HAK8sApiLibs:
         self.system_health = SystemHealth()
         self.ha_obj = HAK8s()
         self.dir_path = common_const.K8S_SCRIPTS_PATH
-        self.restapi = RestClient(CSM_REST_CFG)
 
     # pylint: disable-msg=too-many-locals
     @staticmethod
@@ -301,45 +295,3 @@ class HAK8sApiLibs:
         LOGGER.debug("Fail count is : %s", fail_count)
         return not fail_count, checksums, exp_fail_count if not background else \
             queue.put((not fail_count, checksums, exp_fail_count))
-
-    def create_iam_user_with_header(self, i_d, header):
-        """
-        Function create IAM user with give header info.
-        :param i_d: Int count number for IAM user name creation
-        :param header: Existing header to use for IAM user creation post request
-        :return: None if IAM user REST req fails or Dict response for IAM user successful creation
-        """
-        user = None
-        payload = {}
-        name = f"ha_iam_{i_d}_{time.perf_counter_ns()}"
-        payload.update({"uid": name})
-        payload.update({"display_name": name})
-        LOGGER.info("Creating IAM user request....")
-        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
-        resp = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
-                                      headers=header)
-        LOGGER.info("IAM user request successfully sent...")
-        if resp.status_code == HTTPStatus.CREATED:
-            resp = resp.json()
-            user = dict()
-            user.update({resp["keys"][0]["user"]: {
-                "user_name": resp["keys"][0]["user"],
-                "password": S3_CFG["CliConfig"]["s3_account"]["password"],
-                "accesskey": resp["keys"][0]["access_key"],
-                "secretkey": resp["keys"][0]["secret_key"]}})
-        return user
-
-    def delete_iam_user_with_header(self, user, header):
-        """
-        Function delete IAM user with give header info.
-        :param user: IAM user name to be deleted
-        :param header: Existing header to use for IAM user delete request
-        :return: Tuple
-        """
-        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + user
-        LOGGER.info("Sending Delete IAM user request...")
-        response = self.restapi.rest_call("delete", endpoint=endpoint, headers=header)
-        if response.status_code == HTTPStatus.OK:
-            return True, "Deleted user successfully"
-        LOGGER.debug(response.json())
-        return False, response.json()["message"]

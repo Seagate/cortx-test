@@ -186,7 +186,7 @@ class TestControlPodSoftFailure:
         thr_iam.daemon = True  # Daemonize thread
         self.test_io_prefix = 'test-45498-io'
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_io_prefix,
-                'nclients': 1, 'nsamples': 8, 'output': io_output, 'setup_s3bench': False}
+                'nclients': 1, 'nsamples': 5, 'output': io_output, 'setup_s3bench': False}
         LOGGER.info("Step 2.2: Start IOs in background during control pod soft-failure.")
         io_thread = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                      kwargs=args)
