@@ -139,15 +139,15 @@ class RestParallelOps(RestTestLib):
         self.counter = 0
         return result
 
-    def create_multi_iam_user_set_quota(self, users:int, existing_user:int=1):
+    def create_multi_iam_user_set_quota_delete(self, users:int, existing_user:int=1):
         """
-        Create count number of IAM in parallel and set there Quota using jmeter libs
+        Create count number of IAM in parallel and set there Quota then Delete using jmeter libs
         :param users: Number of users to be created
         """
         if users is None:
             user_limit = rest_const.MAX_IAM_USERS
             users = user_limit - existing_user
-        jmx_file = "CSM_Create_N_IAM_Set_Quota.jmx"
+        jmx_file = "CSM_Create_N_IAM_Set_Quota_Delete.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
         request_limit = self.get_request_usage_limit()
         result = self.execute_max_iam_user_loop(jmx_file, users, request_limit,

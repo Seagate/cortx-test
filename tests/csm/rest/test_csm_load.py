@@ -346,8 +346,8 @@ class TestCsmLoad():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
-    #@pytest.mark.skip("Skipped until CCORTX-30001 is planned")
-    #@pytest.mark.skip("Skipped until CORTX-34103 is fixed")
+    @pytest.mark.skip("Skipped until CCORTX-30001 is planned")
+    @pytest.mark.skip("Skipped until CORTX-34103 is fixed")
     @pytest.mark.lc
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -371,14 +371,9 @@ class TestCsmLoad():
         self.log.info("New users to create: %s", new_iam_users)
 
         self.log.info("Step 2: Create IAM users in parallel with Set Quota")
-        result = self.csm_obj.create_multi_iam_user_set_quota(new_iam_users, existing_user)
+        result = self.csm_obj.create_multi_iam_user_set_quota_delete(new_iam_users, existing_user)
         assert result, "Unable to create users"
 
-        # Try to Delete all created users in parallel
-        result = self.csm_obj.delete_multi_iam_user_loaded()
-        assert result, "Unable to delete users"
-
-        # in case deletion failed in parallel
         self.log.info("Find all newly created users")
         resp = self.csm_obj.list_iam_users_rgw()
         assert resp.status_code == HTTPStatus.OK, "List IAM user failed."
