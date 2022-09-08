@@ -35,8 +35,6 @@ import pytest
 
 from commons import constants as const
 from commons import commands as cmd
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
@@ -172,6 +170,13 @@ class TestControlPodRestart:
         if self.res_taint:
             LOGGER.info("Untaint the node back which was tainted: %s", self.control_node)
             self.node_master_list[0].execute_cmd(cmd=cmd.K8S_UNTAINT_CTRL.format(self.control_node))
+        LOGGER.info("Revert back to default single control pod per cluster if more replicas are "
+                    "created.")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        if len(pod_list) > 1:
+            resp = self.node_master_list[0].create_pod_replicas(num_replica=1,
+                                                                pod_name=pod_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
         # TODO: Uncomment following code after getting confirmation from Rick on control pod
         #  restoration
         # if self.restore_pod:
@@ -234,7 +239,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-32459")
-    @CTFailOn(error_handler)
     @pytest.mark.skip(reason="VM issue in after Restart(CORTX-32933). Need to be tested on HW")
     def test_restart_control_node(self):
         """
@@ -279,7 +283,6 @@ class TestControlPodRestart:
         resp = self.ha_obj.host_safe_unsafe_power_off(host=self.control_node)
         assert_utils.assert_true(resp, "Host is not powered off")
         LOGGER.info("Step 2: %s Node is shutdown where control pod was running.", self.control_node)
-        self.restore_node = self.deploy = True
 
         LOGGER.info("Sleep for pod-eviction-timeout of %s sec", HA_CFG["common_params"][
             "pod_eviction_time"])
@@ -353,7 +356,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40369")
-    @CTFailOn(error_handler)
     def test_taint_ctrl_pod_failover(self):
         """
         Verify IAM users/IOs before and after control pod fails over when tainting control node
@@ -431,7 +433,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-34827")
-    @CTFailOn(error_handler)
     def test_rd_wr_del_during_ctrl_pod_failover(self):
         """
         Verify READs, WRITEs and DELETEs during control pod failover.
@@ -605,7 +606,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40375")
-    @CTFailOn(error_handler)
     def test_mpu_after_ctrl_pod_failover(self):
         """
         Verify multipart upload before and after control pod failover.
@@ -764,7 +764,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40387")
-    @CTFailOn(error_handler)
     def test_ctrl_pod_shutdown_loop(self):
         """
         Verify N-1 control pods shutdown in loop
@@ -865,29 +864,35 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40389")
-    @CTFailOn(error_handler)
-    def test_iam_bkt_cruds_during_ctrl_pod_failover(self):
+    def test_iam_bkt_cruds_during_ctrl_pod_rst(self):
         """
-        Verify IAM user and bucket operations while control pod is failing over
+        Verify IAM user and bucket operations while N-1 control pods are restarted
         """
-        LOGGER.info("STARTED: Verify IAM user and bucket operations while control pod is failing "
-                    "over")
+        LOGGER.info("STARTED: Verify IAM user and bucket operations while N-1 control pods "
+                    "are restarted")
+        LOGGER.info("Prereq: Scale replicas for control pod to %s", self.repl_num)
+        pod_name = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
+        resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
+                                                            pod_name=pod_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Prereq: Total number of control pods in the cluster are: %s", self.repl_num)
+        LOGGER.info("Get the control pod list")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
         event = threading.Event()
         iam_output = Queue()
         bkt_output = Queue()
         num_users = HA_CFG["s3_operation_data"]["iam_users"]
         num_bkts = HA_CFG["s3_operation_data"]["no_bkt_del_ctrl_pod"]
-
         LOGGER.info("Step 1: Create IAM user.")
-        users = self.mgnt_ops.create_account_users(nusers=1)
-        self.s3_clean = users
-        uids = list(users.keys())
-        access_key = list(users.values())[0]["accesskey"]
-        secret_key = list(users.values())[0]["secretkey"]
+        users_org = self.mgnt_ops.create_account_users(nusers=1)
+        self.s3_clean = users_org
+        uids = list(users_org.keys())
+        access_key = list(users_org.values())[0]["accesskey"]
+        secret_key = list(users_org.values())[0]["secretkey"]
         s3_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                            endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("Step 1: Created IAM user successfully")
-
         LOGGER.info("Create %s iam users for deletion", num_users)
         users = self.mgnt_ops.create_account_users(nusers=num_users)
         LOGGER.info("Step 2: Perform IAM user creation/deletion in background")
@@ -897,7 +902,6 @@ class TestControlPodRestart:
                                    args=(event, ), kwargs=args)
         thread1.daemon = True  # Daemonize thread
         thread1.start()
-
         LOGGER.info("Start buckets creation/deletion in background")
         args = {'user_crud': False, 'bkt_crud': True, 'num_bkts': num_bkts, 's3_obj': s3_obj,
                 'output': bkt_output}
@@ -910,36 +914,34 @@ class TestControlPodRestart:
         LOGGER.info("Waiting for %s sec for background operations to start",
                     HA_CFG["common_params"]["10sec_delay"])
         time.sleep(HA_CFG["common_params"]["10sec_delay"])
-
-        LOGGER.info("Control pod %s is hosted on %s node", self.control_pod_name, self.control_node)
-        failover_node = self.system_random.choice([ele for ele in self.host_worker_list if ele !=
-                                                   self.control_node])
-        LOGGER.debug("Fail over node is: %s", failover_node)
-        event.set()
-        LOGGER.info("Step 3: Failover control pod %s to node %s and check cluster status",
-                    self.control_pod_name, failover_node)
-        pod_yaml = {self.control_pod_name: self.modified_yaml}
-        resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
-                                        failover_node=failover_node)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 3: Successfully failed over control pod to %s. Cluster is in good state",
-                    failover_node)
+        LOGGER.info("Step 3: Restart %s control pods while creation/deletion of IAM users and "
+                    "buckets is running in background.", self.repl_num - 1)
+        for count in range(HA_CFG["common_params"]["short_loop"]):
+            LOGGER.info("Restarting %s control pods for loop : %s", self.repl_num - 1, count + 1)
+            ctrl_pod_list = self.system_random.sample(pod_list, self.repl_num - 1)
+            for pod in ctrl_pod_list:
+                resp = self.node_master_list[0].delete_pod(pod)
+                assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 3.1: Check cluster status")
+            delay = HA_CFG["common_params"]["60sec_delay"]
+            resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=delay)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 3.1: Cluster status is online")
+        LOGGER.info("%s pod are restarted successfully in loop of %s", self.repl_num - 1,
+                    HA_CFG["common_params"]["short_loop"])
         event.clear()
-
-        self.restore_pod = self.deploy = True
-        LOGGER.info("Step 4: Verify if IAM users %s are persistent across control pod failover",
+        LOGGER.info("Waiting for threads to join")
+        thread1.join()
+        thread2.join()
+        LOGGER.info("Step 4: Verify if IAM users %s are persistent across control pods restart",
                     uids)
         for user in uids:
             resp = self.rest_iam_user.get_iam_user(user)
             assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
-                                      f"Couldn't find user {user} after control pod failover")
+                                      f"Couldn't find user {user} after control pods restart")
             LOGGER.info("User %s is persistent: %s", user, resp)
-        LOGGER.info("Step 4: Verified all IAM users %s are persistent across control pod "
-                    "failover", uids)
-
-        LOGGER.info("Waiting for threads to join")
-        thread1.join()
-        thread2.join()
+        LOGGER.info("Step 4: Verified all IAM users %s are persistent across control pods "
+                    "restart", uids)
         LOGGER.info("Step 5: Verifying responses from background processes")
         LOGGER.info("Checking background process for IAM user CRUDs")
         iam_resp = tuple()
@@ -978,7 +980,6 @@ class TestControlPodRestart:
                                   f"CRUD operations. \nIn-flight Failed buckets: {exp_fail}"
                                   f"\nFailed buckets: {failed}")
         LOGGER.info("Step 5: Successfully verified responses from background processes")
-
         LOGGER.info("Step 6: Perform new IAM users(%s) and buckets(%s) creation/deletion in loop",
                     num_users, num_bkts)
         users_dict = dict()
@@ -1025,14 +1026,12 @@ class TestControlPodRestart:
                                   f"\nfailed: {failed}")
         LOGGER.info("Step 6: Successfully created/deleted %s new IAM users and %s buckets in loop",
                     num_users, num_bkts)
-
-        LOGGER.info("ENDED: Verify IAM user and bucket CRUD operations while control pod is "
-                    "failing over")
+        LOGGER.info("ENDED: Verify IAM user and bucket operations while N-1 control pods "
+                    "are restarted")
 
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40377")
-    @CTFailOn(error_handler)
     def test_part_mpu_after_ctrl_pod_failover(self):
         """
         Verify partial multipart upload before and after control pod restart.
@@ -1174,7 +1173,6 @@ class TestControlPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-40376")
-    @CTFailOn(error_handler)
     def test_copy_obj_after_ctrl_pod_failover(self):
         """
         Verify copy object before and after control pod restart.
@@ -1280,7 +1278,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40381")
-    @CTFailOn(error_handler)
     def test_mpu_during_ctrl_pod_failover(self):
         """
         This test tests multipart upload during control pod restart
@@ -1422,7 +1419,6 @@ class TestControlPodRestart:
     @pytest.mark.lc
     @pytest.mark.skip(reason="Functionality not available in RGW yet")
     @pytest.mark.tags("TEST-40382")
-    @CTFailOn(error_handler)
     def test_copy_obj_during_ctrl_pod_failover(self):
         """
         Verify copy object during control pod restart
@@ -1581,7 +1577,6 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-40386")
-    @CTFailOn(error_handler)
     def test_chunk_upload_during_ctrl_pod_failover(self):
         """
         Test chunk upload during control pod restart (using jclient)

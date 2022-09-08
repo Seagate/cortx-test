@@ -17,22 +17,25 @@
 """Test library for load testing related operations."""
 import time
 import logging
+import random
 from commons.utils import config_utils
-from commons.constants import  K8S_SCRIPTS_PATH, K8S_PRE_DISK
+from commons.constants import  K8S_SCRIPTS_PATH, K8S_PRE_DISK, POD_NAME_PREFIX
 from commons.constants import LOCAL_SOLUTION_PATH
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
 
-class ProvExt():
-    """ProvExt is creating object and extending functionality of the ProvDeployK8sCortxLib"""
-    def __init__(self, master, workers):
+class CSMExt():
+    """CSMExt is creating object and extending functionality of the ProvDeployK8sCortxLib"""
+    def __init__(self, master, workers, hlth_master):
         self.master = master
         self.workers = workers
+        self.hlth_master = hlth_master
         self.log = logging.getLogger(__name__)
         self.deploy_lc_obj = ProvDeployK8sCortxLib()
         self.update_seconds = 60
         self.ha_obj = HAK8s()
-        
+        self.restore_method = None
+
     def copy_sol_file_local(self):
         self.log.info("Copy solution.yaml from %s to local path %s", K8S_SCRIPTS_PATH, LOCAL_SOLUTION_PATH)
         remote_sol_path = K8S_SCRIPTS_PATH + "solution.yaml"
@@ -57,7 +60,9 @@ class ProvExt():
         self.log.info("Changing C2 value to: %s", c2)
         self.deploy_lc_obj.deploy_cfg['cortx_resource']['agent']['limits']['cpu'] = c2
         self.deploy_lc_obj.update_res_limit_cortx(filepath=LOCAL_SOLUTION_PATH)
-        resp = self.deploy_lc_obj.copy_sol_file(self.master, local_sol_path=LOCAL_SOLUTION_PATH,remote_code_path=K8S_SCRIPTS_PATH)
+        resp = self.deploy_lc_obj.copy_sol_file(self.master,
+                                                local_sol_path=LOCAL_SOLUTION_PATH,
+                                                remote_code_path=K8S_SCRIPTS_PATH)
         return resp
 
     def read_csm_res_limit(self):
@@ -107,9 +112,74 @@ class ProvExt():
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
             self.log.info("[End] Sleep %s", self.update_seconds)
-         
+
             self.log.info("Cleanup: Check cluster status")
             resp = self.ha_obj.poll_cluster_status(self.master)
             assert resp[0], resp[1]
             self.log.info("Cleanup: Cluster status checked successfully")
         self.log.info("[End] Redeploy the setup...")
+
+    def delete_data_pod(self):
+        """
+        Degrade cluster safely by deleting the last data pod from a set
+        :return str set_name: sts set name from pod was deleted
+        :return int num_replica: new replica count after deletion
+        :return bool result: flag to identify if pod deleted or not
+        """
+        self.log.info("[Start] deleting a data pod...")
+        result = False
+        self.log.info("Get pod to be deleted")
+        sts_dict = self.master.get_sts_pods(pod_prefix=POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        self.log.debug("%s Statefulset: %s", POD_NAME_PREFIX, sts_list)
+        sts = random.sample(sts_list, 1)[0]
+        while len(sts_dict[sts]) == 0:
+            sts = random.sample(sts_list, 1)[0]
+        delete_pod = sts_dict[sts][-1]
+        self.log.info("Pod to be deleted is %s", delete_pod)
+        set_type, set_name = self.master.get_set_type_name(pod_name=delete_pod)
+        resp = self.master.get_num_replicas(set_type, set_name)
+        assert resp[0], resp
+        num_replica = int(resp[1])
+        num_replica-=1
+        self.log.info("Shutdown data pod by replica method and "
+                    "verify cluster & remaining pods status")
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.master, health_obj=self.hlth_master,
+            delete_pod=[delete_pod], num_replica=num_replica)
+        pod_name = list(resp[1].keys())[0]
+        set_name = resp[1][pod_name]['deployment_name']
+        self.restore_method = resp[1][pod_name]['method']
+        if resp[1] is None:
+            self.log.error("Failed to shutdown/delete pod: %s", resp)
+        if not resp[0]:
+            self.log.error("Cluster/Services status is not as expected: %s", resp)
+        else:
+            result = True
+        self.log.info("Successfully shutdown data pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+        self.log.info("[End] deleted a data pod...")
+        return result, set_name, num_replica
+
+    def restore_data_pod(self, set_name:str, num_replica:int):
+        """
+        Restore cluster safely by restoring a data pod
+        :param str set_name : sts set name of data pod
+        :param int num_replica : number of replicas of data pod after delete
+        :return bool result: flag to identify if pod restored or not
+        """
+        self.log.info("[Start] Restore a data pod...")
+        result = False
+        resp = self.ha_obj.restore_pod(self.master, self.restore_method,
+                                        restore_params={"deployment_name": None,
+                                                        "deployment_backup": None,
+                                                        "num_replica": num_replica+1,
+                                                        "set_name": set_name})
+        self.log.debug("Response: %s", resp)
+        if not resp[0]:
+            self.log.error("Not able to restored pod: %s", resp)
+        else:
+            self.log.info("Successfully restored pod by %s way", self.restore_method)
+            result = True
+        self.log.info("[End] Restored a data pod...")
+        return result

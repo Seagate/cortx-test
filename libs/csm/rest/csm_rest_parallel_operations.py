@@ -184,6 +184,22 @@ class RestParallelOps(RestTestLib):
         return result
 
     @RestTestLib.authenticate_and_login
+    def create_multi_csm_user_with_List_IAM(self, users:int, existing_user:int=3):
+        """
+        Create count number of CSM in parallel using jmeter libs
+        :param users: Number of users to be created
+        """
+        if users is None:
+            users = self.get_max_csm_user_limit()
+        users = users - existing_user
+
+        jmx_file = "CSM_Create_N_Monitor_Create_List_N_IAM.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        request_limit = self.get_request_usage_limit()
+        result = self.execute_max_user_loop(jmx_file, users, request_limit, ops = "create")
+        return result
+
+    @RestTestLib.authenticate_and_login
     def delete_multi_csm_user(self, users:int, existing_user:int=3):
         """
         Create count number of CSM in parallel using jmeter libs

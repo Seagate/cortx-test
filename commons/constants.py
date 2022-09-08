@@ -49,6 +49,7 @@ S3_ENGINE_RGW = 2
 POD_NAME_PREFIX = "cortx-data"
 CORTX_DATA_NODE_PREFIX = "cortx-data-headless-svc-"
 SERVER_POD_NAME_PREFIX = "cortx-server"
+CORTX_CLIENT_SVC_POSTFIX = "cortx-client-headless.cortx.svc.cluster.local"
 HA_POD_NAME_PREFIX = "cortx-ha"
 HA_K8S_CONTAINER_NAME = "cortx-ha-k8s-monitor"
 HA_FAULT_TOLERANCE_CONTAINER_NAME = "cortx-ha-fault-tolerance"

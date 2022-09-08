@@ -3,10 +3,6 @@ test_45671:
   error_code: 4101
   message_id: "NotFoundError"
   message_index: 0
-test_45673:
-  error_code: 4101
-  message_id: "NotFoundError"
-  message_index: 0
 test_45676:
   error_code: 4101
   message_id: "NotFoundError"
@@ -15,4 +11,14 @@ test_45678:
   error_code: 4101
   message_id: "NotFoundError"
   message_index: 0
-
+test_45749:
+  number_of_days: 20
+  file_path: "/tmp"
+  required_path: "/root/deploy-scripts/charts/cortx/ssl-cert/s3.seagate.com.pem"
+  emailAddress: "testuser@seagate.com"
+  commonName: "Seagate1"
+  countryName: "IN"
+  localityName: "Pune"
+  stateOrProvinceName: "MH"
+  organizationName: "Seagate"
+  organizationUnitName: "CFT"

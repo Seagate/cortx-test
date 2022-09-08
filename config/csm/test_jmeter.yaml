@@ -34,12 +34,12 @@ test_44782:
   error_code: 4104
   message_id: "PermissionDenied"
   message_index: 2
-test_44794:
-  users_count : 5
-  buckets_count : 4
-  files_count : 65
-  rampup: 2
+test_44789:
+  threads: 25
+  rampup: 1
   loop: 10
+test_44790:
+  total_users: 100
 test_44788:
   users_count : 1
   buckets_count : 1

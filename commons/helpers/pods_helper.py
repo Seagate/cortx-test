@@ -582,18 +582,22 @@ class LogicalNode(Host):
                                 read_lines=True,exc=False)
         return True, resp
 
-    def select_random_pod_container(self,pod_prefix: str,
-                                    container_prefix: str):
+    def select_random_pod_container(self, pod_prefix: str,
+                                    container_prefix: str, **kwargs):
         """
         Select random pod and container for the given pods and container prefix
-        :param master_node: Logical Node object for master node.
-        :param pod_prefix: Pod prefix
+        :param pod_prefix: Pod prefix/ Pod name in case of specific_pod: True
         :param container_prefix: Container Prefix
+        :keyword bool specific_pod: True for retrieving containers from specific pod
         return pod_selected,container_selected
         """
-        pod_list = self.get_all_pods(pod_prefix=pod_prefix)
-        sys_random = random.SystemRandom()
-        pod_selected = pod_list[sys_random.randint(0, len(pod_list) - 1)]
+        specific_pod = kwargs.get("specific_pod", False)
+        if specific_pod:
+            pod_selected = pod_prefix
+        else:
+            pod_list = self.get_all_pods(pod_prefix=pod_prefix)
+            sys_random = random.SystemRandom()
+            pod_selected = pod_list[sys_random.randint(0, len(pod_list) - 1)]
         log.info("Pod selected : %s", pod_selected)
         container_list = self.get_container_of_pod(pod_name=pod_selected,
                                                    container_prefix=container_prefix)

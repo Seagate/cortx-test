@@ -114,3 +114,6 @@ S3_BKT_POLICY_NO_SUCH_ERR = "NoSuchBucketPolicy"
 
 # S3 versioning head obj error
 S3_VERSION_NOT_FOUND_GET_OBJ = "The specified version does not exist"
+
+# S3 copy-object
+S3_COPY_OBJECT_QUOTA_ERR = "QuotaExceeded"

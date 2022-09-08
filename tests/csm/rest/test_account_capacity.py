@@ -40,9 +40,14 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils, system_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG, S3_BLKBOX_CFG
+from libs.csm.csm_interface import csm_api_factory
+from libs.csm.extensions.csm_ext import CSMExt
 from libs.csm.rest.csm_rest_acc_capacity import AccountCapacity
 from libs.csm.rest.csm_rest_s3user import RestS3user
+from libs.di.di_mgmt_ops import ManagementOPs
+from libs.di.di_run_man import RunDataCheckManager
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.jmeter.jmeter_integration import JmeterInt
 from libs.s3 import iam_test_lib
 from libs.s3 import s3_misc
 from libs.s3.s3_blackbox_test_lib import JCloudClient
@@ -50,7 +55,6 @@ from libs.s3.s3_bucket_policy_test_lib import S3BucketPolicyTestLib
 from libs.s3.s3_common_test_lib import create_attach_list_iam_policy
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
-
 
 class TestAccountCapacity():
     """Account Capacity Testsuite"""
@@ -60,6 +64,8 @@ class TestAccountCapacity():
         """ This is method is for test suite set-up """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
+        cls.csm_obj = csm_api_factory("rest")
+        cls.ext_obj = CSMExt(cls.csm_obj.master, cls.csm_obj.workers, cls.csm_obj.hlth_master)
         cls.acc_capacity = AccountCapacity()
         cls.log.info("Initiating Rest Client ...")
         cls.s3user = RestS3user()
@@ -88,6 +94,8 @@ class TestAccountCapacity():
         assert_utils.assert_true(resp, resp)
 
         cls.ha_obj = HAK8s()
+        cls.jmx_obj = JmeterInt()
+        cls.num_replica = 0
         cls.master_node_list = []
         cls.worker_node_list = []
         cls.hlth_master_list = []
@@ -104,6 +112,7 @@ class TestAccountCapacity():
                                                         username=node["username"],
                                                         password=node["password"]))
         cls.restore_pod = cls.restore_method = cls.deployment_name = None
+        cls.restore_pod_data = cls.set_name = None
         cls.deployment_backup = None
         if not os.path.exists(TEST_DATA_FOLDER):
             os.mkdir(TEST_DATA_FOLDER)
@@ -121,9 +130,14 @@ class TestAccountCapacity():
                                            restore_params={"deployment_name": self.deployment_name,
                                                            "deployment_backup":
                                                                self.deployment_backup})
-            self.log.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             self.log.info("Successfully restored pod by %s way", self.restore_method)
+        if self.restore_pod_data:
+            self.log.info("Restore deleted data pods.")
+            resp = self.ext_obj.restore_data_pod(self.set_name, self.num_replica)
+            self.log.debug("Response: %s", resp)
+            assert resp, "Failed to restore pod"
+            self.log.info("Successfully restored data pod")
 
         self.log.info("Deleting buckets %s & associated objects", self.buckets_created)
         buckets_deleted = []
@@ -949,3 +963,68 @@ class TestAccountCapacity():
         self.log.info("Delete created file")
         os.remove(file_path_upload)
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
+
+    # pylint: disable=too-many-statements
+    @pytest.mark.skip("Skipped until CORTX-34105 is fixed")
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-44794')
+    def test_44794(self):
+        """
+        CSM load testing in degraded mode to view Degraded capacity
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_conf["test_44794"]
+        self.log.info("Step 1: Create accounts for I/O")
+        mgm_ops = ManagementOPs()
+        users = mgm_ops.create_account_users(nusers=test_cfg["users_count"], use_cortx_cli=False)
+        data = mgm_ops.create_buckets(nbuckets=test_cfg["buckets_count"], users=users)
+
+        self.log.info("degrade cluster")
+        resp,self.set_name,self.num_replica = self.ext_obj.delete_data_pod()
+        self.log.debug("Response: %s", resp)
+        assert resp, "Failed to degrade cluster"
+        self.restore_pod_data = True
+        self.log.info("Successfully degrade cluster")
+
+        self.log.info("Step 3: Start I/O")
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'test_44794'}
+        run_data_chk_obj.start_io_async(
+            users=data, buckets=None, files_count=test_cfg["files_count"], prefs=pref_dir)
+
+        self.log.info("Step 4: Poll Degraded Capacity")
+        jmx_file = "CSM_Poll_Degraded_Capacity.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        result = self.jmx_obj.run_verify_jmx(
+            jmx_file,
+            threads=self.csm_obj.get_request_usage_limit(),
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
+        assert result, "Errors reported in the Jmeter execution"
+
+        stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True, eventual_stop=True)
+        self.log.info("stop_res -  %s", stop_res)
+
+        self.log.info("Step 5: Call degraded capacity api")
+        response = self.csm_obj.get_capacity_usage()
+        assert response.status_code == HTTPStatus.OK , "Status code check failed"
+        self.log.info("Step 6: Check all variables are present in rest response")
+        resp = self.csm_obj.validate_metrics(response.json(), endpoint_param=None)
+        assert resp, "Rest data metrics check failed in full mode"
+
+        self.log.info("Restore deleted data pod")
+        resp = self.ext_obj.restore_data_pod(self.set_name, self.num_replica)
+        self.log.debug("Response: %s", resp)
+        assert resp, "Failed to restore pod"
+        self.log.info("Successfully restored data pod")
+        self.restore_pod_data = False
+
+        self.log.info("delete objects.")
+        resp = self.ha_obj.delete_s3_acc_buckets_objects(s3_data=users, obj_crud=True)
+        assert resp[0], resp[1]
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
