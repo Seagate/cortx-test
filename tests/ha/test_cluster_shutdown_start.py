@@ -779,7 +779,6 @@ class TestClusterShutdownStart:
 
     @pytest.mark.ha
     @pytest.mark.lc
-    @pytest.mark.skip(reason="copy object not available in RGW yet")
     @pytest.mark.tags("TEST-29475")
     @CTFailOn(error_handler)
     def test_copy_obj_bfr_clstr_rstrt_29475(self):
