@@ -33,6 +33,7 @@ from http import HTTPStatus
 from time import perf_counter_ns
 
 import yaml
+from requests import exceptions as req_exception
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -47,7 +48,6 @@ from config import CMN_CFG
 from config import CSM_REST_CFG
 from config import HA_CFG
 from config.s3 import S3_BLKBOX_CFG
-from requests import exceptions as req_exception
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_core_lib import RestClient
 from libs.csm.rest.csm_rest_system_health import SystemHealth
