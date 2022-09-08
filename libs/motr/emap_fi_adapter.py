@@ -324,7 +324,7 @@ class MotrCorruptionAdapter(InjectCorruption):
                     continue
         except IOError as ex:
             LOGGER.exception("Exception occurred while injecting emap fault", exc_info=ex)
-            return False, resp, pod_name
+            return False, resp
 
     def inject_checksum_corruption(self, oid: str, md_path):
         """Injects data checksum error by providing the DU FID."""

@@ -203,17 +203,19 @@ class TestCorruptDataDetection:
             if not remote_copy_status:
                 logger.debug("%s File already exists... or failed to copy file", remote_file)
 
-        # Copy file to container
-        for pod in pod_list:
-            for remote_file in remote_file_list:
-                logger.debug("file %s", remote_file)
-                copy_status = self.master_node_list[0].copy_file_to_container(
-                    remote_file, pod, remote_file, f"{const.MOTR_CONTAINER_PREFIX}-001")
-                if not copy_status:
-                    logger.debug("%s File already exists... or failed to copy file", remote_file)
-                    raise FileNotFoundError
         # For all pods in the system
         for node_pod in node_pod_dict:
+            # Copy file to container
+            for pod in pod_list:
+                for remote_file in remote_file_list:
+                    logger.debug("file %s", remote_file)
+                    copy_status = self.master_node_list[0].copy_file_to_container(
+                        remote_file, pod, remote_file, f"{const.MOTR_CONTAINER_PREFIX}-001")
+                    if not copy_status:
+                        logger.debug("%s File already exists... or failed to copy file",
+                                     remote_file)
+                        raise FileNotFoundError
+
             # Format the Object ID is xxx:yyy format
             object_id = (str(self.system_random.randint(1, 1024 * 1024)) + ":"
                          + str(self.system_random.randint(1, 1024 * 1024)))
