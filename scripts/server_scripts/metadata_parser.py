@@ -467,7 +467,7 @@ class MetadataParser:
                               emap_rec_data_full[7], emap_rec_data_full[8],
                               emap_rec_data_full[9], emap_rec_data_full[10],
                               emap_rec_data_full[11]))
-                self.EditEmapMetadata(emap_rec_data_full, rec_hdr_offset,
+                self.EditEmapMetadata(emap_rec_data_full, rec_hdr_offset + 48,
                                       rec_hdr_offset + 84 + round(
                                           int(emap_rec_data_full[5], 16) / 8))
                 print("** Full Record after edit offset {},"
