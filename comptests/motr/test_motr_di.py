@@ -632,7 +632,7 @@ class TestCorruptDataDetection:
         test_prefix = "TEST-42911"
         count_list = ['1']
         bsize_list = ['4M']
-        layout_ids = ['12']
+        layout_ids = ['11']
         logger.info("STARTED: Test %s m0cp ,checksum corruption in healthy mode and"
                     "m0cat workflow in Degraded Mode", test_prefix)
         resp = self.motr_inject_checksum_corruption(
