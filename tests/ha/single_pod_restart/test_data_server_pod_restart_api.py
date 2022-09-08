@@ -329,9 +329,10 @@ class TestDataServerPodRestartAPI:
     @pytest.mark.tags("TEST-45533")
     def test_obj_overwrite_during_data_server_pod_restart(self):
         """
-        Verify object overwrite during 1 data pod and 1 server pod restart
+        Verify object overwrite during single data pod and server pod restart
         """
-        LOGGER.info("STARTED: Verify object overwrite during 1 data pod and 1 server pod restart")
+        LOGGER.info("STARTED: Verify object overwrite during single data pod and server pod "
+                    "restart")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         output = Queue()
         event = threading.Event()
@@ -346,8 +347,8 @@ class TestDataServerPodRestartAPI:
             assert_utils.assert_equal(checksum[0], checksum[1],
                                       f"Checksum doesn't match, Expected: {checksum[0]} "
                                       f"Received: {checksum[1]}")
-        LOGGER.info("Step 1: Create bucket %s and perform upload of object size %s MB and "
-                    "Overwrite the object", self.bucket_name, file_size)
+        LOGGER.info("Step 1: %s bucket created, uploaded for object size %s MB and Overwrite of"
+                    " object done successfully ", self.bucket_name, file_size)
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_multi"]
         new_s3_data = dict()
         LOGGER.info("Create %s buckets and upload objects for background overwrite during "
@@ -453,4 +454,5 @@ class TestDataServerPodRestartAPI:
                                       f"Received: {checksum[1]}")
         LOGGER.info("Step 8: Successfully overwritten existing object of bucket %s",
                     self.bucket_name)
-        LOGGER.info("COMPLETED: Verify object overwrite during 1 data pod and 1 server pod restart")
+        LOGGER.info("COMPLETED: Verify object overwrite during single data pod and server pod "
+                    "restart")
