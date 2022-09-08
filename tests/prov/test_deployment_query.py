@@ -1,4 +1,4 @@
-# !/usr/bin/python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
@@ -17,10 +17,10 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+
 # pylint: disable=R0904
 
-"""Tests Query Deployment scenarios using REST API."""
-
+"""Failure Domain (k8s based Cortx) Test Suite."""
 import logging
 import os.path
 import time
@@ -39,17 +39,18 @@ from commons.params import LATEST_LOG_FOLDER
 from commons.utils import assert_utils
 from commons.utils import support_bundle_utils
 from config import CMN_CFG
-from config import  DEPLOY_CFG
 from config import  PROV_CFG
+from config import  DEPLOY_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from commons import configmanager, constants
 from commons.constants import K8S_SCRIPTS_PATH, K8S_PRE_DISK, POD_NAME_PREFIX
 from libs.csm.csm_interface import csm_api_factory
 from libs.ha.ha_common_libs_k8s import HAK8s
 
+
 LOGGER = logging.getLogger(__name__)
 
-class TestQueryDeployment():
+class TestQueryDeployment:
     """Query Deployment Testsuites"""
 
     @classmethod
@@ -81,6 +82,7 @@ class TestQueryDeployment():
         cls.deploy_end_time = None
         cls.update_seconds = cls.csm_conf["update_seconds"]
         cls.collect_sb = True
+        cls.destroy_flag = False
 
     def teardown_method(self):
         """
@@ -91,9 +93,10 @@ class TestQueryDeployment():
             support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                             scripts_path=
                                                             self.deploy_conf['k8s_dir'])
-        resp = self.deploy_obj.destroy_setup(self.master_node_list[0],
-                                             self.worker_node_list)
-        assert_utils.assert_true(resp)
+        if self.destroy_flag:
+            resp = self.deploy_obj.destroy_setup(self.master_node_list[0],
+                                                 self.worker_node_list)
+            assert_utils.assert_true(resp)
         self.deploy_obj.close_connections(self.master_node_list, self.worker_node_list)
 
     def multiple_node_deployment(self, node, config, **kwargs):
@@ -122,12 +125,12 @@ class TestQueryDeployment():
         self.collect_sb = False
         self.destroy_flag = True
 
-
     @pytest.mark.skip(reason="Function not avaliable")
     @pytest.mark.lc
+    @pytest.mark.three_node_deployment
     @pytest.mark.cluster_deployment
     @pytest.mark.tags("TEST-45743")
-    def test_45742(self):
+    def test_45743(self):
         """
         Test to verify query should be able to fetch standard 3 node configuration.
         """
@@ -142,114 +145,117 @@ class TestQueryDeployment():
 #       self.log.info(" Send node details query request")
 #       get_topology = self.csm_obj.get_system_topology()
 #       resp = self.csm_obj.get_node_topology()
-#       assert resp.status_code == HTTPStatus.OK
+#       assert resp.status_code == HTTPStatus.OK        
 
-        @pytest.mark.skip(reason="Function not avaliable")
-        @pytest.mark.lc
-        @pytest.mark.cluster_deployment
-        @pytest.mark.tags("TEST-45745")
-        def test_45745(self):
-            """
-            Test to verify query should be able to fetch standard 5 node configuration.
-            """
-            LOGGER.info("Step 1 : Deploy cortx cluster ")
-            self.multiple_node_deployment(5, 1)
-            LOGGER.info("Step 2 : GET the cluster configuration ")
-            self.log.info("Send GET request for fetching system topology" )
-            get_toplogy = self.csm_obj.get_system_topology()
-            result, err_msg = self.csm_obj.verify_system_topology(self.deploy_start_time,
+    @pytest.mark.skip(reason="Function not avaliable")
+    @pytest.mark.lc
+    @pytest.mark.three_node_deployment
+    @pytest.mark.cluster_deployment
+    @pytest.mark.tags("TEST-45745")
+    def test_45745(self):
+        """
+        Test to verify query should be able to fetch standard 5 node configuration.
+        """
+        self.multiple_node_deployment(3, 2)
+        LOGGER.info("Step 1 : Deploy cortx cluster ")
+        self.multiple_node_deployment(5, 1)
+        LOGGER.info("Step 2 : GET the cluster configuration ")
+        self.log.info("Send GET request for fetching system topology" )
+        get_toplogy = self.csm_obj.get_system_topology()
+        result, err_msg = self.csm_obj.verify_system_topology(self.deploy_start_time,
                                                                   self.deploy_end_time,
                                                                   expected_response=HTTPStatus.OK)
-            assert result, err_msg
+        assert result, err_msg
 
 
-        @pytest.mark.skip(reason="Function not avaliable")
-        @pytest.mark.lc
-        @pytest.mark.cluster_deployment
-        @pytest.mark.tags("TEST-45744")
-        def test_45744(self):
-            """
-            Test to verify query should be able to fetch standard 3 node configuration
+    @pytest.mark.skip(reason="Function not avaliable")
+    @pytest.mark.lc
+    @pytest.mark.three_node_deployment
+    @pytest.mark.cluster_deployment
+    @pytest.mark.tags("TEST-45744")
+    def test_45744(self):
+        """
+        Test to verify query should be able to fetch standard 3 node configuration
             if cluster is in degraded state.
-            """
-            LOGGER.info("Step 1 : Deploy cortx cluster ")
-            self.multiple_node_deployment(3, 2)
-            LOGGER.info("Step 2 : Make a cluster in degraded state")
-            LOGGER.info(" Shutdown random data pod with replica method and "
-                        "verify cluster & remaining pods status")
-            num_replica = self.num_replica - 1
-            resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-                master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-                delete_pod=[self.delete_pod], num_replica=num_replica)
-            # Assert if empty dictionary
-            assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-            pod_name = list(resp[1].keys())[0]
-            self.set_name = resp[1][pod_name]['deployment_name']
-            self.restore_method = resp[1][pod_name]['method']
-            pod_name = list(resp[1].keys())[0]
-            assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-            LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
-                        "services states are as expected & remaining pods status is online.", pod_name)
-            self.restore_pod = True
-            #           self.log.info(" Send node details query request")
-            #           get_topology = self.csm_obj.get_system_topology()
-            #           resp = self.csm_obj.get_node_topology()
-            #           assert resp.status_code == HTTPStatus.OK
-            LOGGER.info("Step 5: Restore pod and check cluster status.")
-            resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
-                                           restore_method=self.restore_method,
-                                           restore_params={"deployment_name": self.deployment_name,
-                                                           "deployment_backup":
-                                                               self.deployment_backup,
-                                                           "num_replica": self.num_replica,
-                                                           "set_name": self.set_name},
-                                           clstr_status=True)
-            LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
-                                              "OR the cluster is not online")
+        """
+        LOGGER.info("Step 1 : Deploy cortx cluster ")
+        self.multiple_node_deployment(3, 2)
+        LOGGER.info("Step 2 : Make a cluster in degraded state")
+        LOGGER.info(" Shutdown random data pod with replica method and "
+                    "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=num_replica)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+        pod_name = list(resp[1].keys())[0]
+        self.set_name = resp[1][pod_name]['deployment_name']
+        self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+        self.restore_pod = True
+        #           self.log.info(" Send node details query request")
+        #           get_topology = self.csm_obj.get_system_topology()
+        #           resp = self.csm_obj.get_node_topology()
+        #           assert resp.status_code == HTTPStatus.OK
+        LOGGER.info("Step 5: Restore pod and check cluster status.")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                        "num_replica": self.num_replica,
+                                                        "set_name": self.set_name},
+                                       clstr_status=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
+                                          "OR the cluster is not online")
 
-
-        @pytest.mark.skip(reason="Function not avaliable")
-        @pytest.mark.lc
-        @pytest.mark.cluster_deployment
-        @pytest.mark.tags("TEST-45835")
-        def test_45835(self):
-            """
-            Test to verify query should be able to fetch standard 5 node configuration
+#    @pytest.mark.skip(reason="Function not avaliable")
+    @pytest.mark.lc
+    @pytest.mark.three_node_deployment
+    @pytest.mark.cluster_deployment
+    @pytest.mark.tags("TEST-45835")
+    def test_45835(self):
+        """
+        Test to verify query should be able to fetch standard 5 node configuration
             if cluster is in degraded state.
-            """
-            LOGGER.info("Step 1 : Deploy cortx cluster ")
-            self.multiple_node_deployment(5, 1)
-            LOGGER.info("Step 2 : Make a cluster in degraded state")
-            LOGGER.info(" Shutdown random data pod with replica method and "
-                        "verify cluster & remaining pods status")
-            num_replica = self.num_replica - 1
-            resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-                master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
-                delete_pod=[self.delete_pod], num_replica=num_replica)
-            # Assert if empty dictionary
-            assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
-            pod_name = list(resp[1].keys())[0]
-            self.set_name = resp[1][pod_name]['deployment_name']
-            self.restore_method = resp[1][pod_name]['method']
-            pod_name = list(resp[1].keys())[0]
-            assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
-            LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
-                        "services states are as expected & remaining pods status is online.", pod_name)
-            self.restore_pod = True
-#           self.log.info(" Send node details query request")
-#           get_topology = self.csm_obj.get_system_topology()
-#           resp = self.csm_obj.get_node_topology()
-#           assert resp.status_code == HTTPStatus.OK
-            LOGGER.info("Step 5: Restore pod and check cluster status.")
-            resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
-                                           restore_method=self.restore_method,
-                                           restore_params={"deployment_name": self.deployment_name,
-                                                           "deployment_backup":
-                                                               self.deployment_backup,
-                                                           "num_replica": self.num_replica,
-                                                           "set_name": self.set_name},
-                                           clstr_status=True)
-            LOGGER.debug("Response: %s", resp)
-            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
-                                              "OR the cluster is not online")
+        """
+        LOGGER.info("Step 1 : Deploy cortx cluster ")
+        self.multiple_node_deployment(5, 1)
+        LOGGER.info("Step 2 : Make a cluster in degraded state")
+        LOGGER.info(" Shutdown random data pod with replica method and "
+                    "verify cluster & remaining pods status")
+        num_replica = self.num_replica - 1
+        resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            delete_pod=[self.delete_pod], num_replica=num_replica)
+        # Assert if empty dictionary
+        assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+        pod_name = list(resp[1].keys())[0]
+        self.set_name = resp[1][pod_name]['deployment_name']
+        self.restore_method = resp[1][pod_name]['method']
+        pod_name = list(resp[1].keys())[0]
+        assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+        LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
+                    "services states are as expected & remaining pods status is online.", pod_name)
+        self.restore_pod = True
+        #           self.log.info(" Send node details query request")
+        #           get_topology = self.csm_obj.get_system_topology()
+        #           resp = self.csm_obj.get_node_topology()
+        #           assert resp.status_code == HTTPStatus.OK
+        LOGGER.info("Step 5: Restore pod and check cluster status.")
+        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                       restore_method=self.restore_method,
+                                       restore_params={"deployment_name": self.deployment_name,
+                                                       "deployment_backup":
+                                                           self.deployment_backup,
+                                                        "num_replica": self.num_replica,
+                                                        "set_name": self.set_name},
+                                       clstr_status=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
+                                          "OR the cluster is not online")
