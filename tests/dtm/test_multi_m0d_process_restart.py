@@ -160,11 +160,11 @@ class TestMultiProcessRestart:
 
     @pytest.mark.lc
     @pytest.mark.dtm
-    @pytest.mark.tags("TEST-46663")
+    @pytest.mark.tags("TEST-47155")
     def test_write_during_multi_m0d_restart(self):
         """Verify write during multiple m0d restart using pkill."""
         self.log.info("STARTED: Verify write during multiple m0d restart using pkill")
-        log_file_prefix = 'test-46663'
+        log_file_prefix = 'test-47155'
         que = multiprocessing.Queue()
 
         self.log.info("Step 1: Create bucket for IO operations")
@@ -306,11 +306,11 @@ class TestMultiProcessRestart:
 
     @pytest.mark.lc
     @pytest.mark.dtm
-    @pytest.mark.tags("TEST-4XXXX")
+    @pytest.mark.tags("TEST-47160")
     def test_delete_after_same_m0d_restart_multiple_times(self):
         """Verify delete after same m0d restart multiple times using pkill"""
         self.log.info("STARTED: Verify delete after same m0d restart multiple times using pkill")
-        log_file_prefix = 'test-4XXXX'
+        log_file_prefix = 'test-47160'
         que = multiprocessing.Queue()
 
         self.log.info("Step 1: Create bucket for IO operations")
@@ -355,13 +355,13 @@ class TestMultiProcessRestart:
 
     @pytest.mark.lc
     @pytest.mark.dtm
-    @pytest.mark.tags("TEST-4xxxx")
+    @pytest.mark.tags("TEST-47159")
     def test_continuous_write_read_during_same_m0d_restart_multiple_times(self):
         """Verify continuous WRITE and READ during same m0d restart multiple times using pkill"""
         self.log.info("STARTED: Verify continuous WRITE and READ during same m0d restart multiple "
                       "times "
                       "using pkill")
-        log_file_prefix = 'test-4xxxx'
+        log_file_prefix = 'test-47159'
         que_1 = multiprocessing.Queue()
         que_2 = multiprocessing.Queue()
         bucket_list = []
