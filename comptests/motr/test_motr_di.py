@@ -153,31 +153,30 @@ class TestCorruptDataDetection:
                 + str(self.system_random.randint(1, 1024 * 1024))
         )
         for client_num in range(motr_client_num):
-            for node in node_pod_dict:
-
-                for b_size, (cnt_c, cnt_u), layout, offset in zip(
-                        bsize_list, count_list, layout_ids, offsets
-                ):
-                    self.motr_obj.dd_cmd(b_size, cnt_c, infile, node)
-                    self.motr_obj.cp_cmd(b_size, cnt_c, object_id, layout, infile, node, client_num)
-                    self.motr_obj.cat_cmd(
-                        b_size, cnt_c, object_id, layout, outfile, node, client_num
-                    )
-                    self.motr_obj.cp_update_cmd(
-                        b_size=b_size,
-                        count=cnt_u,
-                        obj=object_id,
-                        layout=layout,
-                        file=infile,
-                        node=node,
-                        client_num=client_num,
-                        offset=offset,
-                    )
-                    self.motr_obj.cat_cmd(
-                        b_size, cnt_c, object_id, layout, outfile, node, client_num, di_g=True
-                    )
-                    self.motr_obj.md5sum_cmd(infile, outfile, node, flag=True)
-                    self.motr_obj.unlink_cmd(object_id, layout, node, client_num)
+            node = node_pod_dict[0]
+            for b_size, (cnt_c, cnt_u), layout, offset in zip(
+                    bsize_list, count_list, layout_ids, offsets
+            ):
+                self.motr_obj.dd_cmd(b_size, cnt_c, infile, node)
+                self.motr_obj.cp_cmd(b_size, cnt_c, object_id, layout, infile, node, client_num)
+                self.motr_obj.cat_cmd(
+                    b_size, cnt_c, object_id, layout, outfile, node, client_num
+                )
+                self.motr_obj.cp_update_cmd(
+                    b_size=b_size,
+                    count=cnt_u,
+                    obj=object_id,
+                    layout=layout,
+                    file=infile,
+                    node=node,
+                    client_num=client_num,
+                    offset=offset,
+                )
+                self.motr_obj.cat_cmd(
+                    b_size, cnt_c, object_id, layout, outfile, node, client_num, di_g=True
+                )
+                self.motr_obj.md5sum_cmd(infile, outfile, node, flag=True)
+                self.motr_obj.unlink_cmd(object_id, layout, node, client_num)
             logger.info("Stop: Verify multiple m0cp/cat operation")
 
     # pylint: disable=too-many-locals
@@ -233,31 +232,31 @@ class TestCorruptDataDetection:
             # Fetch the FID from m0trace log
             fid_resp = self.motr_obj.read_m0trace_log(filepath)
             logger.debug("fid_resp is %s", fid_resp)
-        metadata_path = self.emap_adapter_obj.get_metadata_device(self.motr_obj.master_node_list[0])
-        # Run Emap on all objects, Object id list determines the parity or data
-        data_gob_id_resp, parity_gob_id_resp = self.emap_adapter_obj.get_object_gob_id(
-            metadata_path[0], fid=fid_resp)
-        logger.debug("data gob id resp is %s", data_gob_id_resp)
-        if ft_type == 1:
-            corrupt_resp = self.emap_adapter_obj.inject_fault_k8s(
-                data_gob_id_resp[0], metadata_device=metadata_path[0])
-        else:
-            corrupt_resp = self.emap_adapter_obj.inject_fault_k8s(
-                parity_gob_id_resp[0], metadata_device=metadata_path[0])
-        logger.debug("corrupt emap response ~~~~~~~~~~~~~~~~ %s", corrupt_resp)
-        if "Newly Computed CRC" in corrupt_resp[1]:
-            logger.debug("Corrupted the block ")
-            assert_utils.assert_true(corrupt_resp[0], corrupt_resp[1])
-        self.dtm_obj.process_restart_with_delay(
-            master_node=self.master_node_list[0],
-            health_obj=self.health_obj,
-            check_proc_state=True,
-            process=const.PID_WATCH_LIST[0],
-            pod_prefix=const.POD_NAME_PREFIX,
-            container_prefix=const.MOTR_CONTAINER_PREFIX,
-            proc_restart_delay=5,
-            restart_cnt=1,
-        )
+            metadata_path = self.emap_adapter_obj.get_metadata_device(self.motr_obj.master_node_list[0])
+            # Run Emap on all objects, Object id list determines the parity or data
+            data_gob_id_resp, parity_gob_id_resp = self.emap_adapter_obj.get_object_gob_id(
+                metadata_path[0], fid=fid_resp)
+            logger.debug("data gob id resp is %s", data_gob_id_resp)
+            if ft_type == 1:
+                corrupt_resp = self.emap_adapter_obj.inject_fault_k8s(
+                    data_gob_id_resp[0], metadata_device=metadata_path[0])
+            else:
+                corrupt_resp = self.emap_adapter_obj.inject_fault_k8s(
+                    parity_gob_id_resp[0], metadata_device=metadata_path[0])
+            logger.debug("corrupt emap response ~~~~~~~~~~~~~~~~ %s", corrupt_resp)
+            if "Newly Computed CRC" in corrupt_resp[1]:
+                logger.debug("Corrupted the block ")
+                assert_utils.assert_true(corrupt_resp[0], corrupt_resp[1])
+            self.dtm_obj.process_restart_with_delay(
+                master_node=self.master_node_list[0],
+                health_obj=self.health_obj,
+                check_proc_state=True,
+                process=const.PID_WATCH_LIST[0],
+                pod_prefix=const.POD_NAME_PREFIX,
+                container_prefix=const.MOTR_CONTAINER_PREFIX,
+                proc_restart_delay=5,
+                restart_cnt=1,
+            )
         return object_id_list, self.log_file_list
 
     def m0cat_md5sum_m0unlink(self, bsize_list, count_list, layout_ids, object_list, **kwargs):
