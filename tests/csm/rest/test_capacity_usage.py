@@ -108,13 +108,16 @@ class TestSystemCapacity():
         cls.deploy_list = cls.master.get_deployment_name(POD_NAME_PREFIX)
         cls.update_seconds = cls.csm_conf["update_seconds"]
         cls.log.info("Get the value of K for the given cluster.")
-        resp = cls.ha_obj.get_config_value(cls.master)
-        if resp[0]:
-            cls.kvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['parity'])
-            cls.nvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['data'])
-        else:
-            cls.log.info("Failed to get parity value, will use 1.")
-            cls.kvalue = 1
+#        resp = cls.ha_obj.get_config_value(cls.master)
+#        if resp[0]:
+#            cls.kvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['parity'])
+#            cls.nvalue = int(resp[1]['cluster']['storage_set'][0]['durability']['sns']['data'])
+#        else:
+#            cls.log.info("Failed to get parity value, will use 1.")
+#            cls.kvalue = 4
+#            cls.nvalue = 2
+
+        cls.kvalue, cls.nvalue, _ = cls.csm_obj.get_dix_value() #TODO get_sns_value()
         cls.cap_df = pandas.DataFrame()
         cls.aligned_size = 4 * cls.nvalue
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
@@ -263,14 +266,23 @@ class TestSystemCapacity():
 
         self.log.info("[START] Failure loop")
         for failure_cnt in range(1, self.kvalue + 2):
-            deploy_name = self.deploy_list[failure_cnt]
-            self.log.info("[Start] Shutdown the data pod safely")
-            self.log.info("Deleting pod %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
-            assert_utils.assert_false(resp[0], f"Failed to delete pod {deploy_name}")
-            self.log.info("[End] Successfully deleted pod %s", deploy_name)
+            #deploy_name = self.deploy_list[failure_cnt]
+            #self.log.info("[Start] Shutdown the data pod safely")
+            #self.log.info("Deleting pod %s", deploy_name)
+            #resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
+            #assert_utils.assert_false(resp[0], f"Failed to delete pod {deploy_name}")
+            #self.log.info("[End] Successfully deleted pod %s", deploy_name)
 
-            self.failed_pod.append(deploy_name)
+            resp, set_name, num_replica = self.ext_obj.delete_data_pod()
+            self.log.debug("Response: %s", resp)
+            assert resp, "Failed to degrade cluster"
+            self.failed_pod.append([set_name, num_replica])
+            self.log.info("Printing set and replica for %s iteration", failure_cnt)
+            self.log.info("Set name and replica number is: %s", self.failed_pod)
+            self.restore_pod_data = True
+            self.log.info("[End] Successfully deleted pod")
+
+            #self.failed_pod.append(deploy_name)
 
             self.log.info("[Start] Check cluster status")
             resp = self.ha_obj.check_cluster_status(self.master)
@@ -279,12 +291,12 @@ class TestSystemCapacity():
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
-            self.log.info("[Start] Sleep %s", self.update_seconds)
+            self.log.info("[End] Sleep %s", self.update_seconds)
 
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
-            index = deploy_name + "offline"
-            new_row = pandas.Series(data=resp, name=index)
-            cap_df = cap_df.append(new_row, ignore_index=False)
+#           index = deploy_name + "offline"
+#           new_row = pandas.Series(data=resp, name=index)
+#           cap_df = cap_df.append(new_row, ignore_index=False)
 
             result = self.csm_obj.verify_bytecount_all(resp, failure_cnt, self.kvalue,
                                                        test_cfg["err_margin"], total_written)
@@ -293,24 +305,30 @@ class TestSystemCapacity():
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
-        for deploy_name in reversed(self.failed_pod):
-            self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
-            self.log.debug("Response: %s", resp)
-            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-            self.log.info("Successfully restored pod by %s way", self.restore_method)
-            self.failed_pod.remove(deploy_name)
-            self.log.info("[End] Restore deleted pods : %s", deploy_name)
+        #for deploy_name in reversed(self.failed_pod):
+        for set_name, num_replica in self.failed_pod:
+            self.log.info("[Start]  Restore deleted pods : %s-%s", set_name, num_replica)
+            #resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+            #self.log.debug("Response: %s", resp)
+            #assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            #self.log.info("Successfully restored pod by %s way", self.restore_method)
+            #self.failed_pod.remove(deploy_name)
+            #self.log.info("[End] Restore deleted pods : %s", deploy_name)
             failure_cnt -= 1
+
+            resp = self.ext_obj.restore_data_pod(set_name, num_replica)
+            self.log.debug("Response: %s", resp)
+            assert resp, "Failed to restore pod"
+
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
             self.log.info("[Start] Sleep %s", self.update_seconds)
 
             resp = self.csm_obj.get_degraded_all(self.hlth_master)
-            index = deploy_name + "online"
-            new_row = pandas.Series(data=resp, name=index)
-            cap_df = cap_df.append(new_row, ignore_index=False)
+            #index = deploy_name + "online"
+            #new_row = pandas.Series(data=resp, name=index)
+            #cap_df = cap_df.append(new_row, ignore_index=False)
 
             result = self.csm_obj.verify_bytecount_all(resp, failure_cnt, self.kvalue,
                                                        test_cfg["err_margin"], total_written)
