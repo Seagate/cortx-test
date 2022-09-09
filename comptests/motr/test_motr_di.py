@@ -445,7 +445,7 @@ class TestCorruptDataDetection:
         count_list = [["4", "1"], ["4", "2"], ["4", "3"], ["4", "4"]]
         bsize_list = ["1M", "1M", "1M", "1M"]
         layout_ids = ["9", "9", "9", "9"]
-        offsets = [0, 4096, 8192, 12288]
+        offsets = [4096, 8192, 12288, 12288]
         logger.info("STARTED: Test %s data unit corruption in loop - aligned", test_prefix)
         logger.info("Step 1: Perform m0cp and corrupt the data block")
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
