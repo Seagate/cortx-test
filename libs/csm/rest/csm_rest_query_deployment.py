@@ -230,7 +230,7 @@ class QueryDeployment(RestTestLib):
         if response_version == deploy_version:
             self.log.info("Deployment Version match found")
         else:
-            err_msg = "Deployment Version mismatch found"
+            err_msg = "Deployment Version mismatch found. "
             self.log.error(err_msg)
             result = False
         self.log.info("Verify deployment time of nodes")
@@ -279,20 +279,20 @@ class QueryDeployment(RestTestLib):
                 self.log.info("Resp is %s ", resp)
                 solution = storage1[0]['devices']
                 self.log.info("Solution is %s ", solution)
-                result, err_msg = self.verify_cvg_details(resp, solution)
+                result, err_msg = self.verify_cvg_details(resp, solution, "cvg-01")
                 assert result, err_msg
             elif 'storage' in dicts.keys() and dicts["storage"][0]["name"] == "cvg-02":
                 resp = dicts["storage"][0]['devices']
                 self.log.info("Resp is %s ", resp)
                 solution = storage1[1]['devices']
                 self.log.info("Solution is %s ", solution)
-                result, err_msg = self.verify_cvg_details(resp, solution)
+                result, err_msg = self.verify_cvg_details(resp, solution, "cvg-02")
                 assert result, err_msg
             else:
                 self.log.info("Node other than data node")
         return result, err_msg
 
-    def verify_cvg_details(self, resp: dict, solution: dict):
+    def verify_cvg_details(self, resp: dict, solution: dict, cvg: str):
         """
         Verify cvg details
         """
@@ -300,23 +300,23 @@ class QueryDeployment(RestTestLib):
         result = True
         self.log.info("Check for metadata fields")
         if resp['metadata'][0] == solution['metadata'][0]['path']:
-            self.log.info("Metadata fields match for cvg-02")
+            self.log.info(f"Metadata fields match for {cvg}. ")
         else:
-            err_msg = "Metadata fields match failed for cvg-02"
+            err_msg = f"Metadata fields match failed for {cvg}. "
             self.log.error(err_msg)
             result = False
         self.log.info("Check for data fields")
         if resp['data'][0] == solution['data'][0]['path']:
-            self.log.info("data fields match for cvg-02")
+            self.log.info(f"Data fields match for {cvg}. ")
         else:
-            err_msg = "data fields match failed for cvg-02"
+            err_msg = err_msg + f"data fields match failed for {cvg}."
             self.log.error(err_msg)
             result = False
         self.log.info("Check for data fields")
         if resp['data'][1] == solution['data'][1]['path']:
-            self.log.info("Data fields match for cvg-02")
+            self.log.info(f"Data fields match for {cvg}. ")
         else:
-            err_msg = "Data fields match failed for cvg-02"
+            err_msg = err_msg + f"Data fields match failed for {cvg}."
             self.log.error(err_msg)
             result = False
         return result, err_msg
@@ -361,7 +361,7 @@ class QueryDeployment(RestTestLib):
             if resp in node_id_list:
                 self.log.info("Machine id match successful")
             else:
-                err_msg = "Machine id mismatch found"
+                err_msg = "Machine id mismatch found. "
                 self.log.info(err_msg)
                 result = False
 
@@ -372,7 +372,7 @@ class QueryDeployment(RestTestLib):
             if resp in hostname_list:
                 self.log.info("Hostname match successful")
             else:
-                err_msg = "Hostname mismatch found"
+                err_msg = err_msg + "Hostname mismatch found"
                 self.log.info(err_msg)
                 result = False
         return result, err_msg
