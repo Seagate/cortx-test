@@ -234,7 +234,8 @@ class TestCorruptDataDetection:
             # Fetch the FID from m0trace log
             fid_resp = self.motr_obj.read_m0trace_log(filepath)
             logger.debug("fid_resp is %s", fid_resp)
-            metadata_path = self.emap_adapter_obj.get_metadata_device(self.motr_obj.master_node_list[0])
+            metadata_path = self.emap_adapter_obj.get_metadata_device(
+                self.motr_obj.master_node_list[0])
             # Run Emap on all objects, Object id list determines the parity or data
             data_gob_id_resp, parity_gob_id_resp = self.emap_adapter_obj.get_object_gob_id(
                 metadata_path[0], fid=fid_resp)
