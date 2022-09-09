@@ -1961,8 +1961,7 @@ class HAK8s:
         del_user = list(user.keys())
         failed_del = []
         try:
-            for i_i in range(len(del_user)):
-                user_del = del_user[i_i]
+            for user_del in del_user:
                 endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + user_del
                 LOGGER.info("Sending Delete %s request...", user_del)
                 response = self.restapi.rest_call("delete", endpoint=endpoint, headers=header)
