@@ -433,7 +433,7 @@ class TestCorruptDataDetection:
     @pytest.mark.motr_di
     def test_data_block_corruption_one_by_one(self):
         """
-        Corrupt data block one by one using emap script and
+        Corrupt data block one by one using m0cp and
          reading from object with m0cat should error.
         -s 4096 -c 10 -o 1048583 /root/infile -L 1
         -s 4096 -c 1 -o 1048583 /root/myfile -L 1 -u -O 0
@@ -443,10 +443,10 @@ class TestCorruptDataDetection:
         logger.info("STARTED: Test %s m0cp, corrupt and m0cat workflow of each"
                     " Data block one by one -aligned", test_prefix)
         count_list = [["4", "1"], ["4", "2"], ["4", "3"], ["4", "4"]]
-        bsize_list = ["1M", "1M", "1M", "1M", "1M"]
-        layout_ids = ["9", "9", "9", "9", "9"]
+        bsize_list = ["1M", "1M", "1M", "1M"]
+        layout_ids = ["9", "9", "9", "9"]
         offsets = [0, 4096, 8192, 12288]
-        logger.info("STARTED: Test %s data unit corruption in loop - unaligned", test_prefix)
+        logger.info("STARTED: Test %s data unit corruption in loop - aligned", test_prefix)
         logger.info("Step 1: Perform m0cp and corrupt the data block")
         self.m0cp_corrupt_data_m0cat(layout_ids, bsize_list, count_list, offsets)
         logger.info("ENDED: Test %s m0cp, corrupt and m0cat workflow of each"
