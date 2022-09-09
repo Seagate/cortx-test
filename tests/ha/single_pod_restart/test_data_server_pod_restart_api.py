@@ -323,7 +323,6 @@ class TestDataServerPodRestartAPI:
         """
         LOGGER.info("STARTED: Test to verify multipart upload during single data and server pod "
                     "restart")
-
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
         part_numbers = list(range(1, total_parts + 1))
@@ -334,7 +333,6 @@ class TestDataServerPodRestartAPI:
         download_path1 = os.path.join(self.test_dir_path, self.test_file + "_download1")
         download_path2 = os.path.join(self.test_dir_path, self.test_file + "_download2")
         event = threading.Event()  # Event to be used to send intimation of pod restart
-
         LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -365,7 +363,6 @@ class TestDataServerPodRestartAPI:
         upload_checksum1 = str(resp[2])
         LOGGER.info("Step 1: Successfully performed multipart upload for  size %s MB in "
                     "total %s parts.", file_size, total_parts)
-
         LOGGER.info("Step 2: Shutdown one data and one server pod with replica method and verify"
                     " cluster & remaining pods status")
         for pod_prefix in self.pod_dict:
@@ -383,20 +380,17 @@ class TestDataServerPodRestartAPI:
             self.restore_pod = True
         LOGGER.info("Step 2: Successfully shutdown one data and one server pod. Verified cluster "
                     "and services states are as expected & remaining pods status is online")
-
         LOGGER.info("Step 3: Download the uploaded object in healthy cluster and verify checksum")
         resp = self.ha_obj.dnld_obj_verify_chcksm(s3_test_obj, self.bucket_name,
                                                   self.object_name, download_path, upload_checksum1)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Successfully downloaded the object and verified the checksum")
-
         object_name_1 = f"ha-mp-obj-{int(perf_counter_ns())}"
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Create new bucket")
             bucket_name_1 = f"ha-mp-bkt-{int(perf_counter_ns())}"
         else:
             bucket_name_1 = self.bucket_name
-
         LOGGER.info("Step 4: Start multipart upload of %s MB object in background", file_size)
         args = {'s3_data': self.s3_clean, 'bucket_name': bucket_name_1,
                 'object_name': object_name_1, 'file_size': file_size, 'total_parts': total_parts,
@@ -406,9 +400,9 @@ class TestDataServerPodRestartAPI:
         thread.daemon = True  # Daemonize thread
         thread.start()
         LOGGER.info("Step 4: Started multipart upload of %s MB object in background", file_size)
-
+        LOGGER.info("Wait for %s secs for multipart operation to be in progress",
+                    HA_CFG["common_params"]["60sec_delay"])
         time.sleep(HA_CFG["common_params"]["60sec_delay"])
-
         LOGGER.info("Step 5: Restore data, server pod and check cluster status.")
         event.set()
         for pod_prefix in self.pod_dict:
@@ -427,16 +421,13 @@ class TestDataServerPodRestartAPI:
         LOGGER.info("Step 5: Successfully started data, server pod and cluster is online.")
         self.restore_pod = False
         event.clear()
-
         LOGGER.info("Step 6: Checking responses from background process")
         thread.join()
         responses = tuple()
         while len(responses) < 4:
             responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
-
         if not responses:
             assert_utils.assert_true(False, "Background process failed to do multipart upload")
-
         exp_failed_parts = responses[0]
         failed_parts = responses[1]
         parts_etag = responses[2]
@@ -451,19 +442,16 @@ class TestDataServerPodRestartAPI:
                                             f"state. Failed parts: {failed_parts} and "
                                             f"{exp_failed_parts}")
         LOGGER.info("Step 6: Successfully checked background process responses")
-
         parts_etag = sorted(parts_etag, key=lambda d: d['PartNumber'])
         LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
         upload_checksum2 = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
                                                             compare=False)[0]
         LOGGER.info("Successfully uploaded all the parts of multipart upload.")
-
         LOGGER.info("Step 7: Listing parts of multipart upload")
         res = s3_mp_test_obj.list_parts(mpu_id, bucket_name_1, object_name_1)
         assert_utils.assert_true(res[0], res)
         assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
         LOGGER.info("Step 7: Listed parts of multipart upload. Count: %s", len(res[1]["Parts"]))
-
         LOGGER.info("Step 8: Completing multipart upload")
         res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, bucket_name_1,
                                                        object_name_1)
@@ -471,7 +459,7 @@ class TestDataServerPodRestartAPI:
         res = s3_test_obj.object_list(bucket_name_1)
         assert_utils.assert_in(object_name_1, res[1], res)
         LOGGER.info("Step 8: Multipart upload completed")
-
+        LOGGER.info("Step 9: Download objects and verify checksum")
         LOGGER.info("Step 9.1: Download the uploaded objects in healthy cluster and verify "
                     "checksum")
         resp = self.ha_obj.dnld_obj_verify_chcksm(s3_test_obj, self.bucket_name, self.object_name,
@@ -482,7 +470,6 @@ class TestDataServerPodRestartAPI:
                                                   download_path1, upload_checksum2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Successfully downloaded the objects and verified the checksum")
-
         object_name_2 = f"ha-mp-obj-{int(perf_counter_ns())}"
         if CMN_CFG["dtm0_disabled"]:
             LOGGER.info("Create new bucket")
@@ -644,7 +631,7 @@ class TestDataServerPodRestartAPI:
                                                     total_parts=total_parts,
                                                     multipart_obj_path=object_path)
         object_path = resp[2]
-        parts_etag2 = resp[3]
+        parts_etag3 = resp[3]
         assert_utils.assert_true(resp[0], f"Failed to upload parts. Response: {resp}")
         LOGGER.info("Step 7: Successfully completed partial multipart upload for %s part out of "
                     "%s", parts_half2, total_parts)
@@ -682,10 +669,10 @@ class TestDataServerPodRestartAPI:
                                                     total_parts=total_parts,
                                                     multipart_obj_path=object_path)
         assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
-        parts_etag3 = resp[3]
+        parts_etag4 = resp[3]
         LOGGER.info("Step 10: Successfully uploaded remaining %s parts out of %s",
                     remaining_parts, total_parts)
-        etag_list = parts_etag1 + parts_etag2 + parts_etag3
+        etag_list = parts_etag1 + parts_etag2 + parts_etag3 + parts_etag4
         parts_etag = sorted(etag_list, key=lambda d: d['PartNumber'])
         LOGGER.info("Step 11: Listing parts of multipart upload")
         res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
