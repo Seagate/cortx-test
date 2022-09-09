@@ -1934,21 +1934,26 @@ class HAK8s:
         payload = {}
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
         for i_d in range(num_users):
-            name = f"ha_iam_{i_d}_{time.perf_counter_ns()}"
-            payload.update({"uid": name})
-            payload.update({"display_name": name})
-            LOGGER.info("Creating IAM user request....")
-            resp = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
-                                          headers=header)
-            LOGGER.info("IAM user request successfully sent...")
-            if resp.status_code == HTTPStatus.CREATED:
-                resp = resp.json()
-                user = dict()
-                user.update({resp["keys"][0]["user"]: {
-                    "user_name": resp["keys"][0]["user"],
-                    "password": S3_CFG["CliConfig"]["s3_account"]["password"],
-                    "accesskey": resp["keys"][0]["access_key"],
-                    "secretkey": resp["keys"][0]["secret_key"]}})
+            try:
+                name = f"ha_iam_{i_d}_{time.perf_counter_ns()}"
+                payload.update({"uid": name})
+                payload.update({"display_name": name})
+                LOGGER.info("Creating IAM user request....")
+                resp = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
+                                              headers=header)
+                LOGGER.info("IAM user request successfully sent...")
+                if resp.status_code == HTTPStatus.CREATED:
+                    resp = resp.json()
+                    user = dict()
+                    user.update({resp["keys"][0]["user"]: {
+                        "user_name": resp["keys"][0]["user"],
+                        "password": S3_CFG["CliConfig"]["s3_account"]["password"],
+                        "accesskey": resp["keys"][0]["access_key"],
+                        "secretkey": resp["keys"][0]["secret_key"]}})
+            except (CTException, req_exception.ConnectionError, req_exception.ConnectTimeout) \
+                    as error:
+                LOGGER.exception("Error: %s", error)
+
         return user
 
     def delete_iam_user_with_header(self, user, header):

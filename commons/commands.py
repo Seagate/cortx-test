@@ -187,6 +187,7 @@ GET_PID_CMD = "systemctl status {}.service | grep PID"
 KILL_CMD = "kill -9 {}"
 SAFE_KILL_CMD = "kill {}"
 PIDOF_CMD = "pidof {}"
+SAFE_KILL_CMD = "kill {}"
 
 # CORTXCLI Commands
 CMD_LOGIN_CORTXCLI = "cortxcli"
@@ -665,3 +666,5 @@ PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'
 
 # stat collection through kubectl top
 CMD_PGREP_TOP = 'pgrep "/bin/sh ./{} {}" -fx'
+
+GET_PID_INIT_PROCESS = "ps -aux | grep {} | head -n 1 | awk '{{print $2}}'"

@@ -122,6 +122,7 @@ class LogicalNode(Host):
         :return: Dict
         """
         pod_containers = {}
+        pod_list = pod_list if pod_list else list()
         if not pod_list:
             log.info("Get all data pod names of %s", pod_prefix)
             output = self.execute_cmd(commands.CMD_POD_STATUS +
@@ -478,7 +479,7 @@ class LogicalNode(Host):
             return True, output
         except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
-                    LogicalNode.copy_file_to_container.__name__, error)
+                      LogicalNode.copy_file_to_container.__name__, error)
             return False, error
 
     def get_machine_id_for_pod(self, pod_name: str):
