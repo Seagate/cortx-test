@@ -24,6 +24,8 @@ import os
 import logging
 from multiprocessing import Process
 from time import perf_counter_ns
+from datetime import timedelta
+
 
 from config import CMN_CFG
 from config.s3 import S3_CFG
@@ -403,9 +405,11 @@ def copy_obj_di_check(src_bucket, src_object, dest_bucket, dest_object, **kwargs
         dest_resp = s3_test_object.object_info(dest_bucket, dest_object)
         put_etag = src_resp[1]["ETag"]
         copy_etag = dest_resp[1]["ETag"]
-    LOG.info("Verify ETags of source and destination object")
-    LOG.info("ETags: Source Object: %s, Destination Object: %s", put_etag, copy_etag)
-    assert_utils.assert_equal(put_etag, copy_etag, f"Failed to match ETag: {put_etag}, {copy_etag}")
+        assert_utils.assert_equal(put_etag, copy_etag, f"Failed to match ETag: {put_etag},"
+                                  f" {copy_etag}")
+    else:
+        assert_utils.assert_equal(put_etag, copy_etag.strip('"'), f"Failed to match ETag"
+                                  f": {put_etag}," f" {copy_etag}")
     LOG.info("Matched ETag: %s, %s", put_etag, copy_etag)
     LOG.info("Get metadata of the destination object and check metadata is same as source object.")
     resp_meta1 = s3_test_object.object_info(src_bucket, src_object)
@@ -443,6 +447,32 @@ def list_objects_in_bucket(bucket, objects, s3_test_obj):
     for obj in objects:
         assert_utils.assert_true(obj in listed_objects, f"{obj} not present in {bucket}")
 
+
+def upload_mpu_copy_obj(src_bucket, src_obj, dest_bucket, dest_obj, **kwargs):
+    """ method to upload object via multipart upload and copy it to some bucket
+    :param src_bucket: The name of the source bucket.
+    :param src_obj: The name of the source object.
+    :param dest_bucket: The name of the destination bucket.
+    :param dest_obj: The name of the destination object.
+    :return: etag, pre_date (current date - 1), post_date (cuurent date + 1) """
+    file_path = kwargs.get("fpath", "None")
+    file_size = kwargs.get("file_size", 0)
+    total_parts = kwargs.get("total_parts", 2)
+    s3_test_object = kwargs.get("s3_testobj", "None")
+    s3mp_test_obj = kwargs.get("s3_mp_testobj", "None")
+    _ = s3mp_test_obj.complete_multipart_upload_with_di(src_bucket, src_obj, file_path,
+                                                        total_parts=total_parts,
+                                                        file_size=file_size)
+    LOG.info("Copy object to different bucket")
+    status, response = s3_test_object.copy_object(src_bucket, src_obj, dest_bucket, dest_obj)
+    assert_utils.assert_true(status, response)
+    date2 = response["CopyObjectResult"]["LastModified"]
+    etag = response["CopyObjectResult"]["ETag"]
+    src_resp = s3_test_object.object_info(src_bucket, src_obj)
+    assert_utils.assert_equal(src_resp[1]["ETag"], etag, "ETags don't match")
+    pre_date = date2 - timedelta(days=1)
+    post_date = date2 + timedelta(days=1)
+    return etag, pre_date, post_date
 
 class S3BackgroundIO:
     """Class to perform/handle background S3 IOs for S3 tests using S3bench."""
