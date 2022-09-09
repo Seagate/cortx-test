@@ -157,7 +157,7 @@ class TestControlPodSoftFailure:
         self.test_prefix = 'test-45498'
         self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
+                                                    log_prefix=self.test_prefix, skipcleanup=True, nsamples=2, nclients=2)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Created IAM user and performed IOs before soft-failure.")
 
@@ -186,7 +186,7 @@ class TestControlPodSoftFailure:
         thr_iam.daemon = True  # Daemonize thread
         self.test_io_prefix = 'test-45498-io'
         args = {'s3userinfo': list(users.values())[0], 'log_prefix': self.test_io_prefix,
-                'nclients': 1, 'nsamples': 5, 'output': io_output, 'setup_s3bench': False}
+                'nclients': 1, 'nsamples': 8, 'output': io_output, 'setup_s3bench': False}
         LOGGER.info("Step 2.2: Start IOs in background during control pod soft-failure.")
         io_thread = threading.Thread(target=self.ha_obj.event_s3_operation, args=(event,),
                                      kwargs=args)
@@ -231,7 +231,7 @@ class TestControlPodSoftFailure:
         created_users = iam_resp[3]
         if failed:
             assert_utils.assert_true(False, "No IAM user creation/deletion expected to fail before "
-                                            "or after soft-failure: {failed}")
+                                            f"or after soft-failure: {failed}")
         if created_users:
             for i_i in created_users:
                 self.s3_clean.update(i_i)
@@ -246,12 +246,9 @@ class TestControlPodSoftFailure:
             responses = io_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
         pass_logs = list(x[1] for x in responses["pass_res"])
         fail_logs = list(x[1] for x in responses["fail_res"])
-        resp = self.ha_obj.check_s3bench_log(file_paths=pass_logs)
-        assert_utils.assert_false(len(resp[1]), f"Expected Pass, But Logs which contain failures:"
-                                                f" {resp[1]}")
-        resp = self.ha_obj.check_s3bench_log(file_paths=fail_logs, pass_logs=False)
-        assert_utils.assert_true(len(resp[1]) < len(fail_logs),
-                                 f"Logs which contain passed IOs: {resp[1]}")
+        all_logs = pass_logs + fail_logs
+        resp = self.ha_obj.check_s3bench_log(file_paths=all_logs)
+        assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
         LOGGER.info("Step 4.2: Verified background process of IOs")
         LOGGER.info("Step 4: Verified responses from background processes")
 

@@ -1786,7 +1786,7 @@ class HAK8s:
                     if not header:
                         user = self.mgnt_ops.create_account_users(nusers=1)
                     else:
-                        user = self.create_iam_user_with_header(i_i, header)
+                        user = self.create_iam_user_with_header(header=header)
                     if user is None:
                         if event.is_set():
                             exp_fail.append(user)
@@ -1809,7 +1809,8 @@ class HAK8s:
                         if not header:
                             resp = self.delete_s3_acc_buckets_objects({user: del_users_dict[user]})
                         else:
-                            resp = self.delete_iam_user_with_header(user, header)
+                            resp = self.delete_iam_user_with_header({user: del_users_dict[user]},
+                                                                    header)
                         if not resp[0]:
                             user_del_failed.append(user)
                             if event.is_set():
@@ -1930,44 +1931,55 @@ class HAK8s:
 
         return pod_ep_dict
 
-    def create_iam_user_with_header(self, i_d, header):
+    def create_iam_user_with_header(self, num_users=1, header=None):
         """
         Function create IAM user with give header info.
-        :param i_d: Int count number for IAM user name creation
+        :param num_users: Int count for number of IAM user creation
         :param header: Existing header to use for IAM user creation post request
         :return: None if IAM user REST req fails or Dict response for IAM user successful creation
         """
         user = None
         payload = {}
-        name = f"ha_iam_{i_d}_{time.perf_counter_ns()}"
-        payload.update({"uid": name})
-        payload.update({"display_name": name})
-        LOGGER.info("Creating IAM user request....")
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
-        resp = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
-                                      headers=header)
-        LOGGER.info("IAM user request successfully sent...")
-        if resp.status_code == HTTPStatus.CREATED:
-            resp = resp.json()
-            user = dict()
-            user.update({resp["keys"][0]["user"]: {
-                "user_name": resp["keys"][0]["user"],
-                "password": S3_CFG["CliConfig"]["s3_account"]["password"],
-                "accesskey": resp["keys"][0]["access_key"],
-                "secretkey": resp["keys"][0]["secret_key"]}})
+        for i_d in range(num_users):
+            name = f"ha_iam_{i_d}_{time.perf_counter_ns()}"
+            payload.update({"uid": name})
+            payload.update({"display_name": name})
+            LOGGER.info("Creating IAM user request....")
+            resp = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
+                                          headers=header)
+            LOGGER.info("IAM user request successfully sent...")
+            if resp.status_code == HTTPStatus.CREATED:
+                resp = resp.json()
+                user = dict()
+                user.update({resp["keys"][0]["user"]: {
+                    "user_name": resp["keys"][0]["user"],
+                    "password": S3_CFG["CliConfig"]["s3_account"]["password"],
+                    "accesskey": resp["keys"][0]["access_key"],
+                    "secretkey": resp["keys"][0]["secret_key"]}})
         return user
 
     def delete_iam_user_with_header(self, user, header):
         """
         Function delete IAM user with give header info.
-        :param user: IAM user name to be deleted
+        :param user: IAM user info dict to be deleted
         :param header: Existing header to use for IAM user delete request
         :return: Tuple
         """
-        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + user
-        LOGGER.info("Sending Delete IAM user request...")
-        response = self.restapi.rest_call("delete", endpoint=endpoint, headers=header)
-        if response.status_code == HTTPStatus.OK:
-            return True, "Deleted user successfully"
-        LOGGER.debug(response.json())
-        return False, response.json()["message"]
+        del_user = list(user.keys())
+        failed_del = []
+        try:
+            for i_i in range(len(del_user)):
+                user_del = del_user[i_i]
+                endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + user_del
+                LOGGER.info("Sending Delete %s request...", user_del)
+                response = self.restapi.rest_call("delete", endpoint=endpoint, headers=header)
+                if response.status_code != HTTPStatus.OK:
+                    failed_del.append(user)
+                    LOGGER.debug(response)
+        except (req_exception.ConnectionError, req_exception.ConnectTimeout) as error:
+            LOGGER.exception("Error: %s", error)
+            failed_del.append(user)
+        if failed_del:
+            return False, failed_del
+        return True, "User deleted successfully"
