@@ -309,9 +309,9 @@ CMD_PCS_GREP = "pcs status --full | grep {}"
 CMD_SALT_GET_HOST = 'salt "*" grains.get host'
 CMD_CORTX_VERSION = 'cat /opt/seagate/cortx/RELEASE.INFO | grep VERSION'
 CMD_DECRYPT_CERTIFICATE = "openssl x509 -in " \
-        "/root/deploy-scripts/charts/cortx/ssl-cert/s3.seagate.com.pem -noout -{}"
+        "/root/deploy-scripts/charts/cortx/ssl-cert/cortx.pem -noout -{}"
 CMD_FETCH_CERTIFICATE_DETAILS = "openssl x509 -in " \
-                                "/root/deploy-scripts/charts/cortx/ssl-cert/s3.seagate.com.pem " \
+                                "/root/deploy-scripts/charts/cortx/ssl-cert/cortx.pem " \
                                 "-noout -{} -nameopt lname -nameopt sep_multiline"
 # LDAP commands
 CMD_GET_S3CIPHER_CONST_KEY = "s3cipher generate_key --const_key cortx"
@@ -556,6 +556,7 @@ KUBECTL_DEL_DEPLOY = "kubectl delete deployment {}"
 KUBECTL_DEPLOY_BACKUP = "kubectl get deployment {} -o yaml > {}"
 KUBECTL_RECOVER_DEPLOY = "kubectl create -f {}"
 KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-hax -- hostname"
+KUBECTL_GET_POD_FQDN = "kubectl exec -it {} -c cortx-hax -- hostname --all-fqdns"
 KUBECTL_GET_RECENT_POD = "kubectl get pods --sort-by=.metadata.creationTimestamp -o " \
                          "jsonpath='{{.items[-1:].metadata.name}}'"
 KUBECTL_GET_POD_DEPLOY = "kubectl get pods -l app={} -o custom-columns=:metadata.name"

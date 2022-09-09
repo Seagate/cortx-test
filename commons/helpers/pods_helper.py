@@ -520,6 +520,18 @@ class LogicalNode(Host):
         hostname = output[0].strip()
         return hostname
 
+    def get_pod_fqdn(self, pod_name):
+        """
+        Helper function to get pod hostname
+        :param pod_name: name of the pod
+        :return: str
+        """
+        log.info("Getting pod hostname for pod %s", pod_name)
+        cmd = commands.KUBECTL_GET_POD_FQDN.format(pod_name)
+        output = self.execute_cmd(cmd=cmd, read_lines=True)
+        hostname = output[0].strip()
+        return hostname
+
     def kill_process_in_container(self, pod_name, container_name, process_name):
         """
         Kill specific process in container
