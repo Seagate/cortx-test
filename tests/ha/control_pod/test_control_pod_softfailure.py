@@ -232,11 +232,13 @@ class TestControlPodSoftFailure:
             assert_utils.assert_true(False, "Background process failed to do IAM user CRUD "
                                             "operations")
         failed = iam_resp[1]
+        exp_failed = iam_resp[0]
         user_del_failed = iam_resp[2]
         created_users = iam_resp[3]
-        if failed:
-            assert_utils.assert_true(False, "No IAM user creation/deletion expected to fail before "
-                                            f"or after soft-failure: {failed}")
+        assert_utils.assert_true(failed, "No IAM user creation/deletion expected to fail before "
+                                         f"or after soft-failure: {failed}")
+        assert_utils.assert_false(exp_failed, "IAM user creation/deletion expected to fail during "
+                                              f"soft-failure: {exp_failed}")
         if created_users:
             for i_i in created_users:
                 self.s3_clean.update(i_i)

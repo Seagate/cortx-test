@@ -1806,22 +1806,13 @@ class HAK8s:
                 if len(del_users) > i_i:
                     LOGGER.debug("Deleting %s user", del_users[i_i])
                     user = del_users[i_i]
-                    try:
-                        if not header:
-                            resp = self.delete_s3_acc_buckets_objects({user: del_users_dict[user]})
-                        else:
-                            resp = self.delete_iam_user_with_header({user: del_users_dict[user]},
-                                                                    header)
-                        if not resp[0]:
-                            user_del_failed.append(user)
-                            if event.is_set():
-                                exp_fail.append(user)
-                            else:
-                                failed.append(user)
-                    except (req_exception.ConnectionError, req_exception.ConnectTimeout) as error:
-                        LOGGER.exception("Error: %s", error)
-                        if user not in user_del_failed:
-                            user_del_failed.append(user)
+                    if not header:
+                        resp = self.delete_s3_acc_buckets_objects({user: del_users_dict[user]})
+                    else:
+                        resp = self.delete_iam_user_with_header({user: del_users_dict[user]},
+                                                                header)
+                    if not resp[0]:
+                        user_del_failed.append(user)
                         if event.is_set():
                             exp_fail.append(user)
                         else:
