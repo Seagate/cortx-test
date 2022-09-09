@@ -527,6 +527,7 @@ class LogicalNode(Host):
         :param container_name: Container name
         :param process_name: Process name to be killed
         :keyword safe_kill: To perform safe kill of process PID
+        :keyword pid: Process PID to be killed
         :return resp: String.
         """
         safe_kill = kwargs.get("safe_kill", False)

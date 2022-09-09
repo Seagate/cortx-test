@@ -1768,6 +1768,7 @@ class HAK8s:
         :param num_bkts: Number of buckets to be created and deleted
         :param del_users_dict: Dict of users to be deleted
         :param output: Output queue in which results should be put
+        :keyword header: Obtained header pass for IAM create/delete REST requests
         :return: Queue containing output lists
         """
         header = kwargs.get("header", False)

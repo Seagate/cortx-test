@@ -13,6 +13,7 @@ common_params:
   2sec_delay: 2
   5sec_delay: 5
   10sec_delay: 10
+  15sec_delay: 15
   20sec_delay: 20
   30sec_delay: 30
   60sec_delay: 60
