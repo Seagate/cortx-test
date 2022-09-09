@@ -446,7 +446,7 @@ class TestDataServerPodRestartAPI:
                     "cluster")
         LOGGER.info("Step 8: Overwrite existing object of bucket %s", self.bucket_name)
         resp = self.ha_api.object_overwrite_dnld(self.s3_test_obj, s3_data, iteration=1,
-                                                 random_size=False)
+                                                 random_size=True)
         assert_utils.assert_true(resp[0], "Failure observed in overwrite method.")
         for checksum in resp[1].values():
             assert_utils.assert_equal(checksum[0], checksum[1],
