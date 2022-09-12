@@ -8,6 +8,8 @@ edit_deployment_delay: 120
 size_list: [1, 2, 3, 4, 5, 6, 7]
 # count to restart the rgw process
 rgw_restart_cnt: 5
+# count to restart for multiple process restart test cases
+multi_process_restart_count: 10
 
 #m0d restart interval for Continuous IO's test - 1hr
 m0d_restart_continuous_ios_delay: 3600

@@ -167,10 +167,10 @@ class TestMultiProcessRestart:
         log_file_prefix = 'test-47155'
         que = multiprocessing.Queue()
 
-        self.log.info("Step 1: Create bucket for IO operations")
+        self.log.info("Step1: Create bucket for IO operations")
         self.s3_test_obj.create_bucket(self.bucket_name)
 
-        self.log.info("Step 2: Start write Operations in background")
+        self.log.info("Step2: Start write Operations in background")
         proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op,
                                                 args=(self.bucket_name, self.object_name,
                                                       DTM_TEST_CFG['clients'],
@@ -338,7 +338,7 @@ class TestMultiProcessRestart:
             container_prefix=const.MOTR_CONTAINER_PREFIX,
             process=self.m0d_process,
             check_proc_state=True,
-            restart_cnt=10,
+            restart_cnt=self.test_cfg['multi_process_restart_count'],
             specific_pod=True)
 
         # Assert if process restart failed
@@ -372,7 +372,7 @@ class TestMultiProcessRestart:
             bucket = f'{self.bucket_name}-{each}'
             self.s3_test_obj.create_bucket(bucket)
             bucket_list.append(bucket)
-        self.log.info("Step 2a: Start write Operation:")
+        self.log.info("Step 2: Start write Operation:")
         self.dtm_obj.perform_write_op(bucket_prefix=self.bucket_name,
                                       object_prefix=self.object_name,
                                       no_of_clients=self.test_cfg['clients'],
@@ -382,13 +382,13 @@ class TestMultiProcessRestart:
         resp = que_1.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info_write = resp[1]
-        self.log.info("Step 2a: Start READ Operations in loop in background for data written in "
+        self.log.info("Step 3a: Start READ Operations in loop in background for data written in "
                       "step 1:")
         proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
                                                args=(workload_info_write, que_1, False, True,
                                                      True, self.test_cfg['loop_count']))
         proc_read_op.start()
-        self.log.info("Step 2b: Start write Operations in loop in background:")
+        self.log.info("Step 3b: Start write Operations in loop in background:")
         args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
                 'no_of_clients': self.test_cfg['clients'],
                 'no_of_samples': self.test_cfg['samples'], 'log_file_prefix': log_file_prefix,
@@ -397,7 +397,8 @@ class TestMultiProcessRestart:
         proc_write_op.start()
 
         time.sleep(self.delay)
-        self.log.info("Step 3 : Perform Single m0d Process Restart During Write Operations")
+        self.log.info("Step 4: Perform same single m0d Process Restart for %s During Write and Read"
+                      "Operations", self.test_cfg['multi_process_restart_count'])
         resp_proc = self.dtm_obj.process_restart_with_delay(
             master_node=self.master_node_list[0],
             health_obj=self.health_obj,
@@ -406,15 +407,15 @@ class TestMultiProcessRestart:
             process=self.m0d_process,
             check_proc_state=True,
             proc_restart_delay=self.test_cfg['m0d_restart_continuous_ios_delay'],
-            restart_cnt=10,
+            restart_cnt=self.test_cfg['multi_process_restart_count'],
             specific_pod=True)
 
-        self.log.info("Step 4a: Wait for READ Operation to complete.")
+        self.log.info("Step 5a: Wait for READ Operation to complete.")
         if proc_read_op.is_alive():
             proc_read_op.join()
         resp = que_1.get()
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 4b: Wait for Write Operation to complete.")
+        self.log.info("Step 5b: Wait for Write Operation to complete.")
         if proc_write_op.is_alive():
             proc_write_op.join()
         resp = que_2.get()
@@ -424,7 +425,7 @@ class TestMultiProcessRestart:
         assert_utils.assert_true(resp_proc, "Failure observed during process restart/recovery")
 
         workload_info = resp[1]
-        self.log.info("Step 5: Perform Read-Validate on data written in Step 2b")
+        self.log.info("Step 6: Perform Read-Validate on data written in Step 2b")
         self.dtm_obj.perform_ops(workload_info, que_2, False, True, True)
         resp = que_2.get()
         assert_utils.assert_true(resp[0], resp[1])
