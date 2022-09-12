@@ -156,7 +156,6 @@ class LogicalNode(Host):
             elif pod_name:
                 log.info("Getting set name and set type of pod %s", pod_name)
                 set_type, set_name = self.get_set_type_name(pod_name=pod_name)
-                deploy = set_name
             else:
                 return False, "Please provide atleast one of the parameters set_name, deploy or " \
                               "pod_name"
