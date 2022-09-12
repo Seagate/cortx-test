@@ -29,7 +29,6 @@ import threading
 import time
 from http import HTTPStatus
 from multiprocessing import Queue
-from time import perf_counter_ns
 
 import pytest
 
@@ -43,6 +42,7 @@ from commons.utils import system_utils as sysutils
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
+from libs.csm.csm_interface import csm_api_factory
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
@@ -50,7 +50,6 @@ from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
-from libs.csm.csm_interface import csm_api_factory
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -180,15 +179,12 @@ class TestControlPodSoftFailure:
         LOGGER.info("Changed control pod process delay to 0")
 
         LOGGER.info("Cleanup: Check cluster status")
-        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0])
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cleanup: Cluster status checked successfully")
 
         LOGGER.info("Removing extra files")
-        # sysutils.remove_file(self.modified_yaml)
-        # self.node_master_list[0].remove_remote_file(self.modified_yaml)
-        # self.node_master_list[0].remove_remote_file(self.backup_yaml)
-        sysutils.remove_dirs(self.test_dir_path)
+        sysutils.cleanup_dir(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
     def add_proc_restart_delay(self, proc_restart_delay=0):
@@ -219,6 +215,7 @@ class TestControlPodSoftFailure:
                                                      decode=True)
         return resp
 
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-45499")
@@ -303,7 +300,8 @@ class TestControlPodSoftFailure:
         LOGGER.info("Step 4: Perform WRITE-READ-Verify on user %s", self.uids[0])
         self.test_prefix = 'test-45499-new'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.users.values())[0],
-                                                    log_prefix=self.test_prefix, skipcleanup=True)
+                                                    log_prefix=self.test_prefix,
+                                                    skipcleanup=True, nsamples=5, nclients=5)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs-READs-Verify with variable sizes objects.")
 
@@ -312,23 +310,25 @@ class TestControlPodSoftFailure:
         time.sleep(proc_restart_delay)
 
         LOGGER.info("Step 5: Checking cluster status")
-        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=60)
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
         assert_utils.assert_false(resp[0], resp[1])
         LOGGER.info("Step 5: Cluster status is good")
 
         LOGGER.info("Step 6: Create new IAM user and perform IOs")
-        self.test_prefix = f'test-45499-1'
+        self.test_prefix = 'test-45499-1'
         new_user = self.mgnt_ops.create_account_users(nusers=1)
-        self.s3_clean = new_user
+        self.s3_clean.update(new_user)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(new_user.values())[0],
                                                     log_prefix=self.test_prefix, nclients=2,
-                                                    nsamples=2)
+                                                    nsamples=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Created new IAM user and performed IOs")
 
         LOGGER.info("ENDED: Test IOs and IAM user CRUDs before and after csm-agent is down in all "
                     "control pods")
 
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-45500")
@@ -368,8 +368,8 @@ class TestControlPodSoftFailure:
         del_users = self.mgnt_ops.create_account_users(nusers=num_users)
 
         LOGGER.info("Step 2: Perform IAM user creation/deletion in background")
-        args = {'user_crud': True, 'bkt_crud': False, 'num_users': num_users, 's3_obj': self.s3_obj,
-                'output': iam_output, 'del_users_dict': del_users, 'header': self.header}
+        args = {'user_crud': True, 'num_users': num_users, 'output': iam_output,
+                'del_users_dict': del_users, 'header': self.header}
         thread1 = threading.Thread(target=self.ha_obj.iam_bucket_cruds, args=(event,), kwargs=args)
         thread1.daemon = True  # Daemonize thread
 
@@ -433,8 +433,8 @@ class TestControlPodSoftFailure:
             assert_utils.assert_true(False, "IAM user CRUD operations are expected to be failed "
                                             "during control pod soft failures")
 
-        assert_utils.assert_true(len(created_users), f"Few IAM user creation is expected during "
-                                                     f"soft failures in loop")
+        assert_utils.assert_true(len(created_users), "Few IAM user creation is expected during "
+                                                     "soft failures in loop")
         for i_i in created_users:
             self.s3_clean.update({i_i})
             self.uids.append(i_i["user_name"])
@@ -465,12 +465,12 @@ class TestControlPodSoftFailure:
                     "restart", self.uids)
 
         LOGGER.info("Step 7: Create new IAM user and perform IOs")
-        self.test_prefix = f'test-45500-1'
+        self.test_prefix = 'test-45500-1'
         new_user = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean = new_user
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(new_user.values())[0],
                                                     log_prefix=self.test_prefix, nclients=2,
-                                                    nsamples=2)
+                                                    nsamples=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Created new IAM user and performed IOs")
 
