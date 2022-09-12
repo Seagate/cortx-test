@@ -130,7 +130,7 @@ k8s_cortx_deploy:
   log_path: "/etc/cortx/log"
   custom_log_path: "/etc/cortx/custom/log"
   s3_max_start_timeout: 240
-  s3_instances_per_node: 2
+  s3_instances_per_node: 1
   container_group_size: 1
   sleep_time: 60
   service_delay: 120
@@ -147,12 +147,13 @@ k8s_cortx_deploy:
   service_type: "LoadBalancer"
   lb_count: 1
   deployment_type: "standard"
-  data_disk_size: "20Gi"
-  metadata_disk_size: "20Gi"
+  data_disk_size: "25Gi"
+  metadata_disk_size: "25Gi"
   log_disk_size: "4Gi"
   git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"
   git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/$tag/k8_cortx_cloud/$file"
   k8s_dir: "/root/deploy-scripts/k8_cortx_cloud/"
+  local_path_yaml: "cortx-cloud-3rd-party-pkg/auto-gen-rancher-provisioner/local-path-storage.yaml"
   prov_branch: "cortx-test"
   upgrade_type_cold: "cold"
   upgrade_type_rolling: "rolling"
@@ -233,16 +234,16 @@ k8s_cortx_deploy:
     hax:
       requests:
         mem: '256Mi'
-        cpu: '400m'
+        cpu: '300m'
       limits:
         mem: 1536
-        cpu: '800m'
+        cpu: '500m'
     motr:
       requests:
         mem: '1Gi'
         cpu: '500m'
       limits:
-        mem: 4096
+        mem: 4
         cpu: 2000
     confd:
       requests:
@@ -256,7 +257,7 @@ k8s_cortx_deploy:
           mem: '1Gi'
           cpu: '500m'
         limits:
-          mem: 2000
+          mem: 2
           cpu: 1500
     agent:
       requests:

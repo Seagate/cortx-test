@@ -73,7 +73,7 @@ CMD_TOUCH_FILE = "touch {}"
 LSSCSI_CMD = "lsscsi > {}"
 LINUX_STRING_CMD = "sed '/{}/!d' {} > {}"
 LINUX_REPLACE_STRING = "sed -i 's/{}/{}/g' {}"
-LINUX_EXPORT = "export {}={}"
+LINUX_EXPORT = "export $key=$val"
 LINE_COUNT_CMD = "cat {} | wc -l"
 DISCONNECT_OS_DRIVE_CMD = "echo 1 > /sys/block/{}/device/delete"
 CONNECT_OS_DRIVE_CMD = 'echo "- - -" > /sys/class/scsi_host/host{}/scan'
@@ -538,6 +538,7 @@ K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
 K8S_APPLY_YAML_CONFIG = 'kubectl apply -f {}'
+K8S_DEL_YAML_CONFIG = 'kubectl delete -f $path'
 GET_STATS = "consul kv get -recurse stats"
 GET_BYTECOUNT = "consul kv get -recurse bytecount"
 GET_REQUEST_USAGE = "consul kv get -recurse csm/config/CSM_SERVICE | grep request_quota"

@@ -68,8 +68,8 @@ class TestMultipleConfDeploy:
         """
         Teardown method
         """
+        path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
         if self.collect_sb:
-            path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
             support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
                                                             scripts_path=
                                                             self.deploy_conf['k8s_dir'])
