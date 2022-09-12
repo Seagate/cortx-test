@@ -178,7 +178,7 @@ class TestMultiProcessRestart:
                                                       que, DTM_TEST_CFG['size'], 1,
                                                       [self.bucket_name]))
         proc_write_op.start()
-
+        self.log.info("Sleeping for %s", self.delay)
         time.sleep(self.delay)
         self.log.info("Step 3: Perform multiple m0d Process Restarts During Write Operations")
         resp_proc = self.dtm_obj.multi_process_restart_with_delay(
@@ -210,11 +210,11 @@ class TestMultiProcessRestart:
 
     @pytest.mark.lc
     @pytest.mark.dtm
-    @pytest.mark.tags("TEST-4XXXX")
+    @pytest.mark.tags("TEST-47156")
     def test_read_during_multi_m0d_restart(self):
         """Verify read during multiple m0d restart using pkill."""
         self.log.info("STARTED: Verify read during multiple m0d restart using pkill")
-        log_file_prefix = 'test-4XXXX'
+        log_file_prefix = 'test-47156'
         que = multiprocessing.Queue()
 
         self.log.info("Step 1: Create bucket for IO operations")
@@ -231,7 +231,7 @@ class TestMultiProcessRestart:
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
-
+        self.log.info("Sleeping for %s", self.delay)
         time.sleep(self.delay)
         self.log.info("Step 3: Perform Read Operations on the data written in step 1 in background")
         proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
@@ -260,11 +260,11 @@ class TestMultiProcessRestart:
 
     @pytest.mark.lc
     @pytest.mark.dtm
-    @pytest.mark.tags("TEST-4XXXX")
+    @pytest.mark.tags("TEST-47157")
     def test_delete_after_multi_m0d_restart(self):
         """Verify delete after multiple m0d restart using pkill"""
         self.log.info("STARTED: Verify delete after multiple m0d restart using pkill")
-        log_file_prefix = 'test-4XXXX'
+        log_file_prefix = 'test-47157'
         que = multiprocessing.Queue()
 
         self.log.info("Step 1: Create bucket for IO operations")
@@ -281,7 +281,7 @@ class TestMultiProcessRestart:
         resp = que.get()
         assert_utils.assert_true(resp[0], resp[1])
         workload_info = resp[1]
-
+        self.log.info("Sleeping for %s", self.delay)
         time.sleep(self.delay)
         self.log.info("Step 3: Perform multiple m0d Process Restarts")
         resp_proc = self.dtm_obj.multi_process_restart_with_delay(
