@@ -23,6 +23,7 @@ from commons.constants import  K8S_SCRIPTS_PATH, K8S_PRE_DISK, POD_NAME_PREFIX
 from commons.constants import LOCAL_SOLUTION_PATH
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
+import yaml
 
 class CSMExt():
     """CSMExt is creating object and extending functionality of the ProvDeployK8sCortxLib"""
@@ -50,19 +51,35 @@ class CSMExt():
         :param c1: cpu requests
         :param c2: cpu limits
         """
+        local_sol_path = LOCAL_SOLUTION_PATH
+        remote_sol_path = K8S_SCRIPTS_PATH + 'solution.yaml'
+        self.log.info("Path for solution yaml on remote node: %s", remote_sol_path)
+        solution_path = self.master.copy_file_to_local(remote_path=remote_sol_path,
+                                                               local_path=local_sol_path)
+        self.log.info(solution_path)
+        with open(local_sol_path, 'rb') as yaml_file:
+            conf = yaml.safe_load(yaml_file)
+        self.log.info("Printing solution yaml contents: %s", conf)
+        parent_key = conf['solution']  # Parent key
+        common = parent_key['common']
+        resource = common['resource_allocation']
+        control_res = resource['control']['agent']['resources']
         self.log.info("Changing the resource limit in solution.yaml...")
         self.log.info("Changing M1 value to: %s", m1)
-        self.deploy_lc_obj.deploy_cfg['cortx_resource']['agent']['requests']['mem'] = m1
+        control_res['requests']['memory'] = m1
         self.log.info("Changing M2 value to: %s", m2)
-        self.deploy_lc_obj.deploy_cfg['cortx_resource']['agent']['limits']['mem'] = m2
+        control_res['limits']['memory'] = m2
         self.log.info("Changing C1 value to: %s", c1)
-        self.deploy_lc_obj.deploy_cfg['cortx_resource']['agent']['requests']['cpu'] = c1
+        control_res['requests']['cpu'] = c1
         self.log.info("Changing C2 value to: %s", c2)
-        self.deploy_lc_obj.deploy_cfg['cortx_resource']['agent']['limits']['cpu'] = c2
-        self.deploy_lc_obj.update_res_limit_cortx(filepath=LOCAL_SOLUTION_PATH)
-        resp = self.deploy_lc_obj.copy_sol_file(self.master,
-                                                local_sol_path=LOCAL_SOLUTION_PATH,
-                                                remote_code_path=K8S_SCRIPTS_PATH)
+        control_res['limits']['cpu'] = c2
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(local_sol_path, 'wb') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            soln.close()
+        resp = self.master.copy_file_to_remote(local_sol_path, remote_sol_path)
         return resp
 
     def read_csm_res_limit(self):
