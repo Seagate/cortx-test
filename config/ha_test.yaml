@@ -30,6 +30,7 @@ s3_operation_data:
   no_buckets_per_users: 50
   obj_per_bucket: 200
   iam_users: 150
+  200_iam_users: 200
   no_bkt_del_ctrl_pod: 500
   httpclientimeout: 300000
 

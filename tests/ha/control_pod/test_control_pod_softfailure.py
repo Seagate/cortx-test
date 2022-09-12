@@ -77,7 +77,7 @@ class TestControlPodSoftFailure:
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
         cls.csm_obj = csm_api_factory("rest")
         cls.csm_soft_delay = HA_CFG["common_params"]["15sec_delay"]
-        cls.num_users = HA_CFG["s3_operation_data"]["iam_users"] + 50
+        cls.num_users = HA_CFG["s3_operation_data"]["200_iam_users"]
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -137,8 +137,8 @@ class TestControlPodSoftFailure:
         if self.s3_clean:
             LOGGER.info("Cleanup: Cleaning created IAM users & buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-            LOGGER.error("Cleanup: Failed to perform clean up of created IAM users & buckets")
-            assert_utils.assert_true(resp[0], resp[1])
+            if not resp[0]:
+                LOGGER.error("Cleanup: Failed to perform clean up of created IAM users & buckets")
             LOGGER.info("Cleanup: Successfully cleaned created IAM users & buckets.")
 
         if self.scale_req:
