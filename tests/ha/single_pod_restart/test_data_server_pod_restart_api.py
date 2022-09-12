@@ -1047,9 +1047,10 @@ class TestDataServerPodRestartAPI:
     @pytest.mark.tags("TEST-45535")
     def test_bkt_ver_during_data_server_pod_rst(self):
         """
-        Verify bucket versioning during 1 data pod and 1 server pod restart
+        Verify bucket versioning during single data pod and single server pod restart
         """
-        LOGGER.info("STARTED: Verify bucket versioning during 1 data pod and 1 server pod restart.")
+        LOGGER.info("STARTED: Verify bucket versioning during single data pod and single server "
+                    "pod restart.")
         event = threading.Event()
         get_output = Queue()
         put_output = Queue()
@@ -1205,5 +1206,5 @@ class TestDataServerPodRestartAPI:
         assert_utils.assert_true(resp[0], f"Get Object with versionID failed {resp[1]}")
         LOGGER.info("Step 11: Got object versions of %s & verified etags for %s.",
                     self.object_name, new_bucket)
-        LOGGER.info("COMPLETED: Verify bucket versioning during 1 data pod and 1 server pod "
-                    "restart.")
+        LOGGER.info("COMPLETED: Verify bucket versioning during single data pod and single server "
+                    "pod restart.")
