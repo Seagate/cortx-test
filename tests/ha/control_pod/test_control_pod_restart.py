@@ -86,7 +86,7 @@ class TestControlPodRestart:
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_node = cls.deploy = cls.restore_pod = None
-        cls.repl_num = cls.res_taint = cls.user_list = self.pod_list = None
+        cls.repl_num = cls.res_taint = cls.user_list = cls.pod_list = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.rest_iam_user = RestIamUser()
