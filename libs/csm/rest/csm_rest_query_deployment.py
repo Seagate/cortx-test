@@ -273,24 +273,24 @@ class QueryDeployment(RestTestLib):
         """
         solution_yaml = self.get_solution_yaml()
         storage1 = solution_yaml["solution"]["storage_sets"][0]["storage"]
+        number_of_cvgs = len(storage1)
+        cvg_dict = {}
+        for number in range(0, number_of_cvgs):
+            cvg_dict.update({number:storage1[number]["name"]})
+        self.log.info("cvg dict: %s ", cvg_dict)
         for dicts in get_response.json()["topology"]["nodes"]:
             self.log.info("dict is: %s ", dicts)
-            if 'storage' in dicts.keys() and dicts["storage"][0]["name"] == "cvg-01":
-                resp = dicts["storage"][0]['devices']
-                self.log.info("Resp is %s ", resp)
-                solution = storage1[0]['devices']
-                self.log.info("Solution is %s ", solution)
-                result, err_msg = self.verify_cvg_details(resp, solution, "cvg-01")
-                assert result, err_msg
-            elif 'storage' in dicts.keys() and dicts["storage"][0]["name"] == "cvg-02":
-                resp = dicts["storage"][0]['devices']
-                self.log.info("Resp is %s ", resp)
-                solution = storage1[1]['devices']
-                self.log.info("Solution is %s ", solution)
-                result, err_msg = self.verify_cvg_details(resp, solution, "cvg-02")
-                assert result, err_msg
-            else:
-                self.log.info("Node other than data node")
+            for key, value in cvg_dict.items():
+                self.log.info("Verifying for: %s %s", key, value)
+                if 'storage' in dicts.keys() and dicts["storage"][0]["name"] == value:
+                    resp = dicts["storage"][0]["devices"]
+                    self.log.info("Resp is %s ", resp)
+                    solution = storage1[key]["devices"]
+                    self.log.info("Solution is %s ", solution)
+                    result, err_msg = self.verify_cvg_details(resp, solution, value)
+                    assert result, err_msg
+                else:
+                    self.log.info("Node other than data node")
         return result, err_msg
 
     def verify_cvg_details(self, resp: dict, solution: dict, cvg: str):
@@ -408,7 +408,7 @@ class QueryDeployment(RestTestLib):
         result = True
         yaml_services_dict = self.get_services_dict()
         for dicts in get_resp.json()["topology"]["nodes"]:
-            if dicts["type"] == 'data_node/0' or dicts["type"] == 'data_node/1':
+            if 'data_node' in dicts["type"]:
                 if dicts["services"] == yaml_services_dict['data_node/0']:
                     self.log.info("Services list matched for data nodes")
                 else:
