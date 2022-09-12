@@ -385,16 +385,6 @@ class TestControlPodSoftFailure:
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
             assert_utils.assert_false(resp[0], resp)
             LOGGER.info("Step 2.1: Checked cluster has failures.")
-
-            LOGGER.info("Step 2.2: Get IAM user list and check created IAM users are persist.")
-            resp = self.csm_obj.list_iam_users_rgw(auth_header=self.header)
-            assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "List IAM user failed.")
-            user_data_new = resp.json()
-            fetched_users = user_data_new['users']
-            assert_utils.assert_true(
-                (set(new_users_list).issubset(set(fetched_users)),
-                 "Created IAM user list is not persisted in fetched IAM user list"))
-            LOGGER.info("Step 2.2: Got IAM user list & checked created IAM users are persisted.")
         LOGGER.info("Step 2: Started IAM user CRUD operations while performing soft failure on "
                     "random control pods in loop. Verified existing IAM users persisted.")
 
@@ -425,7 +415,22 @@ class TestControlPodSoftFailure:
             self.s3_clean.update({i_i: self.del_users[i_i]})
         LOGGER.info("Step 3: Verified background process for IAM user creation/deletion")
 
-        LOGGER.info("Step 4: Create IAM user and perform IOs after soft-failure.")
+        LOGGER.info("Step 4: Check cluster status is clean.")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 4: Checked cluster has failures.")
+
+        LOGGER.info("Step 5: Get IAM user list and check created IAM users are persist.")
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "List IAM user failed.")
+        user_data_new = resp.json()
+        fetched_users = user_data_new['users']
+        assert_utils.assert_true(
+            (set(new_users_list).issubset(set(fetched_users)),
+             "Created IAM user list is not persisted in fetched IAM user list"))
+        LOGGER.info("Step 5: Got IAM user list & checked created IAM users are persisted.")
+
+        LOGGER.info("Step 6: Create IAM user and perform IOs after soft-failure.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-45502-1'
         self.s3_clean.update(users)
@@ -433,7 +438,7 @@ class TestControlPodSoftFailure:
                                                     log_prefix=self.test_prefix, skipcleanup=True,
                                                     nclients=2, nsamples=2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Created IAM user and performed IOs after soft-failure.")
+        LOGGER.info("Step 6: Created IAM user and performed IOs after soft-failure.")
         LOGGER.info("ENDED: Verify IAM user creation/deletion and get IAM user list while "
                     "soft-failure in loop.")
 
