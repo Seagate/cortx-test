@@ -85,7 +85,7 @@ class TestControlPodRestart:
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
-        cls.restore_node = cls.deploy = cls.restore_pod = None
+        cls.restore_node = cls.deploy = cls.restore_pod = cls.deploy = None
         cls.repl_num = cls.res_taint = cls.user_list = cls.pod_list = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
@@ -129,6 +129,8 @@ class TestControlPodRestart:
         self.s3_clean = dict()
         self.user_list = list()
         self.restore_pod = False
+        self.deploy = self.node_master_list[0].get_deployment_name(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
         self.header = self.csm_obj.get_headers(self.csm_user, self.csm_passwd)
         self.pod_list = self.node_master_list[0].get_all_pods(
             pod_prefix=const.CONTROL_POD_NAME_PREFIX)
@@ -168,7 +170,8 @@ class TestControlPodRestart:
             pod_prefix=const.CONTROL_POD_NAME_PREFIX)
         if len(self.pod_list) > self.num_replica:
             resp = self.node_master_list[0].create_pod_replicas(num_replica=self.num_replica,
-                                                                pod_name=self.pod_list[0])
+                                                                pod_name=self.pod_list[0],
+                                                                deploy=self.deploy)
             assert_utils.assert_true(resp[0], resp[1])
         if self.s3_clean:
             LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
@@ -730,7 +733,7 @@ class TestControlPodRestart:
         pod_name = self.node_master_list[0].get_all_pods(
             pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
         resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
-                                                            pod_name=pod_name)
+                                                            pod_name=pod_name, deploy=self.deploy)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Total number of control pods in the cluster are: %s", self.repl_num)
         LOGGER.info("Step 1: Create %s IAM user and perform WRITEs-READs-Verify with "
@@ -756,7 +759,8 @@ class TestControlPodRestart:
             while pod_left not in delete_pods:
                 delete_pods.extend(self.system_random.sample(pod_list, self.repl_num - 1))
             for pod in delete_pods:
-                resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod)
+                resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod,
+                                                                    deploy=self.deploy)
                 assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 2.1: Check cluster status")
             delay = HA_CFG["common_params"]["60sec_delay"]
@@ -785,7 +789,8 @@ class TestControlPodRestart:
                 pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
             LOGGER.info("Starting all shutdown pods again")
             resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
-                                                                pod_name=pod_left)
+                                                                pod_name=pod_left,
+                                                                deploy=self.deploy)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Control pods are shutdown in loop successfully.")
         LOGGER.info("Step 3: Check if users created in step 1 are persistent and Perform "
@@ -830,7 +835,7 @@ class TestControlPodRestart:
         pod_name = self.node_master_list[0].get_all_pods(
             pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
         resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
-                                                            pod_name=pod_name)
+                                                            pod_name=pod_name, deploy=self.deploy)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Prereq: Total number of control pods in the cluster are: %s", self.repl_num)
         LOGGER.info("Get the control pod list")
@@ -1644,7 +1649,7 @@ class TestControlPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-45497")
-    def test_cruds_during_all_ctrl_pod_rst(self):
+    def test_cruds_during_all_ctrl_pod_rst(self): # noqa: C901
         """
         Verify IAM user and bucket operations while N control pod restart in loop
         """
@@ -1654,7 +1659,7 @@ class TestControlPodRestart:
         pod_name = self.node_master_list[0].get_all_pods(
             pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
         resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
-                                                            pod_name=pod_name)
+                                                            pod_name=pod_name, deploy=self.deploy)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Wait for %s and Get the control pod list",
                     HA_CFG["common_params"]["60sec_delay"])
@@ -1709,7 +1714,8 @@ class TestControlPodRestart:
             num_replica = self.repl_num - (loop + 1)
             LOGGER.info("Scaling down replica to %s", num_replica)
             resp = self.node_master_list[0].create_pod_replicas(num_replica=num_replica,
-                                                                pod_name=pod_name)
+                                                                pod_name=pod_name,
+                                                                deploy=self.deploy)
             if num_replica == 0:
                 assert_utils.assert_false(resp[0], resp[1])
             else:
