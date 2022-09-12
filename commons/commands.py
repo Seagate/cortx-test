@@ -187,7 +187,6 @@ GET_PID_CMD = "systemctl status {}.service | grep PID"
 KILL_CMD = "kill -9 {}"
 SAFE_KILL_CMD = "kill {}"
 PIDOF_CMD = "pidof {}"
-SAFE_KILL_CMD = "kill {}"
 
 # CORTXCLI Commands
 CMD_LOGIN_CORTXCLI = "cortxcli"
