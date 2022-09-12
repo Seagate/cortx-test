@@ -349,6 +349,8 @@ class TestControlPodSoftFailure:
         """
         LOGGER.info("STARTED: Verify IAM user creation/deletion and get IAM user list while "
                     "soft-failure in loop.")
+        LOGGER.info("Precondition: Create %s iam users for deletion", self.num_users)
+        del_users = self.mgnt_ops.create_account_users(nusers=self.num_users)
 
         LOGGER.info("Step 1: Create multiple IAM users.")
         new_users = self.mgnt_ops.create_account_users(nusers=10)
@@ -368,7 +370,7 @@ class TestControlPodSoftFailure:
         iam_output = Queue()
         event = threading.Event()
         args = {'user_crud': True, 'num_users': self.num_users,
-                'output': iam_output, 'del_users_dict': self.del_users, 'header': self.header}
+                'output': iam_output, 'del_users_dict': del_users, 'header': self.header}
         thr_iam = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
                                    args=(event,), kwargs=args)
         thr_iam.daemon = True  # Daemonize thread
@@ -403,16 +405,16 @@ class TestControlPodSoftFailure:
         exp_failed = iam_resp[0]
         user_del_failed = iam_resp[2]
         created_users = iam_resp[3]
-        assert_utils.assert_true(failed, "No IAM user creation/deletion expected to fail before "
-                                         f"or after soft-failure: {failed}")
-        assert_utils.assert_false(exp_failed, "IAM user creation/deletion expected to fail during "
-                                              f"soft-failure: {exp_failed}")
+        assert_utils.assert_false(failed, "No IAM user creation/deletion expected to fail before "
+                                          f"or after soft-failure: {failed}")
+        assert_utils.assert_true(exp_failed, "IAM user creation/deletion expected to fail during "
+                                             f"soft-failure: {exp_failed}")
         if created_users:
             for i_i in created_users:
                 self.s3_clean.update(i_i)
         LOGGER.info("Updating dict for clean up with remaining users")
         for i_i in user_del_failed:
-            self.s3_clean.update({i_i: self.del_users[i_i]})
+            self.s3_clean.update({i_i: del_users[i_i]})
         LOGGER.info("Step 3: Verified background process for IAM user creation/deletion")
 
         LOGGER.info("Step 4: Check cluster status is clean.")
@@ -441,4 +443,3 @@ class TestControlPodSoftFailure:
         LOGGER.info("Step 6: Created IAM user and performed IOs after soft-failure.")
         LOGGER.info("ENDED: Verify IAM user creation/deletion and get IAM user list while "
                     "soft-failure in loop.")
-
