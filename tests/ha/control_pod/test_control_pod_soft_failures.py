@@ -436,8 +436,8 @@ class TestControlPodSoftFailure:
         assert_utils.assert_true(len(created_users), "Few IAM user creation is expected during "
                                                      "soft failures in loop")
         for i_i in created_users:
-            self.s3_clean.update({i_i})
-            self.uids.append(i_i["user_name"])
+            self.s3_clean.update(i_i)
+            self.uids.append(list(i_i.keys())[0])
 
         LOGGER.info("Checking background process for bucket CRUD operations")
         bkt_resp = tuple()
@@ -467,7 +467,7 @@ class TestControlPodSoftFailure:
         LOGGER.info("Step 7: Create new IAM user and perform IOs")
         self.test_prefix = 'test-45500-1'
         new_user = self.mgnt_ops.create_account_users(nusers=1)
-        self.s3_clean = new_user
+        self.s3_clean.update(new_user)
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(new_user.values())[0],
                                                     log_prefix=self.test_prefix, nclients=2,
                                                     nsamples=2, setup_s3bench=False)
