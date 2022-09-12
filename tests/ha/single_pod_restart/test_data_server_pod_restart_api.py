@@ -457,6 +457,7 @@ class TestDataServerPodRestartAPI:
         LOGGER.info("COMPLETED: Verify object overwrite during single data pod and server pod "
                     "restart")
 
+    # pylint: disable=too-many-branches
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-45532")
