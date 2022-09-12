@@ -462,15 +462,15 @@ class TestDataServerPodRestartAPI:
     @pytest.mark.tags("TEST-45532")
     def test_copy_obj_during_data_server_pod_restart(self):
         """
-        Verify copy object during 1 data pod and 1 server pod restart
+        Verify copy object during single data pod and single server pod restart
         """
-        LOGGER.info("STARTED: Verify copy object during 1 data pod and 1 server pod restart.")
+        LOGGER.info("STARTED: Verify copy object during single data pod and single server pod "
+                    "restart.")
         bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
         bkt_obj_dict = dict()
         t_t = int(perf_counter_ns())
         for cnt in range(bkt_cnt):
             bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
-        self.extra_files.append(self.multipart_obj_path)
         output = Queue()
         event = threading.Event()
         LOGGER.info("Step 1: Create and list buckets. Upload object to %s & copy object from the"
@@ -482,6 +482,7 @@ class TestDataServerPodRestartAPI:
                                                   file_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
         put_etag = resp[1]
+        self.extra_files.append(self.multipart_obj_path)
         LOGGER.info("Step 1: Successfully created multiple buckets and uploaded object to %s "
                     "and copied to other buckets and verified copy object etags", self.bucket_name)
         LOGGER.info("Step 2: Shutdown one data and one server pod with replica method and verify"
@@ -581,12 +582,11 @@ class TestDataServerPodRestartAPI:
             LOGGER.info("Copy object operation for all the buckets completed successfully. ")
         elif failed_bkts or exp_fail_bkt_obj_dict:
             assert_utils.assert_true(False, "Failed to do copy object when cluster was in degraded "
-                                            f"state. Failed buckets: \n{failed_bkts}"
-                                            f"\n{exp_fail_bkt_obj_dict}")
-        LOGGER.info("Step 6: Successfully completed copy object operation is background")
+                                            f"state and pods are restarting. Failed buckets:"
+                                            f" \n{failed_bkts}\n{exp_fail_bkt_obj_dict}")
+        LOGGER.info("Step 6: Successfully completed copy object operation in background")
         LOGGER.info("Step 7: Download the object and verify the checksum")
         LOGGER.info("Download the objects copied in healthy cluster and verify checksum")
-        # bkt_obj_dict.update(bkt_obj_dict1)
         for key, val in bkt_obj_dict.items():
             resp = self.s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
@@ -634,4 +634,5 @@ class TestDataServerPodRestartAPI:
             assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag"
                                                           f"for object {obj} of bucket {bkt}.")
         LOGGER.info("Step 9: Downloaded copied objects & verify etags.")
-        LOGGER.info("COMPLETED: Verify copy object during 1 data pod and 1 server pod restart.")
+        LOGGER.info("COMPLETED: Verify copy object during single data pod and single server pod "
+                    "restart.")
