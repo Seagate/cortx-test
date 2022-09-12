@@ -71,7 +71,7 @@ class TestControlPodSoftFailure:
         cls.ha_obj = HAK8s()
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = cls.test_prefix = cls.deply_name = cls.repl_num = cls.test_io_prefix = None
-        cls.def_replica = cls.del_users = cls.header = None
+        cls.def_replica = cls.del_users = cls.header = cls.scale_req = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
@@ -114,6 +114,7 @@ class TestControlPodSoftFailure:
         assert_utils.assert_true(resp[0], resp)
         self.def_replica = int(resp[1])
         self.repl_num = int(len(self.node_worker_list) / 2 + 1)
+        self.scale_req = True if self.def_replica < self.repl_num else False
         self.deply_name = self.node_master_list[0].get_deployment_name(
             pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
         LOGGER.info("Default replicas for %s is %s and can be scaled to: %s",
@@ -124,9 +125,7 @@ class TestControlPodSoftFailure:
         LOGGER.info("Precondition: Create IAM user before soft-failure.")
         user = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean.update(user)
-        LOGGER.info("Precondition: Create %s iam users for deletion", self.num_users)
-        self.del_users = self.mgnt_ops.create_account_users(nusers=self.num_users)
-        LOGGER.info("Precondition: Get header token befor soft-failure")
+        LOGGER.info("Precondition: Get header token before soft-failure")
         self.header = self.csm_obj.get_headers(self.csm_user, self.csm_passwd)
         LOGGER.info("Done: Setup operations.")
 
@@ -136,14 +135,19 @@ class TestControlPodSoftFailure:
         """
         LOGGER.info("STARTED: Teardown Operations.")
         if self.s3_clean:
-            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
+            LOGGER.info("Cleanup: Cleaning created IAM users & buckets.")
             resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+            LOGGER.error("Cleanup: Failed to perform clean up of created IAM users & buckets")
             assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Revert back to default single control pod per cluster if more replicas are "
-                    "created.")
-        resp = self.node_master_list[0].create_pod_replicas(num_replica=self.def_replica,
-                                                            deploy=self.deply_name)
-        assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Cleanup: Successfully cleaned created IAM users & buckets.")
+
+        if self.scale_req:
+            LOGGER.info(
+                "Cleanup: Revert back to default replica %s for control pod per cluster.",
+                self.def_replica)
+            resp = self.node_master_list[0].create_pod_replicas(num_replica=self.def_replica,
+                                                                deploy=self.deply_name)
+            assert_utils.assert_true(resp[0], resp[1])
         if os.path.exists(self.test_dir_path):
             system_utils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
@@ -161,6 +165,9 @@ class TestControlPodSoftFailure:
         LOGGER.info("STARTED: Verify IAM user creation/deletion & IOs on already created IAM user "
                     "while performing control pod soft-failure in loop 1 by 1 for N control pods.")
 
+        LOGGER.info("Precondition: Create %s iam users for deletion", self.num_users)
+        del_users = self.mgnt_ops.create_account_users(nusers=self.num_users)
+
         LOGGER.info("Step 1: Perform IOs before soft-failure.")
         self.test_prefix = 'test-45498'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
@@ -169,11 +176,12 @@ class TestControlPodSoftFailure:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed IOs before soft-failure.")
 
-        LOGGER.info("Scale replicas for control pod to %s", self.repl_num)
-        resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
-                                                            deploy=self.deply_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Total number of control pods in the cluster are: %s", self.repl_num)
+        if self.scale_req:
+            LOGGER.info("Scale replicas for control pod to %s", self.repl_num)
+            resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
+                                                                deploy=self.deply_name)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Total number of control pods in the cluster are: %s", self.repl_num)
 
         iam_output = Queue()
         io_output = Queue()
@@ -185,7 +193,7 @@ class TestControlPodSoftFailure:
                     "soft-failure.")
 
         args = {'user_crud': True, 'num_users': self.num_users,
-                'output': iam_output, 'del_users_dict': self.del_users, 'header': self.header}
+                'output': iam_output, 'del_users_dict': del_users, 'header': self.header}
         thr_iam = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
                                    args=(event, ), kwargs=args)
         thr_iam.daemon = True  # Daemonize thread
@@ -202,7 +210,7 @@ class TestControlPodSoftFailure:
                     "user and IAM user creation/deletion.")
 
         LOGGER.info("Step 3: Perform soft-failure of %s control pods in loop and check cluster "
-                    "has failures", self.repl_num - 1)
+                    "has failures", self.repl_num)
         LOGGER.info("Get the list of control pods")
         pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
         event.set()
@@ -216,7 +224,7 @@ class TestControlPodSoftFailure:
             assert_utils.assert_false(resp[0], resp)
             LOGGER.info("Step 3.1: Checked cluster has failures.")
         LOGGER.info("Step 3: Performed soft-failure of %s control pods in loop and checked cluster "
-                    "has failures", self.repl_num - 1)
+                    "has failures", self.repl_num)
 
         time.sleep(self.csm_soft_delay)
         event.clear()
@@ -235,16 +243,16 @@ class TestControlPodSoftFailure:
         exp_failed = iam_resp[0]
         user_del_failed = iam_resp[2]
         created_users = iam_resp[3]
-        assert_utils.assert_true(failed, "No IAM user creation/deletion expected to fail before "
-                                         f"or after soft-failure: {failed}")
-        assert_utils.assert_false(exp_failed, "IAM user creation/deletion expected to fail during "
-                                              f"soft-failure: {exp_failed}")
+        assert_utils.assert_false(failed, "No IAM user creation/deletion expected to fail before "
+                                          f"or after soft-failure: {failed}")
+        assert_utils.assert_true(exp_failed, "IAM user creation/deletion expected to fail during "
+                                             f"soft-failure: {exp_failed}")
         if created_users:
             for i_i in created_users:
                 self.s3_clean.update(i_i)
         LOGGER.info("Updating dict for clean up with remaining users")
         for i_i in user_del_failed:
-            self.s3_clean.update({i_i: self.del_users[i_i]})
+            self.s3_clean.update({i_i: del_users[i_i]})
         LOGGER.info("Step 4.1: Verified background process for IAM user creation/deletion")
 
         LOGGER.info("Step 4.2: Verify background process of IOs")

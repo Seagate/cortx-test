@@ -180,7 +180,7 @@ class HAK8sApiLibs:
         :keyword enable_ver: Set to true if want to enable versioning on given bucket
         Can be used for setting up pre-existing objects before enabling/suspending bucket
         versioning
-        :kwargs s3_ver: S3VersioningTestLib instance
+        :keyword s3_ver: S3VersioningTestLib instance
         :return: Tuple (bool, response)
         """
         chk_null_version = kwargs.get("chk_null_version", False)
