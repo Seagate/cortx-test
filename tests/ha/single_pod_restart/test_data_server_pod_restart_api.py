@@ -584,12 +584,12 @@ class TestDataServerPodRestartAPI:
             LOGGER.info("Copy object operation for all the buckets completed successfully. ")
         elif failed_bkts or exp_fail_bkt_obj_dict:
             assert_utils.assert_true(False, "Failed to do copy object when cluster was in degraded "
-                                            f"state and pods are restarting. Failed buckets:"
+                                            f"state or pods are restarting. Failed buckets:"
                                             f" \n{failed_bkts}\n{exp_fail_bkt_obj_dict}")
         LOGGER.info("Step 6: Successfully completed copy object operation in background")
         LOGGER.info("Step 7: Download the object and verify the checksum")
         LOGGER.info("Download the objects copied in healthy cluster and verify checksum")
-        for key, val in bkt_obj_dict.items():
+        for key, val in bkt_obj_dict1.items():
             resp = self.s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
@@ -597,7 +597,7 @@ class TestDataServerPodRestartAPI:
                                                           f"object {val} of bucket {key}. Put and "
                                                           f"Get Etag mismatch")
         LOGGER.info("Download the objects copied in step 4 and verify checksum")
-        for key, val in bkt_obj_dict1.items():
+        for key, val in bkt_obj_dict.items():
             resp = self.s3_test_obj.get_object(bucket=key, key=val)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
