@@ -44,6 +44,7 @@ from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
+from libs.csm.csm_interface import csm_api_factory
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
@@ -70,6 +71,8 @@ class TestControlPodRestart:
         """
         LOGGER.info("STARTED: Setup Module operations.")
         cls.num_nodes = len(CMN_CFG["nodes"])
+        cls.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
+        cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
         cls.username = []
         cls.password = []
         cls.host_master_list = []
@@ -78,11 +81,12 @@ class TestControlPodRestart:
         cls.host_worker_list = []
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
+        cls.csm_obj = csm_api_factory("rest")
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
-        cls.restore_node = cls.deploy = cls.restore_pod = None
-        cls.repl_num = cls.res_taint = cls.user_list = None
+        cls.restore_node = cls.deploy = cls.restore_pod = cls.deploy = None
+        cls.repl_num = cls.res_taint = cls.user_list = cls.pod_list = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.rest_iam_user = RestIamUser()
@@ -110,11 +114,7 @@ class TestControlPodRestart:
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestData")
         control_pods = cls.node_master_list[0].get_pods_node_fqdn(const.CONTROL_POD_NAME_PREFIX)
         ctrl_pod = list(control_pods.keys())[0]
-        backup_path = cls.node_master_list[0].backup_deployment(
-            deployment_name=cls.node_master_list[0].get_deploy_replicaset(ctrl_pod)[1])[1]
-        cls.original_backup = backup_path.split(".")[0] + "_original.yaml"
-        cls.node_master_list[0].rename_file(old_filename=backup_path,
-                                            new_filename=cls.original_backup)
+        cls.original_backup = cls.modified_yaml = cls.backup_yaml = cls.num_replica = None
         cls.original_control_node = control_pods.get(ctrl_pod)
 
     def setup_method(self):
@@ -128,7 +128,13 @@ class TestControlPodRestart:
         self.res_taint = False
         self.s3_clean = dict()
         self.user_list = list()
-        self.restore_pod = None
+        self.restore_pod = False
+        self.deploy = self.node_master_list[0].get_deployment_name(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
+        self.header = self.csm_obj.get_headers(self.csm_user, self.csm_passwd)
+        self.pod_list = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        self.num_replica = len(self.pod_list)
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
@@ -142,18 +148,10 @@ class TestControlPodRestart:
         if not os.path.exists(self.test_dir_path):
             sysutils.make_dirs(self.test_dir_path)
         self.multipart_obj_path = os.path.join(self.test_dir_path, self.test_file)
-        LOGGER.info("Updating control pod deployment yaml")
         self.control_pods = self.node_master_list[0].get_pods_node_fqdn(
             const.CONTROL_POD_NAME_PREFIX)
         self.control_pod_name = list(self.control_pods.keys())[0]
         self.control_node = self.control_pods.get(self.control_pod_name)
-        resp = self.ha_obj.update_deployment_yaml(pod_obj=self.node_master_list[0],
-                                                  pod_name=self.control_pod_name,
-                                                  find_key="persistentVolumeClaim",
-                                                  replace_key="emptyDir", replace_val=dict())
-        assert_utils.assert_true(resp[0], resp)
-        self.modified_yaml = resp[1]
-        self.backup_yaml = resp[2]
         self.repl_num = int(len(self.node_worker_list) / 2 + 1)
         LOGGER.info("Number of replicas can be scaled for this cluster are: %s", self.repl_num)
         LOGGER.info("Done: Setup operations.")
@@ -163,33 +161,23 @@ class TestControlPodRestart:
         This function will be invoked after each test function in the module.
         """
         LOGGER.info("STARTED: Teardown Operations.")
-        if self.s3_clean:
-            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
-            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-            assert_utils.assert_true(resp[0], resp[1])
         if self.res_taint:
             LOGGER.info("Untaint the node back which was tainted: %s", self.control_node)
             self.node_master_list[0].execute_cmd(cmd=cmd.K8S_UNTAINT_CTRL.format(self.control_node))
-        LOGGER.info("Revert back to default single control pod per cluster if more replicas are "
-                    "created.")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
-        if len(pod_list) > 1:
-            resp = self.node_master_list[0].create_pod_replicas(num_replica=1,
-                                                                pod_name=pod_list[0])
+        LOGGER.info("Revert back to default number of control pods %s is more were created",
+                    self.num_replica)
+        self.pod_list = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        if len(self.pod_list) > self.num_replica:
+            resp = self.node_master_list[0].create_pod_replicas(num_replica=self.num_replica,
+                                                                pod_name=self.pod_list[0],
+                                                                deploy=self.deploy)
             assert_utils.assert_true(resp[0], resp[1])
-        # TODO: Uncomment following code after getting confirmation from Rick on control pod
-        #  restoration
-        # if self.restore_pod:
-            # LOGGER.info("Restoring control pod to its original state using yaml file %s",
-            #             self.original_backup)
-            # control_pod_name = self.node_master_list[0].get_all_pods(
-            #     const.CONTROL_POD_NAME_PREFIX)[0]
-            # pod_yaml = {control_pod_name: self.original_backup}
-            # resp = self.ha_obj.failover_pod(pod_obj=self.node_master_list[0], pod_yaml=pod_yaml,
-            #                                 failover_node=self.original_control_node)
-            # LOGGER.debug("Response: %s", resp)
-            # assert_utils.assert_true(resp[0], "Failed to restore control pod to original state")
-            # LOGGER.info("Successfully restored control pod to original state")
+        if self.s3_clean:
+            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
+            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+            if not resp[0]:
+                LOGGER.error("Failed to delete objects/buckets")
         if self.restore_node:
             LOGGER.info("Cleanup: Power on the %s down node.", self.control_node)
             resp = self.ha_obj.host_power_on(host=self.control_node)
@@ -197,40 +185,11 @@ class TestControlPodRestart:
             LOGGER.info("Cleanup: %s is Power on. Sleep for %s sec for pods to join back the"
                         " node", self.control_node, HA_CFG["common_params"]["pod_joinback_time"])
             time.sleep(HA_CFG["common_params"]["pod_joinback_time"])
-        # TODO: As control node is restarted, Need to redeploy cluster after every test (We may
-        #  need this after control pod deployment file is changed)
-        if self.deploy:
-            LOGGER.info("Cleanup: Destroying the cluster ")
-            resp = self.deploy_lc_obj.destroy_setup(self.node_master_list[0],
-                                                    self.node_worker_list,
-                                                    const.K8S_SCRIPTS_PATH)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Cleanup: Cluster destroyed successfully")
-
-            LOGGER.info("Cleanup: Setting prerequisite")
-            self.deploy_lc_obj.execute_prereq_cortx(self.node_master_list[0],
-                                                    const.K8S_SCRIPTS_PATH,
-                                                    const.K8S_PRE_DISK)
-            for node in self.node_worker_list:
-                self.deploy_lc_obj.execute_prereq_cortx(node, const.K8S_SCRIPTS_PATH,
-                                                        const.K8S_PRE_DISK)
-            LOGGER.info("Cleanup: Prerequisite set successfully")
-
-            LOGGER.info("Cleanup: Deploying the Cluster")
-            resp_cls = self.deploy_lc_obj.deploy_cluster(self.node_master_list[0],
-                                                         const.K8S_SCRIPTS_PATH)
-            assert_utils.assert_true(resp_cls[0], resp_cls[1])
-            LOGGER.info("Cleanup: Cluster deployment successfully")
-
         LOGGER.info("Cleanup: Check cluster status")
         resp = self.ha_obj.poll_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cleanup: Cluster status checked successfully")
-
         LOGGER.info("Removing extra files")
-        sysutils.remove_file(self.modified_yaml)
-        self.node_master_list[0].remove_remote_file(self.modified_yaml)
-        self.node_master_list[0].remove_remote_file(self.backup_yaml)
         sysutils.remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
@@ -774,7 +733,7 @@ class TestControlPodRestart:
         pod_name = self.node_master_list[0].get_all_pods(
             pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
         resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
-                                                            pod_name=pod_name)
+                                                            pod_name=pod_name, deploy=self.deploy)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Total number of control pods in the cluster are: %s", self.repl_num)
         LOGGER.info("Step 1: Create %s IAM user and perform WRITEs-READs-Verify with "
@@ -800,7 +759,8 @@ class TestControlPodRestart:
             while pod_left not in delete_pods:
                 delete_pods.extend(self.system_random.sample(pod_list, self.repl_num - 1))
             for pod in delete_pods:
-                resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod)
+                resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod,
+                                                                    deploy=self.deploy)
                 assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 2.1: Check cluster status")
             delay = HA_CFG["common_params"]["60sec_delay"]
@@ -829,7 +789,8 @@ class TestControlPodRestart:
                 pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
             LOGGER.info("Starting all shutdown pods again")
             resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
-                                                                pod_name=pod_left)
+                                                                pod_name=pod_left,
+                                                                deploy=self.deploy)
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Control pods are shutdown in loop successfully.")
         LOGGER.info("Step 3: Check if users created in step 1 are persistent and Perform "
@@ -874,7 +835,7 @@ class TestControlPodRestart:
         pod_name = self.node_master_list[0].get_all_pods(
             pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
         resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
-                                                            pod_name=pod_name)
+                                                            pod_name=pod_name, deploy=self.deploy)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Prereq: Total number of control pods in the cluster are: %s", self.repl_num)
         LOGGER.info("Get the control pod list")
@@ -1683,3 +1644,216 @@ class TestControlPodRestart:
         LOGGER.info("Step 7: Successfully completed IOs.")
 
         LOGGER.info("ENDED: Test chunk upload during control pod restart")
+
+    # pylint: disable=too-many-branches
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-45497")
+    def test_cruds_during_all_ctrl_pod_rst(self): # noqa: C901
+        """
+        Verify IAM user and bucket operations while N control pod restart in loop
+        """
+        LOGGER.info("STARTED: Verify IAM user and bucket operations while N control pod "
+                    "restart in loop with replica method")
+        LOGGER.info("Prereq: Scale replicas for control pod to %s", self.repl_num)
+        pod_name = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)[0]
+        resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
+                                                            pod_name=pod_name, deploy=self.deploy)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Wait for %s and Get the control pod list",
+                    HA_CFG["common_params"]["60sec_delay"])
+        time.sleep(HA_CFG["common_params"]["60sec_delay"])
+        pod_list = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_equal(len(pod_list), self.repl_num, "Did not scale desired number of "
+                                                                "replica")
+        LOGGER.info("Prereq: Total number of control pods in the cluster are: %s",
+                    self.repl_num)
+        event = threading.Event()
+        iam_output = Queue()
+        bkt_output = Queue()
+        num_users = HA_CFG["s3_operation_data"]["iam_users"]
+        num_bkts = HA_CFG["s3_operation_data"]["no_bkt_del_ctrl_pod"]
+        org_user = HA_CFG["s3_operation_data"]["no_csm_users"]
+        LOGGER.info("Step 1: Create IAM user.")
+        users_org = self.mgnt_ops.create_account_users(nusers=org_user)
+        self.s3_clean = users_org
+        uids = list(users_org.keys())
+        access_key = list(users_org.values())[0]["accesskey"]
+        secret_key = list(users_org.values())[0]["secretkey"]
+        s3_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                           endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Step 1: Created IAM user successfully")
+        LOGGER.info("Create %s iam users for deletion", num_users)
+        users = self.mgnt_ops.create_account_users(nusers=num_users)
+        LOGGER.info("Step 2: Start IAM user and buckets cruds in background")
+        LOGGER.info("Step 2.1: Perform IAM user creation/deletion in background")
+        args = {'user_crud': True, 'bkt_crud': False, 'num_users': num_users, 's3_obj': s3_obj,
+                'output': iam_output, 'del_users_dict': users, 'header': self.header}
+        thread1 = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
+                                   args=(event,), kwargs=args)
+        thread1.daemon = True  # Daemonize thread
+        thread1.start()
+        LOGGER.info("Step 2.2: Start buckets creation/deletion in background")
+        args = {'user_crud': False, 'bkt_crud': True, 'num_bkts': num_bkts, 's3_obj': s3_obj,
+                'output': bkt_output}
+        thread2 = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
+                                   args=(event,), kwargs=args)
+        thread2.daemon = True  # Daemonize thread
+        thread2.start()
+        LOGGER.info("Step 2: Successfully started IAM user and bucket creation/deletion in "
+                    "background")
+        LOGGER.info("Waiting for %s sec for background operations to start",
+                    HA_CFG["common_params"]["10sec_delay"])
+        time.sleep(HA_CFG["common_params"]["10sec_delay"])
+        LOGGER.info("Step 3: Restart %s control pods while creation/deletion of IAM users and "
+                    "buckets is running in background.", self.repl_num)
+        event.set()
+        for loop in range(self.repl_num):
+            num_replica = self.repl_num - (loop + 1)
+            LOGGER.info("Scaling down replica to %s", num_replica)
+            resp = self.node_master_list[0].create_pod_replicas(num_replica=num_replica,
+                                                                pod_name=pod_name,
+                                                                deploy=self.deploy)
+            if num_replica == 0:
+                assert_utils.assert_false(resp[0], resp[1])
+            else:
+                assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Wait for %s and Get the control pod list",
+                        HA_CFG["common_params"]["30sec_delay"])
+            time.sleep(HA_CFG["common_params"]["30sec_delay"])
+            pod_list = self.node_master_list[0].get_all_pods(
+                pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+            assert_utils.assert_equal(len(pod_list), num_replica,
+                                      "Did not scale desired number of replica")
+            if num_replica != 0:
+                pod_name = pod_list[0]
+                LOGGER.info("Step 3.1: Verify if IAM users %s are persistent across control "
+                            "pods shutdown one by one", uids)
+                for user in uids:
+                    resp = self.rest_iam_user.get_iam_user(user)
+                    assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
+                                              f"Couldn't find user {user} after control "
+                                              "pods restart")
+                    LOGGER.info("User %s is persistent: %s", user, resp)
+                LOGGER.info("Step 3.1: Verified all IAM users %s are persistent across control "
+                            "pods shutdown one by one", uids)
+        LOGGER.info("Create back replicas %s", self.repl_num)
+        cmd_rpl = cmd.KUBECTL_CREATE_REPLICA.format(self.repl_num, const.CONTROL_POD_NAME_PREFIX)
+        self.node_master_list[0].execute_cmd(cmd=cmd_rpl, read_lines=True)
+        LOGGER.info("Wait for %s and Get the control pod list",
+                    HA_CFG["common_params"]["60sec_delay"])
+        time.sleep(HA_CFG["common_params"]["60sec_delay"])
+        pod_list = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        assert_utils.assert_equal(len(pod_list), self.repl_num, "Did not scale desired number of "
+                                                                "replica")
+        LOGGER.info("Step 3: %s pod are restarted successfully", self.repl_num)
+        LOGGER.info("Step 4: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Cluster status is online.")
+        event.clear()
+        LOGGER.info("Step 5: Verify if IAM users %s are persistent after all control pods "
+                    "restarted", uids)
+        for user in uids:
+            resp = self.rest_iam_user.get_iam_user(user)
+            assert_utils.assert_equal(int(resp.status_code), HTTPStatus.OK.value,
+                                      f"Couldn't find user {user} after control "
+                                      "pods restart")
+            LOGGER.info("User %s is persistent: %s", user, resp)
+        LOGGER.info("Step 5: Verified all IAM users %s are persistent after all control pods "
+                    "restarted", uids)
+        LOGGER.info("Waiting for threads to join")
+        thread1.join()
+        thread2.join()
+        LOGGER.info("Step 6: Verifying responses from background processes")
+        LOGGER.info("Checking background process for IAM user CRUDs")
+        iam_resp = tuple()
+        while len(iam_resp) != 4:
+            iam_resp = iam_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not iam_resp:
+            assert_utils.assert_true(False, "Background process failed to do IAM user CRUD "
+                                            "operations")
+        exp_fail = iam_resp[0]
+        failed = iam_resp[1]
+        user_del_failed = iam_resp[2]
+        created_users = iam_resp[3]
+        if failed:
+            assert_utils.assert_true(False, "Failures observed in background process for IAM "
+                                            f"user CRUD operations. \nFailed buckets: {failed}")
+        elif exp_fail:
+            LOGGER.info("In-Flight IAM user creation/deletion failed for users: %s", exp_fail)
+            LOGGER.info("In-Flight IAM user deletion failed for users: %s", user_del_failed)
+            for i_i in user_del_failed:
+                self.s3_clean.update({i_i: users[i_i]})
+        else:
+            assert_utils.assert_true(False,
+                                     "IAM user CRUD operations are expected to be failed "
+                                     "during control pod failover")
+
+        LOGGER.info("Checking background process for bucket CRUD operations")
+        bkt_resp = tuple()
+        while len(bkt_resp) != 2:
+            bkt_resp = bkt_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not bkt_resp:
+            assert_utils.assert_true(False, "Background process failed to do bucket CRUD "
+                                            "operations")
+        exp_fail = bkt_resp[0]
+        failed = bkt_resp[1]
+        assert_utils.assert_false(len(exp_fail) or len(failed),
+                                  "Failures observed in background process for bucket "
+                                  f"CRUD operations. \nIn-flight Failed buckets: {exp_fail}"
+                                  f"\nFailed buckets: {failed}")
+        LOGGER.info("Step 6: Successfully verified responses from background processes")
+        LOGGER.info(
+            "Step 7: Perform new IAM users(%s) and buckets(%s) creation/deletion in loop",
+            num_users, num_bkts)
+        users_dict = dict()
+        for i_i in created_users:
+            users_dict.update(i_i)
+        output = Queue()
+        args = {'user_crud': True, 'bkt_crud': True, 'num_users': 10,
+                'del_users_dict': users_dict, 'num_bkts': 10, 's3_obj': s3_obj,
+                'output': output}
+        self.ha_obj.iam_bucket_cruds(event, **args)
+        LOGGER.info("Checking responses for IAM user CRUD operations")
+        iam_resp = tuple()
+        while len(iam_resp) != 4:
+            iam_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not iam_resp:
+            assert_utils.assert_true(False, "Failed to do IAM user CRUD operations")
+        exp_fail = iam_resp[0]
+        failed = iam_resp[1]
+        user_del_failed = iam_resp[2]
+        new_created_users = iam_resp[3]
+        if user_del_failed:
+            for i_i in created_users:
+                if list(i_i.keys())[0] in user_del_failed:
+                    self.s3_clean.update(i_i)
+        if new_created_users:
+            for i_i in new_created_users:
+                self.s3_clean.update(i_i)
+        assert_utils.assert_false(len(exp_fail) or len(failed), "Failure in IAM user CRUD "
+                                                                "operations. \nFailed users: "
+                                                                f"\nexp_fail: {exp_fail} and "
+                                                                f"\nfailed: {failed}")
+
+        LOGGER.info("Checking responses for bucket CRUD operations")
+        bkt_resp = tuple()
+        while len(bkt_resp) != 2:
+            bkt_resp = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not bkt_resp:
+            assert_utils.assert_true(False, "Failed to do bucket CRUD operations")
+        exp_fail = bkt_resp[0]
+        failed = bkt_resp[1]
+        assert_utils.assert_false(len(exp_fail) or len(failed),
+                                  "Failures observed in bucket CRUD operations. "
+                                  f"\nFailed buckets: \nexp_fail: {exp_fail} and "
+                                  f"\nfailed: {failed}")
+        LOGGER.info(
+            "Step 7: Successfully created/deleted %s new IAM users and %s buckets in loop",
+            num_users, num_bkts)
+        LOGGER.info("ENDED: Verify IAM user and bucket operations while N control pod "
+                    "restart in loop")

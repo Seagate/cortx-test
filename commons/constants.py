@@ -166,6 +166,7 @@ CSM_CONF_PATH = "/etc/cortx/csm/csm.conf"
 CSM_COPY_PATH = tempfile.gettempdir() + "/csm.conf"
 CLUSTER_COPY_PATH = tempfile.gettempdir() + "/cluster.conf"
 CORTX_CSM_POD = "cortx-csm-agent"
+CSM_AGENT_PRC = "python3 /opt/seagate/cortx/csm/bin/csm_agent"
 LOCAL_PEM_PATH = "/etc/ssl/stx/stx.pem"
 SUPPORT_BUNDLE_DIR_PATH = tempfile.gettempdir() + "/csm_support_bundle/"
 NODE_INDEX = 2
