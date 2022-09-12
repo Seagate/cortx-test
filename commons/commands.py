@@ -185,6 +185,7 @@ PCS_RESOURCE_STATUS_CMD = "pcs resource show {}"
 SYSTEM_CTL_RELOAD_CMD = "systemctl reload {}"
 GET_PID_CMD = "systemctl status {}.service | grep PID"
 KILL_CMD = "kill -9 {}"
+SAFE_KILL_CMD = "kill {}"
 PIDOF_CMD = "pidof {}"
 
 # CORTXCLI Commands
