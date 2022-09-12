@@ -57,7 +57,7 @@ class CSMExt():
         solution_path = self.master.copy_file_to_local(remote_path=remote_sol_path,
                                                                local_path=local_sol_path)
         self.log.info(solution_path)
-        with open(local_sol_path, 'rb') as yaml_file:
+        with open(local_sol_path, 'r') as yaml_file:
             conf = yaml.safe_load(yaml_file)
         self.log.info("Printing solution yaml contents: %s", conf)
         parent_key = conf['solution']  # Parent key
@@ -75,7 +75,7 @@ class CSMExt():
         control_res['limits']['cpu'] = c2
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True
-        with open(local_sol_path, 'wb') as soln:
+        with open(local_sol_path, 'w') as soln:
             yaml.dump(conf, soln, default_flow_style=False,
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
