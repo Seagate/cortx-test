@@ -456,3 +456,185 @@ class TestDataServerPodRestartAPI:
                     self.bucket_name)
         LOGGER.info("COMPLETED: Verify object overwrite during single data pod and server pod "
                     "restart")
+
+    # pylint: disable=too-many-branches
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-45532")
+    def test_copy_obj_during_data_server_pod_restart(self):
+        """
+        Verify copy object during single data pod and single server pod restart
+        """
+        LOGGER.info("STARTED: Verify copy object during single data pod and single server pod "
+                    "restart.")
+        bkt_cnt = HA_CFG["copy_obj_data"]["bkt_cnt"]
+        bkt_obj_dict = dict()
+        t_t = int(perf_counter_ns())
+        for cnt in range(bkt_cnt):
+            bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
+        output = Queue()
+        event = threading.Event()
+        LOGGER.info("Step 1: Create and list buckets. Upload object to %s & copy object from the"
+                    " same bucket to other buckets and verify copy object etags", self.bucket_name)
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=self.s3_test_obj,
+                                                  bucket_name=self.bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  file_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+        put_etag = resp[1]
+        self.extra_files.append(self.multipart_obj_path)
+        LOGGER.info("Step 1: Successfully created multiple buckets and uploaded object to %s "
+                    "and copied to other buckets and verified copy object etags", self.bucket_name)
+        LOGGER.info("Step 2: Shutdown one data and one server pod with replica method and verify"
+                    " cluster & remaining pods status")
+        for pod_prefix in self.pod_dict:
+            num_replica = self.pod_dict[pod_prefix][-1] - 1
+            resp = self.ha_obj.delete_kpod_with_shutdown_methods(
+                master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+                pod_prefix=[pod_prefix], delete_pod=[self.pod_dict.get(pod_prefix)[0]],
+                num_replica=num_replica)
+            assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
+            pod_name = list(resp[1].keys())[0]
+            self.pod_dict[pod_prefix].append(resp[1][pod_name]['deployment_name'])
+            self.pod_dict[pod_prefix].append(resp[1][pod_name]['method'])
+            assert_utils.assert_true(resp[0], "Cluster/Services status is not as expected")
+            LOGGER.info("successfully shutdown pod %s", self.pod_dict.get(pod_prefix)[0])
+            self.restore_pod = True
+        LOGGER.info("Step 2: Successfully shutdown one data and one server pod. Verified cluster "
+                    "and services states are as expected & remaining pods status is online")
+        LOGGER.info("Step 3: Download the copied objects & verify etags.")
+        for bkt, obj in bkt_obj_dict.items():
+            resp = self.s3_test_obj.get_object(bucket=bkt, key=obj)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get "
+                                                          f"Etag for object {obj} of bucket "
+                                                          f"{bkt}.")
+        LOGGER.info("Step 3: Downloaded copied objects & verify etags.")
+        bkt_obj_dict1 = bkt_obj_dict.copy()
+        t_t = int(perf_counter_ns())
+        bucket_name = self.bucket_name
+        bkt_op = False
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create and list buckets")
+            bkt_obj_dict.clear()
+            for cnt in range(bkt_cnt):
+                bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
+            bucket_name = f"ha-mp-bkt-{int(perf_counter_ns())}-1"
+            bkt_op = True
+        else:
+            for idx, bkt in enumerate(bkt_obj_dict):
+                bkt_obj_dict[bkt] = f"ha-obj{idx}-{t_t}"
+        LOGGER.info("Step 4: Copy object from %s to other buckets in background", bucket_name)
+        args = {'s3_test_obj': self.s3_test_obj, 'bucket_name': bucket_name, 'put_etag': put_etag,
+                'object_name': self.object_name, 'bkt_obj_dict': bkt_obj_dict, 'output': output,
+                'file_path': self.multipart_obj_path, 'background': True, 'bkt_op': bkt_op}
+        thread = threading.Thread(target=self.ha_obj.create_bucket_copy_obj, args=(event,),
+                                  kwargs=args)
+        thread.daemon = True  # Daemonize thread
+        thread.start()
+        LOGGER.info("Step 4: Successfully started background process for copy object")
+        # While loop to sync this operation with background thread to achieve expected scenario
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Waiting for creation of %s buckets", bkt_cnt)
+            bkt_list = list()
+            timeout = time.time() + HA_CFG["common_params"]["bucket_creation_delay"]
+            while len(bkt_list) < bkt_cnt:
+                time.sleep(HA_CFG["common_params"]["20sec_delay"])
+                bkt_list = self.s3_test_obj.bucket_list()[1]
+                if timeout < time.time():
+                    LOGGER.error("Bucket creation is taking longer than % sec",
+                                 HA_CFG["common_params"]["bucket_creation_delay"])
+                    assert_utils.assert_true(False, "Please check background process logs")
+        LOGGER.info("Waiting for %s sec...", HA_CFG["common_params"]["20sec_delay"])
+        time.sleep(HA_CFG["common_params"]["20sec_delay"])
+        LOGGER.info("Step 5: Restore data, server pod and check cluster status.")
+        event.set()
+        for pod_prefix in self.pod_dict:
+            self.restore_method = self.pod_dict.get(pod_prefix)[-1]
+            resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+                                           restore_method=self.restore_method,
+                                           restore_params={
+                                               "deployment_name": self.pod_dict.get(pod_prefix)[-2],
+                                               "deployment_backup": self.deployment_backup,
+                                               "num_replica": self.pod_dict.get(pod_prefix)[2],
+                                               "set_name": self.pod_dict.get(pod_prefix)[1]},
+                                           clstr_status=True)
+            LOGGER.debug("Response: %s", resp)
+            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+            LOGGER.info("Successfully restored pod by %s way", self.restore_method)
+        LOGGER.info("Step 5: Successfully started data, server pod and cluster is online.")
+        self.restore_pod = False
+        event.clear()
+        LOGGER.info("Step 6: Checking responses from background process")
+        thread.join()
+        responses = tuple()
+        while len(responses) < 3:
+            responses = output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not responses:
+            assert_utils.assert_true(False, "Background process failed to do copy object")
+        put_etag = responses[0]
+        exp_fail_bkt_obj_dict = responses[1]
+        failed_bkts = responses[2]
+        LOGGER.debug("Responses received from background process:\nput_etag: "
+                     "%s\nexp_fail_bkt_obj_dict: %s\nfailed_bkts: %s", put_etag,
+                     exp_fail_bkt_obj_dict, failed_bkts)
+        if len(exp_fail_bkt_obj_dict) == 0 and len(failed_bkts) == 0:
+            LOGGER.info("Copy object operation for all the buckets completed successfully. ")
+        elif failed_bkts or exp_fail_bkt_obj_dict:
+            assert_utils.assert_true(False, "Failed to do copy object when cluster was in degraded "
+                                            f"state or pods are restarting. Failed buckets:"
+                                            f" \n{failed_bkts}\n{exp_fail_bkt_obj_dict}")
+        LOGGER.info("Step 6: Successfully completed copy object operation in background")
+        LOGGER.info("Step 7: Download the object and verify the checksum")
+        LOGGER.info("Download the objects copied in healthy cluster and verify checksum")
+        for key, val in bkt_obj_dict1.items():
+            resp = self.s3_test_obj.get_object(bucket=key, key=val)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
+                                                          f"object {val} of bucket {key}. Put and "
+                                                          f"Get Etag mismatch")
+        LOGGER.info("Download the objects copied in step 4 and verify checksum")
+        for key, val in bkt_obj_dict.items():
+            resp = self.s3_test_obj.get_object(bucket=key, key=val)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
+                                                          f"object {val} of bucket {key}. Put and "
+                                                          f"Get Etag mismatch")
+        LOGGER.info("Step 7: Successfully downloaded the object and verified the checksum")
+        t_t = int(perf_counter_ns())
+        bucket_name = self.bucket_name
+        bkt_op = False
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Create and list buckets")
+            bkt_obj_dict.clear()
+            for cnt in range(bkt_cnt):
+                bkt_obj_dict[f"ha-bkt{cnt}-{t_t}"] = f"ha-obj{cnt}-{t_t}"
+            bucket_name = f"ha-mp-bkt-{int(perf_counter_ns())}-2"
+            bkt_op = True
+        else:
+            for idx, bkt in enumerate(bkt_obj_dict):
+                bkt_obj_dict[bkt] = f"ha-obj{idx}-{t_t}"
+        LOGGER.info("Step 8: Perform copy object from %s bucket to other buckets verify copy "
+                    "object etags", bucket_name)
+        resp = self.ha_obj.create_bucket_copy_obj(event, s3_test_obj=self.s3_test_obj,
+                                                  bucket_name=bucket_name,
+                                                  object_name=self.object_name,
+                                                  bkt_obj_dict=bkt_obj_dict,
+                                                  put_etag=put_etag, bkt_op=bkt_op)
+        assert_utils.assert_true(resp[0], f"Failed buckets are: {resp[1]}")
+        LOGGER.info("Step 8: Performed copy object from %s bucket to other buckets verified copy "
+                    "object etags", bucket_name)
+        LOGGER.info("Step 9: Download the copied objects & verify etags.")
+        for bkt, obj in bkt_obj_dict.items():
+            resp = self.s3_test_obj.get_object(bucket=bkt, key=obj)
+            LOGGER.info("Get object response: %s", resp)
+            get_etag = resp[1]["ETag"]
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in verification of Put & Get Etag"
+                                                          f"for object {obj} of bucket {bkt}.")
+        LOGGER.info("Step 9: Downloaded copied objects & verify etags.")
+        LOGGER.info("COMPLETED: Verify copy object during single data pod and single server pod "
+                    "restart.")
