@@ -23,6 +23,7 @@
 import time
 import logging
 
+import math
 import random
 import string
 from http import HTTPStatus
@@ -280,10 +281,10 @@ class TestQueryDeployment():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Verify GET system topology ")
-        deploy_start_time = str(self.deploy_start_time).split('.', maxsplit=1)[0]
-        deploy_end_time = str(self.deploy_end_time).split('.', maxsplit=1)[0]
+        deploy_start_time = math.ceil(self.deploy_start_time)
+        deploy_end_time = math.ceil(self.deploy_end_time)
         self.log.info("Deploy start and end time: %s %s ", deploy_start_time, deploy_end_time)
-        result, err_msg = self.csm_obj.verify_system_topology(str(deploy_start_time),
-                   str(deploy_end_time), expected_response=HTTPStatus.OK)
+        result, err_msg = self.csm_obj.verify_system_topology(deploy_start_time,
+                   deploy_end_time, expected_response=HTTPStatus.OK)
         assert result, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)

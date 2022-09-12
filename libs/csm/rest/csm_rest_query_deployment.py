@@ -95,7 +95,6 @@ class QueryDeployment(RestTestLib):
         self.log.info("Get system topology request successfully sent...")
         return response
 
-    # Function not ready
     def verify_system_topology(self, deploy_start_time: str, deploy_end_time: str,
                              expected_response=HTTPStatus.OK):
         """
@@ -186,7 +185,7 @@ class QueryDeployment(RestTestLib):
             result, err_msg = self.verify_id_and_hostname()
             assert result, err_msg
             self.log.info("Step 2: Verify services list")
-            result, err_msg = self.verify_services_list(get_resp)
+            result, err_msg = self.verify_services_list(get_resp.json())
             assert result, err_msg
         else:
             err_msg = "Status code check failed"
@@ -239,7 +238,7 @@ class QueryDeployment(RestTestLib):
                 time_list.append(dicts['deployment_time'])
         self.log.info("List of deployment times: %s", time_list)
         for times in time_list:
-            if deploy_start_time <= times <= deploy_end_time:
+            if deploy_start_time <= int(times) <= deploy_end_time:
                 self.log.info("Deployment time verification successful")
             else:
                 err_msg = err_msg + "Deployment time verification failed"
@@ -407,7 +406,7 @@ class QueryDeployment(RestTestLib):
         err_msg = ""
         result = True
         yaml_services_dict = self.get_services_dict()
-        for dicts in get_resp.json()["topology"]["nodes"]:
+        for dicts in get_resp["topology"]["nodes"]:
             if 'data_node' in dicts["type"]:
                 if dicts["services"] == yaml_services_dict['data_node/0']:
                     self.log.info("Services list matched for data nodes")
