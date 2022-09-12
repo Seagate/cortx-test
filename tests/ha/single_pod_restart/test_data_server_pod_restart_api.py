@@ -535,16 +535,17 @@ class TestDataServerPodRestartAPI:
         thread.start()
         LOGGER.info("Step 4: Successfully started background process for copy object")
         # While loop to sync this operation with background thread to achieve expected scenario
-        LOGGER.info("Waiting for creation of %s buckets", bkt_cnt)
-        bkt_list = list()
-        timeout = time.time() + HA_CFG["common_params"]["bucket_creation_delay"]
-        while len(bkt_list) < bkt_cnt:
-            time.sleep(HA_CFG["common_params"]["20sec_delay"])
-            bkt_list = self.s3_test_obj.bucket_list()[1]
-            if timeout < time.time():
-                LOGGER.error("Bucket creation is taking longer than % sec",
-                             HA_CFG["common_params"]["bucket_creation_delay"])
-                assert_utils.assert_true(False, "Please check background process logs")
+        if CMN_CFG["dtm0_disabled"]:
+            LOGGER.info("Waiting for creation of %s buckets", bkt_cnt)
+            bkt_list = list()
+            timeout = time.time() + HA_CFG["common_params"]["bucket_creation_delay"]
+            while len(bkt_list) < bkt_cnt:
+                time.sleep(HA_CFG["common_params"]["20sec_delay"])
+                bkt_list = self.s3_test_obj.bucket_list()[1]
+                if timeout < time.time():
+                    LOGGER.error("Bucket creation is taking longer than % sec",
+                                 HA_CFG["common_params"]["bucket_creation_delay"])
+                    assert_utils.assert_true(False, "Please check background process logs")
         LOGGER.info("Waiting for %s sec...", HA_CFG["common_params"]["20sec_delay"])
         time.sleep(HA_CFG["common_params"]["20sec_delay"])
         LOGGER.info("Step 5: Restore data, server pod and check cluster status.")
