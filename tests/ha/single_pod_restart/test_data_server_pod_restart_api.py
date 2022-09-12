@@ -437,10 +437,12 @@ class TestDataServerPodRestartAPI:
                      failed_parts, parts_etag, mpu_id)
         if len(exp_failed_parts) == 0 and len(failed_parts) == 0:
             LOGGER.info("All the parts are uploaded successfully")
-        elif exp_failed_parts or failed_parts:
-            assert_utils.assert_true(False, "Failed to upload parts when cluster was in good "
-                                            f"state. Failed parts: {failed_parts} and "
-                                            f"{exp_failed_parts}")
+        elif failed_parts:
+            assert_utils.assert_true(False, "Failed to upload parts when cluster was in degraded "
+                                            f"or healthy state. Failed parts: {failed_parts}")
+        elif exp_failed_parts:
+            assert_utils.assert_true(False, "Failed to upload parts while pods were restarting "
+                                            f"Failed parts: {exp_failed_parts}")
         LOGGER.info("Step 6: Successfully checked background process responses")
         parts_etag = sorted(parts_etag, key=lambda d: d['PartNumber'])
         LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
@@ -522,8 +524,8 @@ class TestDataServerPodRestartAPI:
         LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
                                                            compare=False)[0]
-        LOGGER.info("Step 1: Start multipart upload for 5GB object in multiple parts and complete "
-                    "partially for %s part out of %s", part_numbers, total_parts)
+        LOGGER.info("Step 1: Start multipart upload for %sMB object in multiple parts and complete "
+                    "partially for %s part out of %s", file_size, part_numbers, total_parts)
         LOGGER.info("Creating IAM user with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
@@ -578,8 +580,8 @@ class TestDataServerPodRestartAPI:
                                       list(range(1, total_parts + 1))))
         parts_half1 = self.system_random.sample(remaining_parts, total_parts // 2)
         part_numbers.extend(parts_half1)
-        LOGGER.info("Step 4: Start multipart upload for 5GB object in multiple parts and complete "
-                    "partially for %s part out of %s", parts_half1, total_parts)
+        LOGGER.info("Step 4: Start multipart upload for %sMB object in multiple parts and complete "
+                    "partially for %s part out of %s", file_size, parts_half1, total_parts)
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
@@ -620,8 +622,8 @@ class TestDataServerPodRestartAPI:
                                       list(range(1, total_parts + 1))))
         parts_half2 = self.system_random.sample(remaining_parts, total_parts // 2)
         part_numbers.extend(parts_half2)
-        LOGGER.info("Step 7: Start multipart upload for 5GB object in multiple parts and complete "
-                    "partially for %s part out of %s", parts_half2, total_parts)
+        LOGGER.info("Step 7: Start multipart upload for %sMB object in multiple parts and complete "
+                    "partially for %s part out of %s", file_size, parts_half2, total_parts)
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
