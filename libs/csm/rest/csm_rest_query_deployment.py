@@ -658,7 +658,7 @@ class QueryDeployment(RestTestLib):
             self.log.error(err_msg)
         return result, err_msg
 
- 
+
     def get_sns_value(self):
         """
         return SNS value using Query deployment table
