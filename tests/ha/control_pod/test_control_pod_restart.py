@@ -86,7 +86,7 @@ class TestControlPodRestart:
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.restore_node = cls.deploy = cls.restore_pod = None
-        cls.repl_num = cls.res_taint = cls.user_list = None
+        cls.repl_num = cls.res_taint = cls.user_list = self.pod_list = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
         cls.rest_iam_user = RestIamUser()
@@ -129,8 +129,10 @@ class TestControlPodRestart:
         self.s3_clean = dict()
         self.user_list = list()
         self.restore_pod = False
-        self.num_replica = 1
         self.header = self.csm_obj.get_headers(self.csm_user, self.csm_passwd)
+        self.pod_list = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        self.num_replica = len(self.pod_list)
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
@@ -160,12 +162,13 @@ class TestControlPodRestart:
         if self.res_taint:
             LOGGER.info("Untaint the node back which was tainted: %s", self.control_node)
             self.node_master_list[0].execute_cmd(cmd=cmd.K8S_UNTAINT_CTRL.format(self.control_node))
-        LOGGER.info("Revert back to default single control pod per cluster if more replicas are "
-                    "created.")
-        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
-        if len(pod_list) > 1:
-            resp = self.node_master_list[0].create_pod_replicas(num_replica=1,
-                                                                pod_name=pod_list[0])
+        LOGGER.info("Revert back to default number of control pods %s is more were created",
+                    self.num_replica)
+        self.pod_list = self.node_master_list[0].get_all_pods(
+            pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        if len(self.pod_list) > self.num_replica:
+            resp = self.node_master_list[0].create_pod_replicas(num_replica=self.num_replica,
+                                                                pod_name=self.pod_list[0])
             assert_utils.assert_true(resp[0], resp[1])
         if self.s3_clean:
             LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
