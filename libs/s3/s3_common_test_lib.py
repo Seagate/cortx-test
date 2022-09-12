@@ -372,7 +372,7 @@ def create_attach_list_iam_policy(access, secret, policy_name, iam_policy, iam_u
     :param secret: Secret Key of S3 account
     :param policy_name: IAM Policy name
     :param iam_policy: IAM Policy content
-    :iam_user : IAM username
+    :param iam_user : IAM username
     """
     iam_policy_test_lib = IamPolicyTestLib(access_key=access, secret_key=secret)
     LOG.info("Creating IAM Policy %s = %s", policy_name, iam_policy)
@@ -387,6 +387,7 @@ def create_attach_list_iam_policy(access, secret, policy_name, iam_policy, iam_u
     resp = iam_policy_test_lib.check_policy_in_attached_policies(iam_user, policy.arn)
     assert_utils.assert_true(resp)
 
+
 def copy_obj_di_check(src_bucket, src_object, dest_bucket, dest_object, **kwargs):
     """
     Helper function is used to put object and set object tags.
@@ -394,8 +395,7 @@ def copy_obj_di_check(src_bucket, src_object, dest_bucket, dest_object, **kwargs
     :param src_object: Source Object
     :param dest_bucket: Destination bucket
     :param dest_object: Destination object
-    :param put_etag: Etag of source object
-    :param copy_etag: Etag of destination object
+    :param kwargs: keyword arguments
     """
     put_etag = kwargs.get("put_etag", None)
     copy_etag = kwargs.get("copy_etag", None)
@@ -448,6 +448,7 @@ def list_objects_in_bucket(bucket, objects, s3_test_obj):
         assert_utils.assert_true(obj in listed_objects, f"{obj} not present in {bucket}")
 
 
+    # pylint: disable=too-many-arguments
 def upload_mpu_copy_obj(src_bucket, src_obj, dest_bucket, dest_obj, **kwargs):
     """ method to upload object via multipart upload and copy it to some bucket
     :param src_bucket: The name of the source bucket.
@@ -473,6 +474,7 @@ def upload_mpu_copy_obj(src_bucket, src_obj, dest_bucket, dest_obj, **kwargs):
     pre_date = date2 - timedelta(days=1)
     post_date = date2 + timedelta(days=1)
     return etag, pre_date, post_date
+
 
 class S3BackgroundIO:
     """Class to perform/handle background S3 IOs for S3 tests using S3bench."""
