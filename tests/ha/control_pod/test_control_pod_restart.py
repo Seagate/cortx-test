@@ -44,6 +44,7 @@ from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
+from libs.csm.csm_interface import csm_api_factory
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
@@ -70,6 +71,8 @@ class TestControlPodRestart:
         """
         LOGGER.info("STARTED: Setup Module operations.")
         cls.num_nodes = len(CMN_CFG["nodes"])
+        cls.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
+        cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
         cls.username = []
         cls.password = []
         cls.host_master_list = []
@@ -78,6 +81,7 @@ class TestControlPodRestart:
         cls.host_worker_list = []
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
+        cls.csm_obj = csm_api_factory("rest")
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.s3_clean = cls.test_prefix = cls.random_time = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
@@ -126,6 +130,7 @@ class TestControlPodRestart:
         self.user_list = list()
         self.restore_pod = False
         self.num_replica = 1
+        self.header = self.csm_obj.get_headers(self.csm_user, self.csm_passwd)
         LOGGER.info("Check the overall status of the cluster.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
@@ -1674,14 +1679,15 @@ class TestControlPodRestart:
         LOGGER.info("Step 1: Created IAM user successfully")
         LOGGER.info("Create %s iam users for deletion", num_users)
         users = self.mgnt_ops.create_account_users(nusers=num_users)
-        LOGGER.info("Step 2: Perform IAM user creation/deletion in background")
+        LOGGER.info("Step 2: Start IAM user and buckets cruds in background")
+        LOGGER.info("Step 2.1: Perform IAM user creation/deletion in background")
         args = {'user_crud': True, 'bkt_crud': False, 'num_users': num_users, 's3_obj': s3_obj,
-                'output': iam_output, 'del_users_dict': users}
+                'output': iam_output, 'del_users_dict': users, 'header': self.header}
         thread1 = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
                                    args=(event,), kwargs=args)
         thread1.daemon = True  # Daemonize thread
         thread1.start()
-        LOGGER.info("Start buckets creation/deletion in background")
+        LOGGER.info("Step 2.2: Start buckets creation/deletion in background")
         args = {'user_crud': False, 'bkt_crud': True, 'num_bkts': num_bkts, 's3_obj': s3_obj,
                 'output': bkt_output}
         thread2 = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
