@@ -125,6 +125,8 @@ class TestControlPodSoftFailure:
                     const.CONTROL_POD_NAME_PREFIX, cls.default_replica, cls.repl_num)
         cls.num_users = HA_CFG["s3_operation_data"]["200_iam_users"]
         cls.csm_soft_delay = HA_CFG["common_params"]["15sec_delay"]
+        cls.max_proc_restart_delay = HA_CFG["common_params"]["60sec_delay"]
+        cls.min_proc_restart_delay = HA_CFG["common_params"]["20sec_delay"]
 
     def setup_method(self):
         """
@@ -361,7 +363,6 @@ class TestControlPodSoftFailure:
         LOGGER.info("STARTED: Test IOs and IAM user CRUDs before and after csm-agent is down in"
                     " all control pods")
 
-        proc_restart_delay = HA_CFG["common_params"]["control_proc_restart_delay"]
         num_users = HA_CFG["s3_operation_data"]["no_csm_users"]
 
         if self.scale_req:
@@ -371,10 +372,11 @@ class TestControlPodSoftFailure:
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Total number of control pods in the cluster are: %s", self.repl_num)
 
-        LOGGER.info("Adding %s delay in config files of all control pods", proc_restart_delay)
-        self.add_proc_restart_delay(proc_restart_delay)
+        LOGGER.info("Adding %s delay in config files of all control pods",
+                    self.max_proc_restart_delay)
+        self.add_proc_restart_delay(self.max_proc_restart_delay)
         LOGGER.info("Successfully added %s delay in config files of all control pods",
-                    proc_restart_delay)
+                    self.max_proc_restart_delay)
         self.change_proc_delay = True
 
         LOGGER.info("Step 1: Perform WRITE-READ-Verify on user %s", self.uids[0])
@@ -442,8 +444,8 @@ class TestControlPodSoftFailure:
         LOGGER.info("Step 4: Performed WRITEs-READs-Verify with variable sizes objects.")
 
         LOGGER.info("Waiting for %s time for all control pod containers to start",
-                    proc_restart_delay)
-        time.sleep(proc_restart_delay)
+                    self.max_proc_restart_delay)
+        time.sleep(self.max_proc_restart_delay)
 
         LOGGER.info("Step 5: Checking cluster status")
         resp = self.ha_obj.poll_cluster_status(self.node_master_list[0], timeout=180)
@@ -480,7 +482,6 @@ class TestControlPodSoftFailure:
         bkt_output = Queue()
         num_users = HA_CFG["s3_operation_data"]["iam_users"]
         num_bkts = HA_CFG["s3_operation_data"]["no_bkt_del_ctrl_pod"]
-        proc_restart_delay = HA_CFG["common_params"]["min_control_proc_restart_delay"]
         if self.scale_req:
             LOGGER.info("Scale replicas for control pod to %s", self.repl_num)
             resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
@@ -488,10 +489,11 @@ class TestControlPodSoftFailure:
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Total number of control pods in the cluster are: %s", self.repl_num)
 
-        LOGGER.info("Adding %s delay in config files of all control pods", proc_restart_delay)
-        self.add_proc_restart_delay(proc_restart_delay)
+        LOGGER.info("Adding %s delay in config files of all control pods",
+                    self.min_proc_restart_delay)
+        self.add_proc_restart_delay(self.min_proc_restart_delay)
         LOGGER.info("Successfully added %s delay in config files of all control pods",
-                    proc_restart_delay)
+                    self.min_proc_restart_delay)
         self.change_proc_delay = True
 
         LOGGER.info("Step 1: Perform WRITE-READ-Verify on user %s", self.uids[0])
@@ -532,8 +534,8 @@ class TestControlPodSoftFailure:
         LOGGER.info("Step 3: Created soft failures")
 
         LOGGER.info("Waiting for %s time for all control pod containers to start",
-                    proc_restart_delay)
-        time.sleep(proc_restart_delay)
+                    self.min_proc_restart_delay)
+        time.sleep(self.min_proc_restart_delay)
         event.clear()
 
         LOGGER.info("Waiting for threads to join")

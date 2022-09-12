@@ -24,8 +24,6 @@ common_params:
   10min_delay: 600
   io_retry_count: 5
   short_loop: 5
-  control_proc_restart_delay: 60
-  min_control_proc_restart_delay: 20
 
 s3_operation_data:
   no_csm_users: 10
