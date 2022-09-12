@@ -448,7 +448,7 @@ def list_objects_in_bucket(bucket, objects, s3_test_obj):
         assert_utils.assert_true(obj in listed_objects, f"{obj} not present in {bucket}")
 
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
 def upload_mpu_copy_obj(src_bucket, src_obj, dest_bucket, dest_obj, **kwargs):
     """ method to upload object via multipart upload and copy it to some bucket
     :param src_bucket: The name of the source bucket.
