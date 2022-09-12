@@ -35,6 +35,7 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.s3_utils import calc_checksum
+from commons.utils.system_utils import calculate_checksum
 from commons.utils.system_utils import path_exists
 from commons.utils.system_utils import remove_dirs
 from libs.s3 import s3_test_lib
@@ -273,9 +274,15 @@ class TestCopyObjects:
         validate_copy_content(self.src_bkt, self.key_obj1, self.src_bkt, self.key_obj2,
                               s3_testobj=self.s3_obj, down_path1=self.downld_path1,
                               down_path2=self.downld_path2)
-        validate_copy_content(self.src_bkt, self.key_mpobj1, self.src_bkt, self.key_obj4,
-                              s3_testobj=self.s3_obj, down_path1=self.downld_path1,
-                              down_path2=self.downld_path2)
+        LOGGER.info("Multipart object: Compare content of source and destination copy object")
+        resp = self.s3_obj.object_download(self.src_bkt, self.key_mpobj1, self.downld_path1)
+        assert_utils.assert_true(resp[0], resp[1])
+        srcchecksum = calculate_checksum(self.downld_path1)
+        resp = self.s3_obj.object_download(self.src_bkt, self.key_obj4, self.downld_path2)
+        assert_utils.assert_true(resp[0], resp[1])
+        destchecksum = calculate_checksum(self.downld_path2)
+        assert_utils.assert_equal(srcchecksum, destchecksum, "Checksum match failed.")
+        LOGGER.info("Multipart object: Validated content of copy object")
         LOGGER.info("ENDED: Test Parallel put and copy on destination object "
                     "(simple and multipart source objects)")
 
@@ -299,8 +306,15 @@ class TestCopyObjects:
         self.parallel_copy_and_put_object((self.src_bkt, self.key_obj3, self.src_bkt,
                                           self.key_obj4), (self.src_bkt, self.key_obj3,
                                           self.file_path))
-        copy_obj_di_check(self.src_bkt, self.key_obj3, self.src_bkt, self.key_obj4,
-                          s3_testobj=self.s3_obj)
+        LOGGER.info("Multipart object: Compare content of source and destination copy object")
+        resp = self.s3_obj.object_download(self.src_bkt, self.key_obj3, self.downld_path1)
+        assert_utils.assert_true(resp[0], resp[1])
+        srcchecksum = calculate_checksum(self.downld_path1)
+        resp = self.s3_obj.object_download(self.src_bkt, self.key_obj4, self.downld_path2)
+        assert_utils.assert_true(resp[0], resp[1])
+        destchecksum = calculate_checksum(self.downld_path2)
+        assert_utils.assert_equal(srcchecksum, destchecksum, "Checksum match failed.")
+        LOGGER.info("Multipart object: Validated content of copy object")
         LOGGER.info("All objects should be listed in relevant buckets")
         list_objects_in_bucket(bucket=self.src_bkt, objects=[self.key_obj1, self.key_obj2,
                            self.key_obj3, self.key_obj4], s3_test_obj=self.s3_obj)
