@@ -1571,8 +1571,7 @@ class ProvDeployK8sCortxLib:
                 response.append(resp[1])
                 response.append(time_taken)
                 break
-            else:
-                response.extend([False, 'Timeout'])
+            response.extend([False, 'Timeout'])
         LOGGER.info("hctl_status = %s", resp[1])
         return response
 
