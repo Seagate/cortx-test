@@ -679,3 +679,34 @@ class TestCorruptDataDetection:
                                    flag=False)
         logger.info("ENDED: Test %s Parity corruption and m0cat workflow of"
                     " Data block -aligned", test_prefix)
+
+    @pytest.mark.skip(reason="Degraded mode is not supported yet")
+    @pytest.mark.tags("TEST-41767")
+    @pytest.mark.motr_di
+    def test_data_corruption_healthy_read_in_degraded(self):
+        """
+        Corrupt data block one by one using emap script and
+         reading from object with m0cat should error.
+        -s 4096 -c 10 -o 1048583 /root/infile -L 1
+        -s 4096 -c 1 -o 1048583 /root/myfile -L 1 -u -O 0
+        -o 1048583 -s 4096 -c 10 -L 1 /root/dest_myfile
+        """
+        test_prefix = "TEST-41767"
+        count_list = ["1"]
+        bsize_list = ["1M"]
+        layout_ids = ["9"]
+        logger.info("STARTED: Test %s Data corruption and m0cat workflow of"
+                    " Data block -aligned", test_prefix)
+        resp = self.motr_inject_checksum_corruption(
+            layout_ids, bsize_list, count_list, ft_type=1)
+        object_id_list = resp[0]
+        self.log_file_list = resp[1]
+        # Switch to degraded mode
+        resp = self.motr_obj.switch_to_degraded_mode()
+        assert_utils.assert_true(resp[0], "Failure observed during process restart/recovery")
+        self.pod_selected = resp[1]
+        self.container = resp[2]
+        self.m0cat_md5sum_m0unlink(bsize_list, count_list, layout_ids, object_id_list,
+                                   flag=False)
+        logger.info("ENDED: Test %s Parity corruption and m0cat workflow of"
+                    " Data block -aligned", test_prefix)
