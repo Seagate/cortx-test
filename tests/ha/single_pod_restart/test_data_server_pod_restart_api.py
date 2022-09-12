@@ -1056,12 +1056,12 @@ class TestDataServerPodRestartAPI:
         put_output = Queue()
         LOGGER.info("Step 1: Create bucket and upload object %s of %s size. Enable versioning "
                     "on %s.", self.object_name, self.f_size, self.bucket_name)
-        self.extra_files.append(self.multipart_obj_path)
         args = {'chk_null_version': True, 'is_unversioned': True,
                 'file_path': self.multipart_obj_path, 'enable_ver': True, 's3_ver': self.s3_ver}
         resp = self.ha_api.crt_bkt_put_obj_enbl_ver(event, self.s3_test_obj, self.bucket_name,
                                                     self.object_name, **args)
         assert_utils.assert_true(resp[0], resp[1])
+        self.extra_files.append(self.multipart_obj_path)
         LOGGER.info("Step 1: Created bucket and uploaded object %s of %s size. Enabled "
                     "versioning on %s.", self.object_name, self.f_size, self.bucket_name)
         self.version_etag.update({self.bucket_name: []})
