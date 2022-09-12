@@ -182,11 +182,11 @@ class QueryDeployment(RestTestLib):
         self.log.info("Node topology response %s ", get_resp.json())
         result = get_resp.status_code == expected_response
         if result:
-            self.log.info("Verify node id and hostname")
+            self.log.info("Step 1: Verify node id and hostname")
             result, err_msg = self.verify_id_and_hostname()
             assert result, err_msg
-            self.log.info("Verify services list")
-            result, err_msg = self.verify_services_list(get_resp, expected_response)
+            self.log.info("Step 2: Verify services list")
+            result, err_msg = self.verify_services_list(get_resp)
             assert result, err_msg
         else:
             err_msg = "Status code check failed"
@@ -252,6 +252,7 @@ class QueryDeployment(RestTestLib):
         Verify node details
         """
         err_msg = ""
+        result = True
         self.log.info("Check if all key parameters are present for node")
         list_params = ['id', 'version', 'services', 'type', 'storage_set',
                 'deployment_time', 'hostname']
@@ -377,56 +378,59 @@ class QueryDeployment(RestTestLib):
                 result = False
         return result, err_msg
 
-    # pylint: disable-msg=too-many-branches
-    #Function Not Ready
-    def verify_services_list(self, get_resp: dict, expected_response: str):
+    def get_services_dict(self):
         """
         Verify list of services for cluster nodes
         """
-        yaml_services = []
+        yaml_services_dict = {}
         self.log.info("Read data from cluster.yaml")
         cluster_yaml = self.get_cluster_yaml()
         cluster = cluster_yaml["cluster"]["node_types"]
-        result = get_resp.status_code == expected_response
-        self.log.info("Check for services list in case of data nodes")
-        if result:
-            if cluster[0]["name"] == 'data_node/0' or cluster[0]["name"] == 'data_node/1':
-                yaml_services = cluster[0]["components"][1]["services"]
-            if cluster[0]["name"] == 'server_node':
-                yaml_services = cluster[2]["components"][2]["services"]
-                self.log.info("yaml services for server node: %s ", yaml_services)
-            if cluster[0]["name"] == 'control_node':
-                yaml_services = cluster[3]["components"][1]["services"]
-                self.log.info("yaml services for control node: %s ", yaml_services)
-            for dicts in get_resp.json()["topology"]["nodes"]:
-                node_type = dicts["type"]
-                self.log.info("Check for services list in case of data nodes")
-                if node_type == ('data_node/0', 'data_node/1'):
-                    resp_services = dicts["services"]
-                    if yaml_services == resp_services:
-                        self.log.info("Services list matched for data nodes")
-                    else:
-                        err_msg = "Services list match failed for data nodes"
-                        self.log.error(err_msg)
-                self.log.info("Check for services list in case of control node")
-                if node_type == 'server_node':
-                    resp_services = dicts["services"]
-                    if yaml_services == resp_services:
-                        self.log.info("Services list matched for control nodes")
-                    else:
-                        err_msg = "Services list match failed for control nodes"
-                        self.log.error(err_msg)
-                self.log.info("Check for services list in case of server node")
-                if node_type == 'control_node':
-                    resp_services = dicts["services"]
-                    if yaml_services == resp_services:
-                        self.log.info("Services list matched for control nodes")
-                    else:
-                        err_msg = "Services list match failed for control nodes"
-                        self.log.error(err_msg)
-        else:
-            err_msg = "Status code check failed"
-            self.log.info(err_msg)
+        for elements in cluster:
+            self.log.info("Remove client node details which are not required")
+            removed_value = elements.pop('client_node', 'No Key found')
+            self.log.info("removed value: %s ", str(removed_value))
+            if elements["name"] == 'data_node/0' or elements["name"] == 'data_node/1':
+                yaml_services_dict.update({elements['name']:elements["components"][1]["services"]})
+            elif elements["name"] == 'server_node':
+                yaml_services_dict.update({elements['name']:elements["components"][2]["services"]})
+            elif elements["name"] == 'control_node':
+                yaml_services_dict.update({elements['name']:elements["components"][1]["services"]})
+            else:
+                self.log.info("Ha node service details missing so cannot update dict")
+            #need to check how ha node services would appear after Bug=CORTX-34129 is resolved
+        self.log.info("Yaml service dict: %s ", yaml_services_dict)
+        return yaml_services_dict
+
+    def verify_services_list(self, get_resp: dict):
+        """Verify services list"""
+        err_msg = ""
+        result = True
+        yaml_services_dict = self.get_services_dict()
+        for dicts in get_resp.json()["topology"]["nodes"]:
+            if dicts["type"] == 'data_node/0' or dicts["type"] == 'data_node/1':
+                if dicts["services"] == yaml_services_dict['data_node/0']:
+                    self.log.info("Services list matched for data nodes")
+                else:
+                    result = False
+                    err_msg = "Services list match failed for data nodes"
+                    self.log.error(err_msg)
+            elif dicts["type"] == 'server_node':
+                if dicts["services"] == yaml_services_dict['server_node']:
+                    self.log.info("Services list matched for server nodes")
+                else:
+                    result = False
+                    err_msg = err_msg + "Services list match failed for server nodes"
+                    self.log.error(err_msg)
+            elif dicts["type"] == 'control_node':
+                if dicts["services"] == yaml_services_dict['control_node']:
+                    self.log.info("Services list matched for control nodes")
+                else:
+                    result = False
+                    err_msg = err_msg + "Services list match failed for control nodes"
+                    self.log.error(err_msg)
+            else:
+                self.log.info("Node other than above node types")
         return result, err_msg
 
     def verify_storage_set(self, storage_set_id: str = None,

@@ -209,7 +209,6 @@ class TestQueryDeployment():
             assert resp, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Test not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -221,7 +220,7 @@ class TestQueryDeployment():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Verifying system topology with valid node id")
-        result, err_msg = self.csm_obj.verify_node_topolgy(expected_response=HTTPStatus.OK)
+        result, err_msg = self.csm_obj.verify_node_topology(expected_response=HTTPStatus.OK)
         assert result, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
