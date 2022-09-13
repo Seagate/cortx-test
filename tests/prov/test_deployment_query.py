@@ -30,7 +30,6 @@ import binascii
 import random
 import string
 from http import HTTPStatus
-import logging
 import os
 import secrets
 import threading
@@ -51,7 +50,7 @@ from config import CMN_CFG
 from config import  PROV_CFG
 from config import  DEPLOY_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
-from commons import configmanager, constants
+from commons import configmanager, cortxlogging, constants
 from commons.constants import K8S_SCRIPTS_PATH, K8S_PRE_DISK, POD_NAME_PREFIX
 from libs.csm.csm_interface import csm_api_factory
 from libs.ha.ha_common_libs_k8s import HAK8s
@@ -229,18 +228,16 @@ class TestQueryDeployment:
         """
         Test to verify query should be able to fetch standard 3 node configuration.
         """
+        test_case_name = cortxlogging.get_frame()
         LOGGER.info("Step 1 : Deploy cortx cluster ")
         self.multiple_node_deployment(3, 2)
         LOGGER.info("Step 2 : GET the cluster configuration ")
-        self.log.info("Send GET request for fetching system topology")
+        self.log.info("Deploy start and end time: %s %s ", self.deploy_start_time,
+                      self.deploy_end_time)
         result, err_msg = self.csm_obj.verify_system_topology(self.deploy_start_time,
-                                                              self.deploy_end_time,
-                                                              expected_response=HTTPStatus.OK)
+                                                              self.deploy_end_time, expected_response=HTTPStatus.OK)
         assert result, err_msg
-#       self.log.info(" Send node details query request")
-#       get_topology = self.csm_obj.get_system_topology()
-#       resp = self.csm_obj.get_node_topology()
-#       assert resp.status_code == HTTPStatus.OK        
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
     @pytest.mark.three_node_deployment
@@ -250,16 +247,18 @@ class TestQueryDeployment:
         """
         Test to verify query should be able to fetch standard 5 node configuration.
         """
+        test_case_name = cortxlogging.get_frame()
         self.multiple_node_deployment(3, 2)
         LOGGER.info("Step 1 : Deploy cortx cluster ")
         self.multiple_node_deployment(5, 1)
         LOGGER.info("Step 2 : GET the cluster configuration ")
         self.log.info("Send GET request for fetching system topology" )
-        get_toplogy = self.csm_obj.get_system_topology()
+        self.log.info("Deploy start and end time: %s %s ", self.deploy_start_time,
+                      self.deploy_end_time)
         result, err_msg = self.csm_obj.verify_system_topology(self.deploy_start_time,
-                                                                  self.deploy_end_time,
-                                                                  expected_response=HTTPStatus.OK)
+                                                              self.deploy_end_time, expected_response=HTTPStatus.OK)
         assert result, err_msg
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
 
     @pytest.mark.lc
@@ -271,6 +270,7 @@ class TestQueryDeployment:
         Test to verify query should be able to fetch standard 3 node configuration
             if cluster is in degraded state.
         """
+        test_case_name = cortxlogging.get_frame()
         LOGGER.info("Step 1 : Deploy cortx cluster ")
 #        self.multiple_node_deployment(3, 2)
         LOGGER.info("Step 2 : Make a cluster in degraded state")
@@ -308,6 +308,7 @@ class TestQueryDeployment:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
                                           "OR the cluster is not online")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
     @pytest.mark.three_node_deployment
@@ -318,6 +319,7 @@ class TestQueryDeployment:
         Test to verify query should be able to fetch standard 5 node configuration
             if cluster is in degraded state.
         """
+        test_case_name = cortxlogging.get_frame()
         LOGGER.info("Step 1 : Deploy cortx cluster ")
         self.multiple_node_deployment(5, 1)
         LOGGER.info("Step 2 : Make a cluster in degraded state")
@@ -337,10 +339,12 @@ class TestQueryDeployment:
         LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
         self.restore_pod = True
-        #           self.log.info(" Send node details query request")
-        #           get_topology = self.csm_obj.get_system_topology()
-        #           resp = self.csm_obj.get_node_topology()
-        #           assert resp.status_code == HTTPStatus.OK
+        self.log.info("Step 4: Verify GET system topology ")
+        self.log.info("Deploy start and end time: %s %s ", self.deploy_start_time,
+                      self.deploy_end_time)
+        result, err_msg = self.csm_obj.verify_system_topology(self.deploy_start_time,
+                                                              self.deploy_end_time, expected_response=HTTPStatus.OK)
+        assert result, err_msg
         LOGGER.info("Step 5: Restore pod and check cluster status.")
         resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
                                        restore_method=self.restore_method,
@@ -353,3 +357,4 @@ class TestQueryDeployment:
         LOGGER.debug("Response: %s", resp)
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
                                           "OR the cluster is not online")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
