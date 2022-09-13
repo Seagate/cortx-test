@@ -77,7 +77,10 @@ UPGRADE_SUSPEND_MSG = "Upgrade suspended"
 UPGRADE_ALREADY_SUSPENDED = "Upgrade Process Not found on the system, Suspend cannot be performed"
 PARSE_SIZE = "10485760"
 CONTAINER_PATH = "/root/error_injection.py"
+PARSER_PATH = "/root/metadata_parser.py"
+WRAPPER_PATH = "/root/wrapper_runner.py"
 POD_HCTL_POSTFIX = "-headless.cortx.svc.cluster.local"
+CONTROL_POD_SVC_NAME = "csm_agent"
 
 # common constant.
 ERR_MSG = "Error in %s: %s"
@@ -166,6 +169,7 @@ CSM_CONF_PATH = "/etc/cortx/csm/csm.conf"
 CSM_COPY_PATH = tempfile.gettempdir() + "/csm.conf"
 CLUSTER_COPY_PATH = tempfile.gettempdir() + "/cluster.conf"
 CORTX_CSM_POD = "cortx-csm-agent"
+CSM_AGENT_PRC = "python3 /opt/seagate/cortx/csm/bin/csm_agent"
 LOCAL_PEM_PATH = "/etc/ssl/stx/stx.pem"
 SUPPORT_BUNDLE_DIR_PATH = tempfile.gettempdir() + "/csm_support_bundle/"
 NODE_INDEX = 2

@@ -66,10 +66,12 @@ class TestContDeployment:
             cls.cvg_per_node = int(os.getenv("CVG_PER_NODE"))
             cls.data_disk_per_cvg = int(os.getenv("DATA_DISK_PER_CVG"))
         cls.data_disk_size = os.getenv("DATA_DISK_SIZE", cls.deploy_cfg["data_disk_size"])
-        cls.meta_disk_size = os.getenv("METADATA_DISK_SIZE", cls.deploy_cfg["metadata_disk_size"])
+        cls.meta_disk_size = os.getenv("METADATA_DISK_SIZE",
+                                       cls.deploy_cfg["metadata_disk_size"])
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
-        cls.s3_instances_per_node = os.getenv("S3_INSTANCE_PER_NODE",
-                                              cls.deploy_cfg["s3_instances_per_node"])
+        cls.s3_instances_per_node = int(os.getenv("S3_INSTANCE_PER_NODE",
+                                        cls.deploy_cfg["s3_instances_per_node"]))
+        cls.log_disk_flag = bool(distutils.util.strtobool(os.getenv("LOG_DEVICE_FLAG")))
         cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
         cls.custom_repo_path = os.getenv("CUSTOM_REPO_PATH", cls.deploy_cfg["k8s_dir"])
         cls.namespace = os.getenv("NAMESPACE", cls.deploy_cfg["namespace"])
@@ -179,5 +181,5 @@ class TestContDeployment:
                 destroy_setup_flag=self.destroy_setup_flag, custom_repo_path=self.custom_repo_path,
                 namespace=self.namespace, report_filepath=self.report_file, data_disk_size=
                 self.data_disk_size, meta_disk_size=self.meta_disk_size,
-                s3_instance=self.s3_instances_per_node)
+                s3_instance=self.s3_instances_per_node, log_disk_flag=self.log_disk_flag)
             iteration = iteration + 1

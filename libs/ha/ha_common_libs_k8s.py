@@ -29,9 +29,11 @@ import secrets
 import sys
 import time
 from ast import literal_eval
+from http import HTTPStatus
 from time import perf_counter_ns
 
 import yaml
+from requests import exceptions as req_exception
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -43,9 +45,11 @@ from commons.utils import config_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import run_local_cmd
 from config import CMN_CFG
+from config import CSM_REST_CFG
 from config import HA_CFG
 from config.s3 import S3_BLKBOX_CFG
 from config.s3 import S3_CFG
+from libs.csm.rest.csm_rest_core_lib import RestClient
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -82,6 +86,7 @@ class HAK8s:
         self.parallel_ios = None
         self.system_random = secrets.SystemRandom()
         self.dir_path = common_const.K8S_SCRIPTS_PATH
+        self.restapi = RestClient(CSM_REST_CFG)
 
     def polling_host(self,
                      max_timeout: int,
@@ -1752,7 +1757,7 @@ class HAK8s:
         return True, f"Successfully failed over pods {list(pod_yaml.keys())}"
 
     def iam_bucket_cruds(self, event, s3_obj=None, user_crud=False, num_users=None, bkt_crud=False,
-                         num_bkts=None, del_users_dict=None, output=None):
+                         num_bkts=None, del_users_dict=None, output=None, **kwargs):
         """
         Function to perform iam user and bucket crud operations in loop (To be used for background)
         :param event: event to intimate thread about main thread operations
@@ -1763,8 +1768,10 @@ class HAK8s:
         :param num_bkts: Number of buckets to be created and deleted
         :param del_users_dict: Dict of users to be deleted
         :param output: Output queue in which results should be put
+        :keyword header: Obtained header pass for IAM create/delete REST requests
         :return: Queue containing output lists
         """
+        header = kwargs.get("header", False)
         exp_fail = list()
         failed = list()
         created_users = list()
@@ -1777,7 +1784,10 @@ class HAK8s:
                 try:
                     LOGGER.debug("Creating %s user", i_i)
                     user = None
-                    user = self.mgnt_ops.create_account_users(nusers=1)
+                    if not header:
+                        user = self.mgnt_ops.create_account_users(nusers=1)
+                    else:
+                        user = self.create_iam_user_with_header(header=header)
                     if user is None:
                         if event.is_set():
                             exp_fail.append(user)
@@ -1785,7 +1795,8 @@ class HAK8s:
                             failed.append(user)
                     else:
                         created_users.append(user)
-                except CTException as error:
+                except (CTException, req_exception.ConnectionError, req_exception.ConnectTimeout) \
+                        as error:
                     LOGGER.exception("Error: %s", error)
                     if event.is_set():
                         exp_fail.append(user)
@@ -1795,7 +1806,11 @@ class HAK8s:
                 if len(del_users) > i_i:
                     LOGGER.debug("Deleting %s user", del_users[i_i])
                     user = del_users[i_i]
-                    resp = self.delete_s3_acc_buckets_objects({user: del_users_dict[user]})
+                    if not header:
+                        resp = self.delete_s3_acc_buckets_objects({user: del_users_dict[user]})
+                    else:
+                        resp = self.delete_iam_user_with_header({user: del_users_dict[user]},
+                                                                header)
                     if not resp[0]:
                         user_del_failed.append(user)
                         if event.is_set():
@@ -1907,3 +1922,60 @@ class HAK8s:
             pod_ep_dict[pod] = ip_port
 
         return pod_ep_dict
+
+    def create_iam_user_with_header(self, num_users=1, header=None):
+        """
+        Function create IAM user with give header info.
+        :param num_users: Int count for number of IAM user creation
+        :param header: Existing header to use for IAM user creation post request
+        :return: None if IAM user REST req fails or Dict response for IAM user successful creation
+        """
+        user = None
+        payload = dict()
+        endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
+        for i_d in range(num_users):
+            try:
+                name = f"ha_iam_{i_d}_{time.perf_counter_ns()}"
+                payload.update({"uid": name})
+                payload.update({"display_name": name})
+                LOGGER.info("Creating IAM user request....")
+                resp = self.restapi.rest_call("post", endpoint=endpoint, json_dict=payload,
+                                              headers=header)
+                LOGGER.info("IAM user request successfully sent...")
+                if resp.status_code == HTTPStatus.CREATED:
+                    resp = resp.json()
+                    user = dict()
+                    user.update({resp["keys"][0]["user"]: {
+                        "user_name": resp["keys"][0]["user"],
+                        "password": S3_CFG["CliConfig"]["s3_account"]["password"],
+                        "accesskey": resp["keys"][0]["access_key"],
+                        "secretkey": resp["keys"][0]["secret_key"]}})
+            except (CTException, req_exception.ConnectionError, req_exception.ConnectTimeout) \
+                    as error:
+                LOGGER.exception("Error: %s", error)
+
+        return user
+
+    def delete_iam_user_with_header(self, user, header):
+        """
+        Function delete IAM user with give header info.
+        :param user: IAM user info dict to be deleted
+        :param header: Existing header to use for IAM user delete request
+        :return: Tuple
+        """
+        del_user = list(user.keys())
+        failed_del = list()
+        try:
+            for user_del in del_user:
+                endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + user_del
+                LOGGER.info("Sending Delete %s request...", user_del)
+                response = self.restapi.rest_call("delete", endpoint=endpoint, headers=header)
+                if response.status_code != HTTPStatus.OK:
+                    failed_del.append(user)
+                    LOGGER.debug(response)
+        except (req_exception.ConnectionError, req_exception.ConnectTimeout) as error:
+            LOGGER.exception("Error: %s", error)
+            failed_del.append(user)
+        if failed_del:
+            return False, failed_del
+        return True, "User deleted successfully"

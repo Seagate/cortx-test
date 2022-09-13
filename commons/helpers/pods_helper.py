@@ -121,7 +121,8 @@ class LogicalNode(Host):
         :param pod_list: List of pods
         :return: Dict
         """
-        pod_containers = {}
+        pod_containers = dict()
+        pod_list = pod_list if pod_list else list()
         if not pod_list:
             log.info("Get all data pod names of %s", pod_prefix)
             output = self.execute_cmd(commands.CMD_POD_STATUS +
@@ -156,7 +157,6 @@ class LogicalNode(Host):
             elif pod_name:
                 log.info("Getting set name and set type of pod %s", pod_name)
                 set_type, set_name = self.get_set_type_name(pod_name=pod_name)
-                deploy = set_name
             else:
                 return False, "Please provide atleast one of the parameters set_name, deploy or " \
                               "pod_name"
@@ -473,13 +473,13 @@ class LogicalNode(Host):
         :param: container_name: Name of the container where the file will be copied
         """
         try:
-            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name, \
-                container_path, container_name)
+            cmd = commands.K8S_CP_TO_CONTAINER_CMD.format(local_file_path, pod_name,
+                                                          container_path, container_name)
             output = self.execute_cmd(cmd=cmd, exc=False)
             return True, output
         except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
-                    LogicalNode.copy_file_to_container.__name__, error)
+                      LogicalNode.copy_file_to_container.__name__, error)
             return False, error
 
     def get_machine_id_for_pod(self, pod_name: str):
@@ -520,21 +520,31 @@ class LogicalNode(Host):
         hostname = output[0].strip()
         return hostname
 
-    def kill_process_in_container(self, pod_name, container_name, process_name):
+    def kill_process_in_container(self, pod_name, container_name, process_name=None, **kwargs):
         """
         Kill specific process in container
         :param pod_name: Pod Name
         :param container_name: Container name
         :param process_name: Process name to be killed
+        :keyword safe_kill: To perform safe kill of process PID
+        :keyword pid: Process PID to be killed
         :return resp: String.
         """
-        log.info("Getting PID of %s", process_name)
-        cmd = commands.PIDOF_CMD.format(process_name)
-        resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
-                                 command_suffix=f"-c {container_name} -- {cmd}",
-                                 decode=True)
-        log.info("Killing PID %s", resp)
-        cmd = commands.KILL_CMD.format(resp)
+        safe_kill = kwargs.get("safe_kill", False)
+        pid = kwargs.get("pid", None)
+        if pid is None:
+            log.info("Getting PID of %s", process_name)
+            cmd = commands.PIDOF_CMD.format(process_name)
+            resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
+                                     command_suffix=f"-c {container_name} -- {cmd}",
+                                     decode=True)
+            log.info("Killing PID %s", resp)
+        else:
+            resp = pid
+        if safe_kill:
+            cmd = commands.SAFE_KILL_CMD.format(resp)
+        else:
+            cmd = commands.KILL_CMD.format(resp)
         resp = self.send_k8s_cmd(operation="exec", pod=pod_name, namespace=const.NAMESPACE,
                                  command_suffix=f"-c {container_name} -- {cmd}",
                                  decode=True)
@@ -579,7 +589,7 @@ class LogicalNode(Host):
             return False, f"{file_path} does not exist on node {self.hostname}"
         log.info("Applying deployment from %s", file_path)
         resp = self.execute_cmd(cmd=commands.K8S_APPLY_YAML_CONFIG.format(file_path),
-                                read_lines=True,exc=False)
+                                read_lines=True, exc=False)
         return True, resp
 
     def select_random_pod_container(self, pod_prefix: str,

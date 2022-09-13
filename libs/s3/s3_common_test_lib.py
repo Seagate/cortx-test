@@ -24,6 +24,8 @@ import os
 import logging
 from multiprocessing import Process
 from time import perf_counter_ns
+from datetime import timedelta
+
 
 from config import CMN_CFG
 from config.s3 import S3_CFG
@@ -315,6 +317,53 @@ def create_bucket_put_object(s3_tst_lib, bucket_name: str, obj_name: str, file_p
     assert_utils.assert_true(resp[0], resp[1])
     LOG.info("Uploaded an object %s to bucket %s", obj_name, bucket_name)
 
+def create_bucket_put_get_objects(bucket_name, object_count=None, obj_name_prefix=None,
+                                  obj_list=None, **kwargs):
+    """
+    Function will create a bucket with specified name, upload given no of objects
+    to the bucket and also will download the objects from bucket.
+
+    :param str bucket_name: Name of a bucket to be created.
+    :param int object_count: No of objects to be uploaded into the bucket.
+    :param str obj_name_prefix: Prefix for object name.
+    :param list obj_list: List of objects to be uploaded into the bucket and
+    downloaded from the bucket.
+    :param s3_testobj: s3 test lib object.
+    :param file_path: Path of the file to be created and uploaded to bucket.
+    :param mb_count: Size of file in MBs.
+    :return: List of objects uploaded to bucket.
+    :rtype: list
+    """
+    s3_test_object = kwargs.get("s3_testobj", "None")
+    file_path = kwargs.get("file_path", "None")
+    mb_count = kwargs.get("mb_count", "None")
+    if obj_list is None:
+        obj_list = []
+    LOG.info("Creating a bucket with name %s", bucket_name)
+    resp = s3_test_object.create_bucket(bucket_name)
+    assert_utils.assert_true(resp[0], resp[1])
+    assert resp[1] == bucket_name, resp[0]
+    LOG.info("Created a bucket with name %s", bucket_name)
+    if object_count:
+        LOG.info("Uploading %s objects to the bucket ",  object_count)
+        for cnt in range(object_count):
+            obj_name = f"{obj_name_prefix}{cnt}"
+            system_utils.create_file(file_path, mb_count)
+            resp = s3_test_object.put_object(bucket_name, obj_name, file_path)
+            assert_utils.assert_true(resp[0], resp[1])
+            obj_list.append(obj_name)
+        LOG.info("Uploaded %s objects to the bucket ", object_count)
+        return obj_list
+    if obj_list:
+        for key in obj_list:
+            system_utils.create_file(file_path, mb_count)
+            resp = s3_test_object.put_object(bucket_name, key, file_path)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOG.info("Uploaded object %s to the bucket %s", key, bucket_name)
+            resp = s3_test_object.get_object(bucket_name, key)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOG.info("GET operation successful for object %s from bucket %s", key, bucket_name)
+    return None
 
 def create_attach_list_iam_policy(access, secret, policy_name, iam_policy, iam_user):
     """
@@ -323,7 +372,7 @@ def create_attach_list_iam_policy(access, secret, policy_name, iam_policy, iam_u
     :param secret: Secret Key of S3 account
     :param policy_name: IAM Policy name
     :param iam_policy: IAM Policy content
-    :iam_user : IAM username
+    :param iam_user : IAM username
     """
     iam_policy_test_lib = IamPolicyTestLib(access_key=access, secret_key=secret)
     LOG.info("Creating IAM Policy %s = %s", policy_name, iam_policy)
@@ -338,6 +387,7 @@ def create_attach_list_iam_policy(access, secret, policy_name, iam_policy, iam_u
     resp = iam_policy_test_lib.check_policy_in_attached_policies(iam_user, policy.arn)
     assert_utils.assert_true(resp)
 
+
 def copy_obj_di_check(src_bucket, src_object, dest_bucket, dest_object, **kwargs):
     """
     Helper function is used to put object and set object tags.
@@ -345,8 +395,7 @@ def copy_obj_di_check(src_bucket, src_object, dest_bucket, dest_object, **kwargs
     :param src_object: Source Object
     :param dest_bucket: Destination bucket
     :param dest_object: Destination object
-    :param put_etag: Etag of source object
-    :param copy_etag: Etag of destination object
+    :param kwargs: keyword arguments
     """
     put_etag = kwargs.get("put_etag", None)
     copy_etag = kwargs.get("copy_etag", None)
@@ -356,9 +405,11 @@ def copy_obj_di_check(src_bucket, src_object, dest_bucket, dest_object, **kwargs
         dest_resp = s3_test_object.object_info(dest_bucket, dest_object)
         put_etag = src_resp[1]["ETag"]
         copy_etag = dest_resp[1]["ETag"]
-    LOG.info("Verify ETags of source and destination object")
-    LOG.info("ETags: Source Object: %s, Destination Object: %s", put_etag, copy_etag)
-    assert_utils.assert_equal(put_etag, copy_etag, f"Failed to match ETag: {put_etag}, {copy_etag}")
+        assert_utils.assert_equal(put_etag, copy_etag, f"Failed to match ETag: {put_etag},"
+                                  f" {copy_etag}")
+    else:
+        assert_utils.assert_equal(put_etag, copy_etag.strip('"'), f"Failed to match ETag"
+                                  f": {put_etag}," f" {copy_etag}")
     LOG.info("Matched ETag: %s, %s", put_etag, copy_etag)
     LOG.info("Get metadata of the destination object and check metadata is same as source object.")
     resp_meta1 = s3_test_object.object_info(src_bucket, src_object)
@@ -373,12 +424,7 @@ def validate_copy_content(src_bucket, src_object, dest_bucket, dest_object, **kw
     s3_test_object = kwargs.get("s3_testobj", "None")
     down_path1 = kwargs.get("down_path1", "None")
     down_path2 = kwargs.get("down_path2", "None")
-    src_resp = s3_test_object.object_info(src_bucket, src_object)
-    dest_resp = s3_test_object.object_info(dest_bucket, dest_object)
-    LOG.debug("ETag of source copy object %s", src_resp[1]["ETag"])
-    LOG.debug("ETag of destination copy object %s", dest_resp[1]["ETag"])
-    LOG.info("Compare ETag of source and destination copy object")
-    assert_utils.assert_equal(src_resp[1]["ETag"], dest_resp[1]["ETag"])
+    etag_verify = kwargs.get("etag_verify", True)
     LOG.info("Compare content of source and destination copy object")
     resp = s3_test_object.object_download(src_bucket, src_object, down_path1)
     assert_utils.assert_true(resp[0], resp[1])
@@ -387,14 +433,50 @@ def validate_copy_content(src_bucket, src_object, dest_bucket, dest_object, **kw
     assert_utils.assert_true(resp[0], resp[1])
     destchecksum = calculate_checksum(down_path2)
     assert_utils.assert_equal(srcchecksum, destchecksum, "Checksum match failed.")
+    LOG.info("Validated checksum of source and destination copy object")
+    if etag_verify:
+        src_resp = s3_test_object.object_info(src_bucket, src_object)
+        dest_resp = s3_test_object.object_info(dest_bucket, dest_object)
+        LOG.debug("ETag of source copy object %s", src_resp[1]["ETag"])
+        LOG.debug("ETag of destination copy object %s", dest_resp[1]["ETag"])
+        LOG.info("Compare ETag of source and destination copy object")
+        assert_utils.assert_equal(src_resp[1]["ETag"], dest_resp[1]["ETag"])
+        LOG.info("Validated ETag of source and destination copy object")
     LOG.info("Validated content of copy object")
-
 
 def list_objects_in_bucket(bucket, objects, s3_test_obj):
     """Assert if any of the given object not listed in given bucket"""
     listed_objects = s3_test_obj.object_list(bucket)[1]
     for obj in objects:
         assert_utils.assert_true(obj in listed_objects, f"{obj} not present in {bucket}")
+
+
+    # pylint: disable=too-many-locals
+def upload_mpu_copy_obj(src_bucket, src_obj, dest_bucket, dest_obj, **kwargs):
+    """ method to upload object via multipart upload and copy it to some bucket
+    :param src_bucket: The name of the source bucket.
+    :param src_obj: The name of the source object.
+    :param dest_bucket: The name of the destination bucket.
+    :param dest_obj: The name of the destination object.
+    :return: etag, pre_date (current date - 1), post_date (cuurent date + 1) """
+    file_path = kwargs.get("fpath", "None")
+    file_size = kwargs.get("file_size", 0)
+    total_parts = kwargs.get("total_parts", 2)
+    s3_test_object = kwargs.get("s3_testobj", "None")
+    s3mp_test_obj = kwargs.get("s3_mp_testobj", "None")
+    _ = s3mp_test_obj.complete_multipart_upload_with_di(src_bucket, src_obj, file_path,
+                                                        total_parts=total_parts,
+                                                        file_size=file_size)
+    LOG.info("Copy object to different bucket")
+    status, response = s3_test_object.copy_object(src_bucket, src_obj, dest_bucket, dest_obj)
+    assert_utils.assert_true(status, response)
+    date2 = response["CopyObjectResult"]["LastModified"]
+    etag = response["CopyObjectResult"]["ETag"]
+    src_resp = s3_test_object.object_info(src_bucket, src_obj)
+    assert_utils.assert_equal(src_resp[1]["ETag"], etag, "ETags don't match")
+    pre_date = date2 - timedelta(days=1)
+    post_date = date2 + timedelta(days=1)
+    return etag, pre_date, post_date
 
 
 class S3BackgroundIO:

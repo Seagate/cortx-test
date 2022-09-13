@@ -21,7 +21,6 @@
 """
 import logging
 import secrets
-import time
 from string import Template
 from typing import AnyStr
 from abc import ABC, abstractmethod
@@ -36,10 +35,8 @@ from commons.constants import PROD_TYPE_K8S as K8S
 from commons.constants import CLUSTER_YAML_PATH
 from commons.constants import LOCAL_CLS_YAML_PATH
 from commons.constants import NAMESPACE
-from commons.constants import CONTAINER_PATH
 from commons.constants import CLUSTER_YAML
 from commons.constants import PARSE_SIZE
-from config import di_cfg
 from commons import commands as common_cmd
 from commons.helpers.pods_helper import LogicalNode
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
@@ -48,7 +45,7 @@ LOGGER = logging.getLogger(__name__)
 
 FT_CHKSUM = 1
 FT_PARITY = 2
-EMAP_CMD = "python3 ~/error_injection.py"
+EMAP_CMD = "python3 ~/wrapper_runner.py"
 
 
 class EmapCommand:
@@ -78,14 +75,12 @@ class EmapCommand:
             # Cob FID of object is specified for corrupt_emap
             option = "-list_emap "
             self.add_option(option)
+
         if self.opts.get("corrupt_emap"):
             # Cob FID of object is specified for corrupt_emap
             option = "-corrupt_emap " + str(self.opts.get("corrupt_emap"))
             self.add_option(option)
-        if self.opts.get("emap_count"):
-            # number of checksum corruption instances for parity or data
-            option = "-e " + str(self.opts.get("emap_count"))
-            self.add_option(option)
+
         if self.opts.get("metadata_db_path"):
             # Metadata DB path within each motr fid dir as shown below.
             # /etc/cortx/motr/m0d-0x7200000000000001\:0x32/db/o/100000000000000:2a'
@@ -155,6 +150,7 @@ class InjectCorruption(ABC):
         pass
 
 
+# pylint: disable-msg=too-many-instance-attributes
 class MotrCorruptionAdapter(InjectCorruption):
     """Implements InjectCorruption interface to perform corruption at Motr level."""
 
@@ -214,13 +210,7 @@ class MotrCorruptionAdapter(InjectCorruption):
             else:  # fetch the value from dict for parity block
                 fid_val = value[7:16]
                 parity_fid_list.append(fid_val)
-        # Iterate over data pods to copy the error_injection.py script on motr container
         for pod in pod_list:
-            result = self.master_node_list[0].copy_file_to_container(
-                di_cfg["error_injection"], pod, CONTAINER_PATH, MOTR_CONTAINER_PREFIX
-                + "-001")
-            if not result:
-                raise FileNotFoundError
             # Run script to list emap and dump the output to the file
             cmd = Template(common_cmd.EMAP_LIST).substitute(
                 path=metadata_device, size=parse_size, file=f"{pod}-emap_list.txt"
@@ -285,7 +275,7 @@ class MotrCorruptionAdapter(InjectCorruption):
                 LOGGER.exception("Error: Not able to read local yaml file")
                 return False, error
             metadata_device = data["cluster"]["node_types"][0]["storage"][0]["devices"]["metadata"]
-            LOGGER.debug("Data is %s and metadata device is %s", data, metadata_device)
+            LOGGER.debug("metadata device is %s", metadata_device)
         return metadata_device
 
     def build_emap_command(self, fid: str, selected_meta_dev=None):
@@ -297,55 +287,41 @@ class MotrCorruptionAdapter(InjectCorruption):
         self.emap_bldr = EmapCommandBuilder()
         if (fid or selected_meta_dev) is None:
             return False, "metadata path or fid cannot be None"
-        kwargs = dict(corrupt_emap=fid, parse_size=10485760, emap_count=1,
+        kwargs = dict(corrupt_emap=fid, parse_size=PARSE_SIZE,
                       metadata_db_path=selected_meta_dev)
         cmd = self.emap_bldr.build(**kwargs)
         return cmd
 
-    def inject_fault_k8s(self, oid: str, metadata_device: str):
+    def inject_fault_k8s(self, oid, metadata_device):
         """
         Inject fault of type checksum or parity.
-        :param oid object id
-        :param metadata_device - metadata device path
-        :return boolean :true :if successful
-                          false: if error
+        :param oid: checksum or parity
+        :param metadata_device: metadata device path
+        :return boolean :true, resp :if successful
+                          false, resp: if error
         """
-        resp = None
+        resp = ''
         try:
             data_pods = self.master_node_list[0].get_all_pods(POD_NAME_PREFIX)
-            pod_name = secrets.choice(data_pods)
-            motr_containers = self.master_node_list[0].get_container_of_pod(
-                pod_name, MOTR_CONTAINER_PREFIX)
-            LOGGER.debug("Inside.......... pod_name = %s", pod_name)
-            retries = 1
-            success = False
-            while retries > 0:
+            LOGGER.debug("Data pods and ips : %s", data_pods)
+            for pod_name in data_pods:
+                motr_containers = self.master_node_list[0].get_container_of_pod(
+                    pod_name, MOTR_CONTAINER_PREFIX)
                 try:
-                    emap_cmd = self.build_emap_command(
-                        fid=oid, selected_meta_dev=metadata_device
-                    )
-                    logging.debug("emap_cmd = %s", emap_cmd)
-                    if emap_cmd:
-                        resp = self.master_node_list[0].send_k8s_cmd(
-                            operation="exec",
-                            pod=pod_name,
-                            namespace=NAMESPACE,
-                            command_suffix=f"-c {motr_containers[0]} -- " f"{emap_cmd}",
-                            decode=True,
-                        )
-                        logging.debug("resp = %s", resp)
-                        if resp:
-                            success = True
-                            break
-                        retries -= 1
+                    emap_cmd = self.build_emap_command(fid=oid,
+                                                       selected_meta_dev=metadata_device)
+                    resp = self.master_node_list[0].send_k8s_cmd(
+                        operation="exec",
+                        pod=pod_name,
+                        namespace=NAMESPACE,
+                        command_suffix=f"-c {motr_containers[0]} -- "
+                                       f"{emap_cmd}", decode=True)
+                    LOGGER.debug("resp = %s", resp)
+                    if resp:
+                        return True, resp, pod_name
                 except IOError as ex:
-                    LOGGER.exception("remaining retrying: %s ", retries)
-                    LOGGER.exception("Exception : %s ", ex)
-                    retries -= 1
-                    time.sleep(2)
-                if success:
-                    break
-            return True, resp
+                    LOGGER.exception("remaining retrying: %s", ex)
+                    continue
         except IOError as ex:
             LOGGER.exception("Exception occurred while injecting emap fault", exc_info=ex)
             return False, resp
