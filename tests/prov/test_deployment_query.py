@@ -30,9 +30,18 @@ import binascii
 import random
 import string
 from http import HTTPStatus
+import logging
+import os
+import secrets
+import threading
+import time
+from multiprocessing import Queue
+from time import perf_counter_ns
+
 
 import pytest
 
+from commons import constants as const
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import LOG_DIR
 from commons.params import LATEST_LOG_FOLDER
@@ -46,6 +55,20 @@ from commons import configmanager, constants
 from commons.constants import K8S_SCRIPTS_PATH, K8S_PRE_DISK, POD_NAME_PREFIX
 from libs.csm.csm_interface import csm_api_factory
 from libs.ha.ha_common_libs_k8s import HAK8s
+from commons.helpers.health_helper import Health
+from config import CMN_CFG
+from config import HA_CFG
+from config.s3 import S3_CFG
+from libs.di.di_mgmt_ops import ManagementOPs
+from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from libs.s3.s3_test_lib import S3TestLib
+from commons.helpers.pods_helper import LogicalNode
+from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
+from commons.utils import system_utils
+from config import CMN_CFG
 
 
 LOGGER = logging.getLogger(__name__)
@@ -63,6 +86,9 @@ class TestQueryDeployment:
         cls.worker_node_list = []
         cls.master_node_list = []
         cls.host_list = []
+        cls.node_master_list = list()
+        cls.hlth_master_list = list()
+        cls.node_worker_list = list()
         for node in range(cls.num_nodes):
             vm_name = CMN_CFG["nodes"][node]["hostname"].split(".")[0]
             cls.host_list.append(vm_name)
@@ -71,6 +97,9 @@ class TestQueryDeployment:
                                    password=CMN_CFG["nodes"][node]["password"])
             if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
                 cls.master_node_list.append(node_obj)
+                cls.hlth_master_list.append(Health(hostname=CMN_CFG["nodes"][node]["hostname"],
+                                                   username=CMN_CFG["nodes"][node]["username"],
+                                                   password=CMN_CFG["nodes"][node]["password"]))
             else:
                 cls.worker_node_list.append(node_obj)
         cls.log_disk_size = os.getenv('log_disk_size')
@@ -83,20 +112,87 @@ class TestQueryDeployment:
         cls.update_seconds = cls.csm_conf["update_seconds"]
         cls.collect_sb = True
         cls.destroy_flag = False
+        cls.ha_obj = HAK8s()
+        cls.num_replica = cls.delete_pod = cls.set_type = None
+        cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = cls.set_name = None
+        cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = cls.node_name = None
+        cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
+        cls.system_random = secrets.SystemRandom()
+
+    def setup_method(self):
+        """
+        This function will be invoked prior to each test case.
+        """
+        LOGGER.info("STARTED: Setup Operations")
+        self.restore_node = False
+        self.restore_ip = False
+        self.deploy = False
+        self.s3_clean = dict()
+        LOGGER.info("Check the overall status of the cluster.")
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        if not resp[0]:
+            resp = self.ha_obj.restart_cluster(self.master_node_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cluster status is online.")
+        self.s3acc_name = f"ha_s3acc_{int(perf_counter_ns())}"
+        self.s3acc_email = f"{self.s3acc_name}@seagate.com"
+        self.bucket_name = f"ha-mp-bkt-{int(perf_counter_ns())}"
+        self.object_name = f"ha-mp-obj-{int(perf_counter_ns())}"
+        self.restore_pod = self.restore_method = self.deployment_name = self.set_name = None
+        self.deployment_backup = None
+        if not os.path.exists(self.test_dir_path):
+            resp = system_utils.make_dirs(self.test_dir_path)
+            LOGGER.info("Created path: %s", resp)
+        LOGGER.info("Precondition: Verify cluster is up and running and all pods are online.")
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Precondition: Verified cluster is up and running and all pods are online.")
+        LOGGER.info("Get %s pod to be deleted", const.POD_NAME_PREFIX)
+        sts_dict = self.master_node_list[0].get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        self.delete_pod = sts_dict[sts][-1]
+        LOGGER.info("Pod to be deleted is %s", self.delete_pod)
+        self.set_type, self.set_name = self.master_node_list[0].get_set_type_name(
+            pod_name=self.delete_pod)
+        resp = self.master_node_list[0].get_num_replicas(self.set_type, self.set_name)
+        assert_utils.assert_true(resp[0], resp)
+        self.num_replica = int(resp[1])
+        LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
         """
         Teardown method
         """
+        if self.s3_clean:
+           LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
+           resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+           assert_utils.assert_true(resp[0], resp[1])
+        if self.restore_pod:
+           resp = self.ha_obj.restore_pod(pod_obj=self.master_node_list[0],
+                                          restore_method=self.restore_method,
+                                          restore_params={"deployment_name": self.deployment_name,
+                                                          "deployment_backup":
+                                                              self.deployment_backup,
+                                                          "num_replica": self.num_replica,
+                                                          "set_name": self.set_name})
+           LOGGER.debug("Response: %s", resp)
+           assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
+           LOGGER.info("Successfully restored pod by %s way", self.restore_method)
+        LOGGER.info("Cleanup: Check cluster status and start it if not up.")
+        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
         if self.collect_sb:
-            path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
-            support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
-                                                            scripts_path=
-                                                            self.deploy_conf['k8s_dir'])
+           path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
+           support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
+                                                           scripts_path=
+                                                           self.deploy_conf['k8s_dir'])
         if self.destroy_flag:
-            resp = self.deploy_obj.destroy_setup(self.master_node_list[0],
-                                                 self.worker_node_list)
-            assert_utils.assert_true(resp)
+           resp = self.deploy_obj.destroy_setup(self.master_node_list[0],
+                                                self.worker_node_list)
+           assert_utils.assert_true(resp)
         self.deploy_obj.close_connections(self.master_node_list, self.worker_node_list)
 
     def multiple_node_deployment(self, node, config, **kwargs):
@@ -125,7 +221,6 @@ class TestQueryDeployment:
         self.collect_sb = False
         self.destroy_flag = True
 
-    @pytest.mark.skip(reason="Function not avaliable")
     @pytest.mark.lc
     @pytest.mark.three_node_deployment
     @pytest.mark.cluster_deployment
@@ -147,7 +242,6 @@ class TestQueryDeployment:
 #       resp = self.csm_obj.get_node_topology()
 #       assert resp.status_code == HTTPStatus.OK        
 
-    @pytest.mark.skip(reason="Function not avaliable")
     @pytest.mark.lc
     @pytest.mark.three_node_deployment
     @pytest.mark.cluster_deployment
@@ -168,7 +262,6 @@ class TestQueryDeployment:
         assert result, err_msg
 
 
-    @pytest.mark.skip(reason="Function not avaliable")
     @pytest.mark.lc
     @pytest.mark.three_node_deployment
     @pytest.mark.cluster_deployment
@@ -179,13 +272,13 @@ class TestQueryDeployment:
             if cluster is in degraded state.
         """
         LOGGER.info("Step 1 : Deploy cortx cluster ")
-        self.multiple_node_deployment(3, 2)
+#        self.multiple_node_deployment(3, 2)
         LOGGER.info("Step 2 : Make a cluster in degraded state")
         LOGGER.info(" Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
         num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            master_node_obj=self.master_node_list[0], health_obj=self.hlth_master_list[0],
             delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
@@ -197,12 +290,14 @@ class TestQueryDeployment:
         LOGGER.info("Step 3: Successfully shutdown data pod %s. Verified cluster and "
                     "services states are as expected & remaining pods status is online.", pod_name)
         self.restore_pod = True
-        #           self.log.info(" Send node details query request")
-        #           get_topology = self.csm_obj.get_system_topology()
-        #           resp = self.csm_obj.get_node_topology()
-        #           assert resp.status_code == HTTPStatus.OK
+        self.log.info("Step 4: Verify GET system topology ")
+        self.log.info("Deploy start and end time: %s %s ", self.deploy_start_time,
+                   self.deploy_end_time)
+        result, err_msg = self.csm_obj.verify_system_topology(self.deploy_start_time,
+                   self.deploy_end_time, expected_response=HTTPStatus.OK)
+        assert result, err_msg
         LOGGER.info("Step 5: Restore pod and check cluster status.")
-        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
+        resp = self.ha_obj.restore_pod(pod_obj=self.master_node_list[0],
                                        restore_method=self.restore_method,
                                        restore_params={"deployment_name": self.deployment_name,
                                                        "deployment_backup":
@@ -214,7 +309,6 @@ class TestQueryDeployment:
         assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
                                           "OR the cluster is not online")
 
-#    @pytest.mark.skip(reason="Function not avaliable")
     @pytest.mark.lc
     @pytest.mark.three_node_deployment
     @pytest.mark.cluster_deployment
