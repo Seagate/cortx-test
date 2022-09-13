@@ -77,6 +77,8 @@ UPGRADE_SUSPEND_MSG = "Upgrade suspended"
 UPGRADE_ALREADY_SUSPENDED = "Upgrade Process Not found on the system, Suspend cannot be performed"
 PARSE_SIZE = "10485760"
 CONTAINER_PATH = "/root/error_injection.py"
+PARSER_PATH = "/root/metadata_parser.py"
+WRAPPER_PATH = "/root/wrapper_runner.py"
 POD_HCTL_POSTFIX = "-headless.cortx.svc.cluster.local"
 
 # common constant.
