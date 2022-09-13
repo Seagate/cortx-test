@@ -24,6 +24,7 @@ HA test suite for Control Pod Restart
 
 import logging
 import os
+import secrets
 import threading
 import time
 from http import HTTPStatus
@@ -74,10 +75,13 @@ class TestControlPodSoftFailure:
         cls.host_worker_list = []
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
-        cls.s3_clean = cls.test_prefix = cls.repl_num = cls.test_io_prefix = None
+        cls.s3_clean = cls.test_prefix = cls.repl_num = cls.test_io_prefix = cls.header = None
+        cls.ctrl_pod_list = cls.change_proc_delay = cls.multipart_obj_path = cls.users = None
+        cls.uids = cls.s3_obj = cls.dtm_obj = cls.pid = None
         cls.mgnt_ops = ManagementOPs()
         cls.rest_iam_user = RestIamUser()
         cls.csm_obj = csm_api_factory("rest")
+        cls.system_random = secrets.SystemRandom()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -121,7 +125,6 @@ class TestControlPodSoftFailure:
         This function will be invoked prior to each test case.
         """
         LOGGER.info("STARTED: Setup Operations")
-        self.random_time = int(time.time())
         self.s3_clean = dict()
         self.ctrl_pod_list = list()
         self.change_proc_delay = False
@@ -136,13 +139,13 @@ class TestControlPodSoftFailure:
         self.users = self.mgnt_ops.create_account_users(nusers=1)
         self.s3_clean = self.users
         self.uids = list(self.users.keys())
-        self.access_key = list(self.users.values())[0]['accesskey']
-        self.secret_key = list(self.users.values())[0]['secretkey']
-        self.s3_obj = S3TestLib(access_key=self.access_key, secret_key=self.secret_key,
+        access_key = list(self.users.values())[0]['accesskey']
+        secret_key = list(self.users.values())[0]['secretkey']
+        self.s3_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
         self.header = self.csm_obj.get_headers(self.csm_user, self.csm_passwd)
         LOGGER.info("Successfully created IAM user")
-        self.dtm_obj = DTMRecoveryTestLib(self.access_key, self.secret_key, max_attempts=0)
+        self.dtm_obj = DTMRecoveryTestLib(access_key, secret_key, max_attempts=0)
         self.pid = self.get_pid(pod_name=self.ctrl_pods[0], container_name=self.container_name,
                                 proc_name=const.CONTROL_POD_SVC_NAME)
         LOGGER.debug("PID of cortx-csm-agent process is: %s", self.pid)
@@ -214,7 +217,7 @@ class TestControlPodSoftFailure:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-45498")
-    def test_45498(self):
+    def test_iam_cruds_during_soft_failure_all_pods(self):
         """
         Verify IAM user creation/deletion and IOs on already created IAM user while performing
         control pod soft-failure in loop one by one for N control pods.
@@ -281,13 +284,20 @@ class TestControlPodSoftFailure:
         LOGGER.info("Step 3: Performed soft-failure of %s control pods in loop and checked cluster "
                     "has failures", self.repl_num)
 
-        time.sleep(self.csm_soft_delay)
+        LOGGER.info("Waiting for %s sec for successful container restart",
+                    HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
         event.clear()
+        LOGGER.info("Step 4: Check cluster status is clean.")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 4: Checked cluster status is clean.")
+
         LOGGER.info("Waiting for background threads to join")
         thr_iam.join()
         io_thread.join()
-        LOGGER.info("Step 4: Verifying responses from background processes")
-        LOGGER.info("Step 4.1: Verify background process for IAM user creation")
+        LOGGER.info("Step 5: Verifying responses from background processes")
+        LOGGER.info("Step 5.1: Verify background process for IAM user creation")
         iam_resp = tuple()
         while len(iam_resp) != 4:
             iam_resp = iam_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
@@ -298,19 +308,26 @@ class TestControlPodSoftFailure:
         exp_failed = iam_resp[0]
         user_del_failed = iam_resp[2]
         created_users = iam_resp[3]
-        assert_utils.assert_false(failed, "No IAM user creation/deletion expected to fail before "
-                                          f"or after soft-failure: {failed}")
-        assert_utils.assert_true(exp_failed, "IAM user creation/deletion expected to fail during "
-                                             f"soft-failure: {exp_failed}")
-        if created_users:
-            for i_i in created_users:
-                self.s3_clean.update(i_i)
-        LOGGER.info("Updating dict for clean up with remaining users")
-        for i_i in user_del_failed:
-            self.s3_clean.update({i_i: del_users[i_i]})
-        LOGGER.info("Step 4.1: Verified background process for IAM user creation/deletion")
+        if failed:
+            assert_utils.assert_true(False, "Failures observed in background process for IAM "
+                                            "user CRUD operations before and after soft failures. "
+                                            f"\nFailed users: {failed}")
+        elif exp_failed:
+            LOGGER.info("In-Flight IAM user creation/deletion failed for users: %s", exp_failed)
+            LOGGER.info("In-Flight IAM user deletion failed for users: %s", user_del_failed)
+            for i_i in user_del_failed:
+                self.s3_clean.update({i_i: del_users[i_i]})
+        else:
+            assert_utils.assert_true(False, "Some IAM user CRUD operations are expected to be "
+                                            "failed during control pod soft failures")
 
-        LOGGER.info("Step 4.2: Verify background process of IOs")
+        assert_utils.assert_true(len(created_users), "Few IAM user creation is expected during "
+                                                     "soft failures in loop")
+        for i_i in created_users:
+            self.s3_clean.update(i_i)
+        LOGGER.info("Step 5.1: Verified background process for IAM user creation/deletion")
+
+        LOGGER.info("Step 5.2: Verify background process of IOs")
         responses = {}
         while len(responses) != 2:
             responses = io_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
@@ -319,10 +336,10 @@ class TestControlPodSoftFailure:
         all_logs = pass_logs + fail_logs
         resp = self.ha_obj.check_s3bench_log(file_paths=all_logs)
         assert_utils.assert_false(len(resp[1]), f"Logs which contain failures: {resp[1]}")
-        LOGGER.info("Step 4.2: Verified background process of IOs")
-        LOGGER.info("Step 4: Verified responses from background processes")
+        LOGGER.info("Step 5.2: Verified background process of IOs")
+        LOGGER.info("Step 5: Verified responses from background processes")
 
-        LOGGER.info("Step 5: Create IAM user and perform IOs after soft-failure.")
+        LOGGER.info("Step 6: Create IAM user and perform IOs after soft-failure.")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-45498-1'
         self.s3_clean.update(users)
@@ -330,7 +347,7 @@ class TestControlPodSoftFailure:
                                                     log_prefix=self.test_prefix, skipcleanup=True,
                                                     nclients=2, nsamples=2, setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Created IAM user and performed IOs after soft-failure.")
+        LOGGER.info("Step 6: Created IAM user and performed IOs after soft-failure.")
 
         LOGGER.info("ENDED: Verify IAM user creation/deletion and IOs on already created IAM user "
                     "while performing control pod soft-failure in loop 1 by 1 for N control pods.")
@@ -603,3 +620,180 @@ class TestControlPodSoftFailure:
 
         LOGGER.info("ENDED: Test IOs and IAM user CRUDs during soft failures in all control pods"
                     " (Negative Scenario)")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-45501")
+    def test_iam_cruds_bfr_aftr_soft_failure(self):
+        """
+        Verify IAM user creation and IOs before and after soft-failures
+        """
+        LOGGER.info("STARTED: Verify IAM user creation & IOs before and after soft-failures.")
+
+        LOGGER.info("Step 1: Perform IOs before soft-failure.")
+        self.test_prefix = 'test-45501'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nsamples=2, nclients=2)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed IOs before soft-failure.")
+
+        LOGGER.info("Step 2: Perform soft-failure of control pod and check cluster status.")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+        pod_name = self.system_random.sample(pod_list, 1)[0]
+        self.node_master_list[0].kill_process_in_container(pod_name=pod_name,
+                                                           container_name=const.CORTX_CSM_POD,
+                                                           process_name=const.CSM_AGENT_PRC,
+                                                           safe_kill=True)
+        LOGGER.info("Waiting for %s sec for successful container restart",
+                    HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+        LOGGER.info("Step 2.1: Check cluster is online.")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 2.1: Verified cluster is online.")
+        LOGGER.info("Step 2: Performed soft-failure of control pod & checked cluster is online.")
+
+        LOGGER.info("Step 3: Perform IOs on already created buckets.")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    setup_s3bench=False, nsamples=2, nclients=2)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Performed IOs on already created buckets.")
+
+        LOGGER.info("Step 4: Create multiple buckets and perform IOs for the already created IAM "
+                    "user.")
+        self.test_io_prefix = 'test-45501-io'
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.s3_clean.values())[0],
+                                                    log_prefix=self.test_io_prefix,
+                                                    skipcleanup=True, setup_s3bench=False,
+                                                    nsamples=2, nclients=2)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Create multiple buckets and perform IOs for the already created IAM "
+                    "user.")
+
+        LOGGER.info("Step 5: Create IAM user and perform IOs after soft-failure.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-45501-1'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nclients=2, nsamples=2, setup_s3bench=False)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 5: Created IAM user and performed IOs after soft-failure.")
+        LOGGER.info("ENDED: Verify IAM user creation & IOs before and after soft-failures.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-45502")
+    def test_iam_cruds_during_soft_failure_random_n_pods(self):
+        """
+        Verify IAM user creation/deletion and get IAM user list while soft-failure in loop.
+        """
+        LOGGER.info("STARTED: Verify IAM user creation/deletion and get IAM user list while "
+                    "soft-failure in loop.")
+        LOGGER.info("Precondition: Create %s iam users for deletion", self.num_users)
+        del_users = self.mgnt_ops.create_account_users(nusers=self.num_users)
+
+        if self.scale_req:
+            LOGGER.info("Scale replicas for control pod to %s", self.repl_num)
+            resp = self.node_master_list[0].create_pod_replicas(num_replica=self.repl_num,
+                                                                deploy=self.deploy_name)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Total number of control pods in the cluster are: %s", self.repl_num)
+
+        LOGGER.info("Step 1: Create multiple IAM users.")
+        new_users = self.mgnt_ops.create_account_users(nusers=10)
+        new_users_list = list(new_users.keys())
+        LOGGER.info("Step 1: Created multiple IAM users.")
+
+        LOGGER.info("Step 2: Start IAM user CRUD operations while performing soft failure on "
+                    "random control pods in loop. Verify existing IAM users persist.")
+        LOGGER.info("Get the list of control pods")
+        pod_list = self.node_master_list[0].get_all_pods(pod_prefix=const.CONTROL_POD_NAME_PREFIX)
+
+        iam_output = Queue()
+        event = threading.Event()
+        args = {'user_crud': True, 'num_users': self.num_users,
+                'output': iam_output, 'del_users_dict': del_users, 'header': self.header}
+        thr_iam = threading.Thread(target=self.ha_obj.iam_bucket_cruds,
+                                   args=(event,), kwargs=args)
+        thr_iam.daemon = True  # Daemonize thread
+        LOGGER.info("Starting background threads for IAM user creation/deletion.")
+        thr_iam.start()
+        for failure in range(HA_CFG["common_params"]["short_loop"]):
+            pod = self.system_random.choice(pod_list)
+            LOGGER.info("Creating soft failure of %s for % loop", pod, failure)
+            self.node_master_list[0].kill_process_in_container(pod_name=pod,
+                                                               container_name=const.CORTX_CSM_POD,
+                                                               process_name=const.CSM_AGENT_PRC,
+                                                               safe_kill=True)
+            LOGGER.info("Step 2.1: Check cluster has failures.")
+            resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+            assert_utils.assert_false(resp[0], resp)
+            LOGGER.info("Step 2.1: Checked cluster has failures.")
+        LOGGER.info("Step 2: Started IAM user CRUD operations while performing soft failure on "
+                    "random control pods in loop. Verified existing IAM users persisted.")
+
+        LOGGER.info("Waiting for %s sec for successful container restart",
+                    HA_CFG["common_params"]["30sec_delay"])
+        time.sleep(HA_CFG["common_params"]["30sec_delay"])
+        event.clear()
+        LOGGER.info("Step 3: Check cluster status is clean.")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Checked cluster status is clean.")
+
+        LOGGER.info("Step 4: Verify background process for IAM user creation/deletion")
+        LOGGER.info("Waiting for background threads to join")
+        thr_iam.join()
+        iam_resp = tuple()
+        while len(iam_resp) != 4:
+            iam_resp = iam_output.get(timeout=HA_CFG["common_params"]["60sec_delay"])
+        if not iam_resp:
+            assert_utils.assert_true(False, "Background process failed to do IAM user "
+                                            "creation/deletion operations")
+        failed = iam_resp[1]
+        exp_failed = iam_resp[0]
+        user_del_failed = iam_resp[2]
+        created_users = iam_resp[3]
+        if failed:
+            assert_utils.assert_true(False, "Failures observed in background process for IAM "
+                                            "user CRUD operations before and after soft failures. "
+                                            f"\nFailed users: {failed}")
+        elif exp_failed:
+            LOGGER.info("In-Flight IAM user creation/deletion failed for users: %s", exp_failed)
+            LOGGER.info("In-Flight IAM user deletion failed for users: %s", user_del_failed)
+            for i_i in user_del_failed:
+                self.s3_clean.update({i_i: del_users[i_i]})
+        else:
+            assert_utils.assert_true(False, "Some IAM user CRUD operations are expected to be "
+                                            "failed during control pod soft failures")
+
+        assert_utils.assert_true(len(created_users), "Few IAM user creation is expected during "
+                                                     "soft failures in loop")
+        for i_i in created_users:
+            self.s3_clean.update(i_i)
+        LOGGER.info("Step 4: Verified background process for IAM user creation/deletion")
+
+        LOGGER.info("Step 5: Get IAM user list and check created IAM users are persistent.")
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "List IAM user failed.")
+        user_data_new = resp.json()
+        fetched_users = user_data_new['users']
+        assert_utils.assert_true(
+            (set(new_users_list).issubset(set(fetched_users)),
+             "Created IAM user list is not persisted in fetched IAM user list"))
+        LOGGER.info("Step 5: Got IAM user list & checked created IAM users are persisted.")
+
+        LOGGER.info("Step 6: Create IAM user and perform IOs after soft-failure.")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test-45502-1'
+        self.s3_clean.update(users)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True,
+                                                    nclients=2, nsamples=2)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 6: Created IAM user and performed IOs after soft-failure.")
+        LOGGER.info("ENDED: Verify IAM user creation/deletion and get IAM user list while "
+                    "soft-failure in loop.")
