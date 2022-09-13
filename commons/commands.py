@@ -73,7 +73,7 @@ CMD_TOUCH_FILE = "touch {}"
 LSSCSI_CMD = "lsscsi > {}"
 LINUX_STRING_CMD = "sed '/{}/!d' {} > {}"
 LINUX_REPLACE_STRING = "sed -i 's/{}/{}/g' {}"
-LINUX_EXPORT = "export {}={}"
+LINUX_EXPORT = "export $key=$val"
 LINE_COUNT_CMD = "cat {} | wc -l"
 DISCONNECT_OS_DRIVE_CMD = "echo 1 > /sys/block/{}/device/delete"
 CONNECT_OS_DRIVE_CMD = 'echo "- - -" > /sys/class/scsi_host/host{}/scan'
@@ -413,8 +413,8 @@ M0CP_U_G = "m0cp -G -l $ep -H $hax_ep -P $fid -p $prof_fid -s $bsize -c $count -
 M0TRACE = "m0trace -i $trace > $file"
 LIST_M0TRACE = "ls -ltr| grep m0|awk '{print $9}'"
 GREP_DP_BLOCK_FID = "grep -E \"prepare io fops|UTyp\" $file| cut -d , -f2"
-EMAP_LIST = "python3 /root/error_injection.py -list_emap -m $path -parse_size $size 2>$file"
-FETCH_ID_EMAP = "grep -n {} -e \"{}\"|awk 'END{{print $9}}'"
+EMAP_LIST = "python3 /root/wrapper_runner.py -list_emap -m $path -parse_size $size >$file"
+FETCH_ID_EMAP = "grep -n {} -e \"{}\"|awk 'END{{print $7}}'"
 
 # m0cp from data unit aligned offset 0
 # m0cp -G -l inet:tcp:cortx-client-headless-svc-ssc-vm-rhev4-2620@21201
@@ -539,6 +539,7 @@ K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-hax -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 K8S_CONSUL_UPDATE_CMD = 'kubectl exec -it {} -c {} -- {}'
 K8S_APPLY_YAML_CONFIG = 'kubectl apply -f {}'
+K8S_DEL_YAML_CONFIG = 'kubectl delete -f $path'
 GET_STATS = "consul kv get -recurse stats"
 GET_BYTECOUNT = "consul kv get -recurse bytecount"
 GET_REQUEST_USAGE = "consul kv get -recurse csm/config/CSM_SERVICE | grep request_quota"
@@ -665,3 +666,5 @@ PROC_CMD = "pid=$(echo $(pgrep m0d; pgrep radosgw; pgrep hax) | sed -z 's/ /,/g'
 
 # stat collection through kubectl top
 CMD_PGREP_TOP = 'pgrep "/bin/sh ./{} {}" -fx'
+
+GET_PID_INIT_PROCESS = "ps -aux | grep {} | head -n 1 | awk '{{print $2}}'"

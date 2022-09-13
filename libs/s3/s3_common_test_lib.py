@@ -424,12 +424,7 @@ def validate_copy_content(src_bucket, src_object, dest_bucket, dest_object, **kw
     s3_test_object = kwargs.get("s3_testobj", "None")
     down_path1 = kwargs.get("down_path1", "None")
     down_path2 = kwargs.get("down_path2", "None")
-    src_resp = s3_test_object.object_info(src_bucket, src_object)
-    dest_resp = s3_test_object.object_info(dest_bucket, dest_object)
-    LOG.debug("ETag of source copy object %s", src_resp[1]["ETag"])
-    LOG.debug("ETag of destination copy object %s", dest_resp[1]["ETag"])
-    LOG.info("Compare ETag of source and destination copy object")
-    assert_utils.assert_equal(src_resp[1]["ETag"], dest_resp[1]["ETag"])
+    etag_verify = kwargs.get("etag_verify", True)
     LOG.info("Compare content of source and destination copy object")
     resp = s3_test_object.object_download(src_bucket, src_object, down_path1)
     assert_utils.assert_true(resp[0], resp[1])
@@ -438,8 +433,16 @@ def validate_copy_content(src_bucket, src_object, dest_bucket, dest_object, **kw
     assert_utils.assert_true(resp[0], resp[1])
     destchecksum = calculate_checksum(down_path2)
     assert_utils.assert_equal(srcchecksum, destchecksum, "Checksum match failed.")
+    LOG.info("Validated checksum of source and destination copy object")
+    if etag_verify:
+        src_resp = s3_test_object.object_info(src_bucket, src_object)
+        dest_resp = s3_test_object.object_info(dest_bucket, dest_object)
+        LOG.debug("ETag of source copy object %s", src_resp[1]["ETag"])
+        LOG.debug("ETag of destination copy object %s", dest_resp[1]["ETag"])
+        LOG.info("Compare ETag of source and destination copy object")
+        assert_utils.assert_equal(src_resp[1]["ETag"], dest_resp[1]["ETag"])
+        LOG.info("Validated ETag of source and destination copy object")
     LOG.info("Validated content of copy object")
-
 
 def list_objects_in_bucket(bucket, objects, s3_test_obj):
     """Assert if any of the given object not listed in given bucket"""

@@ -82,7 +82,6 @@ logs:
 # One of INFO, DEBUG, ERROR
 logging_Level: INFO
 retries: 3
-error_injection: "error_injection.py"
 wait_time_m0d_restart:  9999
 fault_injection_script: "scripts/server_scripts/enable_disable_fault_injection.sh"
 fi_k8s: "scripts/server_scripts/s3_fault_injection_k8s_cortx.sh"
