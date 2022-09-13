@@ -1977,6 +1977,23 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
+    @staticmethod
+    def modify_limits(value, count, operation):
+        """
+        Split the value(ex: 400Mi) and multiply/divide by count.
+        param value: resource value to be modified
+        param count: resource values to be multiplied/divided by count
+        param operation: * or /
+        return string
+        """
+        numeric_value = value.strip(string.ascii_letters)
+        unit = value.strip(string.digits)
+        if operation == '*':
+            value = int(numeric_value) * int(count)
+        if operation == '/':
+            value = int(numeric_value) // int(count)
+        return str(int(value)) + unit
+
     def update_res_limit_cortx(self, filepath, **kwargs):
         """
         This Method is used to update the resource limits for cortx services
@@ -2005,13 +2022,16 @@ class ProvDeployK8sCortxLib:
         for res_type in type_list:
             if res_type == "limits":
                 hare_hax_res[res_type]['memory'] = \
-                    str(cortx_resource['hax'][res_type]['mem']//cvg_count)+"Mi"
+                    self.modify_limits(
+                        cortx_resource['hax'][res_type]['cpu'], cvg_count, '/')
                 hare_hax_res[res_type]['cpu'] = \
                     cortx_resource['hax'][res_type]['cpu']
                 server_res[res_type]['memory'] = \
-                    str(cortx_resource['rgw'][res_type]['mem']//s3_instance)+"Gi"
+                    self.modify_limits(
+                        cortx_resource['rgw'][res_type]['mem'], s3_instance, '/')
                 server_res[res_type]['cpu'] = \
-                    str(cortx_resource['rgw'][res_type]['cpu']//s3_instance)+"m"
+                    self.modify_limits(
+                        cortx_resource['rgw'][res_type]['cpu'], s3_instance, '/')
             else:
                 hare_hax_res[res_type]['memory'] = \
                     cortx_resource['hax'][res_type]['mem']
@@ -2025,9 +2045,11 @@ class ProvDeployK8sCortxLib:
             for elem in data_list:
                 if res_type == "limits" and elem == "motr":
                     data_res[elem]['resources'][res_type]['memory'] = \
-                        str(cortx_resource[elem][res_type]['mem']//cvg_count)+"Gi"
+                        self.modify_limits(
+                            cortx_resource[elem][res_type]['mem'], cvg_count, '/')
                     data_res[elem]['resources'][res_type]['cpu'] = \
-                        str(cortx_resource[elem][res_type]['cpu']//cvg_count)+"m"
+                        self.modify_limits(
+                            cortx_resource[elem][res_type]['cpu'], cvg_count, '/')
                 else:
                     data_res[elem]['resources'][res_type]['memory'] = \
                         str(cortx_resource[elem][res_type]['mem'])

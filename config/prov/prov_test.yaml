@@ -236,15 +236,15 @@ k8s_cortx_deploy:
         mem: '256Mi'
         cpu: '300m'
       limits:
-        mem: 1536
+        mem: '1536Mi'
         cpu: '500m'
     motr:
       requests:
         mem: '1Gi'
         cpu: '500m'
       limits:
-        mem: 4
-        cpu: 2000
+        mem: '4Gi'
+        cpu: '2000m'
     confd:
       requests:
         mem: '256Mi'
@@ -257,8 +257,8 @@ k8s_cortx_deploy:
           mem: '1Gi'
           cpu: '500m'
         limits:
-          mem: 2
-          cpu: 1500
+          mem: '2Gi'
+          cpu: '1500m'
     agent:
       requests:
         mem: '128Mi'
