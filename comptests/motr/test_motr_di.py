@@ -695,7 +695,7 @@ class TestCorruptDataDetection:
         count_list = ["1"]
         bsize_list = ["1M"]
         layout_ids = ["9"]
-        logger.info("STARTED: Test %s Data corruption and m0cat workflow of Data block - aligned",
+        logger.info("STARTED: Test %s Data corruption and m0cat workflow of Data block-aligned",
                     test_prefix)
         resp = self.motr_inject_checksum_corruption(
             layout_ids, bsize_list, count_list, ft_type=1)
