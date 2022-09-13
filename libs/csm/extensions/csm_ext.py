@@ -18,12 +18,12 @@
 import time
 import logging
 import random
+import yaml
 from commons.utils import config_utils
 from commons.constants import  K8S_SCRIPTS_PATH, K8S_PRE_DISK, POD_NAME_PREFIX
 from commons.constants import LOCAL_SOLUTION_PATH
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.ha.ha_common_libs_k8s import HAK8s
-import yaml
 
 class CSMExt():
     """CSMExt is creating object and extending functionality of the ProvDeployK8sCortxLib"""
