@@ -108,14 +108,14 @@ class QueryDeployment(RestTestLib):
             result, err_msg = self.verify_unique_ids()
             assert result, err_msg
             self.log.info("Step 2: Verify deployment version and time")
-            result, err_msg = self.verify_deployment_version_time(get_response,
+            result, err_msg = self.verify_deployment_version_time(get_response.json(),
                              deploy_start_time, deploy_end_time)
             assert result, err_msg
             self.log.info("Step 3: Verify node details")
-            result, err_msg = self.verify_node_details(get_response)
+            result, err_msg = self.verify_node_details(get_response.json())
             assert result, err_msg
             self.log.info("Step 4: Verify storage details")
-            result, err_msg = self.verify_storage_details(get_response)
+            result, err_msg = self.verify_storage_details(get_response.json())
             assert result, err_msg
             self.log.info("Step 5: Verify storage set details")
             resp, result, err_msg = self.verify_storage_set()
@@ -209,8 +209,8 @@ class QueryDeployment(RestTestLib):
             result = False
         return result, err_msg
 
-    def verify_deployment_version_time(self, get_response: dict, deploy_start_time: str,
-                                    deploy_end_time: str):
+    def verify_deployment_version_time(self, get_response: dict, deploy_start_time: float,
+                                    deploy_end_time: float):
         """
         Function to verify deployment version and time
         """
@@ -218,7 +218,7 @@ class QueryDeployment(RestTestLib):
         time_list = []
         result = True
         self.log.info("Verify deployment version")
-        response_version = get_response.json()["topology"]["version"]
+        response_version = get_response["topology"]["version"]
         resp = self.master.execute_cmd(
                 cmd=cmds.K8S_POD_INTERACTIVE_CMD.format(self.pod_list[0], cmds.CMD_CORTX_VERSION),
                 read_lines=True)
@@ -233,7 +233,7 @@ class QueryDeployment(RestTestLib):
             self.log.error(err_msg)
             result = False
         self.log.info("Verify deployment time of nodes")
-        for dicts in get_response.json()["topology"]["nodes"]:
+        for dicts in get_response["topology"]["nodes"]:
             if 'deployment_time' in dicts.keys():
                 time_list.append(dicts['deployment_time'])
         self.log.info("List of deployment times: %s", time_list)
@@ -255,7 +255,7 @@ class QueryDeployment(RestTestLib):
         self.log.info("Check if all key parameters are present for node")
         list_params = ['id', 'version', 'services', 'type', 'storage_set',
                 'deployment_time', 'hostname']
-        for dicts in get_response.json()["topology"]["nodes"]:
+        for dicts in get_response["topology"]["nodes"]:
             for param in list_params:
                 self.log.info("Node param: %s", param)
                 if param in dicts.keys() and dicts[param] != "":
@@ -277,7 +277,7 @@ class QueryDeployment(RestTestLib):
         for number in range(0, number_of_cvgs):
             cvg_dict.update({number:storage1[number]["name"]})
         self.log.info("cvg dict: %s ", cvg_dict)
-        for dicts in get_response.json()["topology"]["nodes"]:
+        for dicts in get_response["topology"]["nodes"]:
             self.log.info("dict is: %s ", dicts)
             for key, value in cvg_dict.items():
                 self.log.info("Verifying for: %s %s", key, value)
