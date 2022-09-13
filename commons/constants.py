@@ -296,6 +296,7 @@ class Rest:
                          "iops_write_object",
                          "iops_read_bucket",
                          "iops_write_bucket"]
+    CAPACITY_UPDATE_TIMEOUT = 600
 
 
 # aws cli errors
