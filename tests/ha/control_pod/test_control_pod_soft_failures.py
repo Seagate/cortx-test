@@ -342,6 +342,14 @@ class TestControlPodSoftFailure:
 
         LOGGER.info("Step 6: Create multiple IAM user after soft-failure.")
         users = self.mgnt_ops.create_account_users()
+        new_users_list = list(users.keys())
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "List IAM user failed.")
+        user_data_new = resp.json()
+        fetched_users = user_data_new['users']
+        assert_utils.assert_true(
+            (set(new_users_list).issubset(set(fetched_users)),
+             "Failed to create IAM users after soft-failure"))
         self.s3_clean.update(users)
         LOGGER.info("Step 6: Created multiple IAM user after soft-failure.")
 
@@ -452,6 +460,14 @@ class TestControlPodSoftFailure:
 
         LOGGER.info("Step 6: Create multiple IAM user after soft-failure.")
         new_user = self.mgnt_ops.create_account_users()
+        new_users_list = list(new_user.keys())
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "List IAM user failed.")
+        user_data_new = resp.json()
+        fetched_users = user_data_new['users']
+        assert_utils.assert_true(
+            (set(new_users_list).issubset(set(fetched_users)),
+             "Failed to create IAM users after soft-failure"))
         self.s3_clean.update(new_user)
         LOGGER.info("Step 6: Created multiple IAM user after soft-failure.")
 
@@ -601,6 +617,14 @@ class TestControlPodSoftFailure:
 
         LOGGER.info("Step 7: Create multiple IAM user after soft-failure.")
         new_user = self.mgnt_ops.create_account_users()
+        new_users_list = list(new_user.keys())
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "List IAM user failed.")
+        user_data_new = resp.json()
+        fetched_users = user_data_new['users']
+        assert_utils.assert_true(
+            (set(new_users_list).issubset(set(fetched_users)),
+             "Failed to create IAM users after soft-failure"))
         self.s3_clean.update(new_user)
         LOGGER.info("Step 7: Created multiple IAM user after soft-failure.")
 
@@ -649,6 +673,14 @@ class TestControlPodSoftFailure:
 
         LOGGER.info("Step 4: Create multiple IAM user after soft-failure.")
         users = self.mgnt_ops.create_account_users()
+        new_users_list = list(users.keys())
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "List IAM user failed.")
+        user_data_new = resp.json()
+        fetched_users = user_data_new['users']
+        assert_utils.assert_true(
+            (set(new_users_list).issubset(set(fetched_users)),
+             "Failed to create IAM users after soft-failure"))
         self.s3_clean.update(users)
         LOGGER.info("Step 4: Created multiple IAM user after soft-failure.")
         LOGGER.info("ENDED: Verify IAM user creation & IOs before and after soft-failures.")
@@ -754,11 +786,20 @@ class TestControlPodSoftFailure:
         assert_utils.assert_true(
             (set(new_users_list).issubset(set(fetched_users)),
              "Created IAM user list is not persisted in fetched IAM user list"))
+        self.s3_clean.update(new_users)
         LOGGER.info("Step 5: Got IAM user list & checked created IAM users are persisted.")
 
-        LOGGER.info("Step 6: Create IAM user and perform IOs after soft-failure.")
+        LOGGER.info("Step 6: Create IAM user after soft-failure.")
         users = self.mgnt_ops.create_account_users()
+        new_users_list = list(users.keys())
+        resp = self.csm_obj.list_iam_users_rgw()
+        assert_utils.assert_true(resp.status_code == HTTPStatus.OK, "List IAM user failed.")
+        user_data_new = resp.json()
+        fetched_users = user_data_new['users']
+        assert_utils.assert_true(
+            (set(new_users_list).issubset(set(fetched_users)),
+             "Failed to create IAM users after soft-failure"))
         self.s3_clean.update(users)
-        LOGGER.info("Step 6: Created IAM user and performed IOs after soft-failure.")
+        LOGGER.info("Step 6: Created IAM user after soft-failure.")
         LOGGER.info("ENDED: Verify IAM user creation/deletion and get IAM user list while "
                     "soft-failure in loop.")
