@@ -38,9 +38,11 @@ class CSMExt():
         self.restore_method = None
 
     def copy_sol_file_local(self):
-        self.log.info("Copy solution.yaml from %s to local path %s", K8S_SCRIPTS_PATH, LOCAL_SOLUTION_PATH)
+        self.log.info("Copy solution.yaml from %s to local path %s",
+                                                        K8S_SCRIPTS_PATH, LOCAL_SOLUTION_PATH)
         remote_sol_path = K8S_SCRIPTS_PATH + "solution.yaml"
-        solution_path = self.master.copy_file_to_local(remote_path=remote_sol_path,local_path=LOCAL_SOLUTION_PATH)
+        solution_path = self.master.copy_file_to_local(remote_path=remote_sol_path,
+                                                       local_path=LOCAL_SOLUTION_PATH)
         return solution_path
 
     def update_csm_res_limit(self, m1:str, m2:str, c1:str, c2:str):
