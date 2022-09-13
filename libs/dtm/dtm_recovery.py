@@ -240,8 +240,7 @@ class DTMRecoveryTestLib:
         delay = resp[2]
         if specific_pod:
             pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
-            sys_random = random.SystemRandom()
-            pod_prefix = pod_list[sys_random.randint(0, len(pod_list) - 1)]
+            pod_prefix = pod_list[self.system_random.randint(0, len(pod_list) - 1)]
         for i_i in range(restart_cnt):
             self.log.info("Restarting %s process for %s time", process, i_i + 1)
             pod_selected, container = master_node.select_random_pod_container(pod_prefix,
