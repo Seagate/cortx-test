@@ -498,7 +498,7 @@ class TestControlPodSoftFailure:
         thread1 = threading.Thread(target=self.ha_obj.iam_bucket_cruds, args=(event,), kwargs=args)
         thread1.daemon = True  # Daemonize thread
 
-        LOGGER.info("Step 2.1: Starting bucket CRUDs in background")
+        LOGGER.info("Step 2.2: Starting bucket CRUDs in background")
         args = {'user_crud': False, 'bkt_crud': True, 'num_bkts': num_bkts, 's3_obj': self.s3_obj,
                 'output': bkt_output}
         thread2 = threading.Thread(target=self.ha_obj.iam_bucket_cruds, args=(event,), kwargs=args)
