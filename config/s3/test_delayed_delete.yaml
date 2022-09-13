@@ -16,4 +16,6 @@ random_obj_size:
   min: 1
   max: 5120
 
-gc_min_wait_time_min: 15
+gc_min_wait_time: 900
+space_reclaim_retry_time: 300
+space_reclaim_max_retries: 5

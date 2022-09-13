@@ -23,11 +23,12 @@ import yaml
 
 from config import PROV_TEST_CFG
 from commons import configmanager
-from commons.constants import LOCAL_SOLUTION_PATH, K8S_SCRIPTS_PATH
+from commons.constants import CLUSTER_YAML_PATH, LOCAL_SOLUTION_PATH
+from commons.constants import K8S_SCRIPTS_PATH, POD_NAME_PREFIX, LOCAL_CLS_YAML_PATH
 from commons import commands as cmds
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
-
+# pylint: disable-msg=too-many-public-methods
 class QueryDeployment(RestTestLib):
     """This class contains all the Rest API calls for all query deployment operations"""
 
@@ -36,6 +37,8 @@ class QueryDeployment(RestTestLib):
         self.prov_deploy_cfg = PROV_TEST_CFG["k8s_prov_cortx_deploy"]
         self.rest_resp_conf = configmanager.get_config_wrapper(
             fpath="config/csm/rest_response_data.yaml")
+        self.pod_list = self.master.get_all_pods(pod_prefix=POD_NAME_PREFIX)
+        self.log.info("Pod list : %s ", self.pod_list)
 
     def get_solution_yaml(self):
         """
@@ -49,7 +52,25 @@ class QueryDeployment(RestTestLib):
         self.log.info(solution_path)
         with open(local_sol_path, 'rb') as yaml_file:
             data = yaml.safe_load(yaml_file)
-        self.log.info("Printing solution yaml contents: %s", data)
+        self.log.info("Solution yaml contents: %s", data)
+        return data
+
+    def get_cluster_yaml(self):
+        """Get cluster yaml contents"""
+
+        local_cls_path = LOCAL_CLS_YAML_PATH
+        remote_cls_path = CLUSTER_YAML_PATH
+        self.log.info("Path for cluster yaml on remote node: %s", remote_cls_path)
+        copy_cmd = f'cat {remote_cls_path} > {local_cls_path}'
+        resp = self.master.execute_cmd(
+                cmd=cmds.K8S_POD_INTERACTIVE_CMD.format(self.pod_list[0],
+                copy_cmd), read_lines=True)
+        self.log.info(resp)
+        cluster_yaml_path = self.master.copy_file_to_local(remote_path=local_cls_path,
+                                                               local_path=local_cls_path)
+        self.log.info(cluster_yaml_path)
+        with open(local_cls_path, 'rb') as yaml_file:
+            data = yaml.safe_load(yaml_file)
         return data
 
     @RestTestLib.authenticate_and_login
@@ -59,7 +80,7 @@ class QueryDeployment(RestTestLib):
         :param header: header for api authentication
         :return: response
         """
-        self.log.info("Printing auth header %s and query param %s ", auth_header, uri_param)
+        self.log.info("Auth header %s and query param %s ", auth_header, uri_param)
         self.log.info("Get system topology request....")
         if auth_header is None:
             headers = self.headers
@@ -74,48 +95,39 @@ class QueryDeployment(RestTestLib):
         self.log.info("Get system topology request successfully sent...")
         return response
 
-    # Function not ready
-    def verify_system_topology(self, deploy_version, expected_response=HTTPStatus.OK):
+    def verify_system_topology(self, deploy_start_time: str, deploy_end_time: str,
+                             expected_response=HTTPStatus.OK):
         """
         Verify Get system topology
         """
-        err_msg = ""
-        unique_list = []
-        time_list= []
-        resp = self.get_system_topology()
-        result = True
-        if resp.status_code == expected_response:
-            result = True
-            get_response = resp.json()
-            self.log.info("1. Verify id fields have unique values")
-            for elements in get_response["topology"]:
-                if 'id' in elements.keys():
-                    unique_list.append(elements['id'])
-            if len(set(unique_list)) == len(unique_list):
-                self.log.info("id fields have unique values")
-            else:
-                err_msg = "Duplicate values found for id fields"
-                self.log.error(err_msg)
-                result = False
-            self.log.info("2. Verify deployment version and time")
-            response_version = get_response["topology"]["version"]
-            if response_version == deploy_version:
-                self.log.info("Version match found")
-            else:
-                err_msg = err_msg + "Version mismatch found"
-                self.log.error(err_msg)
-                result = False
-            for nodes in get_response["topology"]["nodes"][0]:
-                time_list.append(nodes["deployment_time"])
-            #compare deployment times
-            #verify node details(call verify storage details inside)
-            self.log.info("Verify certificate details")
+        get_response = self.get_system_topology()
+        self.log.info("Get system topology response %s", get_response)
+        result = get_response.status_code == expected_response
+        if result:
+            self.log.info("Step 1: Verify id fields have unique values")
+            result, err_msg = self.verify_unique_ids()
+            assert result, err_msg
+            self.log.info("Step 2: Verify deployment version and time")
+            result, err_msg = self.verify_deployment_version_time(get_response.json(),
+                             deploy_start_time, deploy_end_time)
+            assert result, err_msg
+            self.log.info("Step 3: Verify node details")
+            result, err_msg = self.verify_node_details(get_response.json())
+            assert result, err_msg
+            self.log.info("Step 4: Verify storage details")
+            result, err_msg = self.verify_storage_details(get_response.json())
+            assert result, err_msg
+            self.log.info("Step 5: Verify storage set details")
+            resp, result, err_msg = self.verify_storage_set()
+            self.log.info("Storage set verification response %s ", resp)
+            assert result, err_msg
+            self.log.info("Step 6: Verify certificate details")
             result, err_msg = self.verify_certificate_details(expected_response=HTTPStatus.OK)
             assert result, err_msg
         else:
-            self.log.error("Status code check failed.")
-            result = False
-        return result, get_response
+            err_msg = "Status code check failed"
+            self.log.error(err_msg)
+        return result, err_msg
 
     def get_certificate_topology(self, auth_header=None):
         """
@@ -161,30 +173,264 @@ class QueryDeployment(RestTestLib):
         response = self.get_system_topology(uri_param, auth_header)
         return response
 
-    #Function Not Ready
-    def verify_nodes(self, node_id=None, expected_response=HTTPStatus.OK):
+    def verify_node_topology(self, expected_response: str):
         """
-        Verify number of nodes and node names
+        Verify node topology
         """
-        resp = self.get_node_topology(node_id)
-        solution_yaml = self.get_solution_yaml()
-        result = resp.status_code == expected_response
+        get_resp = self.get_node_topology()
+        self.log.info("Node topology response %s ", get_resp.json())
+        result = get_resp.status_code == expected_response
         if result:
-            get_response = resp.json()
-            self.log.info("Verify node names")
-            resp_hostnames = []
-            for names in get_response["topology"]["nodes"]:
-                resp_hostnames.append(names["hostname"])
-            #compare for hostnames list received from each pod
-            self.log.info("Verify number of nodes in resp and solution yaml")
-            nodes = len(get_response["topology"]["nodes"])
-            num_nodes = len(solution_yaml["solution"]["storage_set"]["nodes"])
-            if num_nodes != nodes:
-                self.log.error("Actual and expected response for number of nodes didnt match")
-                result = False
+            self.log.info("Step 1: Verify node id and hostname")
+            result, err_msg = self.verify_id_and_hostname()
+            assert result, err_msg
+            self.log.info("Step 2: Verify services list")
+            result, err_msg = self.verify_services_list(get_resp.json())
+            assert result, err_msg
         else:
-            self.log.error("Status code check failed.")
-        return result
+            err_msg = "Status code check failed"
+            self.log.error(err_msg)
+        return result, err_msg
+
+    def verify_unique_ids(self):
+        """
+        Function to verify cluster ids have unique values
+        """
+        err_msg = ""
+        result = True
+        node_id_list, hostname_list = self.generate_node_hostname_list()
+        self.log.info("List of hostnames: %s ", hostname_list)
+        self.log.info("List of unique ids: %s ", node_id_list)
+        if len(set(node_id_list)) == len(node_id_list):
+            self.log.info("id fields have unique values")
+        else:
+            err_msg = "Duplicate values found for id fields"
+            self.log.error(err_msg)
+            result = False
+        return result, err_msg
+
+    def verify_deployment_version_time(self, get_response: dict, deploy_start_time: float,
+                                    deploy_end_time: float):
+        """
+        Function to verify deployment version and time
+        """
+        err_msg = ""
+        time_list = []
+        result = True
+        self.log.info("Verify deployment version")
+        response_version = get_response["topology"]["version"]
+        resp = self.master.execute_cmd(
+                cmd=cmds.K8S_POD_INTERACTIVE_CMD.format(self.pod_list[0], cmds.CMD_CORTX_VERSION),
+                read_lines=True)
+        resp = resp.decode() if isinstance(resp, bytes) else resp
+        deploy_version = [res.strip().split()[1] for res in resp]
+        deploy_version = ''.join(deploy_version).strip('\"')
+        self.log.info("Deploy_version %s ", deploy_version)
+        if response_version == deploy_version:
+            self.log.info("Deployment Version match found")
+        else:
+            err_msg = "Deployment Version mismatch found. "
+            self.log.error(err_msg)
+            result = False
+        self.log.info("Verify deployment time of nodes")
+        for dicts in get_response["topology"]["nodes"]:
+            if 'deployment_time' in dicts.keys():
+                time_list.append(dicts['deployment_time'])
+        self.log.info("List of deployment times: %s", time_list)
+        for times in time_list:
+            if deploy_start_time <= int(times) <= deploy_end_time:
+                self.log.info("Deployment time verification successful")
+            else:
+                err_msg = err_msg + "Deployment time verification failed"
+                self.log.error(err_msg)
+                result = False
+        return result, err_msg
+
+    def verify_node_details(self, get_response: dict):
+        """
+        Verify node details
+        """
+        err_msg = ""
+        result = True
+        self.log.info("Check if all key parameters are present for node")
+        list_params = ['id', 'version', 'services', 'type', 'storage_set',
+                'deployment_time', 'hostname']
+        for dicts in get_response["topology"]["nodes"]:
+            for param in list_params:
+                self.log.info("Node param: %s", param)
+                if param in dicts.keys() and dicts[param] != "":
+                    self.log.info("Node param verification successful")
+                else:
+                    err_msg = "Node param verification failed"
+                    self.log.error(err_msg)
+                    result = False
+        return result, err_msg
+
+    def verify_storage_details(self, get_response: dict):
+        """
+        Verify storage details present for data node
+        """
+        solution_yaml = self.get_solution_yaml()
+        storage1 = solution_yaml["solution"]["storage_sets"][0]["storage"]
+        number_of_cvgs = len(storage1)
+        cvg_dict = {}
+        for number in range(0, number_of_cvgs):
+            cvg_dict.update({number:storage1[number]["name"]})
+        self.log.info("cvg dict: %s ", cvg_dict)
+        for dicts in get_response["topology"]["nodes"]:
+            self.log.info("dict is: %s ", dicts)
+            for key, value in cvg_dict.items():
+                self.log.info("Verifying for: %s %s", key, value)
+                if 'storage' in dicts.keys() and dicts["storage"][0]["name"] == value:
+                    resp = dicts["storage"][0]["devices"]
+                    self.log.info("Resp is %s ", resp)
+                    solution = storage1[key]["devices"]
+                    self.log.info("Solution is %s ", solution)
+                    result, err_msg = self.verify_cvg_details(resp, solution, value)
+                    assert result, err_msg
+                else:
+                    self.log.info("Node other than data node")
+        return result, err_msg
+
+    def verify_cvg_details(self, resp: dict, solution: dict, cvg: str):
+        """
+        Verify cvg details
+        """
+        err_msg = ""
+        result = True
+        self.log.info("Check for metadata fields")
+        if resp['metadata'][0] == solution['metadata'][0]['path']:
+            self.log.info(f"Metadata fields match for {cvg}. ")
+        else:
+            err_msg = f"Metadata fields match failed for {cvg}. "
+            self.log.error(err_msg)
+            result = False
+        self.log.info("Check for data fields")
+        if resp['data'][0] == solution['data'][0]['path']:
+            self.log.info(f"Data fields match for {cvg}. ")
+        else:
+            err_msg = err_msg + f"data fields match failed for {cvg}."
+            self.log.error(err_msg)
+            result = False
+        self.log.info("Check for data fields")
+        if resp['data'][1] == solution['data'][1]['path']:
+            self.log.info(f"Data fields match for {cvg}. ")
+        else:
+            err_msg = err_msg + f"Data fields match failed for {cvg}."
+            self.log.error(err_msg)
+            result = False
+        return result, err_msg
+
+    def generate_node_hostname_list(self):
+        """
+        Generate list of node ids
+        """
+        node_id_list = []
+        hostname_list = []
+        self.log.info("Step 1: Send node details query request")
+        resp = self.get_node_topology()
+        assert resp.status_code == HTTPStatus.OK, \
+						   "Status code check failed for get node topology"
+        self.log.info("Step 2: Send same request with node id")
+        for dicts in resp.json()["topology"]["nodes"]:
+            node_id_list.append(dicts["id"])
+            hostname_list.append(dicts["hostname"])
+        return node_id_list, hostname_list
+
+    def verify_id_and_hostname(self):
+        """
+        Function to verify machine id
+        """
+        err_msg = ""
+        hostname_list = []
+        result = True
+        node_id_list, hostname_list = self.generate_node_hostname_list()
+        self.log.info("Node ids list: %s", node_id_list)
+        for node_ids in node_id_list:
+            self.log.info("Checking for node id: %s ", node_ids)
+            get_resp = self.get_node_topology(node_id = node_ids)
+            assert get_resp.status_code == HTTPStatus.OK, \
+						   "Status code check failed for get node topology"
+            self.log.info("Verify only one node is present in response")
+            if len(get_resp.json()["topology"]["nodes"]) == 1:
+                self.log.info("Verified only one node is present in response")
+        for pod_name in self.pod_list:
+            self.log.info(" Step 3: login to each pod and get machine-id")
+            resp = self.master.get_machine_id_for_pod(pod_name)
+            self.log.info("Machine id in resp %s ", resp)
+            if resp in node_id_list:
+                self.log.info("Machine id match successful")
+            else:
+                err_msg = "Machine id mismatch found. "
+                self.log.info(err_msg)
+                result = False
+
+            self.log.info("Step 4: login to each pod and check hostname")
+            resp = self.master.get_pod_fqdn(pod_name=pod_name)
+            self.log.info("Hostname from resp: %s ", resp)
+            self.log.info("Hostname list: %s ", hostname_list)
+            if resp in hostname_list:
+                self.log.info("Hostname match successful")
+            else:
+                err_msg = err_msg + "Hostname mismatch found"
+                self.log.info(err_msg)
+                result = False
+        return result, err_msg
+
+    def get_services_dict(self):
+        """
+        Verify list of services for cluster nodes
+        """
+        yaml_services_dict = {}
+        self.log.info("Read data from cluster.yaml")
+        cluster_yaml = self.get_cluster_yaml()
+        cluster = cluster_yaml["cluster"]["node_types"]
+        for elements in cluster:
+            self.log.info("Remove client node details which are not required")
+            removed_value = elements.pop('client_node', 'No Key found')
+            self.log.info("removed value: %s ", str(removed_value))
+            if elements["name"] == 'data_node/0' or elements["name"] == 'data_node/1':
+                yaml_services_dict.update({elements['name']:elements["components"][1]["services"]})
+            elif elements["name"] == 'server_node':
+                yaml_services_dict.update({elements['name']:elements["components"][2]["services"]})
+            elif elements["name"] == 'control_node':
+                yaml_services_dict.update({elements['name']:elements["components"][1]["services"]})
+            else:
+                self.log.info("Ha node service details missing so cannot update dict")
+            #need to check how ha node services would appear after Bug=CORTX-34129 is resolved
+        self.log.info("Yaml service dict: %s ", yaml_services_dict)
+        return yaml_services_dict
+
+    def verify_services_list(self, get_resp: dict):
+        """Verify services list"""
+        err_msg = ""
+        result = True
+        yaml_services_dict = self.get_services_dict()
+        for dicts in get_resp["topology"]["nodes"]:
+            if 'data_node' in dicts["type"]:
+                if dicts["services"] == yaml_services_dict['data_node/0']:
+                    self.log.info("Services list matched for data nodes")
+                else:
+                    result = False
+                    err_msg = "Services list match failed for data nodes"
+                    self.log.error(err_msg)
+            elif dicts["type"] == 'server_node':
+                if dicts["services"] == yaml_services_dict['server_node']:
+                    self.log.info("Services list matched for server nodes")
+                else:
+                    result = False
+                    err_msg = err_msg + "Services list match failed for server nodes"
+                    self.log.error(err_msg)
+            elif dicts["type"] == 'control_node':
+                if dicts["services"] == yaml_services_dict['control_node']:
+                    self.log.info("Services list matched for control nodes")
+                else:
+                    result = False
+                    err_msg = err_msg + "Services list match failed for control nodes"
+                    self.log.error(err_msg)
+            else:
+                self.log.info("Node other than above node types")
+        return result, err_msg
 
     def verify_storage_set(self, storage_set_id: str = None,
                                  expected_response=HTTPStatus.OK):
@@ -202,12 +448,12 @@ class QueryDeployment(RestTestLib):
             resp_dix = get_response[
                 "topology"]["storage_sets"][0]["durability"]["data"]
             input_dix = solution_yaml["solution"]["storage_sets"][0]["durability"]["dix"]
-            self.log.info("Printing dix value from response and solution yaml %s and %s",
+            self.log.info("Dix value from response and solution yaml %s and %s",
                                resp_dix, input_dix)
             resp_sns = get_response[
                 "topology"]["storage_sets"][0]["durability"]["metadata"]
             input_sns = solution_yaml["solution"]["storage_sets"][0]["durability"]["sns"]
-            self.log.info("Printing sns value from response and solution yaml %s and %s",
+            self.log.info("Sns value from response and solution yaml %s and %s",
                                resp_sns, input_sns)
             if input_dix != resp_dix:
                 err_msg = "Actual and expected response for dix didnt match"
@@ -298,10 +544,10 @@ class QueryDeployment(RestTestLib):
         for version_cmd in resp:
             if "version" in version_cmd.lower():
                 version_cmd = "v" + version_cmd.strip().split()[1]
-                self.log.info("Printing version from command %s", version_cmd)
+                self.log.info("Version from command %s", version_cmd)
                 break
         get_response_version = get_response_version.split(".")[1]
-        self.log.info("Printing get response version %s", get_response_version)
+        self.log.info("Get response version %s", get_response_version)
         result = version_cmd == get_response_version
         if result:
             self.log.info("Version number match successful")
@@ -399,12 +645,12 @@ class QueryDeployment(RestTestLib):
             assert result, err_msg
             self.log.info("Verify issuer details")
             issuer_dict = get_response["issuer"]
-            self.log.info("Printing issuer details %s", get_response)
+            self.log.info("Issuer details %s", get_response)
             result, err_msg = self.verify_issuer_details(issuer_dict)
             assert result, err_msg
             self.log.info("Verify subject details")
             subject_dict = get_response["subject"]
-            self.log.info("Printing issuer details %s", subject_dict)
+            self.log.info("Subject details %s", subject_dict)
             result, err_msg = self.verify_subject_details(subject_dict)
             assert result, err_msg
         else:

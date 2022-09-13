@@ -13,6 +13,7 @@ common_params:
   2sec_delay: 2
   5sec_delay: 5
   10sec_delay: 10
+  15sec_delay: 15
   20sec_delay: 20
   30sec_delay: 30
   60sec_delay: 60
@@ -29,6 +30,7 @@ s3_operation_data:
   no_buckets_per_users: 50
   obj_per_bucket: 200
   iam_users: 150
+  200_iam_users: 200
   no_bkt_del_ctrl_pod: 500
   httpclientimeout: 300000
 

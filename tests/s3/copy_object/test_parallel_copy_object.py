@@ -275,7 +275,7 @@ class TestCopyObjects:
                               down_path2=self.downld_path2)
         validate_copy_content(self.src_bkt, self.key_mpobj1, self.src_bkt, self.key_obj4,
                               s3_testobj=self.s3_obj, down_path1=self.downld_path1,
-                              down_path2=self.downld_path2)
+                              down_path2=self.downld_path2, etag_verify=False)
         LOGGER.info("ENDED: Test Parallel put and copy on destination object "
                     "(simple and multipart source objects)")
 
@@ -299,8 +299,9 @@ class TestCopyObjects:
         self.parallel_copy_and_put_object((self.src_bkt, self.key_obj3, self.src_bkt,
                                           self.key_obj4), (self.src_bkt, self.key_obj3,
                                           self.file_path))
-        copy_obj_di_check(self.src_bkt, self.key_obj3, self.src_bkt, self.key_obj4,
-                          s3_testobj=self.s3_obj)
+        validate_copy_content(self.src_bkt, self.key_obj3, self.src_bkt, self.key_obj4,
+                              s3_testobj=self.s3_obj, down_path1=self.downld_path1,
+                              down_path2=self.downld_path2, etag_verify=False)
         LOGGER.info("All objects should be listed in relevant buckets")
         list_objects_in_bucket(bucket=self.src_bkt, objects=[self.key_obj1, self.key_obj2,
                            self.key_obj3, self.key_obj4], s3_test_obj=self.s3_obj)
