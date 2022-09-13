@@ -348,6 +348,35 @@ class DTMRecoveryTestLib:
                 self.log.info("Process %s restarted successfully", process)
         return True
 
+    def process_restart_mp(self, master_node, pod_selected, container,
+                           process, proc_restart_delay: int = 600, que = None):
+        """
+        Restart specified Process of specific pod and container
+        :param master_node: Master node object
+        :param pod_prefix: Pod Prefix
+        :param container_prefix: Container Prefix
+        :param process: Process to be restarted.
+        :param proc_restart_delay: Delay in seconds to restart the process after killing it.
+        return boolean
+        """
+        self.log.info("Selecting Pod and container for restart")
+        self.set_proc_restart_duration(master_node, pod_selected, container, proc_restart_delay)
+        try:
+            self.log.info("Kill %s from %s pod %s container ", process, pod_selected, container)
+            resp = master_node.kill_process_in_container(pod_name=pod_selected,
+                                                         container_name=container,
+                                                         process_name=process)
+            self.log.debug("Resp : %s", resp)
+            self.log.info("Sleep till %s", proc_restart_delay)
+            # added 20 seconds delay for container to restart.
+            time.sleep(proc_restart_delay + 20)
+            self.set_proc_restart_duration(master_node, pod_selected, container, 0)
+        except (ValueError, IOError) as ex:
+            self.log.error("Exception Occurred during killing process : %s", ex)
+            self.set_proc_restart_duration(master_node, pod_selected, container, 0)
+            que.put(False)
+        que.put(True)
+
     def get_process_state(self, master_node, pod_name, container_name, process_ids: list):
         """
         Function to get given process state

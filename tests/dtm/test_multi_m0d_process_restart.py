@@ -432,3 +432,347 @@ class TestMultiProcessRestart:
         self.test_completed = True
         self.log.info("ENDED: Verify continuous WRITE and READ during same m0d restart multiple "
                       "times using pkill")
+
+    # pylint: disable=too-many-statements
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-47158")
+    def test_continuous_write_read_during_k_m0d_restart_overlapping(self):
+        """
+        Verify Continuous Write/Reads during K process restart.
+        (Different m0d processes to be selected one after another with delay of 2 mins till k,
+        start each process one by one after 5 mins )
+        """
+        self.log.info("STARTED: Verify continuous WRITE and READ during different m0d restart "
+                      " using pkill")
+        log_file_prefix = 'test-47158'
+        que_1 = multiprocessing.Queue()
+        que_2 = multiprocessing.Queue()
+        m0d_que = multiprocessing.Queue()
+        bucket_list = []
+
+        self.log.info("Step 1: Create %s buckets for write operation during m0d restart",
+                      self.test_cfg['loop_count'])
+        for each in range(self.test_cfg['loop_count']):
+            bucket = f'{self.bucket_name}-{each}'
+            self.s3_test_obj.create_bucket(bucket)
+            bucket_list.append(bucket)
+
+        self.log.info("Step 2: Start write Operation:")
+        self.dtm_obj.perform_write_op(bucket_prefix=self.bucket_name,
+                                      object_prefix=self.object_name,
+                                      no_of_clients=self.test_cfg['clients'],
+                                      no_of_samples=self.test_cfg['samples'],
+                                      obj_size=self.test_cfg['size'],
+                                      log_file_prefix=log_file_prefix, queue=que_1)
+        resp = que_1.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info_write = resp[1]
+
+        self.log.info("Step 3a: Start READ Operations in loop in background for data written in "
+                      "step 1:")
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
+                                               args=(workload_info_write, que_1, False, True,
+                                                     True, self.test_cfg['loop_count']))
+        proc_read_op.start()
+        self.log.info("Step 3b: Start write Operations in loop in background:")
+        args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
+                'no_of_clients': self.test_cfg['clients'],
+                'no_of_samples': self.test_cfg['samples'], 'log_file_prefix': log_file_prefix,
+                'queue': que_2, 'loop': self.test_cfg['loop_count'], 'created_bucket': bucket_list}
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
+        proc_write_op.start()
+
+        time.sleep(self.delay)
+
+        self.log.info("Step 4: Perform m0d Process Restart on %s unique data pods during"
+                      " Write and Read Operations", self.kvalue)
+        pods_list = []
+        m0d_proc_list = []
+        count = 0
+        self.log.info("Stop m0d process with 120 seconds delay in between")
+        while count < self.kvalue:
+            pod_selected, container = self.master_node_list[0].select_random_pod_container(
+                const.POD_NAME_PREFIX, const.MOTR_CONTAINER_PREFIX)
+            if pod_selected in pods_list:
+                continue
+            pods_list.append(pod_selected)
+            count = count + 1
+            proc = multiprocessing.Process(target=self.dtm_obj.process_restart_mp,
+                                           args=(self.master_node_list[0], pod_selected, container,
+                                                 self.m0d_process, 300, m0d_que))
+            proc.start()
+            m0d_proc_list.append(m0d_proc_list)
+            time.sleep(120)
+        self.log.info("Sleep for 300+120 seconds")
+        time.sleep(420)
+        self.log.info("Verify if all the processes recovered")
+        for each in m0d_proc_list:
+            if each.is_alive():
+                each.join()
+            resp = m0d_que.get()
+            assert_utils.assert_true(resp, "Failure during m0d process restart/recovery")
+
+        self.log.info("Step 5: Verify hctl status if all services are online")
+        resp = self.ha_obj.poll_cluster_status(self.master_node_list[0], 300)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Step 6a: Wait for READ Operation to complete.")
+        if proc_read_op.is_alive():
+            proc_read_op.join()
+        resp = que_1.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 6b: Wait for Write Operation to complete.")
+        if proc_write_op.is_alive():
+            proc_write_op.join()
+        resp = que_2.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        workload_info = resp[1]
+        self.log.info("Step 7: Perform Read-Validate on data written in Step 2b")
+        self.dtm_obj.perform_ops(workload_info, que_2, False, True, True)
+        resp = que_2.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.test_completed = True
+        self.log.info("ENDED:  Verify continuous WRITE and READ during different m0d restart "
+                      " using pkill")
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-47161")
+    def test_continuous_write_during_k_m0d_restart_same_time(self):
+        """
+        Verify Continuous Write during K process restart
+        (Kill all processes at same time and restart at same time)
+        """
+        self.log.info("STARTED: Verify Continuous Write during K process restart by killing "
+                      "all process at same time and recovering at same time")
+        log_file_prefix = 'test-47161'
+        que = multiprocessing.Queue()
+        m0d_que = multiprocessing.Queue()
+        bucket_list = []
+
+        self.log.info("Step 1: Create %s buckets for write operation during m0d restart",
+                      self.test_cfg['loop_count'])
+        for each in range(self.test_cfg['loop_count']):
+            bucket = f'{self.bucket_name}-{each}'
+            self.s3_test_obj.create_bucket(bucket)
+            bucket_list.append(bucket)
+
+        self.log.info("Step 2: Start write Operations in loop in background:")
+        args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
+                'no_of_clients': self.test_cfg['clients'],
+                'no_of_samples': self.test_cfg['samples'], 'log_file_prefix': log_file_prefix,
+                'queue': que, 'loop': self.test_cfg['loop_count'], 'created_bucket': bucket_list}
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
+        proc_write_op.start()
+        time.sleep(self.delay)
+
+        self.log.info("Step 3: Perform m0d Process Restart on unique %s data pods at same time"
+                      " during Write Operations", self.kvalue)
+        pods_list = []
+        m0d_proc_list = []
+        count = 0
+        while count < self.kvalue:
+            pod_selected, container = self.master_node_list[0].select_random_pod_container(
+                const.POD_NAME_PREFIX, const.MOTR_CONTAINER_PREFIX)
+            if pod_selected in pods_list:
+                continue
+            else:
+                pods_list.append(pod_selected)
+                count = count + 1
+            proc = multiprocessing.Process(target=self.dtm_obj.process_restart_mp,
+                                           args=(self.master_node_list[0], pod_selected, container,
+                                                 self.m0d_process, 1200, m0d_que))
+            proc.start()
+            m0d_proc_list.append(m0d_proc_list)
+
+        self.log.info("Sleep for 1200+120 seconds")
+        time.sleep(1320)
+
+        self.log.info("Verify if all the processes recovered")
+        for each in m0d_proc_list:
+            if each.is_alive():
+                each.join()
+            resp = m0d_que.get()
+            assert_utils.assert_true(resp, "Failure during m0d process restart/recovery")
+
+        self.log.info("Step 5: Verify hctl status if all services are online")
+        resp = self.ha_obj.poll_cluster_status(self.master_node_list[0], 300)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Step 6: Wait for Write Operation to complete.")
+        if proc_write_op.is_alive():
+            proc_write_op.join()
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        workload_info = resp[1]
+        self.log.info("Step 7: Perform Read-Validate on data written during step2")
+        self.dtm_obj.perform_ops(workload_info, que, False, True, True)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.test_completed = True
+        self.log.info("ENDED: Verify Continuous Write during K process restart by killing "
+                      "all process at same time and recovering at same time")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-47162")
+    def test_continuous_read_during_k_m0d_restart_same_time(self):
+        """
+        Verify Continuous Reads during K process restart.
+        (Kill all processes at same time and restart at same time)
+        """
+        self.log.info("STARTED: Verify Continuous Reads during K process restart by killing "
+                      "all process at same time and recovering at same time")
+        log_file_prefix = 'test-47162'
+        que = multiprocessing.Queue()
+        m0d_que = multiprocessing.Queue()
+
+        self.log.info("Step 1: Start write Operation:")
+        self.dtm_obj.perform_write_op(bucket_prefix=self.bucket_name,
+                                      object_prefix=self.object_name,
+                                      no_of_clients=self.test_cfg['clients'],
+                                      no_of_samples=self.test_cfg['samples'],
+                                      obj_size=self.test_cfg['size'],
+                                      log_file_prefix=log_file_prefix, queue=que)
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info_write = resp[1]
+
+        self.log.info("Step 2: Start READ Operations in loop in background for data written in "
+                      "step 1:")
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
+                                               args=(workload_info_write, que, False, True,
+                                                     True, self.test_cfg['loop_count']))
+        proc_read_op.start()
+        time.sleep(self.delay)
+
+        self.log.info("Step 3: Perform m0d Process Restart on %s unique data pods during"
+                      "Read Operations at same time", self.kvalue)
+        pods_list = []
+        m0d_proc_list = []
+        count = 0
+        while count < self.kvalue:
+            pod_selected, container = self.master_node_list[0].select_random_pod_container(
+                const.POD_NAME_PREFIX, const.MOTR_CONTAINER_PREFIX)
+            if pod_selected in pods_list:
+                continue
+            else:
+                pods_list.append(pod_selected)
+                count = count + 1
+            proc = multiprocessing.Process(target=self.dtm_obj.process_restart_mp,
+                                           args=(self.master_node_list[0], pod_selected, container,
+                                                 self.m0d_process, 1200, m0d_que))
+            proc.start()
+            m0d_proc_list.append(m0d_proc_list)
+
+        self.log.info("Sleep for 1200+120 seconds")
+        time.sleep(1320)
+
+        self.log.info("Verify if all the processes recovered")
+        for each in m0d_proc_list:
+            if each.is_alive():
+                each.join()
+            resp = m0d_que.get()
+            assert_utils.assert_true(resp, "Failure during m0d process restart/recovery")
+
+        self.log.info("Step 5: Verify hctl status if all services are online")
+        resp = self.ha_obj.poll_cluster_status(self.master_node_list[0], 300)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Step 6a: Wait for READ Operation to complete.")
+        if proc_read_op.is_alive():
+            proc_read_op.join()
+        resp = que.get()
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.test_completed = True
+        self.log.info("ENDED:  Verify continuous WRITE and READ during different m0d restart "
+                      " using pkill")
+
+    @pytest.mark.lc
+    @pytest.mark.dtm
+    @pytest.mark.tags("TEST-47163")
+    def test_continuous_write_read_during_k_m0d_restart(self):
+        """
+        Verify Continuous Write/Reads during K process restart.
+        (Randomly select m0d process, kill it ,sleep for 5 mins, start it and.Repeat this K times)
+        """
+        self.log.info("STARTED: Verify continuous WRITE and READ during different m0d restart "
+                      " using pkill")
+        log_file_prefix = 'test-47163'
+        que_1 = multiprocessing.Queue()
+        que_2 = multiprocessing.Queue()
+        bucket_list = []
+
+        self.log.info("Step 1: Create %s buckets for write operation during m0d restart",
+                      self.test_cfg['loop_count'])
+        for each in range(self.test_cfg['loop_count']):
+            bucket = f'{self.bucket_name}-{each}'
+            self.s3_test_obj.create_bucket(bucket)
+            bucket_list.append(bucket)
+
+        self.log.info("Step 2: Start write Operation:")
+        self.dtm_obj.perform_write_op(bucket_prefix=self.bucket_name,
+                                      object_prefix=self.object_name,
+                                      no_of_clients=self.test_cfg['clients'],
+                                      no_of_samples=self.test_cfg['samples'],
+                                      obj_size=self.test_cfg['size'],
+                                      log_file_prefix=log_file_prefix, queue=que_1)
+        resp = que_1.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info_write = resp[1]
+
+        self.log.info("Step 3a: Start READ Operations in loop in background for data written in "
+                      "step 1:")
+        proc_read_op = multiprocessing.Process(target=self.dtm_obj.perform_ops,
+                                               args=(workload_info_write, que_1, False, True,
+                                                     True, self.test_cfg['loop_count']))
+        proc_read_op.start()
+        self.log.info("Step 3b: Start Write Operations in loop in background:")
+        args = {'bucket_prefix': self.bucket_name, 'object_prefix': self.object_name,
+                'no_of_clients': self.test_cfg['clients'],
+                'no_of_samples': self.test_cfg['samples'], 'log_file_prefix': log_file_prefix,
+                'queue': que_2, 'loop': self.test_cfg['loop_count'], 'created_bucket': bucket_list}
+        proc_write_op = multiprocessing.Process(target=self.dtm_obj.perform_write_op, kwargs=args)
+        proc_write_op.start()
+
+        time.sleep(self.delay)
+
+        self.log.info("Step 4: Perform m0d Process Restart on %s data pods during"
+                      " Write and Read Operations", self.kvalue)
+        resp_proc = self.dtm_obj.multi_process_restart_with_delay(
+            master_node=self.master_node_list[0],
+            health_obj=self.health_obj,
+            pod_prefix=const.POD_NAME_PREFIX,
+            container_prefix=const.MOTR_CONTAINER_PREFIX,
+            process=self.m0d_process,
+            check_proc_state=True,
+            k_value=self.kvalue)
+
+        self.log.info("Step 5a: Wait for READ Operation to complete.")
+        if proc_read_op.is_alive():
+            proc_read_op.join()
+        resp = que_1.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 5b: Wait for Write Operation to complete.")
+        if proc_write_op.is_alive():
+            proc_write_op.join()
+        resp = que_2.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        workload_info = resp[1]
+
+        # Assert if process restart failed
+        assert_utils.assert_true(resp_proc, "Failure observed during process restart/recovery")
+
+        self.log.info("Step 6: Perform Read-Validate on data written in Step 2b")
+        self.dtm_obj.perform_ops(workload_info, que_2, False, True, True)
+        resp = que_2.get()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.test_completed = True
+        self.log.info("ENDED: Verify continuous WRITE and READ during different m0d restart "
+                      " using pkill")
