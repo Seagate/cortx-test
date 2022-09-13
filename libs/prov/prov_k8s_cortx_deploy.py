@@ -2023,7 +2023,7 @@ class ProvDeployK8sCortxLib:
             if res_type == "limits":
                 hare_hax_res[res_type]['memory'] = \
                     self.modify_limits(
-                        cortx_resource['hax'][res_type]['cpu'], cvg_count, '/')
+                        cortx_resource['hax'][res_type]['mem'], cvg_count, '/')
                 hare_hax_res[res_type]['cpu'] = \
                     cortx_resource['hax'][res_type]['cpu']
                 server_res[res_type]['memory'] = \
