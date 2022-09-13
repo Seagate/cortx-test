@@ -58,18 +58,18 @@ class QueryDeployment(RestTestLib):
     def get_cluster_yaml(self):
         """Get cluster yaml contents"""
 
-        local_sol_path = LOCAL_CLS_YAML_PATH
-        remote_sol_path = CLUSTER_YAML_PATH
-        self.log.info("Path for solution yaml on remote node: %s", remote_sol_path)
-        copy_cmd = f'cat {CLUSTER_YAML_PATH} > {LOCAL_CLS_YAML_PATH}'
+        local_cls_path = LOCAL_CLS_YAML_PATH
+        remote_cls_path = CLUSTER_YAML_PATH
+        self.log.info("Path for cluster yaml on remote node: %s", remote_cls_path)
+        copy_cmd = f'cat {remote_cls_path} > {local_cls_path}'
         resp = self.master.execute_cmd(
                 cmd=cmds.K8S_POD_INTERACTIVE_CMD.format(self.pod_list[0],
                 copy_cmd), read_lines=True)
         self.log.info(resp)
-        solution_path = self.master.copy_file_to_local(remote_path=local_sol_path,
-                                                               local_path=local_sol_path)
-        self.log.info(solution_path)
-        with open(local_sol_path, 'rb') as yaml_file:
+        cluster_yaml_path = self.master.copy_file_to_local(remote_path=local_cls_path,
+                                                               local_path=local_cls_path)
+        self.log.info(cluster_yaml_path)
+        with open(local_cls_path, 'rb') as yaml_file:
             data = yaml.safe_load(yaml_file)
         return data
 
