@@ -272,7 +272,7 @@ class TestQueryDeployment:
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("Step 1 : Deploy cortx cluster ")
-#        self.multiple_node_deployment(3, 2)
+        self.multiple_node_deployment(3, 2)
         LOGGER.info("Step 2 : Make a cluster in degraded state")
         LOGGER.info(" Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
