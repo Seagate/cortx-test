@@ -1931,7 +1931,7 @@ class HAK8s:
         :return: None if IAM user REST req fails or Dict response for IAM user successful creation
         """
         user = None
-        payload = {}
+        payload = dict()
         endpoint = CSM_REST_CFG["s3_iam_user_endpoint"]
         for i_d in range(num_users):
             try:
@@ -1964,7 +1964,7 @@ class HAK8s:
         :return: Tuple
         """
         del_user = list(user.keys())
-        failed_del = []
+        failed_del = list()
         try:
             for user_del in del_user:
                 endpoint = CSM_REST_CFG["s3_iam_user_endpoint"] + "/" + user_del

@@ -121,7 +121,7 @@ class LogicalNode(Host):
         :param pod_list: List of pods
         :return: Dict
         """
-        pod_containers = {}
+        pod_containers = dict()
         pod_list = pod_list if pod_list else list()
         if not pod_list:
             log.info("Get all data pod names of %s", pod_prefix)

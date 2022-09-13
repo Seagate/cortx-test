@@ -24,7 +24,6 @@ HA test suite for Control Pod Restart
 
 import logging
 import os
-import secrets
 import threading
 import time
 from http import HTTPStatus
@@ -34,7 +33,6 @@ import pytest
 
 from commons import commands as cmd
 from commons import constants as const
-from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
@@ -47,8 +45,6 @@ from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
-from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
 
 # Global Constants
@@ -427,7 +423,8 @@ class TestControlPodSoftFailure:
         self.test_prefix = 'test-45499-new'
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(self.users.values())[0],
                                                     log_prefix=self.test_prefix,
-                                                    skipcleanup=True, nsamples=5, nclients=5)
+                                                    skipcleanup=True, nsamples=5, nclients=5,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Performed WRITEs-READs-Verify with variable sizes objects.")
 
@@ -436,9 +433,8 @@ class TestControlPodSoftFailure:
         time.sleep(self.max_proc_restart_delay)
 
         LOGGER.info("Step 5: Checking cluster status")
-        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0],
-                                               timeout=self.max_proc_restart_delay)
-        assert_utils.assert_false(resp[0], resp[1])
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Cluster status is good")
 
         LOGGER.info("Step 6: Create new IAM user and perform IOs")
@@ -495,12 +491,14 @@ class TestControlPodSoftFailure:
         LOGGER.info("Create %s iam users for deletion", num_users)
         del_users = self.mgnt_ops.create_account_users(nusers=num_users)
 
-        LOGGER.info("Step 2: Perform IAM user creation/deletion in background")
+        LOGGER.info("Step 2: Perform IAM user and bucket creation/deletion in background")
+        LOGGER.info("Step 2.1: Starting IAM CRUDs in background")
         args = {'user_crud': True, 'num_users': num_users, 'output': iam_output,
                 'del_users_dict': del_users, 'header': self.header}
         thread1 = threading.Thread(target=self.ha_obj.iam_bucket_cruds, args=(event,), kwargs=args)
         thread1.daemon = True  # Daemonize thread
 
+        LOGGER.info("Step 2.1: Starting bucket CRUDs in background")
         args = {'user_crud': False, 'bkt_crud': True, 'num_bkts': num_bkts, 's3_obj': self.s3_obj,
                 'output': bkt_output}
         thread2 = threading.Thread(target=self.ha_obj.iam_bucket_cruds, args=(event,), kwargs=args)
@@ -532,8 +530,7 @@ class TestControlPodSoftFailure:
         thread2.join()
 
         LOGGER.info("Step 4: Checking cluster status")
-        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0],
-                                               timeout=self.min_proc_restart_delay)
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Cluster status is good")
 
