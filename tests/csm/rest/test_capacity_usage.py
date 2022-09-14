@@ -130,7 +130,7 @@ class TestSystemCapacity():
 
         self.log.info("[Start] Sleep %s", self.update_seconds)
         time.sleep(self.update_seconds)
-        self.log.info("[Start] Sleep %s", self.update_seconds)
+        self.log.info("[End] Sleep %s", self.update_seconds)
 
         resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
 
@@ -197,7 +197,7 @@ class TestSystemCapacity():
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
-            self.log.info("[Start] Sleep %s", self.update_seconds)
+            self.log.info("[End] Sleep %s", self.update_seconds)
 
             self.log.info("Cleanup: Check cluster status")
             resp = self.ha_obj.poll_cluster_status(self.master)
@@ -682,7 +682,7 @@ class TestSystemCapacity():
             failure_cnt -= 1
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
-            self.log.info("[Start] Sleep %s", self.update_seconds)
+            self.log.info("[End] Sleep %s", self.update_seconds)
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
                                                           self.kvalue, test_cfg["err_margin"])
@@ -780,7 +780,7 @@ class TestSystemCapacity():
             failure_cnt -= 1
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
-            self.log.info("[Start] Sleep %s", self.update_seconds)
+            self.log.info("[End] Sleep %s", self.update_seconds)
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
                                                           self.kvalue, test_cfg["err_margin"])
@@ -1055,7 +1055,7 @@ class TestSystemCapacity():
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
-            self.log.info("[Start] Sleep %s", self.update_seconds)
+            self.log.info("[End] Sleep %s", self.update_seconds)
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             result = self.csm_obj.verify_degraded_capacity(
                 resp, healthy=total_written, degraded=0, critical=0, damaged=0,
@@ -1179,7 +1179,7 @@ class TestSystemCapacityFixedPlacement():
 
         self.log.info("[Start] Sleep %s", self.update_seconds)
         time.sleep(self.update_seconds)
-        self.log.info("[Start] Sleep %s", self.update_seconds)
+        self.log.info("[End] Sleep %s", self.update_seconds)
 
         resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
 
@@ -1247,7 +1247,7 @@ class TestSystemCapacityFixedPlacement():
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
-            self.log.info("[Start] Sleep %s", self.update_seconds)
+            self.log.info("[End] Sleep %s", self.update_seconds)
 
             self.log.info("Cleanup: Check cluster status")
             resp = self.ha_obj.poll_cluster_status(self.csm_obj.master)
