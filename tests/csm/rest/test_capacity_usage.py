@@ -371,7 +371,7 @@ class TestSystemCapacity():
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
-        for set_name, num_replica in self.failed_pod:
+        for set_name, num_replica in self.restore_list:
             self.log.info("Failure count: %s", failure_cnt)
             deploy_name = f"{set_name}-{num_replica}"
             self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
@@ -498,7 +498,7 @@ class TestSystemCapacity():
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
-        for set_name, num_replica in self.failed_pod:
+        for set_name, num_replica in self.restore_list:
             self.log.info("Failure count: %s", failure_cnt)
             deploy_name = f"{set_name}-{num_replica}"
             self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
