@@ -1580,12 +1580,14 @@ class ProvDeployK8sCortxLib:
             resp = self.get_hctl_status(master_node_obj)
             LOGGER.debug("services status is %s, End Time is %s", resp[1], end_time)
             if resp[0]:
+                response = []
                 time_taken = time.time() - start_time
                 LOGGER.info("#### Services online. Time Taken : %s", time_taken)
                 response.append(resp[1])
                 response.append(time_taken)
+                response.append(resp[0])
                 break
-            response.extend([False, 'Timeout'])
+            response = [False, 'Timeout']
         LOGGER.info("hctl_status = %s", resp[1])
         return response
 
