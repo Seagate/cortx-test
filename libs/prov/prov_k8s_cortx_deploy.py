@@ -92,7 +92,7 @@ class ProvDeployK8sCortxLib:
         self.data_only_list = ["data-only", "standard"]
         self.server_only_list = ["server-only", "standard"]
         self.exclusive_pod_list = ["data-only", "server-pod"]
-        self.patterns = "invalid release"
+        self.patterns = " 23 characters"
         self.local_sol_path = common_const.LOCAL_SOLUTION_PATH
 
     @staticmethod
@@ -1249,6 +1249,7 @@ class ProvDeployK8sCortxLib:
         returns True, resp
         """
         deployment_type = kwargs.get("deployment_type", self.deployment_type)
+        service_status = []
         LOGGER.info("Step to Perform Cortx Cluster Deployment")
         deploy_resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
                                                 worker_node_list, system_disk_dict,
@@ -1259,8 +1260,18 @@ class ProvDeployK8sCortxLib:
                 bool(re.findall(r'\w*[A-Z]\w*', namespace)):
             LOGGER.debug("Negative Test Scenario")
             assert_utils.assert_false(deploy_resp[0], deploy_resp[1])
-            if self.patterns in deploy_resp[1]:
-                return True, 0
+            if not deploy_resp[0]:
+                local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER,
+                                          self.deploy_cfg['log_file'])
+                remote_path = os.path.join(self.deploy_cfg["k8s_dir"],
+                                           self.deploy_cfg['log_file'])
+                master_node_list[0].copy_file_to_local(remote_path, local_path)
+                with open(local_path) as file:
+                    lines = file.readlines()
+                    for line in lines:
+                        if self.patterns in line:
+                            LOGGER.debug(line)
+                            service_status.append(line)
         # Run status-cortx-cloud.sh script to fetch the status of all resources.
         if deploy_resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
@@ -1478,7 +1489,7 @@ class ProvDeployK8sCortxLib:
                                                   master_node_list,
                                                   worker_node_list,
                                                   namespace, system_disk_dict)
-            row.append(deploy_stage_resp[1])
+            assert_utils.assert_true(deploy_stage_resp[0])
         if self.deployment_type not in self.exclusive_pod_list:
             if setup_client_config_flag:
                 client_config_res = self.client_config(master_node_list, namespace)

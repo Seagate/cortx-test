@@ -167,6 +167,10 @@ class TestNamespaceDeployment:
                                            worker_node_list=self.worker_node_list,
                                            destroy_setup_flag=True,
                                            namespace=custom_namespace)
+        self.namespace = custom_namespace
+        self.log.info("Deleting the created namespace %s", custom_namespace)
+        resp = self.deploy_lc_obj.del_namespace(self.master_node_list[0], custom_namespace)
+        assert_utils.assert_true(resp)
         self.collect_sb = False
         self.destroy_flag = False
 
