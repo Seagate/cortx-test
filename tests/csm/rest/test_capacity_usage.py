@@ -311,8 +311,11 @@ class TestSystemCapacity():
             self.log.info("[Start] Shutdown the data pod safely")
             resp, set_name, num_replica = self.ext_obj.delete_data_pod()
             self.log.debug("Response: %s", resp)
-            assert resp, "Failed to degrade cluster"
-            self.failed_pod.append([set_name, num_replica])
+            deploy_name = f"{set_name}-{num_replica}"
+            self.log.info("Deleted replica: %s", deploy_name)
+            assert resp, f"Failed to delete pod {deploy_name}"
+            self.restore_list.append([set_name, num_replica])
+            self.failed_pod.append(deploy_name)
             self.log.info("Printing set and replica for %s iteration", failure_cnt)
             self.log.info("Set name and replica number is: %s", self.failed_pod)
             self.restore_pod_data = True
@@ -369,12 +372,17 @@ class TestSystemCapacity():
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
         for set_name, num_replica in self.failed_pod:
-            self.log.info("[Start]  Restore deleted pods : %s-%s", set_name, num_replica)
+            self.log.info("Failure count: %s", failure_cnt)
+            deploy_name = f"{set_name}-{num_replica}"
+            self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
             resp = self.ext_obj.restore_data_pod(set_name, num_replica)
             self.log.debug("Response: %s", resp)
-            assert resp, "Failed to restore pod"
+            assert resp, f"Failed to restore pod {deploy_name}"
+            self.log.info("Successfully restored pod %s", deploy_name)
+            self.restore_list.remove([set_name, num_replica])
+            self.failed_pod.remove(deploy_name)
+            self.log.info("[End] Restore deleted pods : %s", deploy_name)
             failure_cnt -= 1
-            self.failed_pod.remove([set_name, num_replica])
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
@@ -421,8 +429,11 @@ class TestSystemCapacity():
             self.log.info("[Start] Shutdown the data pod safely")
             resp, set_name, num_replica = self.ext_obj.delete_data_pod()
             self.log.debug("Response: %s", resp)
-            assert resp, "Failed to degrade cluster"
-            self.failed_pod.append([set_name, num_replica])
+            deploy_name = f"{set_name}-{num_replica}"
+            self.log.info("Deleted replica: %s", deploy_name)
+            assert resp, f"Failed to delete pod {deploy_name}"
+            self.restore_list.append([set_name, num_replica])
+            self.failed_pod.append(deploy_name)
             self.log.info("Printing set and replica for %s iteration", failure_cnt)
             self.log.info("Set name and replica number is: %s", self.failed_pod)
             self.restore_pod_data = True
@@ -488,12 +499,17 @@ class TestSystemCapacity():
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
         for set_name, num_replica in self.failed_pod:
-            self.log.info("[Start]  Restore deleted pods : %s-%s", set_name, num_replica)
+            self.log.info("Failure count: %s", failure_cnt)
+            deploy_name = f"{set_name}-{num_replica}"
+            self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
             resp = self.ext_obj.restore_data_pod(set_name, num_replica)
             self.log.debug("Response: %s", resp)
-            assert resp, "Failed to restore pod"
+            assert resp, f"Failed to restore pod {deploy_name}"
+            self.log.info("Successfully restored pod %s", deploy_name)
+            self.restore_list.remove([set_name, num_replica])
+            self.failed_pod.remove(deploy_name)
+            self.log.info("[End] Restore deleted pods : %s", deploy_name)
             failure_cnt -= 1
-            self.failed_pod.remove([set_name, num_replica])
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
