@@ -315,11 +315,11 @@ class TestSystemCapacity():
             self.log.info("Deleted replica: %s", deploy_name)
             assert resp, f"Failed to delete pod {deploy_name}"
             self.restore_list.append([set_name, num_replica])
-            self.failed_pod.append(deploy_name)
-            self.log.info("Printing set and replica for %s iteration", failure_cnt)
-            self.log.info("Set name and replica number is: %s", self.failed_pod)
+
+            self.log.info("Deleted replica list: %s", self.restore_list)
             self.restore_pod_data = True
-            self.log.info("[End] Successfully deleted pod")
+            self.failed_pod.append(deploy_name)
+            self.log.info("[End] Successfully deleted pod %s", deploy_name)
 
             self.log.info("[Start] Check cluster status")
             resp = self.ha_obj.check_cluster_status(self.master)
@@ -433,11 +433,11 @@ class TestSystemCapacity():
             self.log.info("Deleted replica: %s", deploy_name)
             assert resp, f"Failed to delete pod {deploy_name}"
             self.restore_list.append([set_name, num_replica])
-            self.failed_pod.append(deploy_name)
-            self.log.info("Printing set and replica for %s iteration", failure_cnt)
-            self.log.info("Set name and replica number is: %s", self.failed_pod)
+
+            self.log.info("Deleted replica list: %s", self.restore_list)
             self.restore_pod_data = True
-            self.log.info("[End] Successfully deleted pod")
+            self.failed_pod.append(deploy_name)
+            self.log.info("[End] Successfully deleted pod %s", deploy_name)
 
             self.log.info("[Start] Check cluster status")
             resp = self.ha_obj.check_cluster_status(self.master)
