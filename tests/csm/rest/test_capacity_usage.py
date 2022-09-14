@@ -74,12 +74,12 @@ class TestSystemCapacity():
         cls.restore_method = None
         cls.restore_list = []
         cls.deployment_name = []
-        cls.failed_pod = []
+        cls.failed_pod = cls.failed_pod_restore = []
         cls.deployment_backup = None
         cls.restore_pod_data = None
         cls.set_name = None
         cls.num_replica = 0
-        cls.deploy_list = cls.master.get_deployment_name(POD_NAME_PREFIX)
+        cls.deploy_list = cls.master.get_all_pods_and_ips("data").keys() #cls.master.get_deployment_name(POD_NAME_PREFIX)
         cls.update_seconds = cls.csm_conf["update_seconds"]
         cls.log.info("Get the value of K for the given cluster.")
         # WORKAROUND: comment the below line and uncomment the commented line for execution
@@ -167,6 +167,7 @@ class TestSystemCapacity():
             assert resp.status_code == HTTPStatus.OK, "Failed to delete S3 user"
 
         if not self.deploy:
+            self.log.info("Collecting support bundle")
             bundle_dir = os.path.join(LOG_DIR, "latest", "support_bundle")
             self.log.info("Support bundle dir : %s", bundle_dir)
             resp = sb.collect_support_bundle_k8s(local_dir_path=bundle_dir,
@@ -614,14 +615,23 @@ class TestSystemCapacity():
 
         self.log.info("[START] Failure loop")
         for failure_cnt in range(1, self.kvalue + 1):
-            deploy_name = self.deploy_list[failure_cnt]
-            self.log.info("[Start] Shutdown the data pod safely")
-            self.log.info("Deleting pod %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
-            assert_utils.assert_false(resp[0], f"Failed to delete pod {deploy_name}")
-            self.log.info("[End] Successfully deleted pod %s", deploy_name)
+#            deploy_name = self.deploy_list[failure_cnt]
+#            self.log.info("[Start] Shutdown the data pod safely")
+#            self.log.info("Deleting pod %s", deploy_name)
+#            resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
+#            assert_utils.assert_false(resp[0], f"Failed to delete pod {deploy_name}")
+#            self.log.info("[End] Successfully deleted pod %s", deploy_name)
 
+            resp, set_name, num_replica = self.ext_obj.delete_data_pod()
+            deploy_name = f"{set_name}-{num_replica}"
+#            assert_utils.assert_false(resp, f"Failed to delete pod {deploy_name}")
+            self.log.debug("Response: %s", resp)
+            self.failed_pod_restore.append([set_name, num_replica])
+            self.log.info("Printing set and replica for %s iteration", failure_cnt)
+            self.log.info("Set name and replica number is: %s", self.failed_pod_restore)
+            self.restore_pod_data = True
             self.failed_pod.append(deploy_name)
+            self.log.info("[End] Successfully deleted pod")
 
             self.log.info("[Start] Check cluster status")
             resp = self.ha_obj.check_cluster_status(self.master)
@@ -673,12 +683,18 @@ class TestSystemCapacity():
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
-        for deploy_name in self.failed_pod:
+        for set_name, num_replica in self.failed_pod_restore:
+            deploy_name = f"{set_name}-{num_replica}"
+            self.log.info("[Start]  Restore deleted pods : %s-%s", set_name, num_replica)
+            resp = self.ext_obj.restore_data_pod(set_name, num_replica)
+#            assert 
+
             self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
             resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
             self.log.debug("Response: %s", resp)
             assert resp[0], f"Failed to restore pod by {self.restore_method} way"
             self.log.info("Successfully restored pod by %s way", self.restore_method)
+            self.failed_pod_restore.remove([set_name, num_replica])
             self.failed_pod.remove(deploy_name)
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
             failure_cnt -= 1
