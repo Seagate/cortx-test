@@ -119,6 +119,33 @@ class TestQueryDeployment:
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
         cls.system_random = secrets.SystemRandom()
 
+    def multiple_node_deployment(self, node, config, **kwargs):
+        """
+        This Method is used for deployment of various node count
+        and its multiple SNS,DIX configs
+        :param: nodes: Its the count of worker nodes in K8S cluster.
+        :param: config: Its the config for each node defined
+                        in deploy_config.yaml file
+        """
+        self.deploy_start_time = time.time()
+        log_device = kwargs.get("log_device_flag", False)
+        config = DEPLOY_CFG[f'nodes_{node}'][f'config_{config}']
+        self.log.info("Running %s N with config %s+%s+%s",
+                      node, config['sns_data'], config['sns_parity'], config['sns_spare'])
+        self.deploy_obj.test_deployment(
+            sns_data=config['sns_data'], sns_parity=config['sns_parity'],
+            sns_spare=config['sns_spare'], dix_data=config['dix_data'],
+            dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
+            cvg_count=config['cvg_per_node'], data_disk_per_cvg=config['data_disk_per_cvg'],
+            master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
+            s3_instance=1, log_disk_flag=log_device, setup_k8s_cluster_flag = False,
+            setup_client_config_flag = False, run_basic_s3_io_flag = False,
+            run_s3bench_workload_flag = False )
+        self.deploy_end_time = time.time()
+        self.collect_sb = False
+        self.destroy_flag = True
+
+
     def setup_method(self):
         """
         This function will be invoked prior to each test case.
@@ -194,31 +221,6 @@ class TestQueryDeployment:
            assert_utils.assert_true(resp)
         self.deploy_obj.close_connections(self.master_node_list, self.worker_node_list)
 
-    def multiple_node_deployment(self, node, config, **kwargs):
-        """
-        This Method is used for deployment of various node count
-        and its multiple SNS,DIX configs
-        :param: nodes: Its the count of worker nodes in K8S cluster.
-        :param: config: Its the config for each node defined
-                        in deploy_config.yaml file
-        """
-        self.deploy_start_time = time.time()
-        log_device = kwargs.get("log_device_flag", False)
-        config = DEPLOY_CFG[f'nodes_{node}'][f'config_{config}']
-        self.log.info("Running %s N with config %s+%s+%s",
-                      node, config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.deploy_obj.test_deployment(
-            sns_data=config['sns_data'], sns_parity=config['sns_parity'],
-            sns_spare=config['sns_spare'], dix_data=config['dix_data'],
-            dix_parity=config['dix_parity'], dix_spare=config['dix_spare'],
-            cvg_count=config['cvg_per_node'], data_disk_per_cvg=config['data_disk_per_cvg'],
-            master_node_list=self.master_node_list, worker_node_list=self.worker_node_list,
-            s3_instance=1, log_disk_flag=log_device, setup_k8s_cluster_flag = False,
-            setup_client_config_flag = False, run_basic_s3_io_flag = False,
-            run_s3bench_workload_flag = False )
-        self.deploy_end_time = time.time()
-        self.collect_sb = False
-        self.destroy_flag = True
 
     @pytest.mark.lc
     @pytest.mark.three_node_deployment
