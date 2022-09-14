@@ -311,6 +311,7 @@ class TestSystemCapacity():
             self.log.info("[Start] Shutdown the data pod safely")
             resp, set_name, num_replica = self.ext_obj.delete_data_pod()
             self.log.debug("Response: %s", resp)
+            assert resp, "Failed to degrade cluster"
             self.failed_pod.append([set_name, num_replica])
             self.log.info("Printing set and replica for %s iteration", failure_cnt)
             self.log.info("Set name and replica number is: %s", self.failed_pod)
@@ -420,6 +421,7 @@ class TestSystemCapacity():
             self.log.info("[Start] Shutdown the data pod safely")
             resp, set_name, num_replica = self.ext_obj.delete_data_pod()
             self.log.debug("Response: %s", resp)
+            assert resp, "Failed to degrade cluster"
             self.failed_pod.append([set_name, num_replica])
             self.log.info("Printing set and replica for %s iteration", failure_cnt)
             self.log.info("Set name and replica number is: %s", self.failed_pod)
