@@ -373,6 +373,7 @@ class TestSystemCapacity():
             self.log.debug("Response: %s", resp)
             assert resp, "Failed to restore pod"
             failure_cnt -= 1
+            self.failed_pod.remove([set_name, num_replica])
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
@@ -490,6 +491,7 @@ class TestSystemCapacity():
             self.log.debug("Response: %s", resp)
             assert resp, "Failed to restore pod"
             failure_cnt -= 1
+            self.failed_pod.remove([set_name, num_replica])
 
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
