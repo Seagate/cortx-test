@@ -73,7 +73,7 @@ class TestSystemCapacity():
         cls.restore_method = None
         cls.restore_list = []
         cls.deployment_name = []
-        cls.failed_pod = cls.failed_pod_restore = []
+        cls.failed_pod = []
         cls.deployment_backup = None
         cls.restore_pod_data = None
         cls.set_name = None
@@ -81,9 +81,7 @@ class TestSystemCapacity():
         cls.deploy_list = cls.master.get_all_pods_and_ips("data").keys()
         cls.update_seconds = cls.csm_conf["update_seconds"]
         cls.log.info("Get the value of K for the given cluster.")
-        # WORKAROUND: comment the below line and uncomment the commented line for execution
         cls.nvalue, cls.kvalue, _ = cls.csm_obj.get_sns_value()
-        #cls.nvalue, cls.kvalue, _ = cls.csm_obj.get_dix_value()
         cls.cap_df = pandas.DataFrame()
         cls.aligned_size = 4 * cls.nvalue
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
