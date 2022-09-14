@@ -22,7 +22,6 @@
 Provisioner utility methods for Deployment of k8s based Cortx Deployment
 """
 import csv
-import json
 import logging
 import math
 import os
@@ -92,7 +91,7 @@ class ProvDeployK8sCortxLib:
         self.data_only_list = ["data-only", "standard"]
         self.server_only_list = ["server-only", "standard"]
         self.exclusive_pod_list = ["data-only", "server-pod"]
-        self.patterns = " 23 characters"
+        self.patterns = self.deploy_cfg['max_namespace_len']
         self.local_sol_path = common_const.LOCAL_SOLUTION_PATH
 
     @staticmethod
@@ -286,11 +285,15 @@ class ProvDeployK8sCortxLib:
         return : True/False and resp
         """
         LOGGER.info("Deploy Cortx cloud")
-        export_cmd = Template(common_cmd.LINUX_EXPORT).substitute(
+        server_export_cmd = Template(common_cmd.LINUX_EXPORT).substitute(
+            key=self.deploy_cfg["deploy_server_timeout_key"],
+            val=str(self.deploy_cfg["deploy_server_timeout_val"]) + "s")
+        ha_export_cmd = Template(common_cmd.LINUX_EXPORT).substitute(
             key=self.deploy_cfg["deploy_ha_timeout_key"],
             val=str(self.deploy_cfg["deploy_ha_timeout_val"]) + "s")
-        cmd = export_cmd + " && " + Template(common_cmd.DEPLOY_CLUSTER_CMD).substitute(
-            path=remote_code_path, log=self.deploy_cfg['log_file'])
+        cmd = server_export_cmd + " && " + ha_export_cmd + " && " +\
+              Template(common_cmd.DEPLOY_CLUSTER_CMD).substitute(
+                  path=remote_code_path, log=self.deploy_cfg['log_file'])
         try:
             resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
                                         timeout=self.deploy_cfg['timeout']['deploy'])
