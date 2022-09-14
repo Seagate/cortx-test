@@ -80,7 +80,7 @@ class TestClusterShutdownStart:
         cls.ha_obj = HAK8s()
         cls.restored = True
         cls.s3_clean = {}
-        cls.test_prefix = cls.s3bench_cleanup = cls.random_time = cls.s3ios = None
+        cls.test_prefix = cls.random_time = cls.s3ios = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = None
         cls.multipart_obj_path = None
         cls.mgnt_ops = ManagementOPs()
@@ -132,6 +132,10 @@ class TestClusterShutdownStart:
         This function will be invoked after each test function in the module.
         """
         LOGGER.info("STARTED: Teardown Operations.")
+        if self.s3_clean:
+            LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
+            resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+            assert_utils.assert_true(resp[0], resp[1])
         if self.restored:
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -139,19 +143,6 @@ class TestClusterShutdownStart:
                 LOGGER.debug("Cluster status: %s", resp)
                 resp = self.ha_obj.restart_cluster(self.node_master_list[0])
                 assert_utils.assert_true(resp[0], resp[1])
-            if self.s3_clean:
-                LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
-                resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
-                assert_utils.assert_true(resp[0], resp[1])
-
-            # Check if s3bench objects cleanup is required
-            if self.s3bench_cleanup:
-                for user_info in self.s3bench_cleanup.values():
-                    resp = self.ha_obj.ha_s3_workload_operation(
-                        s3userinfo=user_info, log_prefix=self.test_prefix,
-                        skipwrite=True, skipread=True)
-                    assert_utils.assert_true(resp[0], resp[1])
-                LOGGER.info("Cleanup: Deleted s3 objects and buckets.")
 
             if os.path.exists(self.test_dir_path):
                 remove_dirs(self.test_dir_path)
@@ -575,7 +566,7 @@ class TestClusterShutdownStart:
         LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29469'
-        self.s3_clean = self.s3bench_cleanup = users
+        self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix,
                                                     skipread=True, skipcleanup=True)
@@ -613,7 +604,7 @@ class TestClusterShutdownStart:
         LOGGER.info("STEP 1: Perform IOs with variable object sizes")
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test-29470'
-        self.s3_clean = self.s3bench_cleanup = users
+        self.s3_clean = users
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
                                                     log_prefix=self.test_prefix, skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
@@ -1028,7 +1019,8 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 4: Check DI for IOs run before restart.")
         resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
-                                                    log_prefix=self.test_prefix, skipwrite=True)
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    setup_s3bench=False)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Verified DI for IOs run before restart.")
 

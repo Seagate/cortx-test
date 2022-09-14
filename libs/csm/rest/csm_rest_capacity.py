@@ -311,23 +311,26 @@ class SystemCapacity(RestTestLib):
         """
         Verify degraded, critical, damaged bytecount in the resp.
         """
+        self.log.info("Failure count : %s", failure_cnt)
+        self.log.info("K value : %s", kvalue)
+
         if failure_cnt == 0:
-            self.log.info("Checking for %s greater than to K value", failure_cnt)
+            self.log.info("Checking for failure count: %s equal to 0", failure_cnt)
             result = self.verify_degraded_capacity(resp, healthy=total_written,
             degraded=0, critical=0, damaged=0, err_margin=err_margin,
             total=total_written)
         elif failure_cnt < kvalue:
-            self.log.info("Checking for %s greater than to K value", failure_cnt)
+            self.log.info("Checking for failure count: %s less than to K value", failure_cnt)
             result = self.verify_degraded_capacity(resp, healthy=new_write,
             degraded=total_written-new_write, critical=0, damaged=0, err_margin=err_margin,
             total=total_written)
         elif failure_cnt == kvalue:
-            self.log.info("Checking for %s greater than to K value", failure_cnt)
+            self.log.info("Checking for failure count: %s equal to K value", failure_cnt)
             result = self.verify_degraded_capacity(resp, healthy=new_write,
             degraded=0, critical=total_written-new_write, damaged=0, err_margin=err_margin,
             total=total_written)
         else:
-            self.log.info("Checking for %s less than to K value", failure_cnt)
+            self.log.info("Checking for failure count: %s greater than to K value", failure_cnt)
             result = self.verify_degraded_capacity(resp, healthy=new_write,
             degraded=0, critical=0, damaged=total_written-new_write, err_margin=err_margin,
             total=total_written)

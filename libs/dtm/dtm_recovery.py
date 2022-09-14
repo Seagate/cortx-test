@@ -214,31 +214,35 @@ class DTMRecoveryTestLib:
                                    process,
                                    check_proc_state: bool = False, proc_state: str =
                                    const.DTM_RECOVERY_STATE, restart_cnt: int = 1,
-                                   proc_restart_delay: int = 600):
+                                   proc_restart_delay: int = 600,
+                                   **kwargs):
         """
         Restart specified Process of specific pod and container
         :param master_node: Master node object
         :param health_obj: Health object of the master node
         :param pod_prefix: Pod Prefix
         :param container_prefix: Container Prefix
-        :param process: Process to be restarted.
+        :param process: Process to be restarted
         :param check_proc_state: Flag to check process state
         :param proc_state: Expected state of the process
         :param restart_cnt: Count to restart process from randomly selected pod (Restart once
         previously restarted process recovers)
-        :param proc_restart_delay: Delay in seconds to restart the process after killing it.
+        :param proc_restart_delay: Delay in seconds to restart the process after killing it
+        :keyword bool specific_pod: True for retrieving containers from specific pod
         return : boolean
         """
-
+        specific_pod = kwargs.get("specific_pod", False)
         self.log.info("Get process IDs of %s", process)
         resp = self.get_process_ids(health_obj=health_obj, process=process)
         if not resp[0]:
             return resp[0]
         process_ids = resp[1]
         delay = resp[2]
+        if specific_pod:
+            pod_list = master_node.get_all_pods(pod_prefix=pod_prefix)
+            pod_prefix = pod_list[self.system_random.randint(0, len(pod_list) - 1)]
         for i_i in range(restart_cnt):
             self.log.info("Restarting %s process for %s time", process, i_i + 1)
-            self.log.info("Selecting Pod and container for restart")
             pod_selected, container = master_node.select_random_pod_container(pod_prefix,
                                                                               container_prefix)
             self.set_proc_restart_duration(master_node, pod_selected, container, proc_restart_delay)
@@ -310,8 +314,7 @@ class DTMRecoveryTestLib:
             self.log.info("Selecting Pod and container for restart")
             pod_prefix = pod_list.pop(random.SystemRandom().randint(0, len(pod_list) - 1))
             pod_selected, container = master_node.select_random_pod_container(pod_prefix,
-                                                                              container_prefix,
-                                                                              specific_pod=True)
+                                                                              container_prefix)
             self.set_proc_restart_duration(master_node, pod_selected, container, proc_restart_delay)
             try:
                 self.log.info("Kill %s from %s pod %s container ", process, pod_selected, container)
