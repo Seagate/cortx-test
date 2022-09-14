@@ -307,14 +307,15 @@ class TestSystemCapacity():
 
         self.log.info("[START] Failure loop")
         for failure_cnt in range(1, self.kvalue + 1):
-            deploy_name = self.deploy_list[failure_cnt]
+            self.log.info("Starting failure loop for iteration %s ", failure_cnt)
             self.log.info("[Start] Shutdown the data pod safely")
-            self.log.info("Deleting pod %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
-            assert_utils.assert_false(resp[0], f"Failed to delete pod {deploy_name}")
-            self.log.info("[End] Successfully deleted pod %s", deploy_name)
-
-            self.failed_pod.append(deploy_name)
+            resp, set_name, num_replica = self.ext_obj.delete_data_pod()
+            self.log.debug("Response: %s", resp)
+            self.failed_pod.append([set_name, num_replica])
+            self.log.info("Printing set and replica for %s iteration", failure_cnt)
+            self.log.info("Set name and replica number is: %s", self.failed_pod)
+            self.restore_pod_data = True
+            self.log.info("[End] Successfully deleted pod")
 
             self.log.info("[Start] Check cluster status")
             resp = self.ha_obj.check_cluster_status(self.master)
@@ -366,18 +367,16 @@ class TestSystemCapacity():
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
-        for deploy_name in reversed(self.failed_pod):
-            self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+        for set_name, num_replica in self.failed_pod:
+            self.log.info("[Start]  Restore deleted pods : %s-%s", set_name, num_replica)
+            resp = self.ext_obj.restore_data_pod(set_name, num_replica)
             self.log.debug("Response: %s", resp)
-            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-            self.log.info("Successfully restored pod by %s way", self.restore_method)
-            self.failed_pod.remove(deploy_name)
-            self.log.info("[End] Restore deleted pods : %s", deploy_name)
+            assert resp, "Failed to restore pod"
             failure_cnt -= 1
+
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
-            self.log.info("[Start] Sleep %s", self.update_seconds)
+            self.log.info("[End] Sleep %s", self.update_seconds)
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
                                                           self.kvalue, test_cfg["err_margin"])
@@ -416,14 +415,15 @@ class TestSystemCapacity():
 
         self.log.info("[START] Failure loop")
         for failure_cnt in range(1, self.kvalue + 1):
-            deploy_name = self.deploy_list[failure_cnt]
+            self.log.info("Starting failure loop for iteration %s ", failure_cnt)
             self.log.info("[Start] Shutdown the data pod safely")
-            self.log.info("Deleting pod %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
-            assert_utils.assert_false(resp[0], f"Failed to delete pod {deploy_name}")
-            self.log.info("[End] Successfully deleted pod %s", deploy_name)
-
-            self.failed_pod.append(deploy_name)
+            resp, set_name, num_replica = self.ext_obj.delete_data_pod()
+            self.log.debug("Response: %s", resp)
+            self.failed_pod.append([set_name, num_replica])
+            self.log.info("Printing set and replica for %s iteration", failure_cnt)
+            self.log.info("Set name and replica number is: %s", self.failed_pod)
+            self.restore_pod_data = True
+            self.log.info("[End] Successfully deleted pod")
 
             self.log.info("[Start] Check cluster status")
             resp = self.ha_obj.check_cluster_status(self.master)
@@ -484,18 +484,16 @@ class TestSystemCapacity():
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
-        for deploy_name in reversed(self.failed_pod):
-            self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+        for set_name, num_replica in self.failed_pod:
+            self.log.info("[Start]  Restore deleted pods : %s-%s", set_name, num_replica)
+            resp = self.ext_obj.restore_data_pod(set_name, num_replica)
             self.log.debug("Response: %s", resp)
-            assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
-            self.log.info("Successfully restored pod by %s way", self.restore_method)
-            self.failed_pod.remove(deploy_name)
-            self.log.info("[End] Restore deleted pods : %s", deploy_name)
+            assert resp, "Failed to restore pod"
             failure_cnt -= 1
+
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
-            self.log.info("[Start] Sleep %s", self.update_seconds)
+            self.log.info("[End] Sleep %s", self.update_seconds)
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
                                                           self.kvalue, test_cfg["err_margin"])
