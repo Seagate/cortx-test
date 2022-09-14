@@ -30,7 +30,7 @@ import pytest
 
 from commons import configmanager, cortxlogging
 from commons.utils import cert_utils
-from commons.constants import K8S_SCRIPTS_PATH, K8S_PRE_DISK, POD_NAME_PREFIX
+from commons.constants import K8S_SCRIPTS_PATH, K8S_PRE_DISK
 from libs.csm.csm_interface import csm_api_factory
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
@@ -58,18 +58,17 @@ class TestQueryDeployment():
         """
         self.log.info("Prerequisite: Deploy cortx cluster")
         self.log.info("Cleanup: Destroying the cluster ")
-        resp = self.deploy_lc_obj.destroy_setup(self.csm_obj.master, self.csm_obj.worker_list,
-                                                K8S_SCRIPTS_PATH)
+        resp = self.deploy_lc_obj.destroy_setup(self.csm_obj.master, self.csm_obj.workers)
         assert resp[0], resp[1]
         self.log.info("Cleanup: Cluster destroyed successfully")
         self.deploy_start_time = time.time()
-        self.log.info("Printing start time for deployment %s: ", self.deploy_start_time)
+        self.log.info("Start time for deployment %s: ", self.deploy_start_time)
         self.log.info("Cleanup: Setting prerequisite")
         self.deploy_lc_obj.execute_prereq_cortx(self.csm_obj.master,
                                                 K8S_SCRIPTS_PATH,
                                                 K8S_PRE_DISK)
 
-        for node in self.csm_obj.worker_list:
+        for node in self.csm_obj.workers:
             self.deploy_lc_obj.execute_prereq_cortx(node, K8S_SCRIPTS_PATH,
                                                     K8S_PRE_DISK)
         self.log.info("Cleanup: Prerequisite set successfully")
@@ -89,7 +88,7 @@ class TestQueryDeployment():
         assert resp[0], resp[1]
         self.log.info("Cleanup: Cluster status checked successfully")
         self.deploy_end_time = time.time()
-        self.log.info("Printing end time for deployment %s: ", self.deploy_end_time)
+        self.log.info("End time for deployment %s: ", self.deploy_end_time)
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -167,7 +166,7 @@ class TestQueryDeployment():
         random_symbols = ''.join(random.choices(string.punctuation, k=10))
         invalid_ids = []
         invalid_ids = [random_string, random_number, random_symbols]
-        self.log.info("Printing list of invalid storage set ids: %s", invalid_ids)
+        self.log.info("List of invalid storage set ids: %s", invalid_ids)
         self.log.info("Step 1: Send GET request with invalid storage ID")
         for ids in invalid_ids:
             self.log.info("Sending request for: %s", ids)
@@ -198,7 +197,7 @@ class TestQueryDeployment():
         random_symbols = ''.join(random.choices(string.punctuation, k=10))
         invalid_ids = []
         invalid_ids = [random_string, random_number, random_symbols]
-        self.log.info("Printing list of invalid node ids: %s", invalid_ids)
+        self.log.info("List of invalid node ids: %s", invalid_ids)
         self.log.info("Step 1: Send GET request with invalid storage ID")
         for ids in invalid_ids:
             self.log.info("Sending request for: %s", ids)
@@ -210,46 +209,19 @@ class TestQueryDeployment():
             assert resp, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Test not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-45677')
     def test_45677(self):
         """
-        Verify GET cluster topology with valid node id
+        Verify GET system topology with valid node id
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        node_id_list = []
-        get_topology = self.csm_obj.get_system_topology()
-        self.log.info("Step 1: Send node details query request")
-        resp = self.csm_obj.get_node_topology()
-        assert resp.status_code == HTTPStatus.OK, \
-						   "Status code check failed for get node topology"
-        self.log.info("Step 2: Send same request with node id")
-        for ids in get_topology["topology"]["nodes"].keys():
-            if 'id' in ids:
-                node_id_list.append(ids)
-        for node_ids in node_id_list:
-            resp = self.csm_obj.get_node_topology(node_id = node_ids)
-            assert resp.status_code == HTTPStatus.OK, \
-						   "Status code check failed for get node topology"
-            self.log.info("Verify only one node is present in response")
-        self.log.info("Get pod names")
-        pod_list = self.csm_obj.master.get_all_pods(pod_prefix=POD_NAME_PREFIX)
-        for pod_name in pod_list[1]:
-            self.log.info(" Step 3: login to each pod and get machine-id")
-            resp = self.csm_obj.master.get_machine_id_for_pod(pod_name)
-            for node_id in node_id_list:
-                assert node_id == resp[1], "Machine id mismatch found"
-            self.log.info("Step 4: login to each pod and check hostname")
-            resp = self.csm_obj.master.get_pod_hostname(pod_name=pod_name)
-            resp_node = get_topology["topology"]["nodes"]
-            for hostnames in resp_node:
-                assert hostnames["hostname"] == resp[1], "Hostname mismatch found"
-            self.log.info("Step 5: Check services list")
-            self.log.info("Step 6: Check component list")
+        self.log.info("Step 1: Verifying system topology with valid node id")
+        result, err_msg = self.csm_obj.verify_node_topology(expected_response=HTTPStatus.OK)
+        assert result, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -297,7 +269,6 @@ class TestQueryDeployment():
         assert result, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.skip("Test not ready")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -309,6 +280,9 @@ class TestQueryDeployment():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         self.log.info("Step 1: Verify GET system topology ")
-        result, err_msg = self.csm_obj.verify_system_topology(expected_response=HTTPStatus.OK)
+        self.log.info("Deploy start and end time: %s %s ", self.deploy_start_time,
+                   self.deploy_end_time)
+        result, err_msg = self.csm_obj.verify_system_topology(self.deploy_start_time,
+                   self.deploy_end_time, expected_response=HTTPStatus.OK)
         assert result, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)

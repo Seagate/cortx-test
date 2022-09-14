@@ -520,6 +520,18 @@ class LogicalNode(Host):
         hostname = output[0].strip()
         return hostname
 
+    def get_pod_fqdn(self, pod_name):
+        """
+        Helper function to get pod hostname
+        :param pod_name: name of the pod
+        :return: str
+        """
+        log.info("Getting pod hostname for pod %s", pod_name)
+        cmd = commands.KUBECTL_GET_POD_FQDN.format(pod_name)
+        output = self.execute_cmd(cmd=cmd, read_lines=True)
+        hostname = output[0].strip()
+        return hostname
+
     def kill_process_in_container(self, pod_name, container_name, process_name=None, **kwargs):
         """
         Kill specific process in container
@@ -593,21 +605,16 @@ class LogicalNode(Host):
         return True, resp
 
     def select_random_pod_container(self, pod_prefix: str,
-                                    container_prefix: str, **kwargs):
+                                    container_prefix: str):
         """
         Select random pod and container for the given pods and container prefix
         :param pod_prefix: Pod prefix/ Pod name in case of specific_pod: True
         :param container_prefix: Container Prefix
-        :keyword bool specific_pod: True for retrieving containers from specific pod
         return pod_selected,container_selected
         """
-        specific_pod = kwargs.get("specific_pod", False)
-        if specific_pod:
-            pod_selected = pod_prefix
-        else:
-            pod_list = self.get_all_pods(pod_prefix=pod_prefix)
-            sys_random = random.SystemRandom()
-            pod_selected = pod_list[sys_random.randint(0, len(pod_list) - 1)]
+        pod_list = self.get_all_pods(pod_prefix=pod_prefix)
+        sys_random = random.SystemRandom()
+        pod_selected = pod_list[sys_random.randint(0, len(pod_list) - 1)]
         log.info("Pod selected : %s", pod_selected)
         container_list = self.get_container_of_pod(pod_name=pod_selected,
                                                    container_prefix=container_prefix)
