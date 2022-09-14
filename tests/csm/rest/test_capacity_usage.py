@@ -586,6 +586,7 @@ class TestSystemCapacity():
 
     # pylint: disable=broad-except
     # pylint: disable=too-many-statements
+    @pytest.mark.skip("recovery seq is same as test_33919 due to stateful set")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -615,23 +616,19 @@ class TestSystemCapacity():
 
         self.log.info("[START] Failure loop")
         for failure_cnt in range(1, self.kvalue + 1):
-#            deploy_name = self.deploy_list[failure_cnt]
-#            self.log.info("[Start] Shutdown the data pod safely")
-#            self.log.info("Deleting pod %s", deploy_name)
-#            resp = self.master.create_pod_replicas(num_replica=0, deploy=deploy_name)
-#            assert_utils.assert_false(resp[0], f"Failed to delete pod {deploy_name}")
-#            self.log.info("[End] Successfully deleted pod %s", deploy_name)
-
+            self.log.info("Iteration: %s", failure_cnt)
+            self.log.info("[Start] Shutdown the data pod safely")
             resp, set_name, num_replica = self.ext_obj.delete_data_pod()
-            deploy_name = f"{set_name}-{num_replica}"
-#            assert_utils.assert_false(resp, f"Failed to delete pod {deploy_name}")
             self.log.debug("Response: %s", resp)
+            self.log.info("Deleted replica: %s", deploy_name)
+            deploy_name = f"{set_name}-{num_replica}"
+            assert resp, f"Failed to delete pod {deploy_name}"
             self.failed_pod_restore.append([set_name, num_replica])
-            self.log.info("Printing set and replica for %s iteration", failure_cnt)
-            self.log.info("Set name and replica number is: %s", self.failed_pod_restore)
+            
+            self.log.info("Deleted replica list: %s", self.failed_pod_restore)
             self.restore_pod_data = True
             self.failed_pod.append(deploy_name)
-            self.log.info("[End] Successfully deleted pod")
+            self.log.info("[End] Successfully deleted pod %s", deploy_name)
 
             self.log.info("[Start] Check cluster status")
             resp = self.ha_obj.check_cluster_status(self.master)
@@ -685,22 +682,18 @@ class TestSystemCapacity():
         failure_cnt = len(self.failed_pod)
         for set_name, num_replica in self.failed_pod_restore:
             deploy_name = f"{set_name}-{num_replica}"
-            self.log.info("[Start]  Restore deleted pods : %s-%s", set_name, num_replica)
-            resp = self.ext_obj.restore_data_pod(set_name, num_replica)
-#            assert 
-
             self.log.info("[Start]  Restore deleted pods : %s", deploy_name)
-            resp = self.master.create_pod_replicas(num_replica=1, deploy=deploy_name)
+            resp = self.ext_obj.restore_data_pod(set_name, num_replica)
             self.log.debug("Response: %s", resp)
-            assert resp[0], f"Failed to restore pod by {self.restore_method} way"
-            self.log.info("Successfully restored pod by %s way", self.restore_method)
+            assert resp, f"Failed to restore pod {deploy_name}"
+            self.log.info("Successfully restored pod %s", deploy_name)
             self.failed_pod_restore.remove([set_name, num_replica])
             self.failed_pod.remove(deploy_name)
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
             failure_cnt -= 1
             self.log.info("[Start] Sleep %s", self.update_seconds)
             time.sleep(self.update_seconds)
-            self.log.info("[Start] Sleep %s", self.update_seconds)
+            self.log.info("[End] Sleep %s", self.update_seconds)
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
                                                           self.kvalue, test_cfg["err_margin"])
