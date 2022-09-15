@@ -1583,9 +1583,9 @@ class ProvDeployK8sCortxLib:
                 response = []
                 time_taken = time.time() - start_time
                 LOGGER.info("#### Services online. Time Taken : %s", time_taken)
+                response.append(resp[0])
                 response.append(resp[1])
                 response.append(time_taken)
-                response.append(resp[0])
                 break
             response = [False, 'Timeout']
         LOGGER.info("hctl_status = %s", resp[1])

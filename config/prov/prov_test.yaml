@@ -196,7 +196,7 @@ k8s_cortx_deploy:
   deploy_ha_timeout_key: "CORTX_DEPLOY_HA_TIMEOUT"
   deploy_server_timeout_key: "CORTX_DEPLOY_SERVER_TIMEOUT"
   deploy_ha_timeout_val: 1000
-  deploy_server_timeout_val: 1000
+  deploy_server_timeout_val: 1200
   timeout:
     pre-req: 120
     deploy: 7200
