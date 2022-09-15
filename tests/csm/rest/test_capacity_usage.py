@@ -585,7 +585,7 @@ class TestSystemCapacity():
 
     # pylint: disable=broad-except
     # pylint: disable=too-many-statements
-    #@pytest.mark.skip("recovery seq is same as test_33919 due to stateful set")
+    @pytest.mark.skip("recovery seq is same as test_33919 due to stateful set")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
