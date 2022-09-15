@@ -39,6 +39,7 @@ from config import HA_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from libs.csm.csm_interface import csm_api_factory
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -62,9 +63,11 @@ class TestMultiDataPodRestart:
         cls.hlth_master_list = []
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
+        cls.csm_obj = csm_api_factory("rest")
         cls.random_time = cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = cls.node_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
+        cls.qvalue = cls.kvalue = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -100,6 +103,15 @@ class TestMultiDataPodRestart:
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Precondition: Verified cluster is up and running and all pods are online.")
+        LOGGER.info("Get the value for number pods that can go down for cluster")
+        resp = self.ha_obj.calculate_multi_value(self.csm_obj, len(self.node_worker_list))
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Maximum number of pod that can go down is: %s", resp[1])
+        self.qvalue = resp[1]
+        LOGGER.info("Getting K value for the cluster")
+        resp = self.csm_obj.get_sns_value()
+        LOGGER.info("K value for the cluster is: %s", resp[1])
+        self.kvalue = resp[1]
         LOGGER.info("COMPLETED: Setup operations. ")
 
     def teardown_method(self):
