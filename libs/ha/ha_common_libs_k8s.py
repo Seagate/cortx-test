@@ -1994,6 +1994,6 @@ class HAK8s:
             return False, "Could not retrieve DIX values"
         LOGGER.info("Replication factor for cluster is: %s", resp[1])
         quorum_req = (resp[1] / 2) + 1
-        LOGGER.debug("Minimum IO services required for quorum are: %s", quorum_req)
-        multi_value = num_nodes - quorum_req
+        LOGGER.debug("Minimum IO services required for quorum are: %s", int(quorum_req))
+        multi_value = num_nodes - int(quorum_req)
         return True, multi_value
