@@ -585,7 +585,7 @@ class TestSystemCapacity():
 
     # pylint: disable=broad-except
     # pylint: disable=too-many-statements
-    @pytest.mark.skip("recovery seq is same as test_33919 due to stateful set")
+    #@pytest.mark.skip("recovery seq is same as test_33919 due to stateful set")
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -619,8 +619,8 @@ class TestSystemCapacity():
             self.log.info("[Start] Shutdown the data pod safely")
             resp, set_name, num_replica = self.ext_obj.delete_data_pod()
             self.log.debug("Response: %s", resp)
-            self.log.info("Deleted replica: %s", deploy_name)
             deploy_name = f"{set_name}-{num_replica}"
+            self.log.info("Deleted replica: %s", deploy_name)
             assert resp, f"Failed to delete pod {deploy_name}"
             self.restore_list.append([set_name, num_replica])
 
@@ -680,6 +680,7 @@ class TestSystemCapacity():
 
         self.log.info("[START] Recovery loop")
         failure_cnt = len(self.failed_pod)
+        self.restore_list.reverse()
         for set_name, num_replica in self.restore_list:
             self.log.info("Failure count: %s", failure_cnt)
             deploy_name = f"{set_name}-{num_replica}"
@@ -701,6 +702,7 @@ class TestSystemCapacity():
             #TODO: Commented due to CORTX-34274
             #assert result[0], result[1] + f"for {failure_cnt} failures"
         self.deploy = True
+        self.restore_pod_data = False
 
     # pylint: disable=broad-except
     # pylint: disable=too-many-statements
