@@ -22,13 +22,14 @@
 import json
 import os
 import logging
-from multiprocessing import Process
-from time import perf_counter_ns
+import time
 from datetime import timedelta
+from multiprocessing import Process
 
 
 from config import CMN_CFG
 from config.s3 import S3_CFG
+from commons import constants as const
 from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
@@ -36,6 +37,7 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import calculate_checksum
 from commons.utils.system_utils import path_exists
+from libs.csm.csm_interface import csm_api_factory
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
@@ -97,6 +99,43 @@ def get_cortx_capacity() -> tuple:
     total, avail, used = health.get_sys_capacity()
 
     return total, avail, used
+
+
+def get_cortx_rgw_bytecount() -> tuple:
+    """Get bytecount stats for CORTX RGW."""
+    csm_obj = csm_api_factory("rest")
+    LOG.info("Sleep for capacity update interval %s seconds", const.Rest.CAPACITY_UPDATE_TIMEOUT)
+    time.sleep(const.Rest.CAPACITY_UPDATE_TIMEOUT)
+    response = csm_obj.verify_get_bytecount()
+    return response['bytecount']
+
+
+def poll_cluster_capacity(check_increase=True, sleep_interval=300, max_retries=5,
+                          initial_capacity=0) -> bool:
+    """Poll cluster capacity to check for increase/decrease in capacity used"""
+    retry_count = 0
+    space_reclaimed = False
+    while True:
+        LOG.info("Cluster capacity check (attempt %s)", retry_count+1)
+        if const.S3_ENGINE_RGW == CMN_CFG["s3_engine"]:
+            used_capacity = get_cortx_rgw_bytecount()['healthy']
+        else:
+            used_capacity = get_cortx_capacity()[-1]
+        LOG.info("CORTX capacity: %s", used_capacity)
+        if check_increase and initial_capacity <= used_capacity:
+            space_reclaimed = True
+            break
+        if not check_increase and initial_capacity > used_capacity:
+            space_reclaimed = True
+            break
+        LOG.info("Capacity increase/decrease check failed")
+        retry_count += 1
+        if retry_count < max_retries:
+            LOG.info("Retrying after %s seconds", sleep_interval)
+            time.sleep(sleep_interval)
+        else:
+            break
+    return space_reclaimed
 
 
 def create_s3_acc(
@@ -203,8 +242,8 @@ def perform_s3_io(s3_obj, s3_bucket, dir_path, obj_prefix="S3obj", size=10, num_
     assert_utils.assert_true(resp, f"Path not exists: {dir_path}")
     LOG.info("S3 IO started....")
     for _ in range(num_sample):
-        f1name = f"{obj_prefix}-{perf_counter_ns()}.txt"
-        f2name = f"{obj_prefix}-{perf_counter_ns()}.txt"
+        f1name = f"{obj_prefix}-{time.perf_counter_ns()}.txt"
+        f2name = f"{obj_prefix}-{time.perf_counter_ns()}.txt"
         f1path = os.path.join(dir_path, f1name)
         f2path = os.path.join(dir_path, f2name)
         resp = system_utils.create_file(f1path, count=size)
@@ -424,12 +463,7 @@ def validate_copy_content(src_bucket, src_object, dest_bucket, dest_object, **kw
     s3_test_object = kwargs.get("s3_testobj", "None")
     down_path1 = kwargs.get("down_path1", "None")
     down_path2 = kwargs.get("down_path2", "None")
-    src_resp = s3_test_object.object_info(src_bucket, src_object)
-    dest_resp = s3_test_object.object_info(dest_bucket, dest_object)
-    LOG.debug("ETag of source copy object %s", src_resp[1]["ETag"])
-    LOG.debug("ETag of destination copy object %s", dest_resp[1]["ETag"])
-    LOG.info("Compare ETag of source and destination copy object")
-    assert_utils.assert_equal(src_resp[1]["ETag"], dest_resp[1]["ETag"])
+    etag_verify = kwargs.get("etag_verify", True)
     LOG.info("Compare content of source and destination copy object")
     resp = s3_test_object.object_download(src_bucket, src_object, down_path1)
     assert_utils.assert_true(resp[0], resp[1])
@@ -438,8 +472,16 @@ def validate_copy_content(src_bucket, src_object, dest_bucket, dest_object, **kw
     assert_utils.assert_true(resp[0], resp[1])
     destchecksum = calculate_checksum(down_path2)
     assert_utils.assert_equal(srcchecksum, destchecksum, "Checksum match failed.")
+    LOG.info("Validated checksum of source and destination copy object")
+    if etag_verify:
+        src_resp = s3_test_object.object_info(src_bucket, src_object)
+        dest_resp = s3_test_object.object_info(dest_bucket, dest_object)
+        LOG.debug("ETag of source copy object %s", src_resp[1]["ETag"])
+        LOG.debug("ETag of destination copy object %s", dest_resp[1]["ETag"])
+        LOG.info("Compare ETag of source and destination copy object")
+        assert_utils.assert_equal(src_resp[1]["ETag"], dest_resp[1]["ETag"])
+        LOG.info("Validated ETag of source and destination copy object")
     LOG.info("Validated content of copy object")
-
 
 def list_objects_in_bucket(bucket, objects, s3_test_obj):
     """Assert if any of the given object not listed in given bucket"""
@@ -489,8 +531,8 @@ class S3BackgroundIO:
         :param io_bucket_name: IO bucket name.
         """
         self.s3_test_lib_obj = s3_test_lib_obj
-        self.io_bucket_name = io_bucket_name if io_bucket_name else "s3io-bkt-{}".format(
-            perf_counter_ns())
+        self.io_bucket_name = io_bucket_name \
+                              if io_bucket_name else f"s3io-bkt-{time.perf_counter_ns()}"
         self.log_prefix = "parallel_io"
         self.parallel_ios = None
         assert_utils.assert_true(path_exists(s3bench.S3_BENCH_PATH),
