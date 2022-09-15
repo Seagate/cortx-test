@@ -394,6 +394,7 @@ class TestSystemCapacity():
             assert result[0], result[1] + f"for {failure_cnt} failures"
         assert self.csm_obj.verify_checksum(cap_df)
         self.deploy = True
+        self.restore_pod_data = False
 
     # pylint: disable=broad-except
     @pytest.mark.skip(reason="CORTX-31578")
@@ -522,6 +523,7 @@ class TestSystemCapacity():
             assert result[0], result[1] + f"for {failure_cnt} failures"
         assert self.csm_obj.verify_checksum(cap_df)
         self.deploy = True
+        self.restore_pod_data = False
 
     # pylint: disable=too-many-statements
     @pytest.mark.lc
