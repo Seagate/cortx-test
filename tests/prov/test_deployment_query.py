@@ -23,13 +23,13 @@
 """Failure Domain (k8s based Cortx) Test Suite."""
 import logging
 import os.path
-import time
-import base64
+
+
 from http import HTTPStatus
 import os
 import secrets
 import time
-from multiprocessing import Queue
+
 from time import perf_counter_ns
 import pytest
 from commons.params import LOG_DIR
@@ -41,17 +41,13 @@ from config import  PROV_CFG
 from config import  DEPLOY_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from commons import configmanager, cortxlogging, constants as const
-from commons.constants import K8S_PRE_DISK, POD_NAME_PREFIX
+
 from libs.csm.csm_interface import csm_api_factory
 from libs.ha.ha_common_libs_k8s import HAK8s
 from commons.helpers.health_helper import Health
 from libs.ha.ha_common_libs_k8s import HAK8s
-from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from libs.s3.s3_test_lib import S3TestLib
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
-from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG
 
@@ -248,7 +244,6 @@ class TestQueryDeployment:
                                                               self.deploy_end_time, expected_response=HTTPStatus.OK)
         assert result, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
-
 
     @pytest.mark.lc
     @pytest.mark.three_node_deployment
