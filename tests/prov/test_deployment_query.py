@@ -24,24 +24,14 @@
 import logging
 import os.path
 import time
-
 import base64
-import binascii
-import random
-import string
 from http import HTTPStatus
 import os
 import secrets
-import threading
 import time
 from multiprocessing import Queue
 from time import perf_counter_ns
-
-
 import pytest
-
-from commons import constants as const
-from commons.helpers.pods_helper import LogicalNode
 from commons.params import LOG_DIR
 from commons.params import LATEST_LOG_FOLDER
 from commons.utils import assert_utils
@@ -50,15 +40,11 @@ from config import CMN_CFG
 from config import  PROV_CFG
 from config import  DEPLOY_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
-from commons import configmanager, cortxlogging, constants
-from commons.constants import K8S_SCRIPTS_PATH, K8S_PRE_DISK, POD_NAME_PREFIX
+from commons import configmanager, cortxlogging, constants as const
+from commons.constants import K8S_PRE_DISK, POD_NAME_PREFIX
 from libs.csm.csm_interface import csm_api_factory
 from libs.ha.ha_common_libs_k8s import HAK8s
 from commons.helpers.health_helper import Health
-from config import CMN_CFG
-from config import HA_CFG
-from config.s3 import S3_CFG
-from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -211,14 +197,14 @@ class TestQueryDeployment:
         resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         if self.collect_sb:
-           path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
-           support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
-                                                           scripts_path=
-                                                           self.deploy_conf['k8s_dir'])
+            path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
+            support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
+                                                            scripts_path=
+                                                            self.deploy_conf['k8s_dir'])
         if self.destroy_flag:
-           resp = self.deploy_obj.destroy_setup(self.master_node_list[0],
-                                                self.worker_node_list)
-           assert_utils.assert_true(resp)
+            resp = self.deploy_obj.destroy_setup(self.master_node_list[0],
+                                                 self.worker_node_list)
+            assert_utils.assert_true(resp)
         self.deploy_obj.close_connections(self.master_node_list, self.worker_node_list)
 
 
@@ -237,7 +223,8 @@ class TestQueryDeployment:
         self.log.info("Deploy start and end time: %s %s ", self.deploy_start_time,
                       self.deploy_end_time)
         result, err_msg = self.csm_obj.verify_system_topology(self.deploy_start_time,
-                                                              self.deploy_end_time, expected_response=HTTPStatus.OK)
+                                                              self.deploy_end_time,
+                                                              expected_response=HTTPStatus.OK)
         assert result, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
