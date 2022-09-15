@@ -370,6 +370,7 @@ class TestSystemCapacity():
         self.log.info("[END] Failure loop")
 
         self.log.info("[START] Recovery loop")
+        self.restore_list.reverse()
         failure_cnt = len(self.failed_pod)
         for set_name, num_replica in self.restore_list:
             self.log.info("Failure count: %s", failure_cnt)
@@ -497,6 +498,7 @@ class TestSystemCapacity():
         self.log.info("[END] Failure loop")
 
         self.log.info("[START] Recovery loop")
+        self.restore_list.reverse()
         failure_cnt = len(self.failed_pod)
         for set_name, num_replica in self.restore_list:
             self.log.info("Failure count: %s", failure_cnt)
