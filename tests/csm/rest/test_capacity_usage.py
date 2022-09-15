@@ -674,7 +674,7 @@ class TestSystemCapacity():
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
                                                           self.kvalue, test_cfg["err_margin"])
-            #TODO: Commented due to CORTX-34274
+            # todo Commented due to CORTX-34274
             #assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
@@ -699,7 +699,7 @@ class TestSystemCapacity():
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
                                                           self.kvalue, test_cfg["err_margin"])
-            #TODO: Commented due to CORTX-34274
+            # todo Commented due to CORTX-34274
             #assert result[0], result[1] + f"for {failure_cnt} failures"
         self.deploy = True
         self.restore_pod_data = False
