@@ -397,16 +397,16 @@ class SystemCapacity(RestTestLib):
                     written_on.append(node)
             corrupt_shards = len(set(written_on) & set(failed_pod))
             if corrupt_shards == 0:
-                self.log.debug("Checking for %s less than to K value", corrupt_shards)
+                self.log.debug("Checking for %s is zero", corrupt_shards)
                 healthy += cap_df["data_written"][row]
             elif corrupt_shards < kvalue:
-                self.log.debug("Checking for %s greater than to K value", corrupt_shards)
+                self.log.debug("Checking for %s less than to K value", corrupt_shards)
                 degraded += cap_df["data_written"][row]
             elif corrupt_shards == kvalue:
-                self.log.debug("Checking for %s greater than to K value", corrupt_shards)
+                self.log.debug("Checking for %s equal to K value", corrupt_shards)
                 critical += cap_df["data_written"][row]
             else:
-                self.log.debug("Checking for %s less than to K value", corrupt_shards)
+                self.log.debug("Checking for %s greater than to K value", corrupt_shards)
                 damaged += cap_df["data_written"][row]
 
         total_written = healthy + degraded + critical + damaged
