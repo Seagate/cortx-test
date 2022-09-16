@@ -215,7 +215,7 @@ configure-tools: aws-configure s3fs-configure s3cmd-configure minio-configure
 apache-jmeter-install:
 	@echo "###Installing apache-jmeter in current machine###"
 	yum install -y java-1.8.0-openjdk
-	wget https://downloads.apache.org//jmeter/binaries/$(APACHE_J_METER)
+	wget https://downloads.apache.org/jmeter/binaries/$(APACHE_J_METER)
 	tar -zxf $(APACHE_J_METER) -C /usr/
 	mv /usr/apache-jmeter-5.5 /usr/apachejmeter
 	rm -rf $(APACHE_J_METER)
