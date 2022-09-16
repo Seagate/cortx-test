@@ -19,7 +19,7 @@
   dir_path=/mnt/nfs_share
   if [ $# -eq 4 ]
   then
-      log_path=$4/$1/$2/
+      log_path=$4/$1/$2/$(date +"%Y-%m-%d-%H-%M-%S")
   else
       log_path=deployment/$1/$2
   fi
@@ -29,7 +29,7 @@
   cmd3="mkdir -p $LOG_PATH"
   mount_cmd="mount cftic2.pun.seagate.com:/cftshare_temp $dir_path"
   mv_cmd="mv $3/log/latest/TEST-* $LOG_PATH"
-  mv_cmd2="mv $3/support_bundle/*.tar $LOG_PATH"
+  mv_cmd2="mv $3/support_bundle/*.tgz $LOG_PATH"
   mv_cmd3="mv $3/crash_files/*.gz $LOG_PATH"
   mv_csv="cp $3/log/latest/*.csv $LOG_PATH"
   mv_log="mv $3/log/latest/deployment.log $LOG_PATH"
@@ -60,15 +60,15 @@
       echo "INFO: Creating dir"
       eval "$cmd3"
   fi
-  if [ -f "$3/log/latest/TEST-N*" ]
+  if ls $3/log/latest/TEST-* 1> /dev/null 2>&1;
   then
       eval "$mv_cmd"
   fi
-  if [ -f "$3/support_bundle/*.tar" ]
+  if ls $3/support_bundle/*.tgz 1> /dev/null 2>&1;
   then
       eval "$mv_cmd2"
   fi
-  if [ -f "$3/crash_files/*.gz" ]
+  if ls $3/crash_files/*.gz 1> /dev/null 2>&1;
   then
       eval "$mv_cmd3"
   fi
@@ -76,11 +76,11 @@
   then
       eval "$mv_log"
   fi
-  if [ -f "$3/log/latest/*.csv" ]
+  if ls $3/log/latest/*.csv 1> /dev/null 2>&1;
   then
       eval "$mv_csv"
   fi
-  if [ -f "$3/log/latest/dst" ]
+  if [ -d "$3/log/latest/dst" ]
   then
       eval "$mv_dst"
   fi
