@@ -100,7 +100,6 @@ class TestMultiServerPodRestart:
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Precondition: Verified cluster is up and running and all pods are online.")
-        LOGGER.info("Get the value for number pods that can go down for cluster")
         resp = self.ha_obj.calculate_multi_value(self.csm_obj, len(self.node_worker_list))
         assert_utils.assert_true(resp[0], resp[1])
         self.qvalue = resp[1]
@@ -112,7 +111,7 @@ class TestMultiServerPodRestart:
         self.kvalue = resp[1]
         self.nvalue = len(self.node_worker_list)
         LOGGER.info("N value for the given cluster is: %s", self.nvalue)
-        LOGGER.info("Get data pod with prefix %s", const.POD_NAME_PREFIX)
+        LOGGER.info("Get server pod with prefix %s", const.SERVER_POD_NAME_PREFIX)
         sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         sts_list = list(sts_dict.keys())
         LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)

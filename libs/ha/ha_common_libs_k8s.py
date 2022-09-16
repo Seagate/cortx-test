@@ -1987,8 +1987,9 @@ class HAK8s:
         :param num_nodes: Number of worker nodes in cluster
         :return: tuple
         """
-        LOGGER.info("Cluster has %s total number of worker nodes", num_nodes)
-        LOGGER.info("Get the DIX values from the cluster")
+        LOGGER.info("Calculate the value for number pods that can go down for cluster")
+        LOGGER.debug("Cluster has %s total number of worker nodes", num_nodes)
+        LOGGER.debug("Get the DIX values from the cluster")
         resp = csm_obj.get_dix_value()
         if not resp:
             return False, "Could not retrieve DIX values"

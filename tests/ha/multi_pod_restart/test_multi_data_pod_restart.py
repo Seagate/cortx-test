@@ -102,7 +102,6 @@ class TestMultiDataPodRestart:
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Precondition: Verified cluster is up and running and all pods are online.")
-        LOGGER.info("Get the value for number pods that can go down for cluster")
         resp = self.ha_obj.calculate_multi_value(self.csm_obj, len(self.node_worker_list))
         assert_utils.assert_true(resp[0], resp[1])
         self.qvalue = resp[1]
