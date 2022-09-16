@@ -30,6 +30,7 @@ from commons import cortxlogging
 from commons.utils import assert_utils
 from commons.utils import support_bundle_utils as sb
 from commons.constants import RESTORE_SCALE_REPLICAS, K8S_SCRIPTS_PATH, K8S_PRE_DISK
+from commons.constants import  POD_NAME_PREFIX
 from commons.params import LOG_DIR
 from config import CMN_CFG
 from config.s3 import S3_CFG
@@ -71,8 +72,9 @@ class TestSystemCapacity():
         cls.node_list = cls.csm_obj.workers
         cls.log.info("Master node object: %s", cls.master)
         cls.restore_method = None
+        cls.data_pod_sts_list = []
+        cls.data_pod_count = 0
         cls.restore_list = []
-        cls.restored_list = []
         cls.deployment_name = []
         cls.failed_pod = []
         cls.deployment_backup = None
@@ -101,6 +103,11 @@ class TestSystemCapacity():
         resp = self.ha_obj.poll_cluster_status(self.master)
         assert resp[0], resp[1]
         self.log.info("Cleanup: Cluster status checked successfully")
+
+        sts_dict = self.master.get_sts_pods(pod_prefix=POD_NAME_PREFIX)
+        self.data_pod_sts_list = list(sts_dict.keys())
+        self.log.info("%s Statefulset: %s", POD_NAME_PREFIX, self.data_pod_sts_list)
+        self.data_pod_count = len(sts_dict[self.data_pod_sts_list[0]])
 
         self.log.info("Creating S3 account")
         resp = self.csm_obj.create_s3_account()
@@ -148,16 +155,11 @@ class TestSystemCapacity():
         self.log.info("[START] Teardown Method")
         if self.restore_pod_data:
             self.log.info("Restore deleted data pods.")
-            for restore_pod_info in self.restore_list:
-                if restore_pod_info not in self.restored_list:
-                    self.log.info("Restoring for list %s", restore_pod_info)
-                    resp = self.ext_obj.restore_data_pod(restore_pod_info[0],
-                                                        restore_pod_info[1])
-                    self.log.debug("Response: %s", resp)
-                    assert resp, "Failed to restore pod"
-                    self.restored_list.append(restore_pod_info)
-                else:
-                    self.log.debug("Already was restored: %s", restore_pod_info)
+            for sts_name in self.data_pod_sts_list:
+                self.log.info("Restoring for list %s", sts_name)
+                resp = self.ext_obj.restore_data_pod(sts_name, self.data_pod_count)
+                self.log.debug("Response: %s", resp)
+                assert resp, "Failed to restore pod"
             self.log.info("Successfully restored data pod")
             self.restore_list = []
 
@@ -371,7 +373,8 @@ class TestSystemCapacity():
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
                                                           self.kvalue, test_cfg["err_margin"])
-            # assert result[0], result[1]
+            #Commented below line until CORTX-34274 is fixed
+            assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
         self.log.info("[START] Recovery loop")
@@ -385,7 +388,6 @@ class TestSystemCapacity():
             self.log.debug("Response: %s", resp)
             assert resp, f"Failed to restore pod {deploy_name}"
             self.log.info("Successfully restored pod %s", deploy_name)
-            self.restored_list.append([set_name, num_replica])
             self.failed_pod.remove(deploy_name)
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
             failure_cnt -= 1
@@ -501,7 +503,8 @@ class TestSystemCapacity():
             resp = self.csm_obj.get_degraded_all(self.csm_obj.hlth_master)
             result = self.csm_obj.verify_flexi_protection(resp, cap_df, self.failed_pod,
                                                           self.kvalue, test_cfg["err_margin"])
-            # assert result[0], result[1]
+            #Commented below line until CORTX-34274 is fixed
+            assert result[0], result[1]
         self.log.info("[END] Failure loop")
 
         self.log.info("[START] Recovery loop")
@@ -515,7 +518,6 @@ class TestSystemCapacity():
             self.log.debug("Response: %s", resp)
             assert resp, f"Failed to restore pod {deploy_name}"
             self.log.info("Successfully restored pod %s", deploy_name)
-            self.restored_list.append([set_name, num_replica])
             self.failed_pod.remove(deploy_name)
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
             failure_cnt -= 1
@@ -718,7 +720,6 @@ class TestSystemCapacity():
             self.log.debug("Response: %s", resp)
             assert resp, f"Failed to restore pod {deploy_name}"
             self.log.info("Successfully restored pod %s", deploy_name)
-            self.restored_list.append([set_name, num_replica])
             self.failed_pod.remove(deploy_name)
             self.log.info("[End] Restore deleted pods : %s", deploy_name)
             failure_cnt -= 1
