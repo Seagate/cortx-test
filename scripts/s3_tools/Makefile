@@ -30,7 +30,7 @@ VERIFY_SSL=True
 VALIDATE_CERTS=True
 CA_CRT=/etc/ssl/stx-s3-clients/s3/ca.crt
 NFS_SHARE=cftic2.pun.seagate.com:/cftshare/jclientCloud/
-APACHE_J_METER=apache-jmeter-5.4.1.tgz
+APACHE_J_METER=apache-jmeter-5.5.tgz
 
 ifeq ($(VERIFY_SSL), True)
    ssl=--ssl
@@ -217,7 +217,7 @@ apache-jmeter-install:
 	yum install -y java-1.8.0-openjdk
 	wget https://downloads.apache.org//jmeter/binaries/$(APACHE_J_METER)
 	tar -zxf $(APACHE_J_METER) -C /usr/
-	mv /usr/apache-jmeter-5.4.1 /usr/apachejmeter
+	mv /usr/apache-jmeter-5.5 /usr/apachejmeter
 	rm -rf $(APACHE_J_METER)
 	@echo "###Installed apache jmeter in current machine###"
 
