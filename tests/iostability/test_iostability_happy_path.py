@@ -115,10 +115,11 @@ class TestIOWorkload:
         """Teardown method."""
         self.log.info("Teardown method")
         path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER)
+        sb_dir = os.path.join("support_bundle")
         if not self.test_completed:
             self.mail_notify.event_fail.set()
             self.log.info("Test Failure observed, collecting support bundle")
-            resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=path,
+            resp = support_bundle_utils.collect_support_bundle_k8s(local_dir_path=sb_dir,
                                                                    scripts_path=K8S_SCRIPTS_PATH)
             assert_utils.assert_true(resp)
             resp = self.log_collect.collect_logs(path=path)

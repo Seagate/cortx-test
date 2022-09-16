@@ -1979,3 +1979,23 @@ class HAK8s:
         if failed_del:
             return False, failed_del
         return True, "User deleted successfully"
+
+    def calculate_multi_value(self, csm_obj, num_nodes):
+        """
+        Function to calculate the value for how many pods can go down in a given cluster.
+        :param csm_obj: Object for csm rest calls
+        :param num_nodes: Number of worker nodes in cluster
+        :return: tuple
+        """
+        LOGGER.info("Calculate the value for number pods that can go down for cluster")
+        LOGGER.debug("Cluster has %s total number of worker nodes", num_nodes)
+        LOGGER.debug("Get the DIX values from the cluster")
+        resp = csm_obj.get_dix_value()
+        if not resp:
+            return False, "Could not retrieve DIX values"
+        LOGGER.info("Replication factor for cluster is: %s", resp[1])
+        quorum_req = (resp[1] / 2) + 1
+        LOGGER.debug("Minimum IO services required for quorum are: %s", int(quorum_req))
+        multi_value = num_nodes - int(quorum_req)
+        LOGGER.info("Maximum number of pods that can go down: %s", multi_value)
+        return True, multi_value
