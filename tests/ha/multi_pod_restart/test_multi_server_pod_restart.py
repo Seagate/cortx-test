@@ -19,16 +19,16 @@
 #
 
 """
-HA test suite for Multiple data Pod restart
+HA test suite for Multiple server Pod restart
 """
 
 import logging
 import secrets
 import time
-from time import perf_counter_ns
 
 import pytest
 
+from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
@@ -42,9 +42,9 @@ from libs.csm.csm_interface import csm_api_factory
 LOGGER = logging.getLogger(__name__)
 
 
-class TestMultiDataPodRestart:
+class TestMultiServerPodRestart:
     """
-    Test suite for Multiple Data Pod Restart
+    Test suite for Multiple Server Pod Restart
     """
 
     @classmethod
@@ -61,10 +61,11 @@ class TestMultiDataPodRestart:
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.csm_obj = csm_api_factory("rest")
-        cls.random_time = cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = None
+        cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = cls.node_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
         cls.qvalue = cls.kvalue = cls.nvalue = None
+        cls.set_type = cls.set_name = cls.last_pod = cls.num_replica = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
 
@@ -91,10 +92,9 @@ class TestMultiDataPodRestart:
         This function will be invoked prior to each test case.
         """
         LOGGER.info("STARTED: Setup Operations")
-        self.random_time = int(time.time())
         self.restore_pod = False
         self.s3_clean = dict()
-        self.s3acc_name = f"ha_s3acc_{int(perf_counter_ns())}"
+        self.s3acc_name = f"ha_s3acc_{int(time.perf_counter_ns())}"
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
         LOGGER.info("Precondition: Verify cluster is up and running and all pods are online.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
@@ -103,7 +103,6 @@ class TestMultiDataPodRestart:
         LOGGER.info("Get the value for number pods that can go down for cluster")
         resp = self.ha_obj.calculate_multi_value(self.csm_obj, len(self.node_worker_list))
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Maximum number of pod that can go down is: %s", resp[1])
         self.qvalue = resp[1]
         LOGGER.info("Getting K value for the cluster")
         resp = self.csm_obj.get_sns_value()
@@ -113,6 +112,17 @@ class TestMultiDataPodRestart:
         self.kvalue = resp[1]
         self.nvalue = len(self.node_worker_list)
         LOGGER.info("N value for the given cluster is: %s", self.nvalue)
+        LOGGER.info("Get data pod with prefix %s", const.POD_NAME_PREFIX)
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.SERVER_POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        self.last_pod = sts_dict[sts][-1]
+        self.set_type, self.set_name = self.node_master_list[0].get_set_type_name(
+            pod_name=self.last_pod)
+        resp = self.node_master_list[0].get_num_replicas(self.set_type, self.set_name)
+        assert_utils.assert_true(resp[0], resp)
+        self.num_replica = int(resp[1])
         LOGGER.info("COMPLETED: Setup operations. ")
 
     def teardown_method(self):
@@ -129,7 +139,9 @@ class TestMultiDataPodRestart:
                                            restore_method=self.restore_method,
                                            restore_params={"deployment_name": self.deployment_name,
                                                            "deployment_backup":
-                                                               self.deployment_backup})
+                                                               self.deployment_backup,
+                                                           "num_replica": self.num_replica,
+                                                           "set_name": self.set_name})
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
@@ -143,7 +155,7 @@ class TestMultiDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-45588")
-    def test_read_after_server_pods_restart(self):
+    def test_read_after_multi_server_pods_restart(self):
         """
         Verify READs after random between K-1 to N-1 server pods restart
         """
@@ -153,7 +165,7 @@ class TestMultiDataPodRestart:
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-45589")
-    def test_read_during_server_pods_restart(self):
+    def test_read_during_multi_server_pods_restart(self):
         """
         Verify READs in loop during random between K-1 to N-1 server pod restart
         """

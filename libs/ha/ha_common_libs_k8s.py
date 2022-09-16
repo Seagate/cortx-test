@@ -1996,4 +1996,5 @@ class HAK8s:
         quorum_req = (resp[1] / 2) + 1
         LOGGER.debug("Minimum IO services required for quorum are: %s", int(quorum_req))
         multi_value = num_nodes - int(quorum_req)
+        LOGGER.info("Maximum number of pods that can go down: %s", multi_value)
         return True, multi_value
