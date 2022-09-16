@@ -33,6 +33,7 @@ from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG
+from config import HA_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -144,11 +145,10 @@ class TestMultiServerPodRestart:
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
-        LOGGER.info("Cleanup: Check cluster status and start it if not up.")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        if not resp[0]:
-            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleanup: Check cluster status.")
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0],
+                                               HA_CFG["common_params"]["60sec_delay"])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Teardown completed.")
 
     @pytest.mark.ha

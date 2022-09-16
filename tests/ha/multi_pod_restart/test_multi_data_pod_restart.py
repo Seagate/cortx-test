@@ -142,11 +142,10 @@ class TestMultiDataPodRestart:
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
-        LOGGER.info("Cleanup: Check cluster status and start it if not up.")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        if not resp[0]:
-            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleanup: Check cluster status.")
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0],
+                                               HA_CFG["common_params"]["60sec_delay"])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-statements
