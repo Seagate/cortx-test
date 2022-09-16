@@ -658,7 +658,6 @@ class QueryDeployment(RestTestLib):
             self.log.error(err_msg)
         return result, err_msg
 
-
     def get_sns_value(self):
         """
         return SNS value using Query deployment table
@@ -667,10 +666,10 @@ class QueryDeployment(RestTestLib):
         assert resp.status_code == HTTPStatus.OK, "Status code check failed."
         data = resp.json()['topology']['storage_sets'][0]['durability']['data']
         data = data.split("+")
-        kvalue = int(data[0])
-        nvalue = int(data[1])
+        nvalue = int(data[0])
+        kvalue = int(data[1])
         svalue = int(data[2])
-        return kvalue, nvalue, svalue
+        return nvalue, kvalue, svalue
 
     def get_dix_value(self):
         """
