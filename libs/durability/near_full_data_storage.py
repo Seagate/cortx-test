@@ -30,6 +30,7 @@ from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG
 from config import DURABILITY_CFG
 from config.s3 import S3_CFG
+from libs.csm.csm_interface import csm_api_factory
 from libs.durability.disk_failure_recovery_libs import DiskFailureRecoveryLib
 from scripts.s3_bench import s3bench
 
@@ -60,24 +61,26 @@ class NearFullStorage:
                     avail_cap, used_cap)
         current_usage_per = round(used_cap / total_cap * 100)
 
-        if memory_percent > current_usage_per:
-            # Get SNS configuration to retrieve available user data space
-            durability_values = DiskFailureRecoveryLib.retrieve_durability_values(master_obj, 'sns')
-            if not durability_values[0]:
-                LOGGER.error("Error in retrieving SNS values")
-                return durability_values
-            sns_values = {key: int(value) for key, value in durability_values[1].items()}
-            LOGGER.debug("Durability Values (SNS) %s", sns_values)
-            data_sns = sns_values['data']
-            sum_sns = sum(sns_values.values())
-            LOGGER.debug("Current usage percent : %s Expected disk usage percent : %s",
-                         current_usage_per, memory_percent)
-            write_percent = memory_percent - current_usage_per
-            expected_writes = (write_percent * total_cap) / 100
-            user_data_writes = data_sns / sum_sns * expected_writes
-            LOGGER.info("User writes to be performed %s bytes to attain %s percent full disk space",
-                        user_data_writes, memory_percent)
-            return True, user_data_writes
+        kvalue, nvalue, svalue = csm_api_factory("rest").get_sns_value()
+        # durability_values = DiskFailureRecoveryLib.retrieve_durability_values(master_obj,
+        # 'sns')
+        # if not durability_values[0]:
+        #     LOGGER.error("Error in retrieving SNS values")
+        #     return durability_values
+        # sns_values = {key: int(value) for key, value in durability_values[1].items()}
+        # LOGGER.debug("Durability Values (SNS) %s", sns_values)
+        # data_sns = sns_values['data']
+        # sum_sns = sum(sns_values.values())
+        LOGGER.debug("nvalue, kvalue, svalue : %s %s %s", nvalue, kvalue, svalue)
+        sum_sns = nvalue + kvalue + svalue
+        LOGGER.debug("Current usage percent : %s Expected disk usage percent : %s",
+                     current_usage_per, memory_percent)
+        write_percent = memory_percent - current_usage_per
+        expected_writes = (write_percent * total_cap) / 100
+        user_data_writes = nvalue / sum_sns * expected_writes
+        LOGGER.info("User writes to be performed %s bytes to attain %s percent full disk space",
+                    user_data_writes, memory_percent)
+        return True, user_data_writes
         LOGGER.info("Current Memory usage(%s) is already more than expected memory usage(%s)",
                     current_usage_per, memory_percent)
         return True, 0
