@@ -70,6 +70,7 @@ class TestMultiDataPodRestart:
         cls.qvalue = cls.kvalue = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
+        cls.rest_obj = S3AccountOperations()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -87,7 +88,13 @@ class TestMultiDataPodRestart:
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
 
-        cls.rest_obj = S3AccountOperations()
+        resp = cls.ha_obj.calculate_multi_value(cls.csm_obj, len(cls.node_worker_list))
+        assert_utils.assert_true(resp[0], resp[1])
+        cls.qvalue = resp[1]
+        LOGGER.info("Getting K value for the cluster")
+        resp = cls.csm_obj.get_sns_value()
+        LOGGER.info("K value for the cluster is: %s", resp[1])
+        cls.kvalue = resp[1]
 
     def setup_method(self):
         """
@@ -102,13 +109,6 @@ class TestMultiDataPodRestart:
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Precondition: Verified cluster is up and running and all pods are online.")
-        resp = self.ha_obj.calculate_multi_value(self.csm_obj, len(self.node_worker_list))
-        assert_utils.assert_true(resp[0], resp[1])
-        self.qvalue = resp[1]
-        LOGGER.info("Getting K value for the cluster")
-        resp = self.csm_obj.get_sns_value()
-        LOGGER.info("K value for the cluster is: %s", resp[1])
-        self.kvalue = resp[1]
         LOGGER.info("Get data pod with prefix %s", const.POD_NAME_PREFIX)
         sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
         sts_list = list(sts_dict.keys())

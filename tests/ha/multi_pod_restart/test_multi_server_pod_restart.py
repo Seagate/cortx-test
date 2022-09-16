@@ -68,6 +68,7 @@ class TestMultiServerPodRestart:
         cls.set_type = cls.set_name = cls.last_pod = cls.num_replica = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
+        cls.rest_obj = S3AccountOperations()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -85,7 +86,17 @@ class TestMultiServerPodRestart:
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
 
-        cls.rest_obj = S3AccountOperations()
+        resp = cls.ha_obj.calculate_multi_value(cls.csm_obj, len(cls.node_worker_list))
+        assert_utils.assert_true(resp[0], resp[1])
+        cls.qvalue = resp[1]
+        LOGGER.info("Getting K value for the cluster")
+        resp = cls.csm_obj.get_sns_value()
+        if not resp:
+            assert_utils.assert_true(False, "Could not retrieve SNS values of cluster")
+        LOGGER.info("K value for the cluster is: %s", resp[1])
+        cls.kvalue = resp[1]
+        cls.nvalue = len(cls.node_worker_list)
+        LOGGER.info("N value for the given cluster is: %s", cls.nvalue)
 
     def setup_method(self):
         """
@@ -100,17 +111,6 @@ class TestMultiServerPodRestart:
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Precondition: Verified cluster is up and running and all pods are online.")
-        resp = self.ha_obj.calculate_multi_value(self.csm_obj, len(self.node_worker_list))
-        assert_utils.assert_true(resp[0], resp[1])
-        self.qvalue = resp[1]
-        LOGGER.info("Getting K value for the cluster")
-        resp = self.csm_obj.get_sns_value()
-        if not resp:
-            assert_utils.assert_true(False, "Could not retrieve SNS values of cluster")
-        LOGGER.info("K value for the cluster is: %s", resp[1])
-        self.kvalue = resp[1]
-        self.nvalue = len(self.node_worker_list)
-        LOGGER.info("N value for the given cluster is: %s", self.nvalue)
         LOGGER.info("Get server pod with prefix %s", const.SERVER_POD_NAME_PREFIX)
         sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.SERVER_POD_NAME_PREFIX)
         sts_list = list(sts_dict.keys())
