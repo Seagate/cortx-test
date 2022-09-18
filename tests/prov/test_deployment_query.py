@@ -353,3 +353,4 @@ class TestQueryDeployment:
         #                                   "OR the cluster is not online")
         # self.restore_pod = False
         self.log.info("##### Test ended -  %s #####", test_case_name)
+        
