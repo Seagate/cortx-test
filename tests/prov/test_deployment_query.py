@@ -36,14 +36,11 @@ from commons.params import LOG_DIR
 from commons.params import LATEST_LOG_FOLDER
 from commons.utils import assert_utils
 from commons.utils import support_bundle_utils
-from config import CMN_CFG
 from config import  PROV_CFG
 from config import  DEPLOY_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from commons import configmanager, cortxlogging, constants as const
-
 from libs.csm.csm_interface import csm_api_factory
-from libs.ha.ha_common_libs_k8s import HAK8s
 from commons.helpers.health_helper import Health
 from libs.ha.ha_common_libs_k8s import HAK8s
 from commons.helpers.pods_helper import LogicalNode
@@ -226,7 +223,8 @@ class TestQueryDeployment:
         self.log.info("Deploy start and end time: %s %s ", self.deploy_start_time,
                       self.deploy_end_time)
         result, err_msg = self.csm_obj.verify_system_topology(self.deploy_start_time,
-                                                              self.deploy_end_time, expected_response=HTTPStatus.OK)
+                                                              self.deploy_end_time,
+                                                              expected_response=HTTPStatus.OK)
         assert result, err_msg
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
