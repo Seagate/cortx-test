@@ -110,6 +110,7 @@ class TestQueryDeployment:
                         in deploy_config.yaml file
         """
         self.deploy_start_time = time.time()
+        self.log.info("Start time for deployment %s: ", self.deploy_start_time)
         log_device = kwargs.get("log_device_flag", False)
         config = DEPLOY_CFG[f'nodes_{node}'][f'config_{config}']
         self.log.info("Running %s N with config %s+%s+%s",
@@ -124,6 +125,7 @@ class TestQueryDeployment:
             setup_client_config_flag = False, run_basic_s3_io_flag = False,
             run_s3bench_workload_flag = False )
         self.deploy_end_time = time.time()
+        self.log.info("End time for deployment %s: ", self.deploy_end_time)
         self.collect_sb = False
         self.destroy_flag = True
 
@@ -152,22 +154,6 @@ class TestQueryDeployment:
         if not os.path.exists(self.test_dir_path):
             resp = system_utils.make_dirs(self.test_dir_path)
             LOGGER.info("Created path: %s", resp)
-        LOGGER.info("Precondition: Verify cluster is up and running and all pods are online.")
-        resp = self.ha_obj.check_cluster_status(self.master_node_list[0])
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Precondition: Verified cluster is up and running and all pods are online.")
-        LOGGER.info("Get %s pod to be deleted", const.POD_NAME_PREFIX)
-        sts_dict = self.master_node_list[0].get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
-        sts_list = list(sts_dict.keys())
-        LOGGER.debug("%s Statefulset: %s", const.POD_NAME_PREFIX, sts_list)
-        sts = self.system_random.sample(sts_list, 1)[0]
-        self.delete_pod = sts_dict[sts][-1]
-        LOGGER.info("Pod to be deleted is %s", self.delete_pod)
-        self.set_type, self.set_name = self.master_node_list[0].get_set_type_name(
-            pod_name=self.delete_pod)
-        resp = self.master_node_list[0].get_num_replicas(self.set_type, self.set_name)
-        assert_utils.assert_true(resp[0], resp)
-        self.num_replica = int(resp[1])
         LOGGER.info("Done: Setup operations.")
 
     def teardown_method(self):
@@ -233,7 +219,6 @@ class TestQueryDeployment:
         Test to verify query should be able to fetch standard 5 node configuration.
         """
         test_case_name = cortxlogging.get_frame()
-        self.multiple_node_deployment(3, 2)
         LOGGER.info("Step 1 : Deploy cortx cluster ")
         self.multiple_node_deployment(5, 1)
         LOGGER.info("Step 2 : GET the cluster configuration ")
@@ -258,6 +243,18 @@ class TestQueryDeployment:
         LOGGER.info("Step 1 : Deploy cortx cluster ")
         self.multiple_node_deployment(3, 2)
         LOGGER.info("Step 2 : Make a cluster in degraded state")
+        LOGGER.info("Get %s pod to be deleted", const.POD_NAME_PREFIX)
+        sts_dict = self.master_node_list[0].get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        self.delete_pod = sts_dict[sts][-1]
+        LOGGER.info("Pod to be deleted is %s", self.delete_pod)
+        self.set_type, self.set_name = self.master_node_list[0].get_set_type_name(
+            pod_name=self.delete_pod)
+        resp = self.master_node_list[0].get_num_replicas(self.set_type, self.set_name)
+        assert_utils.assert_true(resp[0], resp)
+        self.num_replica = int(resp[1])
         LOGGER.info(" Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
         num_replica = self.num_replica - 1
@@ -276,22 +273,24 @@ class TestQueryDeployment:
         self.restore_pod = True
         self.log.info("Step 4: Verify GET system topology ")
         self.log.info("Deploy start and end time: %s %s ", self.deploy_start_time,
-                   self.deploy_end_time)
+                      self.deploy_end_time)
         result, err_msg = self.csm_obj.verify_system_topology(self.deploy_start_time,
-                   self.deploy_end_time, expected_response=HTTPStatus.OK)
+                                                              self.deploy_end_time,
+                                                              expected_response=HTTPStatus.OK)
         assert result, err_msg
-        LOGGER.info("Step 5: Restore pod and check cluster status.")
-        resp = self.ha_obj.restore_pod(pod_obj=self.master_node_list[0],
-                                       restore_method=self.restore_method,
-                                       restore_params={"deployment_name": self.deployment_name,
-                                                       "deployment_backup":
-                                                           self.deployment_backup,
-                                                        "num_replica": self.num_replica,
-                                                        "set_name": self.set_name},
-                                       clstr_status=True)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
-                                          "OR the cluster is not online")
+        # LOGGER.info("Step 5: Restore pod and check cluster status.")
+        # resp = self.ha_obj.restore_pod(pod_obj=self.master_node_list[0],
+        #                                restore_method=self.restore_method,
+        #                                restore_params={"deployment_name": self.deployment_name,
+        #                                                "deployment_backup":
+        #                                                    self.deployment_backup,
+        #                                                 "num_replica": self.num_replica,
+        #                                                 "set_name": self.set_name},
+        #                                clstr_status=True)
+        # LOGGER.debug("Response: %s", resp)
+        # assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
+        #                                   "OR the cluster is not online")
+        # self.restore_pod = False
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -307,11 +306,23 @@ class TestQueryDeployment:
         LOGGER.info("Step 1 : Deploy cortx cluster ")
         self.multiple_node_deployment(5, 1)
         LOGGER.info("Step 2 : Make a cluster in degraded state")
+        LOGGER.info("Get %s pod to be deleted", const.POD_NAME_PREFIX)
+        sts_dict = self.master_node_list[0].get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        self.delete_pod = sts_dict[sts][-1]
+        LOGGER.info("Pod to be deleted is %s", self.delete_pod)
+        self.set_type, self.set_name = self.master_node_list[0].get_set_type_name(
+            pod_name=self.delete_pod)
+        resp = self.master_node_list[0].get_num_replicas(self.set_type, self.set_name)
+        assert_utils.assert_true(resp[0], resp)
+        self.num_replica = int(resp[1])
         LOGGER.info(" Shutdown random data pod with replica method and "
                     "verify cluster & remaining pods status")
         num_replica = self.num_replica - 1
         resp = self.ha_obj.delete_kpod_with_shutdown_methods(
-            master_node_obj=self.node_master_list[0], health_obj=self.hlth_master_list[0],
+            master_node_obj=self.master_node_list[0], health_obj=self.hlth_master_list[0],
             delete_pod=[self.delete_pod], num_replica=num_replica)
         # Assert if empty dictionary
         assert_utils.assert_true(resp[1], "Failed to shutdown/delete pod")
@@ -327,18 +338,21 @@ class TestQueryDeployment:
         self.log.info("Deploy start and end time: %s %s ", self.deploy_start_time,
                       self.deploy_end_time)
         result, err_msg = self.csm_obj.verify_system_topology(self.deploy_start_time,
-                                                              self.deploy_end_time, expected_response=HTTPStatus.OK)
+                                                              self.deploy_end_time,
+                                                              expected_response=HTTPStatus.OK)
         assert result, err_msg
-        LOGGER.info("Step 5: Restore pod and check cluster status.")
-        resp = self.ha_obj.restore_pod(pod_obj=self.node_master_list[0],
-                                       restore_method=self.restore_method,
-                                       restore_params={"deployment_name": self.deployment_name,
-                                                       "deployment_backup":
-                                                           self.deployment_backup,
-                                                        "num_replica": self.num_replica,
-                                                        "set_name": self.set_name},
-                                       clstr_status=True)
-        LOGGER.debug("Response: %s", resp)
-        assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
-                                          "OR the cluster is not online")
+        # LOGGER.info("Step 5: Restore pod and check cluster status.")
+        # resp = self.ha_obj.restore_pod(pod_obj=self.master_node_list[0],
+        #                                restore_method=self.restore_method,
+        #                                restore_params={"deployment_name": self.deployment_name,
+        #                                                "deployment_backup":
+        #                                                    self.deployment_backup,
+        #                                                 "num_replica": self.num_replica,
+        #                                                 "set_name": self.set_name},
+        #                                clstr_status=True)
+        # LOGGER.debug("Response: %s", resp)
+        # assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way "
+        #                                   "OR the cluster is not online")
+        # self.restore_pod = False
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
