@@ -443,13 +443,11 @@ def read_selected_tests_csv():
         return tests
 
 
-def trigger_tests_from_te(args):
+def trigger_tests_from_te(args, jira_obj):
     """
     Get the tests from test execution
     Trigger those tests using pytest command
     """
-    jira_id, jira_pwd = runner.get_jira_credential()
-    jira_obj = JiraTask(jira_id, jira_pwd)
     # test_list, te_tag = jira_obj.get_test_ids_from_te(args.te_ticket)
     # if len(test_list) == 0 or te_tag == "":
     #     assert False, "Please check TE provided, tests or tag is missing"
@@ -630,18 +628,44 @@ def get_setup_details(args):
                 raise Exception(f'target {args.target} Data does not exists in setups.json')
 
 
+def get_ordered_test_executions(jira_obj, test_plan):
+    """Order Test Executions to execute HA test lastly."""
+    result = []
+    test_executions = jira_obj.get_test_plan_details(test_plan)
+    for test_execution in test_executions:
+        if test_execution["testEnvironments"]:
+            marker = test_execution["testEnvironments"][0].lower()
+        else:
+            continue
+        summary = test_execution["summary"].lower()
+        if "ha" in summary or "ha" in marker:
+            result.append(test_execution["key"])
+        elif "ceph" in summary or "ceph" in marker:
+            continue
+        else:
+            result.insert(0, test_execution["key"])
+    return result
+
+
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.
     It renames up the latest folder and parses TE ticket to create detailed test details csv.
     """
     get_setup_details(args)
+    jira_id, jira_pwd = runner.get_jira_credential()
+    jira_obj = JiraTask(jira_id, jira_pwd)
     if args.json_file:
         json_dict, cmd, run_using = runner.parse_json(args.json_file)
         cmd_line = runner.get_cmd_line(cmd, run_using, args.html_report, args.log_level)
         prc = subprocess.Popen(cmd_line)
         out, err = prc.communicate()
+    elif not args.te_ticket and args.test_plan:
+        test_executions = get_ordered_test_executions(jira_obj, args.test_plan)
+        for test_execution in test_executions:
+            args.te_ticket = test_execution
+            trigger_tests_from_te(args, jira_obj)
     elif args.te_ticket:
-        trigger_tests_from_te(args)
+        trigger_tests_from_te(args, jira_obj)
     else:
         check_kafka_msg_trigger_test(args)
 

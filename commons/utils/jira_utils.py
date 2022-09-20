@@ -161,14 +161,14 @@ class JiraTask:
             print("Returned code from xray jira request: {}".format(response.status_code))
         return test_details, te_tag
 
-    def get_test_plan_details(self, test_plan_id: str) -> [dict]:
+    def get_test_plan_details(self, test_plan: str) -> [dict]:
         """
         Summary: Get test executions from test plan.
 
         Description: Returns dictionary of test executions from test plan.
 
         Args:
-            test_plan_id:  (str): Test plan number in JIRA
+            test_plan:  (str): Test plan number in JIRA
 
         Returns:
             List of dictionaries
@@ -178,12 +178,12 @@ class JiraTask:
              "testEnvironments": ["515_full"]},
             ]
         """
-        jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/' \
-                   f'{test_plan_id}/testexecution'
-        response = requests.get(jira_url, auth=(self.jira_id, self.jira_password))
-        if response.status_code == HTTPStatus.OK:
-            return response.json()
-        return response.text
+        jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/{test_plan}/testexecution'
+        try:
+            response = self.http.get(jira_url, auth=self.auth, headers=self.headers)
+        except (JIRAError, requests.exceptions.RequestException) as fault:
+            raise EnvironmentError("Unable to access JIRA. Please check above errors.") from fault
+        return response.json()
 
     @staticmethod
     def get_test_list_from_test_plan(test_plan: str, username: str, password: str) -> [dict]:
