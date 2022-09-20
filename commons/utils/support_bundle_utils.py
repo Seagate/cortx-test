@@ -210,6 +210,9 @@ def collect_support_bundle_k8s(local_dir_path: str, scripts_path: str = cm_const
             password = CMN_CFG["nodes"][node]["password"]
             m_node_obj = LogicalNode(hostname=host, username=username, password=password)
 
+    if not os.path.exists(local_dir_path):
+        os.mkdir(local_dir_path)
+
     flg = False
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.CLSTR_LOGS_CMD.format(scripts_path), read_lines=True)
     for line in resp:

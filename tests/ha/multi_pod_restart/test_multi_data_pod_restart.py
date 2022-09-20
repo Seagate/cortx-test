@@ -26,7 +26,6 @@ import logging
 import random
 import secrets
 import time
-from time import perf_counter_ns
 
 import pytest
 
@@ -39,6 +38,7 @@ from config import HA_CFG
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from libs.csm.csm_interface import csm_api_factory
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -62,11 +62,15 @@ class TestMultiDataPodRestart:
         cls.hlth_master_list = []
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
-        cls.random_time = cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = None
+        cls.csm_obj = csm_api_factory("rest")
+        cls.s3_clean = cls.test_prefix = cls.test_prefix_deg = None
         cls.s3acc_name = cls.s3acc_email = cls.bucket_name = cls.object_name = cls.node_name = None
         cls.restore_pod = cls.deployment_backup = cls.deployment_name = cls.restore_method = None
+        cls.set_type = cls.set_name = cls.last_pod = cls.num_replica = None
+        cls.qvalue = cls.kvalue = None
         cls.mgnt_ops = ManagementOPs()
         cls.system_random = secrets.SystemRandom()
+        cls.rest_obj = S3AccountOperations()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -84,22 +88,38 @@ class TestMultiDataPodRestart:
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
 
-        cls.rest_obj = S3AccountOperations()
+        resp = cls.ha_obj.calculate_multi_value(cls.csm_obj, len(cls.node_worker_list))
+        assert_utils.assert_true(resp[0], resp[1])
+        cls.qvalue = resp[1]
+        LOGGER.info("Getting K value for the cluster")
+        resp = cls.csm_obj.get_sns_value()
+        LOGGER.info("K value for the cluster is: %s", resp[1])
+        cls.kvalue = resp[1]
 
     def setup_method(self):
         """
         This function will be invoked prior to each test case.
         """
         LOGGER.info("STARTED: Setup Operations")
-        self.random_time = int(time.time())
         self.restore_pod = False
         self.s3_clean = dict()
-        self.s3acc_name = f"ha_s3acc_{int(perf_counter_ns())}"
+        self.s3acc_name = f"ha_s3acc_{int(time.perf_counter_ns())}"
         self.s3acc_email = f"{self.s3acc_name}@seagate.com"
         LOGGER.info("Precondition: Verify cluster is up and running and all pods are online.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Precondition: Verified cluster is up and running and all pods are online.")
+        LOGGER.info("Get data pod with prefix %s", const.POD_NAME_PREFIX)
+        sts_dict = self.node_master_list[0].get_sts_pods(pod_prefix=const.POD_NAME_PREFIX)
+        sts_list = list(sts_dict.keys())
+        LOGGER.debug("%s Statefulset: %s", const.POD_NAME_PREFIX, sts_list)
+        sts = self.system_random.sample(sts_list, 1)[0]
+        self.last_pod = sts_dict[sts][-1]
+        self.set_type, self.set_name = self.node_master_list[0].get_set_type_name(
+            pod_name=self.last_pod)
+        resp = self.node_master_list[0].get_num_replicas(self.set_type, self.set_name)
+        assert_utils.assert_true(resp[0], resp)
+        self.num_replica = int(resp[1])
         LOGGER.info("COMPLETED: Setup operations. ")
 
     def teardown_method(self):
@@ -116,15 +136,16 @@ class TestMultiDataPodRestart:
                                            restore_method=self.restore_method,
                                            restore_params={"deployment_name": self.deployment_name,
                                                            "deployment_backup":
-                                                               self.deployment_backup})
+                                                               self.deployment_backup,
+                                                           "num_replica": self.num_replica,
+                                                           "set_name": self.set_name})
             LOGGER.debug("Response: %s", resp)
             assert_utils.assert_true(resp[0], f"Failed to restore pod by {self.restore_method} way")
             LOGGER.info("Successfully restored pod by %s way", self.restore_method)
-        LOGGER.info("Cleanup: Check cluster status and start it if not up.")
-        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
-        if not resp[0]:
-            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleanup: Check cluster status.")
+        resp = self.ha_obj.poll_cluster_status(self.node_master_list[0],
+                                               HA_CFG["common_params"]["60sec_delay"])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Done: Teardown completed.")
 
     # pylint: disable=too-many-statements
