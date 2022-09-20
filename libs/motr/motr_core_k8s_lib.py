@@ -24,12 +24,14 @@ Python library contains methods which provides the services endpoints.
 import json
 import logging
 import os
+import secrets
 import time
 from random import SystemRandom
 from string import Template
 
 from libs.motr import TEMP_PATH
 from libs.motr import FILE_BLOCK_COUNT
+from libs.motr.emap_fi_adapter import MotrCorruptionAdapter
 from libs.motr.layouts import BSIZE_LAYOUT_MAP
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.dtm.dtm_recovery import DTMRecoveryTestLib
@@ -37,7 +39,10 @@ from config import CMN_CFG
 from config import di_cfg
 from commons import commands as common_cmd
 from commons import constants as common_const
-from commons.params import LOG_DIR, LATEST_LOG_FOLDER
+from commons.params import LOG_DIR
+from commons.params import LATEST_LOG_FOLDER
+from commons.params import MOTR_DI_ERR_INJ_WRAP_LOCAL_PATH
+from commons.params import MOTR_DI_ERR_INJ_FILE_LOCAL_PATH
 from commons.utils import system_utils
 from commons.utils import config_utils
 from commons.utils import assert_utils
@@ -53,6 +58,7 @@ class MotrCoreK8s():
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self):
+        self.system_random = secrets.SystemRandom()
         self.profile_fid = None
         self.cortx_node_list = None
         self.master_node_list = []
@@ -80,7 +86,7 @@ class MotrCoreK8s():
         self.node_pod_dict = self.get_node_pod_dict()
         self.ha_obj = HAK8s()
         self.dtm_obj = DTMRecoveryTestLib()
-
+        self.emap_adapter_obj = MotrCorruptionAdapter(CMN_CFG, oid="1234:1234")
 
     @property
     def _get_cluster_info(self):
@@ -322,15 +328,24 @@ class MotrCoreK8s():
         node = kwargs.get('node')
         offset = kwargs.get('offset')
         client_num = kwargs.get('client_num', None)
+        di_flag = kwargs.get('di_flag', None)
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
-        cmd = Template(common_cmd.M0CP_U_G).substitute(
-            ep=node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
-            hax_ep=node_dict["hax_ep"],
-            fid=node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-            prof_fid=self.profile_fid, bsize=b_size.lower(),
-            count=count, obj=obj, layout=layout, off=offset, file=file)
+        if di_flag:
+            cmd = Template(common_cmd.M0CP_U_G).substitute(
+                chksum="-G", ep=node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                hax_ep=node_dict["hax_ep"],
+                fid=node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                prof_fid=self.profile_fid, bsize=b_size.lower(),
+                count=count, obj=obj, layout=layout, off=offset, file=file)
+        else:
+            cmd = Template(common_cmd.M0CP_U_G).substitute(
+                chksum="", ep=node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                hax_ep=node_dict["hax_ep"],
+                fid=node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                prof_fid=self.profile_fid, bsize=b_size.lower(),
+                count=count, obj=obj, layout=layout, off=offset, file=file)
         resp = self.node_obj.send_k8s_cmd(operation="exec", pod=self.node_pod_dict[node],
                                           namespace=common_const.NAMESPACE,
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
@@ -342,7 +357,7 @@ class MotrCoreK8s():
                                    f'"{cmd}" Failed, Please check the log')
 
     # pylint: disable=too-many-arguments
-    def cat_cmd(self, b_size, count, obj, layout, file, node, client_num=None, di_g=False):
+    def cat_cmd(self, b_size, count, obj, layout, file, node, client_num=None, **kwargs):
         """
         M0CAT command creation
 
@@ -354,21 +369,22 @@ class MotrCoreK8s():
         :node: on which node m0cp cmd need to perform
         :client_num: perform operation on motr_client
         """
+        di_g = kwargs.get("di_g", False)
+        ft_type = kwargs.get("FT_TYPE", 1)
         if client_num is None:
             client_num = 0
         node_dict = self.get_cortx_node_endpoints(node)
         if di_g:
-            cmd = common_cmd.M0CAT_G.format(
-                node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
-                node_dict["hax_ep"],
-                node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
-                self.profile_fid,
-                b_size.lower(),
-                count,
-                obj,
-                layout,
-                file
-            )
+            if ft_type == 1:
+                cmd = common_cmd.M0CAT_G.format(
+                    "", node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                    node_dict["hax_ep"], node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                    self.profile_fid, b_size.lower(), count, obj, layout, file)
+            else:
+                cmd = common_cmd.M0CAT_G.format(
+                    "-r", node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
+                    node_dict["hax_ep"], node_dict[common_const.MOTR_CLIENT][client_num]["fid"],
+                    self.profile_fid, b_size.lower(), count, obj, layout, file)
         else:
             cmd = common_cmd.M0CAT.format(
                 node_dict[common_const.MOTR_CLIENT][client_num]["ep"],
@@ -386,17 +402,17 @@ class MotrCoreK8s():
                                           command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                                                          f"-- {cmd}", decode=False, exc=False)
 
-        log.info("CAT Resp: %s", resp)
+        log.info("CAT Resp: %s ", resp)
         if di_g:
-            if b'-5' in resp:
-                assert_utils.assert_in(b'Checksum validation failed for Obj',
-                                       resp,f'"{cmd}" The m0cat operation failed'
+            if "Checksum validation" in str(resp):
+                assert_utils.assert_in("Checksum validation failed for Obj",
+                                       str(resp), f'"{cmd}" The m0cat operation failed'
                                        f' as expected for corrupt block')
             else:
-                assert_utils.assert_not_in(b'ERROR' or b"Error", resp,
+                assert_utils.assert_not_in("ERROR" or "panic", str(resp),
                                            f'"{cmd}" Failed, Please check the log')
         else:
-            assert_utils.assert_not_in(b'ERROR' or b"Error", resp,
+            assert_utils.assert_not_in("ERROR" or "Error", str(resp),
                                        f'"{cmd}" Failed, Please check the log')
 
     def unlink_cmd(self, obj, layout, node, client_num=None):
@@ -473,7 +489,6 @@ class MotrCoreK8s():
 
             assert_utils.assert_not_in("ERROR" or "Error", resp,
                                        f'"{cmd}" Failed, Please check the log')
-
 
     def get_md5sum(self, file, node):
         """
@@ -809,7 +824,7 @@ class MotrCoreK8s():
         log.debug("DICT is %s", checksum_dict)
         return checksum_dict
 
-    def switch_to_degraded_mode(self):
+    def switch_to_degraded_mode_process_kill(self):
         """
         This method kill's m0d process and make setup to degraded mode
         returns boolean True and pod and container on which m0d was killed
@@ -832,3 +847,154 @@ class MotrCoreK8s():
             self.dtm_obj.set_proc_restart_duration(self.master_node_list[0],
                                                    pod_selected, container, 0)
             return False, pod_selected, container
+
+    # pylint: disable=too-many-locals
+    def m0cp_corrupt_data_m0cat(self, layout_ids, bsize_list, count_list, offsets, **kwargs):
+        """
+        Create an object with M0CP, corrupt with M0CP and
+        validate the corruption with md5sum after M0CAT.
+        """
+        log.info("STARTED: m0cp, corrupt and m0cat workflow")
+        infile = TEMP_PATH + "input"
+        outfile = TEMP_PATH + "output"
+        ft_type = kwargs.get("ft_type", 1)
+        node_pod_dict = self.get_node_pod_dict()
+        motr_client_num = self.get_number_of_motr_clients()
+        object_id = (
+                str(self.system_random.randint(1, 1024 * 1024))
+                + ":"
+                + str(self.system_random.randint(1, 1024 * 1024))
+        )
+        for client_num in range(motr_client_num):
+            for node in node_pod_dict:
+                for b_size, (cnt_c, cnt_u), layout, offset in zip(
+                        bsize_list, count_list, layout_ids, offsets
+                ):
+                    self.dd_cmd(b_size, cnt_c, infile, node)
+                    self.cp_cmd(b_size, cnt_c, object_id, layout, infile, node,
+                                client_num)  # without checksum generation
+                    self.cat_cmd(
+                        b_size, cnt_c, object_id, layout, outfile, node, client_num
+                    )
+                    self.cp_update_cmd(
+                        b_size=b_size, count=cnt_u,
+                        obj=object_id, layout=layout, file=infile,
+                        node=node, client_num=client_num, offset=offset,
+                        di_flag=True)  # with checksum re-generation
+                    self.cat_cmd(
+                        b_size, cnt_c, object_id, layout, outfile, node, client_num, di_g=True,
+                        FT_TYPE=ft_type
+                    )
+                    self.md5sum_cmd(infile, outfile, node, flag=True)
+                    self.unlink_cmd(object_id, layout, node, client_num)
+                log.info("Stop: Verify multiple m0cp/cat operation")
+
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-arguments
+    def motr_inject_checksum_corruption(self, layout_ids, bsize_list, count_list, ft_type=1):
+        """
+        Create an object with M0CP, identify the emap blocks corresponding to data blocks
+        and corrupt single parity/data checksum block with emap script
+        """
+        log.info("STARTED: EMAP corruption workflow")
+        infile = TEMP_PATH + "input"
+        node_pod_dict = self.get_node_pod_dict()
+        object_id_list = []
+        log_file_list = []
+        pod_list = self.master_node_list[0].get_all_pods(common_const.POD_NAME_PREFIX)
+        # Copy the emap script to controller node's root dir
+        # for enabling further copy to container
+        file_list = [MOTR_DI_ERR_INJ_WRAP_LOCAL_PATH, MOTR_DI_ERR_INJ_FILE_LOCAL_PATH]
+        remote_file_list = [common_const.WRAPPER_PATH, common_const.PARSER_PATH]
+
+        # Copy File from client to master node
+        for file, remote_file in zip(file_list, remote_file_list):
+            remote_copy_status = self.master_node_list[0].copy_file_to_remote(file, remote_file)
+            if not remote_copy_status:
+                log.debug("%s File already exists... or failed to copy file", remote_file)
+
+        # For all pods in the system
+        for node_pod in node_pod_dict:
+            # Copy file to container
+            for pod in pod_list:
+                for remote_file in remote_file_list:
+                    log.debug("file %s", remote_file)
+                    copy_status = self.master_node_list[0].copy_file_to_container(
+                        remote_file, pod, remote_file,
+                        f"{common_const.MOTR_CONTAINER_PREFIX}-001")
+                    if not copy_status:
+                        log.debug("%s File already exists... or failed to copy file",
+                                  remote_file)
+                        raise FileNotFoundError
+
+            # Format the Object ID is xxx:yyy format
+            object_id = (str(self.system_random.randint(1, 1024 * 1024)) + ":"
+                         + str(self.system_random.randint(1, 1024 * 1024)))
+            # On the Client POD - cortx - hax container
+            for b_size, cnt_c, layout in zip(bsize_list, count_list, layout_ids):
+                # Create file (object) with dd on all client pods
+                self.dd_cmd(b_size, cnt_c, infile, node_pod)
+                # Create object
+                object_id_list.append(object_id)  # Store object_id for future delete
+                self.cp_cmd(
+                    b_size, cnt_c, object_id, layout, infile, node_pod, 0, di_g=True)  # client_num
+
+            filepath = self.dump_m0trace_log(f"{node_pod}-trace_log.txt", node_pod)
+            log.debug("filepath is %s", filepath)
+            log_file_list.append(filepath)
+            # Fetch the FID from m0trace log
+            fid_resp = self.read_m0trace_log(filepath)
+            log.debug("fid_resp is %s", fid_resp)
+            metadata_path = self.emap_adapter_obj.get_metadata_device(
+                self.master_node_list[0])
+            # Run Emap on all objects, Object id list determines the parity or data
+            data_gob_id_resp, parity_gob_id_resp = self.emap_adapter_obj.get_object_gob_id(
+                metadata_path[0], fid=fid_resp)
+            log.debug("data gob id resp is %s", data_gob_id_resp)
+            if ft_type == 1:
+                corrupt_resp = self.emap_adapter_obj.inject_fault_k8s(
+                    data_gob_id_resp[0], metadata_device=metadata_path[0])
+            else:
+                corrupt_resp = self.emap_adapter_obj.inject_fault_k8s(
+                    parity_gob_id_resp[0], metadata_device=metadata_path[0])
+            log.debug("corrupt emap response ~~~~~~~~~~~~~~~~ %s", corrupt_resp)
+            if corrupt_resp[0]:
+                lines = corrupt_resp[1].split()
+                for line in lines:
+                    if "Newly Computed CRC" in line:
+                        log.debug("Corrupted the block ")
+                        assert_utils.assert_true(corrupt_resp[0], corrupt_resp[1])
+                pod = corrupt_resp[2]
+                self.dtm_obj.process_restart_with_delay(
+                    master_node=self.master_node_list[0],
+                    health_obj=self.health_obj,
+                    check_proc_state=True,
+                    process=common_const.PID_WATCH_LIST[0],
+                    pod_prefix=pod,
+                    container_prefix=common_const.MOTR_CONTAINER_PREFIX,
+                    proc_restart_delay=0,
+                    restart_cnt=1,
+                )
+        return object_id_list, log_file_list
+
+    def m0cat_md5sum_m0unlink(self, bsize_list, count_list, layout_ids, object_list, **kwargs):
+        """
+        Validate the corruption with md5sum after M0CAT and unlink the object
+        """
+        log.info("STARTED: m0cat_md5sum_m0unlink workflow")
+        infile = kwargs.get("infile", TEMP_PATH + "input")
+        outfile = kwargs.get("outfile", TEMP_PATH + "output")
+        flag = kwargs.get("flag", True)
+        ft_type = kwargs.get("ft_type", 1)
+        node_pod_dict = self.get_node_pod_dict()
+        motr_client_num = self.get_number_of_motr_clients()
+        for client_num in range(motr_client_num):
+            for node, obj_id in zip(node_pod_dict, object_list):
+                for b_size, cnt_c, layout, in zip(bsize_list, count_list, layout_ids):
+                    self.cat_cmd(b_size, cnt_c, obj_id, layout, outfile, node,
+                                 client_num, di_g=True, FT_TYPE=ft_type)
+                    # Verify the md5sum
+                    self.md5sum_cmd(infile, outfile, node, flag=flag)
+                    # Delete the object
+                    self.unlink_cmd(obj_id, layout, node, client_num)
+                log.info("Stop: Verify m0cat_md5sum_m0unlink operation")
