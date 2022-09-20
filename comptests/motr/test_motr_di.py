@@ -187,7 +187,8 @@ class TestCorruptDataDetection:
         from object with m0cat should error.
         """
         test_prefix = "TEST-41766"
-        logger.info("STARTED:[Degraded mode]: %s for data block corruption in degraded mode -aligned",
+        logger.info("STARTED:[Degraded mode]: %s for data block corruption in "
+                    "degraded mode -aligned",
                     test_prefix)
         logger.info("Step 1: Switch the cluster to degraded mode by killing"
                     "the m0d process of any data pod")
