@@ -39,7 +39,6 @@ from commons.constants import CLUSTER_YAML
 from commons.constants import PARSE_SIZE
 from commons import commands as common_cmd
 from commons.helpers.pods_helper import LogicalNode
-from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 LOGGER = logging.getLogger(__name__)
 
@@ -163,7 +162,6 @@ class MotrCorruptionAdapter(InjectCorruption):
         self.oid = oid  # deals with a single oid at a moment
         self.master_node_list = list()
         self.worker_node_list = list()
-        self.motr_obj = MotrCoreK8s()
         if self.cmn_cfg["product_family"] in (LC, LR) and self.cmn_cfg["product_type"] == K8S:
             for node in self.nodes:
                 if node["node_type"].lower() == "master":
@@ -287,7 +285,7 @@ class MotrCorruptionAdapter(InjectCorruption):
         self.emap_bldr = EmapCommandBuilder()
         if (fid or selected_meta_dev) is None:
             return False, "metadata path or fid cannot be None"
-        kwargs = dict(corrupt_emap=fid, parse_size=PARSE_SIZE,
+        kwargs = dict(corrupt_emap=fid, parse_size="1048576",
                       metadata_db_path=selected_meta_dev)
         cmd = self.emap_bldr.build(**kwargs)
         return cmd
@@ -315,7 +313,7 @@ class MotrCorruptionAdapter(InjectCorruption):
                         pod=pod_name,
                         namespace=NAMESPACE,
                         command_suffix=f"-c {motr_containers[0]} -- "
-                                       f"{emap_cmd}", decode=True)
+                                       f"{emap_cmd}", decode=True, timeout=120)
                     LOGGER.debug("resp = %s", resp)
                     if resp:
                         return True, resp, pod_name
