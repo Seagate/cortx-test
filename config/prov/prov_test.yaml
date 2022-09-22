@@ -194,7 +194,9 @@ k8s_cortx_deploy:
   destroy_setup_flag: "True"
   cortx_cluster_deploy_flag: "True"
   deploy_ha_timeout_key: "CORTX_DEPLOY_HA_TIMEOUT"
+  deploy_server_timeout_key: "CORTX_DEPLOY_SERVER_TIMEOUT"
   deploy_ha_timeout_val: 1000
+  deploy_server_timeout_val: 1200
   timeout:
     pre-req: 120
     deploy: 7200
@@ -287,6 +289,7 @@ k8s_cortx_deploy:
       limits:
         mem: '512Mi'
         cpu: '250m'
+  max_namespace_len: '20'
 test_basic_io:
   io_upper_limits:
     Kb: 130

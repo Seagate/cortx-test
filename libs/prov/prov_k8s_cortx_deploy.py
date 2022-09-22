@@ -22,7 +22,6 @@
 Provisioner utility methods for Deployment of k8s based Cortx Deployment
 """
 import csv
-import json
 import logging
 import math
 import os
@@ -92,7 +91,7 @@ class ProvDeployK8sCortxLib:
         self.data_only_list = ["data-only", "standard"]
         self.server_only_list = ["server-only", "standard"]
         self.exclusive_pod_list = ["data-only", "server-pod"]
-        self.patterns = "invalid release"
+        self.patterns = self.deploy_cfg['max_namespace_len']
         self.local_sol_path = common_const.LOCAL_SOLUTION_PATH
 
     @staticmethod
@@ -286,11 +285,15 @@ class ProvDeployK8sCortxLib:
         return : True/False and resp
         """
         LOGGER.info("Deploy Cortx cloud")
-        export_cmd = Template(common_cmd.LINUX_EXPORT).substitute(
+        server_export_cmd = Template(common_cmd.LINUX_EXPORT).substitute(
+            key=self.deploy_cfg["deploy_server_timeout_key"],
+            val=str(self.deploy_cfg["deploy_server_timeout_val"]) + "s")
+        ha_export_cmd = Template(common_cmd.LINUX_EXPORT).substitute(
             key=self.deploy_cfg["deploy_ha_timeout_key"],
             val=str(self.deploy_cfg["deploy_ha_timeout_val"]) + "s")
-        cmd = export_cmd + " && " + Template(common_cmd.DEPLOY_CLUSTER_CMD).substitute(
-            path=remote_code_path, log=self.deploy_cfg['log_file'])
+        cmd = server_export_cmd + " && " + ha_export_cmd + " && " +\
+              Template(common_cmd.DEPLOY_CLUSTER_CMD).substitute(
+                  path=remote_code_path, log=self.deploy_cfg['log_file'])
         try:
             resp = node_obj.execute_cmd(cmd, read_lines=True, recv_ready=True,
                                         timeout=self.deploy_cfg['timeout']['deploy'])
@@ -1249,6 +1252,7 @@ class ProvDeployK8sCortxLib:
         returns True, resp
         """
         deployment_type = kwargs.get("deployment_type", self.deployment_type)
+        service_status = []
         LOGGER.info("Step to Perform Cortx Cluster Deployment")
         deploy_resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
                                                 worker_node_list, system_disk_dict,
@@ -1259,8 +1263,18 @@ class ProvDeployK8sCortxLib:
                 bool(re.findall(r'\w*[A-Z]\w*', namespace)):
             LOGGER.debug("Negative Test Scenario")
             assert_utils.assert_false(deploy_resp[0], deploy_resp[1])
-            if self.patterns in deploy_resp[1]:
-                return True, 0
+            if not deploy_resp[0]:
+                local_path = os.path.join(LOG_DIR, LATEST_LOG_FOLDER,
+                                          self.deploy_cfg['log_file'])
+                remote_path = os.path.join(self.deploy_cfg["k8s_dir"],
+                                           self.deploy_cfg['log_file'])
+                master_node_list[0].copy_file_to_local(remote_path, local_path)
+                with open(local_path) as file:
+                    lines = file.readlines()
+                    for line in lines:
+                        if self.patterns in line:
+                            LOGGER.debug(line)
+                            service_status.append(line)
         # Run status-cortx-cloud.sh script to fetch the status of all resources.
         if deploy_resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
@@ -1478,7 +1492,7 @@ class ProvDeployK8sCortxLib:
                                                   master_node_list,
                                                   worker_node_list,
                                                   namespace, system_disk_dict)
-            row.append(deploy_stage_resp[1])
+            assert_utils.assert_true(deploy_stage_resp[0])
         if self.deployment_type not in self.exclusive_pod_list:
             if setup_client_config_flag:
                 client_config_res = self.client_config(master_node_list, namespace)
@@ -1566,12 +1580,14 @@ class ProvDeployK8sCortxLib:
             resp = self.get_hctl_status(master_node_obj)
             LOGGER.debug("services status is %s, End Time is %s", resp[1], end_time)
             if resp[0]:
+                response = []
                 time_taken = time.time() - start_time
                 LOGGER.info("#### Services online. Time Taken : %s", time_taken)
+                response.append(resp[0])
                 response.append(resp[1])
                 response.append(time_taken)
                 break
-            response.extend([False, 'Timeout'])
+            response = [False, 'Timeout']
         LOGGER.info("hctl_status = %s", resp[1])
         return response
 
