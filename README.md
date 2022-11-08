@@ -3,7 +3,7 @@ CORTX-TEST is a repository for multiple automation projects developed for testin
 
 It is logically divided into following components:
 *   Test Automation framework (Corbot)
-*   Test Execution Framework  (drunner)
+*   Test Execution Framework  (Gliese entry point- drunner)
 *   Robot framework UI Tests and
 *   Tools ( Reporting Dashboards, Data Integrity, Clone Test Plans etc.)
 
