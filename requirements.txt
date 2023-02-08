@@ -6,7 +6,7 @@ certifi==2019.6.16
 chardet==3.0.4
 Click==7.0
 confluent_kafka
-cryptography==37.0.0
+cryptography==39.0.1
 defusedxml~=0.7.1
 docutils==0.14
 fastavro
