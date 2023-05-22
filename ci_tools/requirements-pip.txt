@@ -54,7 +54,7 @@ python-jenkins~=1.7.0
 pyyaml==6.0.0
 pyzmq==18.0.2
 pyOpenSSL==20.0.1
-requests==2.22.0
+requests==2.31.0
 redexpect
 robotframework==3.2.2
 robotframework-pythonlibcore==2.1.0
