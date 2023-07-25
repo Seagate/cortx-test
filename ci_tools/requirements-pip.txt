@@ -2,7 +2,7 @@ aenum==2.2.4
 bandit==1.7.1
 boto3==1.9.202
 botocore==1.12.202
-certifi==2019.6.16
+certifi==2023.7.22
 chardet==3.0.4
 Click==7.0
 confluent_kafka
