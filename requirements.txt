@@ -12,7 +12,7 @@ docutils==0.14
 fastavro
 fabric~=2.5.0
 filelock==3.0.12
-flask==1.1.2
+flask==2.2.5
 gevent~=21.1.2
 greenlet==0.4.17
 idna==2.8
