@@ -1,3 +1,4 @@
+# Disclaimer: This project is not maintained anymore
 # cortx-test
 CORTX-TEST is a repository for multiple automation projects developed for testing [CORTX](https://github.com/Seagate/cortx/blob/main/README.md#get-started) and supported solutions/systems. These frameworks are reusable for any opensource object stores with minimal configurations. 
 
